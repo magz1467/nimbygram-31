@@ -1,8 +1,6 @@
-
 import { FilterBar } from "@/components/FilterBar";
 import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Application } from "@/types/planning";
 
 interface SearchSectionProps {
   onPostcodeSelect: (postcode: string) => void;
@@ -16,7 +14,6 @@ interface SearchSectionProps {
   isMapView: boolean;
   onToggleView?: () => void;
   applications?: any[];
-  categories?: string[];
   statusCounts?: {
     'Under Review': number;
     'Approved': number;
@@ -34,7 +31,6 @@ export const SearchSection = ({
   isMapView,
   onToggleView,
   applications,
-  categories,
   statusCounts,
 }: SearchSectionProps) => {
   const isMobile = useIsMobile();
@@ -57,7 +53,6 @@ export const SearchSection = ({
               activeFilters={activeFilters}
               activeSort={activeSort}
               applications={applications}
-              categories={categories}
               statusCounts={statusCounts}
             />
           </div>

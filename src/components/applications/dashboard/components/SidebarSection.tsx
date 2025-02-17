@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { DesktopSidebar } from "@/components/map/DesktopSidebar";
 import { MobileListContainer } from "@/components/map/mobile/MobileListContainer";
@@ -15,7 +14,6 @@ interface SidebarSectionProps {
     type?: string;
   };
   activeSort: 'closingSoon' | 'newest' | null;
-  categories?: string[];
   statusCounts?: {
     'Under Review': number;
     'Approved': number;
@@ -38,7 +36,6 @@ export const SidebarSection = ({
   activeFilters,
   activeSort,
   statusCounts,
-  categories,
   onFilterChange,
   onSortChange,
   onSelectApplication,
@@ -60,7 +57,6 @@ export const SidebarSection = ({
           onSelectApplication={onSelectApplication}
           onClose={onClose}
           statusCounts={statusCounts}
-          categories={categories}
         />
       </div>
     );
