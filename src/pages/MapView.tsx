@@ -128,22 +128,32 @@ const MapView = () => {
       </div>
     );
   }
+
+  console.log('🎯 Rendering MapContent with:', {
+    applicationCount: applications.length,
+    selectedId,
+    isMapView: true,
+    isLoading,
+    firstCoordinates: applications[0]?.coordinates
+  });
   
   return (
     <ErrorBoundary>
-      <MapContent 
-        applications={applications}
-        selectedId={selectedId}
-        coordinates={[51.5074, -0.1278]} // Default to London coordinates
-        isMobile={isMobile}
-        isMapView={true}
-        onMarkerClick={(id) => {
-          console.log('🖱️ Marker clicked:', id);
-          setSelectedId(id);
-        }}
-        isLoading={isLoading}
-        postcode="SW1A 1AA" // Default London postcode
-      />
+      <div className="h-screen w-full">
+        <MapContent 
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={[51.5074, -0.1278]} // Default to London coordinates
+          isMobile={isMobile}
+          isMapView={true}
+          onMarkerClick={(id) => {
+            console.log('🖱️ Marker clicked:', id);
+            setSelectedId(id);
+          }}
+          isLoading={isLoading}
+          postcode="SW1A 1AA" // Default London postcode
+        />
+      </div>
     </ErrorBoundary>
   );
 };
