@@ -31,7 +31,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address')
+          .select('id, geom, proposal, address, status')
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -74,7 +74,7 @@ const MapViewPage = () => {
             id: item.id || Math.random(),
             title: item.proposal || `Property ${item.id}`,
             address: item.address || 'Address unavailable',
-            status: 'Under Review',
+            status: item.status || 'Status unavailable',
             reference: item.id?.toString() || '',
             description: item.proposal || '',
             submissionDate: '',
