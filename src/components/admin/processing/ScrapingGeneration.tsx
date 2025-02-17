@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +16,7 @@ export const ScrapingGeneration = () => {
   const checkFunctionExists = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('extract-pdf-urls', {
-        method: 'OPTIONS'
+        method: 'GET'  // Changed from 'OPTIONS' to 'GET'
       });
       
       if (error) {
