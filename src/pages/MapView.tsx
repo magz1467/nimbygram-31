@@ -12,6 +12,7 @@ import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { useCoordinates } from "@/hooks/use-coordinates";
 import Header from "@/components/Header";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
+import { calculateDistance } from "@/utils/distance";
 
 const MapViewPage = () => {
   const isMobile = useIsMobile();
@@ -22,8 +23,16 @@ const MapViewPage = () => {
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates } = useCoordinates(postcode);
 
-  // Use the filtered applications hook
-  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort);
+  // Filter applications by distance and other filters
+  const filteredByDistance = applications.filter(app => {
+    if (!coordinates || !app.coordinates) return false;
+    const distance = calculateDistance(coordinates, app.coordinates);
+    // Convert 2 miles to kilometers (2 * 1.60934)
+    return distance <= 3.21868;
+  });
+
+  // Use the filtered applications hook with distance-filtered applications
+  const filteredApplications = useFilteredApplications(filteredByDistance, activeFilters, activeSort);
 
   // Default coordinates for central London
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
@@ -146,7 +155,8 @@ const MapViewPage = () => {
     isLoading,
     firstCoordinates: applications[0]?.coordinates,
     searchedCoordinates: coordinates,
-    activeFilters
+    activeFilters,
+    withinRadius: filteredByDistance.length
   });
   
   return (
