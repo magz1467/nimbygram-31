@@ -19,9 +19,12 @@ const MapView = () => {
       setIsLoading(true);
       
       try {
+        // Optimize query by limiting fields and adding pagination
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('*');
+          .select('id, description, url_documents, last_scraped_at, geom')
+          .range(0, 99) // Fetch first 100 records to start with
+          .not('geom', 'is', null); // Only fetch records with geometry
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -37,18 +40,22 @@ const MapView = () => {
 
         // Transform the property data to match the Application type
         const transformedData = properties?.map((item: any) => {
-          console.log('🔄 Processing item:', item.id, 'Location:', item.geom);
-          
           let coordinates: [number, number] | undefined;
           try {
-            if (item.geom && typeof item.geom === 'object') {
+            if (item.geom?.coordinates && Array.isArray(item.geom.coordinates)) {
+              // Handle both Point and other geometry types
+              const coords = Array.isArray(item.geom.coordinates[0]) 
+                ? item.geom.coordinates[0] 
+                : item.geom.coordinates;
+              
               coordinates = [
-                item.geom.coordinates[1],
-                item.geom.coordinates[0]
+                coords[1],
+                coords[0]
               ];
             }
           } catch (err) {
             console.warn('⚠️ Error parsing coordinates for item:', item.id, err);
+            return null;
           }
 
           if (!coordinates) {
@@ -90,6 +97,14 @@ const MapView = () => {
           hasCoordinates: transformedData?.some(app => app.coordinates)
         });
 
+        if (!transformedData?.length) {
+          toast({
+            title: "No properties found",
+            description: "No properties with valid coordinates were found",
+            variant: "destructive"
+          });
+        }
+
         setApplications(transformedData || []);
       } catch (error) {
         console.error('💥 Error in fetchPropertyData:', error);
@@ -105,6 +120,14 @@ const MapView = () => {
 
     fetchPropertyData();
   }, []);
+
+  if (!applications.length && !isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>No properties found. Please try again later.</p>
+      </div>
+    );
+  }
   
   return (
     <ErrorBoundary>
