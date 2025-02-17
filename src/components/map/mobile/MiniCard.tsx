@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { MapPin } from "lucide-react";
 import { ApplicationTitle } from "@/components/applications/ApplicationTitle";
@@ -20,14 +21,14 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           <ImageResolver
             imageMapUrl={application.image_map_url}
             image={application.image}
-            title={application.title || application.description || ''}
+            title={application.title || ''}
             applicationId={application.id}
             coordinates={application.coordinates}
           />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-primary mb-1 line-clamp-2">
-            <ApplicationTitle title={application.engaging_title || application.description || ''} />
+            <ApplicationTitle title={application.title || application.description || ''} />
           </h3>
           <p className="text-sm text-gray-600 mb-2 line-clamp-2">
             <span className="flex items-center gap-1">

@@ -31,7 +31,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom')
+          .select('id, geom, proposal')
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -72,11 +72,11 @@ const MapViewPage = () => {
 
           return {
             id: item.id || Math.random(),
-            title: `Property ${item.id}`,
+            title: item.proposal || `Property ${item.id}`, // Use proposal as title, fallback to Property ID
             address: 'Address pending',
             status: 'Under Review',
             reference: item.id?.toString() || '',
-            description: '',
+            description: item.proposal || '', // Also use proposal as description
             submissionDate: '',
             coordinates: coordinates,
             postcode: 'N/A',
