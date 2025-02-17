@@ -1,6 +1,18 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Award, Film, Hammer, Home, House, Trees } from "lucide-react";
+import { 
+  Building2, 
+  Store, 
+  Factory, 
+  Building, 
+  TreePine, 
+  Church,
+  Warehouse,
+  School,
+  Hotel,
+  MapPin 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ClassificationFiltersProps {
@@ -14,59 +26,59 @@ export const ClassificationFilters = ({
 }: ClassificationFiltersProps) => {
   const filters = [
     {
-      label: "High Impact",
-      value: "high_impact",
-      icon: Award,
-      color: "#af5662", // Honeysuckle
-      description: "Impact scores above 70",
+      label: "Residential",
+      value: "residential",
+      icon: Building2,
+      color: "#af5662",
+      description: "Residential properties",
     },
     {
-      label: "Entertainment",
-      value: "entertainment",
-      icon: Film,
-      color: "#8bc5be", // Tiffany Blue
-      description: "Entertainment venues",
+      label: "Commercial",
+      value: "commercial",
+      icon: Store,
+      color: "#8bc5be",
+      description: "Commercial properties",
     },
     {
-      label: "Trees",
-      value: "trees",
-      icon: Trees,
-      color: "#af5662", // Honeysuckle
-      description: "Tree-related applications",
+      label: "Industrial",
+      value: "industrial",
+      icon: Factory,
+      color: "#af5662",
+      description: "Industrial properties",
     },
     {
-      label: "Demolition",
-      value: "demolition",
-      icon: Hammer,
-      color: "#8bc5be", // Tiffany Blue
-      description: "Demolition works",
+      label: "Mixed Use",
+      value: "mixed_use",
+      icon: Building,
+      color: "#8bc5be",
+      description: "Mixed use developments",
     },
     {
-      label: "Housing",
-      value: "housing",
-      icon: House,
-      color: "#af5662", // Honeysuckle
-      description: "New build houses",
+      label: "Green Space",
+      value: "green_space",
+      icon: TreePine,
+      color: "#af5662",
+      description: "Parks and green spaces",
     },
     {
-      label: "Extensions",
-      value: "home_extension",
-      icon: Home,
-      color: "#8bc5be", // Tiffany Blue
-      description: "Home extensions",
+      label: "Religious",
+      value: "religious",
+      icon: Church,
+      color: "#8bc5be",
+      description: "Religious buildings",
     },
     {
-      label: "Landscaping",
-      value: "landscaping",
-      icon: Trees,
-      color: "#af5662", // Honeysuckle
-      description: "Landscaping works",
+      label: "Storage",
+      value: "storage",
+      icon: Warehouse,
+      color: "#af5662",
+      description: "Storage facilities",
     },
     {
       label: "Other",
       value: "other",
-      icon: House,
-      color: "#8bc5be", // Tiffany Blue
+      icon: MapPin,
+      color: "#8bc5be",
       description: "Other applications",
     }
   ];

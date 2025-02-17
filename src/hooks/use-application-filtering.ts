@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 
 interface FilterConfig {
@@ -41,31 +42,35 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
 
   if (filters.classification) {
     filtered = filtered.filter(app => {
-      switch (filters.classification) {
-        case 'high_impact':
-          return (app.final_impact_score || 0) > 70;
-        case 'entertainment':
-          return app.class_3?.toLowerCase() === 'entertainment';
-        case 'trees':
-          return app.class_3?.toLowerCase() === 'trees';
-        case 'demolition':
-          return app.class_3?.toLowerCase() === 'demolition';
-        case 'housing':
-          return app.class_3?.toLowerCase() === 'new_build_houses';
-        case 'home_extension':
-          return app.class_3?.toLowerCase() === 'home_extension';
-        case 'landscaping':
-          return app.class_3?.toLowerCase() === 'landscaping';
+      const category = app.category?.toLowerCase() || 'other';
+      const classification = filters.classification.toLowerCase();
+
+      switch (classification) {
+        case 'residential':
+          return category === 'residential';
+        case 'commercial':
+          return category === 'commercial';
+        case 'industrial':
+          return category === 'industrial';
+        case 'mixed_use':
+          return category === 'mixed use';
+        case 'green_space':
+          return category === 'green space';
+        case 'religious':
+          return category === 'religious';
+        case 'storage':
+          return category === 'storage';
         case 'other':
           const mainTypes = [
-            'entertainment',
-            'trees',
-            'demolition',
-            'new_build_houses',
-            'home_extension',
-            'landscaping'
+            'residential',
+            'commercial',
+            'industrial',
+            'mixed use',
+            'green space',
+            'religious',
+            'storage'
           ];
-          return !mainTypes.includes(app.class_3?.toLowerCase() || '');
+          return !mainTypes.includes(category);
         default:
           return true;
       }
@@ -79,7 +84,8 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
         app.description,
         app.address,
         app.reference,
-        app.title
+        app.title,
+        app.category
       ];
       return searchableFields.some(field => 
         field?.toLowerCase().includes(searchLower)
