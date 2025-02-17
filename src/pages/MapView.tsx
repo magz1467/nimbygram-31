@@ -1,4 +1,3 @@
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -150,9 +149,9 @@ const MapView = () => {
         <SearchSection 
           onPostcodeSelect={handlePostcodeSelect}
           onFilterChange={handleFilterChange}
-          onSortChange={(sort) => handleSortChange(sort || null)}
+          onSortChange={(sort: 'closingSoon' | 'newest' | null) => handleSortChange(sort)}
           activeFilters={activeFilters}
-          activeSort={activeSort || 'newest'}
+          activeSort={'newest'}
           isMapView={isMapView}
           applications={applications}
         />
@@ -167,9 +166,9 @@ const MapView = () => {
               postcode={postcode}
               coordinates={[51.5074, -0.1278]}
               activeFilters={activeFilters}
-              activeSort={activeSort || 'newest'}
+              activeSort={'newest'}
               onFilterChange={handleFilterChange}
-              onSortChange={(sort) => handleSortChange(sort || null)}
+              onSortChange={(sort: 'closingSoon' | 'newest' | null) => handleSortChange(sort)}
               onSelectApplication={setSelectedId}
               onClose={() => setSelectedId(null)}
             />

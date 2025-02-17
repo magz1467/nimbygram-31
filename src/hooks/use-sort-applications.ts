@@ -1,7 +1,7 @@
-import { Application } from "@/types/planning";
-import { isWithinNextSevenDays } from "@/utils/dateUtils";
 
-export type SortType = 'closingSoon' | 'newest' | 'impact' | null;
+import { Application } from "@/types/planning";
+import { SortType } from "@/types/application-types";
+import { isWithinNextSevenDays } from "@/utils/dateUtils";
 
 interface SortConfig {
   type: SortType;
@@ -58,21 +58,6 @@ const sortByNewest = (applications: Application[]) => {
   });
 };
 
-const sortByImpactScore = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    // Handle null values - push them to the bottom
-    if (a.final_impact_score === null && b.final_impact_score === null) return 0;
-    if (a.final_impact_score === null) return 1;
-    if (b.final_impact_score === null) return -1;
-    
-    // Convert to numbers and sort by impact score descending (highest first)
-    const scoreA = Number(a.final_impact_score);
-    const scoreB = Number(b.final_impact_score);
-    
-    return scoreB - scoreA;
-  });
-};
-
 export const useApplicationSorting = ({ type, applications }: SortConfig) => {
   if (!applications?.length) return [];
   
@@ -87,12 +72,8 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
     case 'newest':
       sorted = sortByNewest(applications);
       break;
-    case 'impact':
-      sorted = sortByImpactScore(applications);
-      break;
     default:
-      // Make impact score the default sort
-      sorted = sortByImpactScore(applications);
+      sorted = applications;
   }
 
   console.log('Number of applications after sort:', sorted.length);
