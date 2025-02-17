@@ -6,12 +6,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { toast } from "@/components/ui/use-toast";
+import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
+import { SidebarSection } from "@/components/applications/dashboard/components/SidebarSection";
+import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 
 const MapView = () => {
   const isMobile = useIsMobile();
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [postcode, setPostcode] = useState("SW1A 1AA");
+  const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
 
   useEffect(() => {
     const fetchPropertyData = async () => {
@@ -121,6 +126,11 @@ const MapView = () => {
     fetchPropertyData();
   }, []);
 
+  const handlePostcodeSelect = (newPostcode: string) => {
+    setPostcode(newPostcode);
+    // Here you would typically fetch new data for the selected postcode
+  };
+
   if (!applications.length && !isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -139,20 +149,51 @@ const MapView = () => {
   
   return (
     <ErrorBoundary>
-      <div className="h-screen w-full">
-        <MapContent 
+      <div className="flex flex-col h-screen">
+        <SearchSection 
+          onPostcodeSelect={handlePostcodeSelect}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          activeFilters={activeFilters}
+          activeSort={activeSort}
+          isMapView={isMapView}
           applications={applications}
-          selectedId={selectedId}
-          coordinates={[51.5074, -0.1278]} // Default to London coordinates
-          isMobile={isMobile}
-          isMapView={true}
-          onMarkerClick={(id) => {
-            console.log('🖱️ Marker clicked:', id);
-            setSelectedId(id);
-          }}
-          isLoading={isLoading}
-          postcode="SW1A 1AA" // Default London postcode
         />
+        
+        <div className="flex flex-1 overflow-hidden">
+          {!isMobile && (
+            <SidebarSection
+              isMobile={isMobile}
+              isMapView={true}
+              applications={applications}
+              selectedId={selectedId}
+              postcode={postcode}
+              coordinates={[51.5074, -0.1278]}
+              activeFilters={activeFilters}
+              activeSort={activeSort}
+              onFilterChange={handleFilterChange}
+              onSortChange={handleSortChange}
+              onSelectApplication={setSelectedId}
+              onClose={() => setSelectedId(null)}
+            />
+          )}
+          
+          <div className="flex-1 relative">
+            <MapContent 
+              applications={applications}
+              selectedId={selectedId}
+              coordinates={[51.5074, -0.1278]}
+              isMobile={isMobile}
+              isMapView={true}
+              onMarkerClick={(id) => {
+                console.log('🖱️ Marker clicked:', id);
+                setSelectedId(id);
+              }}
+              isLoading={isLoading}
+              postcode={postcode}
+            />
+          </div>
+        </div>
       </div>
     </ErrorBoundary>
   );
