@@ -24,7 +24,6 @@ const MapView = () => {
       setIsLoading(true);
       
       try {
-        // Only select the id and geometry columns initially to verify the connection
         const { data: properties, error } = await supabase
           .from('property_data_api')
           .select('id, geom')
@@ -48,7 +47,6 @@ const MapView = () => {
           let coordinates: [number, number] | undefined;
           try {
             if (item.geom?.coordinates && Array.isArray(item.geom.coordinates)) {
-              // Handle both Point and other geometry types
               const coords = Array.isArray(item.geom.coordinates[0]) 
                 ? item.geom.coordinates[0] 
                 : item.geom.coordinates;
@@ -70,12 +68,12 @@ const MapView = () => {
 
           return {
             id: item.id || Math.random(),
-            title: `Property ${item.id}`, // Simplified title since we don't have description
-            address: 'Address pending', // Placeholder since we don't have url_documents
+            title: `Property ${item.id}`,
+            address: 'Address pending',
             status: 'Under Review',
             reference: item.id?.toString() || '',
-            description: '', // Empty since we don't have this field
-            submissionDate: '', // Empty since we don't have last_scraped_at
+            description: '',
+            submissionDate: '',
             coordinates: coordinates,
             postcode: 'N/A',
             applicant: 'Not specified',
@@ -128,7 +126,6 @@ const MapView = () => {
 
   const handlePostcodeSelect = (newPostcode: string) => {
     setPostcode(newPostcode);
-    // Here you would typically fetch new data for the selected postcode
   };
 
   if (!applications.length && !isLoading) {
@@ -153,9 +150,9 @@ const MapView = () => {
         <SearchSection 
           onPostcodeSelect={handlePostcodeSelect}
           onFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
+          onSortChange={(sort) => handleSortChange(sort || null)}
           activeFilters={activeFilters}
-          activeSort={activeSort}
+          activeSort={activeSort || 'newest'}
           isMapView={isMapView}
           applications={applications}
         />
@@ -170,9 +167,9 @@ const MapView = () => {
               postcode={postcode}
               coordinates={[51.5074, -0.1278]}
               activeFilters={activeFilters}
-              activeSort={activeSort}
+              activeSort={activeSort || 'newest'}
               onFilterChange={handleFilterChange}
-              onSortChange={handleSortChange}
+              onSortChange={(sort) => handleSortChange(sort || null)}
               onSelectApplication={setSelectedId}
               onClose={() => setSelectedId(null)}
             />
