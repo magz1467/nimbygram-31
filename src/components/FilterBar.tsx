@@ -1,61 +1,74 @@
 
-import { ViewToggle } from "@/components/map/filter/ViewToggle";
-import { FilterControls } from "@/components/map/filter/FilterControls";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ViewToggle } from "./map/filter/ViewToggle";
+import { FilterControls } from "./map/filter/FilterControls";
+import { SortType } from "@/types/application-types";
+import { useCallback } from "react";
 
 interface FilterBarProps {
-  onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onFilterChange?: (filterType: string, value: string) => void;
+  onSortChange?: (sortType: SortType) => void;
   activeFilters?: {
     status?: string;
     type?: string;
+    classification?: string;
   };
-  activeSort?: 'closingSoon' | 'newest' | null;
+  activeSort: SortType;
+  isMapView?: boolean;
+  onToggleView?: () => void;
   applications?: any[];
-  categories?: string[];
   statusCounts?: {
     'Under Review': number;
     'Approved': number;
     'Declined': number;
     'Other': number;
   };
-  isMapView?: boolean;
-  onToggleView?: () => void;
 }
 
 export const FilterBar = ({
   onFilterChange,
   onSortChange,
-  activeFilters,
+  activeFilters = {},
   activeSort,
-  applications,
-  categories,
-  statusCounts,
   isMapView,
   onToggleView,
+  applications = [],
+  statusCounts = {
+    'Under Review': 0,
+    'Approved': 0,
+    'Declined': 0,
+    'Other': 0
+  }
 }: FilterBarProps) => {
   const isMobile = useIsMobile();
 
+  const handleFilterChange = useCallback((filterType: string, value: string) => {
+    if (onFilterChange) {
+      onFilterChange(filterType, value);
+    }
+  }, [onFilterChange]);
+
+  const handleSortChange = useCallback((sortType: SortType) => {
+    if (onSortChange) {
+      onSortChange(sortType);
+    }
+  }, [onSortChange]);
+
   return (
-    <div className="flex items-center gap-2 justify-between">
-      <FilterControls
-        onFilterChange={onFilterChange}
-        onSortChange={onSortChange}
-        activeFilters={activeFilters}
-        activeSort={activeSort}
-        isMobile={isMobile}
-        applications={applications}
-        isMapView={isMapView || false}
-        onToggleView={onToggleView}
-        statusCounts={statusCounts}
-        categories={categories}
-      />
-      {onToggleView && (
-        <ViewToggle
+    <div className="flex flex-col bg-white border-b">
+      <div className="flex items-center justify-between p-1.5">
+        <FilterControls 
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          activeFilters={activeFilters}
+          activeSort={activeSort}
+          isMobile={isMobile}
+          applications={applications}
+          statusCounts={statusCounts}
           isMapView={isMapView || false}
           onToggleView={onToggleView}
         />
-      )}
+      </div>
     </div>
   );
 };

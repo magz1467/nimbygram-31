@@ -24,7 +24,6 @@ interface DesktopSidebarProps {
     'Declined': number;
     'Other': number;
   };
-  categories?: string[];
 }
 
 export const DesktopSidebar = ({
@@ -37,8 +36,7 @@ export const DesktopSidebar = ({
   onSortChange,
   onSelectApplication,
   onClose,
-  statusCounts,
-  categories
+  statusCounts
 }: DesktopSidebarProps) => {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const { toast } = useToast();
@@ -69,7 +67,6 @@ export const DesktopSidebar = ({
           activeFilters={activeFilters}
           activeSort={activeSort}
           statusCounts={statusCounts}
-          categories={categories}
         />
       ) : selectedApplicationData && (
         <ApplicationDetailView
