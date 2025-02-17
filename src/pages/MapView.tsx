@@ -11,6 +11,7 @@ import { SidebarSection } from "@/components/applications/dashboard/components/S
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { useCoordinates } from "@/hooks/use-coordinates";
 import Header from "@/components/Header";
+import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 
 const MapViewPage = () => {
   const isMobile = useIsMobile();
@@ -20,6 +21,9 @@ const MapViewPage = () => {
   const [postcode, setPostcode] = useState("SW1A 1AA");
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates } = useCoordinates(postcode);
+
+  // Use the filtered applications hook
+  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort);
 
   // Default coordinates for central London
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
@@ -136,11 +140,13 @@ const MapViewPage = () => {
 
   console.log('🎯 Rendering MapContent with:', {
     applicationCount: applications.length,
+    filteredCount: filteredApplications.length,
     selectedId,
     isMapView: true,
     isLoading,
     firstCoordinates: applications[0]?.coordinates,
-    searchedCoordinates: coordinates
+    searchedCoordinates: coordinates,
+    activeFilters
   });
   
   return (
@@ -154,7 +160,7 @@ const MapViewPage = () => {
           activeFilters={activeFilters}
           activeSort={activeSort}
           isMapView={isMapView}
-          applications={applications}
+          applications={filteredApplications}
         />
         
         <div className="flex flex-1 overflow-hidden">
@@ -162,7 +168,7 @@ const MapViewPage = () => {
             <SidebarSection
               isMobile={isMobile}
               isMapView={true}
-              applications={applications}
+              applications={filteredApplications}
               selectedId={selectedId}
               postcode={postcode}
               coordinates={coordinates || defaultCoordinates}
@@ -177,7 +183,7 @@ const MapViewPage = () => {
           
           <div className="flex-1 relative">
             <MapContent 
-              applications={applications}
+              applications={filteredApplications}
               selectedId={selectedId}
               coordinates={coordinates || defaultCoordinates}
               isMobile={isMobile}
