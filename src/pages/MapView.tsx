@@ -19,12 +19,12 @@ const MapView = () => {
       setIsLoading(true);
       
       try {
-        // Optimize query by limiting fields and adding pagination
+        // Only select the id and geometry columns initially to verify the connection
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, description, url_documents, last_scraped_at, geom')
-          .range(0, 99) // Fetch first 100 records to start with
-          .not('geom', 'is', null); // Only fetch records with geometry
+          .select('id, geom')
+          .range(0, 99)
+          .not('geom', 'is', null);
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -65,12 +65,12 @@ const MapView = () => {
 
           return {
             id: item.id || Math.random(),
-            title: item.description || 'No description available',
-            address: item.url_documents || 'No address available',
+            title: `Property ${item.id}`, // Simplified title since we don't have description
+            address: 'Address pending', // Placeholder since we don't have url_documents
             status: 'Under Review',
             reference: item.id?.toString() || '',
-            description: item.description || '',
-            submissionDate: item.last_scraped_at || '',
+            description: '', // Empty since we don't have this field
+            submissionDate: '', // Empty since we don't have last_scraped_at
             coordinates: coordinates,
             postcode: 'N/A',
             applicant: 'Not specified',
