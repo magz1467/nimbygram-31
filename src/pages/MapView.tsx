@@ -36,7 +36,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status')
+          .select('id, geom, proposal, address, status, class_3')  // Added class_3 field
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -75,6 +75,26 @@ const MapViewPage = () => {
             return null;
           }
 
+          // Determine category from class_3 field
+          let category = 'other';
+          const class3Lower = (item.class_3 || '').toLowerCase();
+          
+          if (class3Lower.includes('residential') || class3Lower.includes('dwelling') || class3Lower.includes('house')) {
+            category = 'residential';
+          } else if (class3Lower.includes('commercial') || class3Lower.includes('retail') || class3Lower.includes('office')) {
+            category = 'commercial';
+          } else if (class3Lower.includes('industrial') || class3Lower.includes('warehouse')) {
+            category = 'industrial';
+          } else if (class3Lower.includes('mixed')) {
+            category = 'mixed_use';
+          } else if (class3Lower.includes('garden') || class3Lower.includes('park')) {
+            category = 'green_space';
+          } else if (class3Lower.includes('church') || class3Lower.includes('religious')) {
+            category = 'religious';
+          } else if (class3Lower.includes('storage') || class3Lower.includes('garage')) {
+            category = 'storage';
+          }
+
           return {
             id: item.id || Math.random(),
             title: item.proposal || `Property ${item.id}`,
@@ -91,6 +111,7 @@ const MapViewPage = () => {
             ward: 'Not specified',
             officer: 'Not assigned',
             consultationEnd: '',
+            category: category,  // Add the determined category
             image: undefined,
             image_map_url: undefined,
             ai_title: undefined,
@@ -106,7 +127,8 @@ const MapViewPage = () => {
         console.log('✨ Transformed data:', {
           totalTransformed: transformedData?.length,
           firstItem: transformedData?.[0],
-          hasCoordinates: transformedData?.some(app => app.coordinates)
+          hasCoordinates: transformedData?.some(app => app.coordinates),
+          categories: transformedData?.map(app => app.category)  // Log categories for debugging
         });
 
         if (!transformedData?.length) {
@@ -146,7 +168,8 @@ const MapViewPage = () => {
     isLoading,
     firstCoordinates: applications[0]?.coordinates,
     searchedCoordinates: coordinates,
-    activeFilters
+    activeFilters,
+    categories: applications.map(app => app.category)  // Log categories for debugging
   });
   
   return (
