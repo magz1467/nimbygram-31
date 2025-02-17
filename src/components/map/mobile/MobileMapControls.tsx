@@ -1,50 +1,44 @@
-import { Application } from "@/types/planning";
-import { MapAction, SortType } from "@/types/map-reducer";
-import { FilterControls } from "../filter/FilterControls";
+
+import { Button } from "@/components/ui/button";
+import { List, SortAsc } from "lucide-react";
+import { SortDropdown } from "../filter/SortDropdown";
+import { SortType } from "@/types/application-types";
 
 interface MobileMapControlsProps {
-  applications: Application[];
-  dispatch: React.Dispatch<MapAction>;
-  activeSort: SortType;
-  isMapView: boolean;
   onToggleView: () => void;
-  statusCounts?: {
-    'Under Review': number;
-    'Approved': number;
-    'Declined': number;
-    'Other': number;
-  };
+  onSortChange: (sortType: SortType) => void;
+  activeSort: SortType;
 }
 
 export const MobileMapControls = ({
-  applications,
-  dispatch,
-  activeSort,
-  isMapView,
   onToggleView,
-  statusCounts
+  onSortChange,
+  activeSort,
 }: MobileMapControlsProps) => {
-  const handleFilterChange = (filterType: string, value: string) => {
-    console.log('Filter changed:', filterType, value);
-  };
-
-  const handleSortChange = (sortType: SortType) => {
-    dispatch({ type: 'SET_SORT', payload: sortType });
-  };
-
   return (
-    <div className="fixed top-0 left-0 right-0 z-10 bg-white border-b shadow-sm">
-      <FilterControls
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        activeFilters={{}}
+    <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 px-4 z-10">
+      <Button
+        variant="default"
+        size="sm"
+        className="flex items-center gap-1.5 w-full bg-white text-black hover:bg-gray-100 shadow-lg"
+        onClick={onToggleView}
+      >
+        <List className="h-4 w-4" />
+        List View
+      </Button>
+
+      <SortDropdown
         activeSort={activeSort}
-        isMobile={true}
-        applications={applications}
-        isMapView={isMapView}
-        onToggleView={onToggleView}
-        statusCounts={statusCounts}
-      />
+        onSortChange={onSortChange}
+      >
+        <Button
+          variant="default"
+          size="sm"
+          className="flex items-center gap-1.5 bg-white text-black hover:bg-gray-100 shadow-lg"
+        >
+          <SortAsc className="h-4 w-4" />
+        </Button>
+      </SortDropdown>
     </div>
   );
 };

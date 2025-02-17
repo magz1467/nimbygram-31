@@ -1,10 +1,11 @@
+
 import { Application } from "@/types/planning";
 import { MapSection } from "./MapSection";
 import { SidebarSection } from "./SidebarSection";
 import { DashboardHeader } from "./DashboardHeader";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SortType } from "@/hooks/use-sort-applications";
+import { SortType } from "@/types/application-types";
 import { SearchSection } from "./SearchSection";
 import { Header } from "@/components/Header";
 
@@ -17,14 +18,14 @@ interface DashboardLayoutProps {
     status?: string;
     type?: string;
   };
-  activeSort: SortType | null;
+  activeSort: SortType;
   postcode: string;
   isLoading?: boolean;
   filteredApplications: Application[];
   handleMarkerClick: (id: number | null) => void;
   handleFilterChange: (filterType: string, value: string) => void;
   handlePostcodeSelect: (postcode: string) => void;
-  handleSortChange: (sortType: SortType | null) => void;
+  handleSortChange: (sortType: SortType) => void;
   setIsMapView: (value: boolean) => void;
 }
 
@@ -60,9 +61,9 @@ export const DashboardLayout = ({
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
           activeFilters={activeFilters}
-          activeSort={activeSort || 'newest'}
+          activeSort={activeSort}
           isMapView={isMapView}
-          onToggleView={isMobile ? () => setIsMapView(!isMapView) : undefined}
+          onToggleView={() => setIsMapView(!isMapView)}
         />
         
         <div className="flex flex-1 min-h-0 relative">
@@ -76,7 +77,7 @@ export const DashboardLayout = ({
             postcode={postcode}
             coordinates={coordinates as [number, number]}
             activeFilters={activeFilters}
-            activeSort={activeSort as "closingSoon" | "newest"}
+            activeSort={activeSort}
             onFilterChange={handleFilterChange}
             onSortChange={handleSortChange}
             onSelectApplication={handleMarkerClick}

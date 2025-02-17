@@ -1,7 +1,8 @@
+
 import { Application } from "@/types/planning";
 import { FilterBar } from "@/components/FilterBar";
 import { AlertSection } from "./AlertSection";
-import { SortType } from "@/hooks/use-sort-applications";
+import { SortType } from "@/types/application-types";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 

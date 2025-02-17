@@ -1,5 +1,6 @@
+
 import { FilterBar } from "@/components/FilterBar";
-import { SortType } from "@/hooks/use-sort-applications";
+import { SortType } from "@/types/application-types";
 
 interface DashboardHeaderProps {
   onFilterChange: (filterType: string, value: string) => void;
