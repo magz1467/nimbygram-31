@@ -20,6 +20,9 @@ const MapViewPage = () => {
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates } = useCoordinates(postcode);
 
+  // Default coordinates for central London
+  const defaultCoordinates: [number, number] = [51.5074, -0.1278];
+
   useEffect(() => {
     const fetchPropertyData = async () => {
       console.log('🔍 Starting to fetch property data...');
@@ -160,7 +163,7 @@ const MapViewPage = () => {
               applications={applications}
               selectedId={selectedId}
               postcode={postcode}
-              coordinates={coordinates || [51.5074, -0.1278]}
+              coordinates={coordinates || defaultCoordinates}
               activeFilters={activeFilters}
               activeSort={activeSort}
               onFilterChange={handleFilterChange}
@@ -174,7 +177,7 @@ const MapViewPage = () => {
             <MapContent 
               applications={applications}
               selectedId={selectedId}
-              coordinates={coordinates || [51.5074, -0.1278]}
+              coordinates={coordinates || defaultCoordinates}
               isMobile={isMobile}
               isMapView={true}
               onMarkerClick={(id) => {

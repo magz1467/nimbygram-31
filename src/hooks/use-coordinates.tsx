@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { LatLngTuple } from "leaflet";
 
 export const useCoordinates = (postcode: string | undefined) => {
-  const [coordinates, setCoordinates] = useState<LatLngTuple | null>(null);
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
