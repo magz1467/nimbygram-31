@@ -1,9 +1,11 @@
+
 import Index from "@/pages/Index";
 import About from "@/pages/About";
 import Press from "@/pages/Press";
 import Admin2 from "@/pages/Admin2";
 import Profile from "@/pages/Profile";
 import Help from "@/pages/Help";
+import Feed from "@/pages/Feed";
 import { RouteObject } from "react-router-dom";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
@@ -36,6 +38,11 @@ export const mainRoutes: RouteObject[] = [
   {
     path: "/help",
     element: <Help />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/feed",
+    element: <Feed />,
     errorElement: <RouteErrorBoundary />,
   },
 ];
