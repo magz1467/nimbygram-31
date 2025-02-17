@@ -1,7 +1,8 @@
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewToggle } from "./map/filter/ViewToggle";
 import { FilterControls } from "./map/filter/FilterControls";
-import { SortType } from "@/hooks/use-sort-applications";
+import { SortType } from "@/types/application-types";
 import { useCallback } from "react";
 
 interface FilterBarProps {

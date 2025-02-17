@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Application } from "@/types/planning";
 import { SortType, FilterType, StatusCounts } from "@/types/application-types";
@@ -68,10 +69,10 @@ export const useApplicationState = (initialPostcode = '') => {
     }
   }, [isLoadingApps, isLoadingCoords, searchStartTime]);
 
-  // Set default sort to 'impact' when applications are loaded
+  // Set default sort to 'newest' when applications are loaded
   useEffect(() => {
     if (applications?.length > 0 && !activeSort) {
-      handleSortChange('impact');
+      handleSortChange('newest');
     }
   }, [applications, activeSort, handleSortChange]);
 

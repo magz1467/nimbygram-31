@@ -1,29 +1,25 @@
-import { Map } from 'leaflet';
-import { Application } from './planning';
-import { SortType } from '@/hooks/use-sort-applications';
 
-export interface MapState {
-  selectedId: number | null;
-  activeFilters: {
-    status?: string;
-    type?: string;
-  };
-  activeSort: SortType | null;
-}
+import { Application } from "./planning";
+import { SortType } from "./application-types";
 
-export interface MapActions {
-  handleMarkerClick: (id: number | null) => void;
-  handleFilterChange: (filterType: string, value: string) => void;
-  handleSortChange: (sortType: SortType | null) => void;
-}
+export type MapLocation = {
+  coordinates: [number, number];
+  zoom: number;
+};
 
-export interface MapViewProps {
+export type MapFeatures = {
   applications: Application[];
   selectedId: number | null;
-  coordinates: [number, number];
-  onMarkerClick: (id: number | null) => void;
-  onCenterChange?: (center: [number, number]) => void;
-  onMapMove?: (map: Map) => void;
-  isMobile?: boolean;
-  isMapView?: boolean;
-}
+  activeSort: SortType;
+  postcode: string;
+};
+
+export type MapState = MapLocation & MapFeatures;
+
+export type MapAction =
+  | { type: 'SET_COORDINATES'; payload: [number, number] }
+  | { type: 'SET_ZOOM'; payload: number }
+  | { type: 'SET_APPLICATIONS'; payload: Application[] }
+  | { type: 'SET_SELECTED_ID'; payload: number | null }
+  | { type: 'SET_SORT'; payload: SortType }
+  | { type: 'SET_POSTCODE'; payload: string };
