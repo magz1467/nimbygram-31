@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { SidebarSection } from "@/components/applications/dashboard/components/SidebarSection";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
+import { useCoordinates } from "@/hooks/use-coordinates";
 
 const MapViewPage = () => {
   const isMobile = useIsMobile();
@@ -17,6 +18,7 @@ const MapViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [postcode, setPostcode] = useState("SW1A 1AA");
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
+  const { coordinates } = useCoordinates(postcode);
 
   useEffect(() => {
     const fetchPropertyData = async () => {
@@ -42,7 +44,6 @@ const MapViewPage = () => {
 
         console.log('📦 Received property data:', properties?.length || 0, 'records');
 
-        // Transform the property data to match the Application type
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
           try {
@@ -125,6 +126,7 @@ const MapViewPage = () => {
   }, []);
 
   const handlePostcodeSelect = (newPostcode: string) => {
+    console.log('New postcode selected:', newPostcode);
     setPostcode(newPostcode);
   };
 
@@ -133,7 +135,8 @@ const MapViewPage = () => {
     selectedId,
     isMapView: true,
     isLoading,
-    firstCoordinates: applications[0]?.coordinates
+    firstCoordinates: applications[0]?.coordinates,
+    searchedCoordinates: coordinates
   });
   
   return (
@@ -157,7 +160,7 @@ const MapViewPage = () => {
               applications={applications}
               selectedId={selectedId}
               postcode={postcode}
-              coordinates={[51.5074, -0.1278]}
+              coordinates={coordinates || [51.5074, -0.1278]}
               activeFilters={activeFilters}
               activeSort={activeSort}
               onFilterChange={handleFilterChange}
@@ -171,7 +174,7 @@ const MapViewPage = () => {
             <MapContent 
               applications={applications}
               selectedId={selectedId}
-              coordinates={[51.5074, -0.1278]}
+              coordinates={coordinates || [51.5074, -0.1278]}
               isMobile={isMobile}
               isMapView={true}
               onMarkerClick={(id) => {
