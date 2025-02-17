@@ -47,33 +47,38 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
       
       if (!app.category) return filters.classification === 'other';
       
-      // Match the filter value with the actual category values in the database
+      // Extract relevant keywords from the title/description to determine category
+      const titleLower = (app.title || app.description || '').toLowerCase();
+      const isExtension = titleLower.includes('extension') || titleLower.includes('extend');
+      const isChangeOfUse = titleLower.includes('change of use') || titleLower.includes('conversion');
+      const isResidential = titleLower.includes('residential') || titleLower.includes('dwelling') || titleLower.includes('house') || titleLower.includes('flat');
+      const isCommercial = titleLower.includes('commercial') || titleLower.includes('shop') || titleLower.includes('retail') || titleLower.includes('office');
+      const isIndustrial = titleLower.includes('industrial') || titleLower.includes('warehouse') || titleLower.includes('factory');
+      const isMixedUse = titleLower.includes('mixed use') || (isResidential && isCommercial);
+      const isGreenSpace = titleLower.includes('garden') || titleLower.includes('park') || titleLower.includes('landscape');
+      const isReligious = titleLower.includes('church') || titleLower.includes('mosque') || titleLower.includes('temple');
+      const isStorage = titleLower.includes('storage') || titleLower.includes('garage');
+
+      // Match the filter value with the detected category
       switch (filters.classification) {
         case 'residential':
-          return app.category.toLowerCase() === 'residential';
+          return isResidential;
         case 'commercial':
-          return app.category.toLowerCase() === 'commercial';
+          return isCommercial;
         case 'industrial':
-          return app.category.toLowerCase() === 'industrial';
+          return isIndustrial;
         case 'mixed_use':
-          return app.category.toLowerCase() === 'mixed use';
+          return isMixedUse;
         case 'green_space':
-          return app.category.toLowerCase() === 'green space';
+          return isGreenSpace;
         case 'religious':
-          return app.category.toLowerCase() === 'religious';
+          return isReligious;
         case 'storage':
-          return app.category.toLowerCase() === 'storage';
+          return isStorage;
         case 'other':
-          const mainCategories = [
-            'residential',
-            'commercial',
-            'industrial',
-            'mixed use',
-            'green space',
-            'religious',
-            'storage'
-          ];
-          return !mainCategories.includes(app.category.toLowerCase());
+          // If it doesn't match any other category, it's "other"
+          return !isResidential && !isCommercial && !isIndustrial && 
+                 !isMixedUse && !isGreenSpace && !isReligious && !isStorage;
         default:
           return true;
       }
