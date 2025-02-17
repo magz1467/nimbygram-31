@@ -1,3 +1,4 @@
+
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -9,7 +10,7 @@ import { SearchSection } from "@/components/applications/dashboard/components/Se
 import { SidebarSection } from "@/components/applications/dashboard/components/SidebarSection";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 
-const MapView = () => {
+const MapViewPage = () => {
   const isMobile = useIsMobile();
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -127,14 +128,6 @@ const MapView = () => {
     setPostcode(newPostcode);
   };
 
-  if (!applications.length && !isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>No properties found. Please try again later.</p>
-      </div>
-    );
-  }
-
   console.log('🎯 Rendering MapContent with:', {
     applicationCount: applications.length,
     selectedId,
@@ -149,9 +142,9 @@ const MapView = () => {
         <SearchSection 
           onPostcodeSelect={handlePostcodeSelect}
           onFilterChange={handleFilterChange}
-          onSortChange={(sort: 'closingSoon' | 'newest' | null) => handleSortChange(sort)}
+          onSortChange={handleSortChange}
           activeFilters={activeFilters}
-          activeSort={'newest'}
+          activeSort={activeSort}
           isMapView={isMapView}
           applications={applications}
         />
@@ -166,9 +159,9 @@ const MapView = () => {
               postcode={postcode}
               coordinates={[51.5074, -0.1278]}
               activeFilters={activeFilters}
-              activeSort={'newest'}
+              activeSort={activeSort}
               onFilterChange={handleFilterChange}
-              onSortChange={(sort: 'closingSoon' | 'newest' | null) => handleSortChange(sort)}
+              onSortChange={handleSortChange}
               onSelectApplication={setSelectedId}
               onClose={() => setSelectedId(null)}
             />
@@ -195,4 +188,4 @@ const MapView = () => {
   );
 };
 
-export default MapView;
+export default MapViewPage;
