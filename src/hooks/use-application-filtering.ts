@@ -42,26 +42,29 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
 
   if (filters.classification) {
     filtered = filtered.filter(app => {
-      const category = app.category?.toLowerCase() || 'other';
-      const classification = filters.classification.toLowerCase();
-
-      switch (classification) {
+      // Debug logging to see what categories are coming in
+      console.log('Filtering app with category:', app.category, 'against classification:', filters.classification);
+      
+      if (!app.category) return filters.classification === 'other';
+      
+      // Match the filter value with the actual category values in the database
+      switch (filters.classification) {
         case 'residential':
-          return category === 'residential';
+          return app.category.toLowerCase() === 'residential';
         case 'commercial':
-          return category === 'commercial';
+          return app.category.toLowerCase() === 'commercial';
         case 'industrial':
-          return category === 'industrial';
+          return app.category.toLowerCase() === 'industrial';
         case 'mixed_use':
-          return category === 'mixed use';
+          return app.category.toLowerCase() === 'mixed use';
         case 'green_space':
-          return category === 'green space';
+          return app.category.toLowerCase() === 'green space';
         case 'religious':
-          return category === 'religious';
+          return app.category.toLowerCase() === 'religious';
         case 'storage':
-          return category === 'storage';
+          return app.category.toLowerCase() === 'storage';
         case 'other':
-          const mainTypes = [
+          const mainCategories = [
             'residential',
             'commercial',
             'industrial',
@@ -70,7 +73,7 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
             'religious',
             'storage'
           ];
-          return !mainTypes.includes(category);
+          return !mainCategories.includes(app.category.toLowerCase());
         default:
           return true;
       }
@@ -93,5 +96,7 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
     });
   }
 
+  // Debug logging to see filtered results
+  console.log('Filtered applications:', filtered.length);
   return filtered;
 };
