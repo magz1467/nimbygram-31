@@ -10,6 +10,7 @@ import { SearchSection } from "@/components/applications/dashboard/components/Se
 import { SidebarSection } from "@/components/applications/dashboard/components/SidebarSection";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { useCoordinates } from "@/hooks/use-coordinates";
+import Header from "@/components/Header";
 
 const MapViewPage = () => {
   const isMobile = useIsMobile();
@@ -145,6 +146,7 @@ const MapViewPage = () => {
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen">
+        <Header />
         <SearchSection 
           onPostcodeSelect={handlePostcodeSelect}
           onFilterChange={handleFilterChange}

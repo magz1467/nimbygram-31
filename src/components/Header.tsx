@@ -1,14 +1,10 @@
+
 import { useLocation } from "react-router-dom";
 import { Logo } from "./header/Logo";
 import { MobileMenu } from "./header/MobileMenu";
 
 export const Header = () => {
   const location = useLocation();
-  const isMapPage = location.pathname === "/map";
-
-  if (isMapPage) {
-    return null;
-  }
 
   return (
     <header className="border-b bg-white">
