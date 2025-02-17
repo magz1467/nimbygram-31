@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 
 interface FilterConfig {
@@ -40,36 +41,7 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
   }
 
   if (filters.classification) {
-    filtered = filtered.filter(app => {
-      switch (filters.classification) {
-        case 'high_impact':
-          return (app.final_impact_score || 0) > 70;
-        case 'entertainment':
-          return app.class_3?.toLowerCase() === 'entertainment';
-        case 'trees':
-          return app.class_3?.toLowerCase() === 'trees';
-        case 'demolition':
-          return app.class_3?.toLowerCase() === 'demolition';
-        case 'housing':
-          return app.class_3?.toLowerCase() === 'new_build_houses';
-        case 'home_extension':
-          return app.class_3?.toLowerCase() === 'home_extension';
-        case 'landscaping':
-          return app.class_3?.toLowerCase() === 'landscaping';
-        case 'other':
-          const mainTypes = [
-            'entertainment',
-            'trees',
-            'demolition',
-            'new_build_houses',
-            'home_extension',
-            'landscaping'
-          ];
-          return !mainTypes.includes(app.class_3?.toLowerCase() || '');
-        default:
-          return true;
-      }
-    });
+    filtered = filtered.filter(app => app.category === filters.classification);
   }
 
   if (filters.search) {
@@ -79,7 +51,8 @@ export const useApplicationFiltering = (applications: Application[], filters: Fi
         app.description,
         app.address,
         app.reference,
-        app.title
+        app.title,
+        app.category
       ];
       return searchableFields.some(field => 
         field?.toLowerCase().includes(searchLower)

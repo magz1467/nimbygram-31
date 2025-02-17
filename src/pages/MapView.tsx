@@ -17,6 +17,7 @@ const MapViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [postcode, setPostcode] = useState("SW1A 1AA");
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchPropertyData = async () => {
@@ -26,7 +27,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom')
+          .select('id, geom, category')
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -41,6 +42,10 @@ const MapViewPage = () => {
         }
 
         console.log('📦 Received property data:', properties?.length || 0, 'records');
+
+        // Extract unique categories
+        const uniqueCategories = [...new Set(properties?.map(item => item.category).filter(Boolean))];
+        setCategories(uniqueCategories);
 
         // Transform the property data to match the Application type
         const transformedData = properties?.map((item: any) => {
@@ -90,14 +95,16 @@ const MapViewPage = () => {
             centroid: undefined,
             impact_score: null,
             impact_score_details: undefined,
-            impacted_services: undefined
+            impacted_services: undefined,
+            category: item.category || 'Other'
           } as Application;
         }).filter((app): app is Application => app !== null);
 
         console.log('✨ Transformed data:', {
           totalTransformed: transformedData?.length,
           firstItem: transformedData?.[0],
-          hasCoordinates: transformedData?.some(app => app.coordinates)
+          hasCoordinates: transformedData?.some(app => app.coordinates),
+          categories: uniqueCategories
         });
 
         if (!transformedData?.length) {
@@ -133,7 +140,8 @@ const MapViewPage = () => {
     selectedId,
     isMapView: true,
     isLoading,
-    firstCoordinates: applications[0]?.coordinates
+    firstCoordinates: applications[0]?.coordinates,
+    categories
   });
   
   return (
@@ -147,6 +155,7 @@ const MapViewPage = () => {
           activeSort={activeSort}
           isMapView={isMapView}
           applications={applications}
+          categories={categories}
         />
         
         <div className="flex flex-1 overflow-hidden">
@@ -164,6 +173,7 @@ const MapViewPage = () => {
               onSortChange={handleSortChange}
               onSelectApplication={setSelectedId}
               onClose={() => setSelectedId(null)}
+              categories={categories}
             />
           )}
           
