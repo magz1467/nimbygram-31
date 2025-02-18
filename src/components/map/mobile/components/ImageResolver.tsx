@@ -35,19 +35,16 @@ export const ImageResolver = ({
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    console.log('ImageResolver - Initial State:', {
-      applicationId,
-      image_map_url: imageMapUrl,
-      image,
-      currentImageSource,
-      class_3,
-      title
-    });
-
     // Reset error state when props change
     setHasError(false);
 
-    // First try to determine category from title if class_3 is not set
+    // First try the streetview image
+    if (image) {
+      setCurrentImageSource(image);
+      return;
+    }
+
+    // Then try to determine category from title if class_3 is not set
     let detectedCategory = class_3;
     if (!detectedCategory && title) {
       const titleLower = title.toLowerCase();
@@ -62,26 +59,17 @@ export const ImageResolver = ({
       } else if (titleLower.includes('listed building')) {
         detectedCategory = 'Listed Building';
       }
-      console.log('ImageResolver - Detected category from title:', detectedCategory);
     }
     
     // Use category image if available
     if (detectedCategory && CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]) {
-      console.log('ImageResolver - Using category image for:', detectedCategory);
       setCurrentImageSource(CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]);
-      return;
-    }
-    
-    // Then try the regular image
-    if (image && image !== '/placeholder.svg') {
-      setCurrentImageSource(image);
       return;
     }
 
     // Finally use miscellaneous category image as fallback
-    console.log('ImageResolver - Using miscellaneous category image');
     setCurrentImageSource(CATEGORY_IMAGES['Miscellaneous']);
-  }, [imageMapUrl, image, applicationId, class_3, title]);
+  }, [image, imageMapUrl, applicationId, class_3, title]);
 
   const handleImageError = () => {
     console.log('ImageResolver - Error loading image:', currentImageSource);

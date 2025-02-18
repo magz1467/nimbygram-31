@@ -45,7 +45,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status')
+          .select('id, geom, proposal, address, status, streetview_url')  // Added streetview_url
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -84,6 +84,11 @@ const MapViewPage = () => {
             return null;
           }
 
+          // Process the streetview URL
+          const streetviewUrl = item.streetview_url ? 
+            `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/streetviews/${item.streetview_url}` : 
+            undefined;
+
           return {
             id: item.id || Math.random(),
             title: item.proposal || `Property ${item.id}`,
@@ -100,7 +105,7 @@ const MapViewPage = () => {
             ward: 'Not specified',
             officer: 'Not assigned',
             consultationEnd: '',
-            image: undefined,
+            image: streetviewUrl,  // Set the image to the streetview URL
             image_map_url: undefined,
             ai_title: undefined,
             last_date_consultation_comments: undefined,

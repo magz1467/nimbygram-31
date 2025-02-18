@@ -26,16 +26,13 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('ApplicationImage - Initial State:', {
-      applicationId: application.id,
-      image_map_url: application.image_map_url,
-      image: application.image,
-      currentImageSource: imageSource,
-      class_3: application.class_3,
-      title: application.description || ''
-    });
+    // First try the streetview image
+    if (application.image) {
+      setImageSource(application.image);
+      return;
+    }
 
-    // First try to determine category from title if class_3 is not set
+    // Then try to determine category from title if class_3 is not set
     let detectedCategory = application.class_3;
     if (!detectedCategory && application.description) {
       const titleLower = application.description.toLowerCase();
@@ -50,24 +47,15 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
       } else if (titleLower.includes('listed building')) {
         detectedCategory = 'Listed Building';
       }
-      console.log('ApplicationImage - Detected category from title:', detectedCategory);
     }
-
+    
     // Use category image if available
     if (detectedCategory && CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]) {
-      console.log('ApplicationImage - Using category image for:', detectedCategory);
       setImageSource(CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]);
       return;
     }
 
-    // Then try the regular image
-    if (application.image && application.image !== '/placeholder.svg') {
-      setImageSource(application.image);
-      return;
-    }
-
     // Finally use miscellaneous category image as fallback
-    console.log('ApplicationImage - Using miscellaneous category image');
     setImageSource(CATEGORY_IMAGES['Miscellaneous']);
   }, [application.id, application.image, application.image_map_url, application.class_3, application.description]);
 
