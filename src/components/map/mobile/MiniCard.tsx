@@ -24,6 +24,13 @@ interface MiniCardProps {
 }
 
 export const MiniCard = ({ application, onClick }: MiniCardProps) => {
+  // Add debug logging
+  console.log('MiniCard received application:', {
+    id: application.id,
+    category: application.category,
+    title: application.title
+  });
+
   const categoryIcon = application.category ? CATEGORY_ICONS[application.category] : <Building className="h-4 w-4" />;
 
   const formattedTitle = application.category ? 
