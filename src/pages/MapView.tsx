@@ -44,7 +44,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status, streetview_url')
+          .select('id, geom, proposal, address, status, streetview_url, category')  // Added category to the select
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -83,28 +83,6 @@ const MapViewPage = () => {
             return null;
           }
 
-          // Determine category based on proposal text
-          let class_3 = 'New Build'; // default category
-          const proposalLower = (item.proposal || '').toLowerCase();
-          
-          if (proposalLower.includes('demolition')) {
-            class_3 = 'Demolition';
-          } else if (proposalLower.includes('extension') || proposalLower.includes('storey')) {
-            class_3 = 'Extension';
-          } else if (proposalLower.includes('hospital')) {
-            class_3 = 'Hospital';
-          } else if (proposalLower.includes('commercial') || proposalLower.includes('retail')) {
-            class_3 = 'Commercial';
-          } else if (proposalLower.includes('industrial') || proposalLower.includes('factory')) {
-            class_3 = 'Industrial';
-          } else if (proposalLower.includes('listed building')) {
-            class_3 = 'Listed Building';
-          } else if (proposalLower.includes('change of use')) {
-            class_3 = 'Change of Use';
-          } else if (proposalLower.includes('planning condition')) {
-            class_3 = 'Planning Conditions';
-          }
-
           // Process the streetview URL
           console.log('Processing streetview URL:', {
             raw: item.streetview_url,
@@ -114,6 +92,7 @@ const MapViewPage = () => {
           const streetviewUrl = item.streetview_url || undefined;
 
           console.log('Using streetview URL:', streetviewUrl);
+          console.log('Category from database:', item.category); // Debug log for category
 
           return {
             id: item.id || Math.random(),
@@ -140,7 +119,7 @@ const MapViewPage = () => {
             impact_score: null,
             impact_score_details: undefined,
             impacted_services: undefined,
-            class_3: class_3  // Changed from category to class_3
+            class_3: item.category || 'New Build'  // Use the category from the database
           } as Application;
         }).filter((app): app is Application => app !== null);
 
@@ -149,7 +128,7 @@ const MapViewPage = () => {
           firstItem: transformedData?.[0],
           hasCoordinates: transformedData?.some(app => app.coordinates),
           firstItemImage: transformedData?.[0]?.image,
-          firstItemCategory: transformedData?.[0]?.category // Log the category for debugging
+          firstItemCategory: transformedData?.[0]?.class_3 // Log the category for debugging
         });
 
         if (!transformedData?.length) {
