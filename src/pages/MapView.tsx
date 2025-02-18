@@ -44,7 +44,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status, streetview_url, category')  // Added category to the select
+          .select('id, geom, proposal, address, status, streetview_url, category')
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -58,7 +58,7 @@ const MapViewPage = () => {
           return;
         }
 
-        console.log('📦 Received property data:', properties?.length || 0, 'records');
+        console.log('📦 Raw property data:', properties);
 
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
@@ -68,10 +68,7 @@ const MapViewPage = () => {
                 ? item.geom.coordinates[0] 
                 : item.geom.coordinates;
               
-              coordinates = [
-                coords[1],
-                coords[0]
-              ];
+              coordinates = [coords[1], coords[0]];
             }
           } catch (err) {
             console.warn('⚠️ Error parsing coordinates for item:', item.id, err);
@@ -83,18 +80,7 @@ const MapViewPage = () => {
             return null;
           }
 
-          // Process the streetview URL
-          console.log('Processing streetview URL:', {
-            raw: item.streetview_url,
-            supabaseUrl: import.meta.env.VITE_SUPABASE_URL
-          });
-
-          const streetviewUrl = item.streetview_url || undefined;
-
-          console.log('Using streetview URL:', streetviewUrl);
-          console.log('Category from database:', item.category); // Debug log for category
-
-          return {
+          const result: Application = {
             id: item.id || Math.random(),
             title: item.proposal || `Property ${item.id}`,
             address: item.address || 'Address unavailable',
@@ -110,7 +96,7 @@ const MapViewPage = () => {
             ward: 'Not specified',
             officer: 'Not assigned',
             consultationEnd: '',
-            image: streetviewUrl,
+            image: item.streetview_url,
             image_map_url: undefined,
             ai_title: undefined,
             last_date_consultation_comments: undefined,
@@ -119,16 +105,21 @@ const MapViewPage = () => {
             impact_score: null,
             impact_score_details: undefined,
             impacted_services: undefined,
-            category: item.category || 'New Build'  // Just use category directly
-          } as Application;
+            category: item.category || 'New Build'
+          };
+
+          console.log('Transformed item:', {
+            id: result.id,
+            category: result.category,
+            title: result.title
+          });
+
+          return result;
         }).filter((app): app is Application => app !== null);
 
         console.log('✨ Transformed data:', {
           totalTransformed: transformedData?.length,
-          firstItem: transformedData?.[0],
-          hasCoordinates: transformedData?.some(app => app.coordinates),
-          firstItemImage: transformedData?.[0]?.image,
-          firstItemCategory: transformedData?.[0]?.class_3 // Log the category for debugging
+          firstItem: transformedData?.[0]
         });
 
         if (!transformedData?.length) {
