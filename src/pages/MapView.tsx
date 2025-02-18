@@ -26,8 +26,8 @@ const MapViewPage = () => {
   const filteredByDistance = applications.filter(app => {
     if (!coordinates || !app.coordinates) return false;
     const distance = calculateDistance(coordinates, app.coordinates);
-    // Convert 2 miles to kilometers (2 * 1.60934)
-    return distance <= 3.21868;
+    // Convert 5km to kilometers
+    return distance <= 5;
   });
 
   // Use the filtered applications hook with distance-filtered applications
