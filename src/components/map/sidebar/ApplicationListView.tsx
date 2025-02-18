@@ -27,6 +27,19 @@ interface ApplicationListViewProps {
   };
 }
 
+const categoryEmojis: { [key: string]: string } = {
+  'Demolition': '🏚️',
+  'Extension': '🏗️',
+  'New Build': '🏘️',
+  'Change of Use': '🔄',
+  'Listed Building': '🏛️',
+  'Commercial': '🏢',
+  'Industrial': '🏭',
+  'Hospital': '🏥',
+  'Planning Conditions': '📋',
+  'Miscellaneous': '📝'
+};
+
 export const ApplicationListView = ({
   applications,
   selectedApplication,
@@ -68,7 +81,9 @@ export const ApplicationListView = ({
                 <div className="font-semibold text-primary mb-1">
                   {app.category ? (
                     <>
-                      <span className="text-blue-600">{app.category}</span>
+                      <span className="text-blue-600">
+                        {categoryEmojis[app.category] || '📝'} {app.category}
+                      </span>
                       <span className="text-gray-600">: </span>
                     </>
                   ) : null}
