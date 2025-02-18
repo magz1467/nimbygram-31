@@ -45,7 +45,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status, streetview_url')  // Added streetview_url
+          .select('id, geom, proposal, address, status, streetview_url')
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -84,10 +84,18 @@ const MapViewPage = () => {
             return null;
           }
 
-          // Process the streetview URL
+          // Process the streetview URL - logging for debugging
+          console.log('Processing streetview URL:', {
+            raw: item.streetview_url,
+            supabaseUrl: import.meta.env.VITE_SUPABASE_URL
+          });
+
+          // Correctly construct the streetview URL
           const streetviewUrl = item.streetview_url ? 
-            `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/streetviews/${item.streetview_url}` : 
+            `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/properties/property_${item.id}_streetview.jpg` : 
             undefined;
+
+          console.log('Constructed streetview URL:', streetviewUrl);
 
           return {
             id: item.id || Math.random(),
@@ -105,7 +113,7 @@ const MapViewPage = () => {
             ward: 'Not specified',
             officer: 'Not assigned',
             consultationEnd: '',
-            image: streetviewUrl,  // Set the image to the streetview URL
+            image: streetviewUrl,
             image_map_url: undefined,
             ai_title: undefined,
             last_date_consultation_comments: undefined,
@@ -120,7 +128,8 @@ const MapViewPage = () => {
         console.log('✨ Transformed data:', {
           totalTransformed: transformedData?.length,
           firstItem: transformedData?.[0],
-          hasCoordinates: transformedData?.some(app => app.coordinates)
+          hasCoordinates: transformedData?.some(app => app.coordinates),
+          firstItemImage: transformedData?.[0]?.image
         });
 
         if (!transformedData?.length) {
