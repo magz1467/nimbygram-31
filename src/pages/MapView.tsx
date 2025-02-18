@@ -83,13 +83,34 @@ const MapViewPage = () => {
             return null;
           }
 
-          // Process the streetview URL - logging for debugging
+          // Determine category based on proposal text
+          let category = 'New Build'; // default category
+          const proposalLower = (item.proposal || '').toLowerCase();
+          
+          if (proposalLower.includes('demolition')) {
+            category = 'Demolition';
+          } else if (proposalLower.includes('extension') || proposalLower.includes('storey')) {
+            category = 'Extension';
+          } else if (proposalLower.includes('hospital')) {
+            category = 'Hospital';
+          } else if (proposalLower.includes('commercial') || proposalLower.includes('retail')) {
+            category = 'Commercial';
+          } else if (proposalLower.includes('industrial') || proposalLower.includes('factory')) {
+            category = 'Industrial';
+          } else if (proposalLower.includes('listed building')) {
+            category = 'Listed Building';
+          } else if (proposalLower.includes('change of use')) {
+            category = 'Change of Use';
+          } else if (proposalLower.includes('planning condition')) {
+            category = 'Planning Conditions';
+          }
+
+          // Process the streetview URL
           console.log('Processing streetview URL:', {
             raw: item.streetview_url,
             supabaseUrl: import.meta.env.VITE_SUPABASE_URL
           });
 
-          // Just use the streetview_url directly from the database
           const streetviewUrl = item.streetview_url || undefined;
 
           console.log('Using streetview URL:', streetviewUrl);
@@ -118,7 +139,8 @@ const MapViewPage = () => {
             centroid: undefined,
             impact_score: null,
             impact_score_details: undefined,
-            impacted_services: undefined
+            impacted_services: undefined,
+            category: category  // Add the category to the transformed data
           } as Application;
         }).filter((app): app is Application => app !== null);
 
@@ -126,7 +148,8 @@ const MapViewPage = () => {
           totalTransformed: transformedData?.length,
           firstItem: transformedData?.[0],
           hasCoordinates: transformedData?.some(app => app.coordinates),
-          firstItemImage: transformedData?.[0]?.image
+          firstItemImage: transformedData?.[0]?.image,
+          firstItemCategory: transformedData?.[0]?.category // Log the category for debugging
         });
 
         if (!transformedData?.length) {
