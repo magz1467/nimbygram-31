@@ -35,10 +35,13 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-primary mb-1">
-            {application.category && (
-              <span className="text-primary">{application.category}: </span>
-            )}
-            <span className="line-clamp-2">{application.title}</span>
+            {application.category ? (
+              <>
+                <span className="text-blue-600">{application.category}</span>
+                <span className="text-gray-600">: </span>
+              </>
+            ) : null}
+            <span className="text-gray-900 line-clamp-2">{application.title}</span>
           </div>
           <p className="text-sm text-gray-600 mb-2">
             <span className="inline-flex items-center gap-1">
@@ -52,7 +55,9 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
               lastDateConsultationComments={application.last_date_consultation_comments}
               impactScore={application.final_impact_score}
             />
-            <span className="text-xs text-gray-500">{application.distance}</span>
+            {application.distance && (
+              <span className="text-xs text-gray-500">{application.distance}</span>
+            )}
           </div>
         </div>
       </div>
