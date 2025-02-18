@@ -79,13 +79,12 @@ export const ApplicationListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-primary mb-1">
-                  {app.category && (
-                    <span style={{ color: "#af5662" }}>
-                      {categoryEmojis[app.category] || '📝'} {app.category}:
-                    </span>
-                  )}
                   <span className="text-gray-900 line-clamp-2">
-                    {app.engaging_title || app.description}
+                    {app.category ? (
+                      <span style={{ color: "#af5662" }}>
+                        {categoryEmojis[app.category] || '📝'} {app.category}: 
+                      </span>
+                    ) : ''}{app.engaging_title || app.description}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">
