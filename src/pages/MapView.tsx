@@ -1,4 +1,3 @@
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -90,12 +89,10 @@ const MapViewPage = () => {
             supabaseUrl: import.meta.env.VITE_SUPABASE_URL
           });
 
-          // Correctly construct the streetview URL
-          const streetviewUrl = item.streetview_url ? 
-            `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/properties/property_${item.id}_streetview.jpg` : 
-            undefined;
+          // Just use the streetview_url directly from the database
+          const streetviewUrl = item.streetview_url || undefined;
 
-          console.log('Constructed streetview URL:', streetviewUrl);
+          console.log('Using streetview URL:', streetviewUrl);
 
           return {
             id: item.id || Math.random(),
