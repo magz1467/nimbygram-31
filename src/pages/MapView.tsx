@@ -1,3 +1,4 @@
+
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,10 +25,16 @@ const MapViewPage = () => {
 
   // Filter applications by distance and other filters
   const filteredByDistance = applications.filter(app => {
-    if (!coordinates || !app.coordinates) return false;
+    if (!coordinates || !app.coordinates) {
+      console.log('Filtered out due to missing coordinates:', app.id);
+      return false;
+    }
     const distance = calculateDistance(coordinates, app.coordinates);
-    // Convert 5km to kilometers
-    return distance <= 5;
+    const isWithinRadius = distance <= 5;
+    if (!isWithinRadius) {
+      console.log(`Filtered out due to distance (${distance.toFixed(2)}km):`, app.id);
+    }
+    return isWithinRadius;
   });
 
   // Use the filtered applications hook with distance-filtered applications
@@ -58,7 +65,8 @@ const MapViewPage = () => {
           return;
         }
 
-        console.log('📦 Raw property data:', properties);
+        console.log('📦 Raw property data count:', properties?.length);
+        console.log('📦 First few items geometry:', properties?.slice(0, 3).map(p => p.geom));
 
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
@@ -69,6 +77,7 @@ const MapViewPage = () => {
                 : item.geom.coordinates;
               
               coordinates = [coords[1], coords[0]];
+              console.log(`✅ Successfully parsed coordinates for item ${item.id}:`, coordinates);
             }
           } catch (err) {
             console.warn('⚠️ Error parsing coordinates for item:', item.id, err);
@@ -108,19 +117,15 @@ const MapViewPage = () => {
             category: item.category || 'New Build'
           };
 
-          console.log('Transformed item:', {
-            id: result.id,
-            category: result.category,
-            title: result.title
-          });
-
           return result;
         }).filter((app): app is Application => app !== null);
 
-        console.log('✨ Transformed data:', {
-          totalTransformed: transformedData?.length,
-          firstItem: transformedData?.[0]
-        });
+        console.log('✨ Transformed data count:', transformedData?.length);
+        console.log('✨ First few transformed items:', transformedData?.slice(0, 3).map(app => ({
+          id: app.id,
+          coordinates: app.coordinates,
+          address: app.address
+        })));
 
         if (!transformedData?.length) {
           toast({
@@ -151,16 +156,12 @@ const MapViewPage = () => {
     setPostcode(newPostcode);
   };
 
-  console.log('🎯 Rendering MapContent with:', {
-    applicationCount: applications.length,
-    filteredCount: filteredApplications.length,
-    selectedId,
-    isMapView: true,
-    isLoading,
-    firstCoordinates: applications[0]?.coordinates,
-    searchedCoordinates: coordinates,
-    activeFilters,
-    withinRadius: filteredByDistance.length
+  console.log('🎯 MapContent rendering stats:', {
+    rawApplicationCount: applications.length,
+    filteredByDistanceCount: filteredByDistance.length,
+    finalFilteredCount: filteredApplications.length,
+    searchCoordinates: coordinates,
+    activeFilters
   });
   
   return (
