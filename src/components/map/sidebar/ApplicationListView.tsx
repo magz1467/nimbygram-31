@@ -61,12 +61,21 @@ export const ApplicationListView = ({
                   title={app.title || app.description || ''}
                   applicationId={app.id}
                   coordinates={app.coordinates}
+                  class_3={app.category}
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-primary truncate">
-                  {app.engaging_title || app.description}
-                </h3>
+                <div className="font-semibold text-primary mb-1">
+                  {app.category ? (
+                    <>
+                      <span className="text-blue-600">{app.category}</span>
+                      <span className="text-gray-600">: </span>
+                    </>
+                  ) : null}
+                  <span className="text-gray-900 line-clamp-2">
+                    {app.engaging_title || app.description}
+                  </span>
+                </div>
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                   {app.address}
                 </p>
@@ -76,9 +85,11 @@ export const ApplicationListView = ({
                     lastDateConsultationComments={app.last_date_consultation_comments}
                     impactScore={app.final_impact_score}
                   />
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500">{app.distance}</span>
-                  </div>
+                  {app.distance && (
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-gray-500">{app.distance}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
