@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { MapPin, Factory, Building, Construction, HousePlus, Hospital, PlusSquare, Store, Landmark, Trash2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageResolver } from "./components/ImageResolver";
 
@@ -16,11 +16,6 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
     category: application.category,
     title: application.title
   });
-
-  // Simplified title rendering - just use the category and title directly
-  const title = application.category ? 
-    <span>{application.category}: {application.title}</span> :
-    application.title;
 
   return (
     <div className="fixed bottom-2 left-2 right-2 bg-white border rounded-lg shadow-lg z-[1000]">
@@ -39,13 +34,16 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-primary mb-1 line-clamp-2">
-            {title}
-          </h3>
-          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-            <span className="flex items-center gap-1">
+          <div className="font-semibold text-primary mb-1">
+            {application.category && (
+              <span className="text-primary">{application.category}: </span>
+            )}
+            <span className="line-clamp-2">{application.title}</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-2">
+            <span className="inline-flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {application.address}
+              <span className="line-clamp-2">{application.address}</span>
             </span>
           </p>
           <div className="flex items-center gap-2">
