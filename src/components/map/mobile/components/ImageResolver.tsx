@@ -39,8 +39,9 @@ export const ImageResolver = ({
     // Reset error state when props change
     setHasError(false);
 
-    // First try the streetview image
+    // First try the streetview image (from Supabase)
     if (image) {
+      console.log('Using streetview_url image:', image);
       setCurrentImageSource(image);
       return;
     }
