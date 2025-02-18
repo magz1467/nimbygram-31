@@ -84,25 +84,25 @@ const MapViewPage = () => {
           }
 
           // Determine category based on proposal text
-          let category = 'New Build'; // default category
+          let class_3 = 'New Build'; // default category
           const proposalLower = (item.proposal || '').toLowerCase();
           
           if (proposalLower.includes('demolition')) {
-            category = 'Demolition';
+            class_3 = 'Demolition';
           } else if (proposalLower.includes('extension') || proposalLower.includes('storey')) {
-            category = 'Extension';
+            class_3 = 'Extension';
           } else if (proposalLower.includes('hospital')) {
-            category = 'Hospital';
+            class_3 = 'Hospital';
           } else if (proposalLower.includes('commercial') || proposalLower.includes('retail')) {
-            category = 'Commercial';
+            class_3 = 'Commercial';
           } else if (proposalLower.includes('industrial') || proposalLower.includes('factory')) {
-            category = 'Industrial';
+            class_3 = 'Industrial';
           } else if (proposalLower.includes('listed building')) {
-            category = 'Listed Building';
+            class_3 = 'Listed Building';
           } else if (proposalLower.includes('change of use')) {
-            category = 'Change of Use';
+            class_3 = 'Change of Use';
           } else if (proposalLower.includes('planning condition')) {
-            category = 'Planning Conditions';
+            class_3 = 'Planning Conditions';
           }
 
           // Process the streetview URL
@@ -140,7 +140,7 @@ const MapViewPage = () => {
             impact_score: null,
             impact_score_details: undefined,
             impacted_services: undefined,
-            category: category  // Add the category to the transformed data
+            class_3: class_3  // Changed from category to class_3
           } as Application;
         }).filter((app): app is Application => app !== null);
 
