@@ -78,7 +78,7 @@ export const ApplicationListView = ({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-primary mb-1 flex items-baseline gap-1">
+                <div className="font-semibold text-primary mb-1">
                   {app.category && (
                     <span style={{ color: "#af5662" }}>
                       {categoryEmojis[app.category] || '📝'} {app.category}:
