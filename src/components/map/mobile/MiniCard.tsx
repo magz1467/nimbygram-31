@@ -24,12 +24,12 @@ interface MiniCardProps {
 }
 
 export const MiniCard = ({ application, onClick }: MiniCardProps) => {
-  const categoryIcon = application.class_3 ? CATEGORY_ICONS[application.class_3] : <Building className="h-4 w-4" />;
+  const categoryIcon = application.category ? CATEGORY_ICONS[application.category] : <Building className="h-4 w-4" />;
 
-  const formattedTitle = application.class_3 ? 
+  const formattedTitle = application.category ? 
     <div className="flex items-center gap-2">
       {categoryIcon}
-      <span>{application.class_3}: {application.title}</span>
+      <span>{application.category}: {application.title}</span>
     </div> :
     <ApplicationTitle title={application.title || ''} />;
 

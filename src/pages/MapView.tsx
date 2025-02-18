@@ -119,7 +119,7 @@ const MapViewPage = () => {
             impact_score: null,
             impact_score_details: undefined,
             impacted_services: undefined,
-            class_3: item.category || 'New Build'  // Use the category from the database
+            category: item.category || 'New Build'  // Just use category directly
           } as Application;
         }).filter((app): app is Application => app !== null);
 
