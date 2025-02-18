@@ -51,7 +51,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('property_data_api')
-          .select('id, geom, proposal, address, status, streetview_url, category')
+          .select('id, geom, proposal, address, status, streetview_url, category, lpa_name')  // Added lpa_name
           .range(0, 99)
           .not('geom', 'is', null);
 
@@ -66,9 +66,18 @@ const MapViewPage = () => {
         }
 
         console.log('📦 Raw property data count:', properties?.length);
-        console.log('📦 First few items geometry:', properties?.slice(0, 3).map(p => p.geom));
+        console.log('📦 Westminster properties:', properties?.filter(p => p.lpa_name?.toLowerCase().includes('westminster')).length);
 
         const transformedData = properties?.map((item: any) => {
+          // Log Westminster properties specifically
+          if (item.lpa_name?.toLowerCase().includes('westminster')) {
+            console.log('Westminster property:', {
+              id: item.id,
+              address: item.address,
+              geom: item.geom,
+            });
+          }
+
           let coordinates: [number, number] | undefined;
           try {
             if (item.geom?.coordinates && Array.isArray(item.geom.coordinates)) {
@@ -77,7 +86,17 @@ const MapViewPage = () => {
                 : item.geom.coordinates;
               
               coordinates = [coords[1], coords[0]];
-              console.log(`✅ Successfully parsed coordinates for item ${item.id}:`, coordinates);
+              
+              // Log distance for Westminster properties
+              if (item.lpa_name?.toLowerCase().includes('westminster') && coordinates) {
+                const distance = calculateDistance(defaultCoordinates, coordinates);
+                console.log(`Westminster property distance check:`, {
+                  id: item.id,
+                  address: item.address,
+                  coordinates: coordinates,
+                  distance: `${distance.toFixed(2)}km`
+                });
+              }
             }
           } catch (err) {
             console.warn('⚠️ Error parsing coordinates for item:', item.id, err);
@@ -121,10 +140,17 @@ const MapViewPage = () => {
         }).filter((app): app is Application => app !== null);
 
         console.log('✨ Transformed data count:', transformedData?.length);
-        console.log('✨ First few transformed items:', transformedData?.slice(0, 3).map(app => ({
+        
+        // Log Westminster properties after transformation
+        const westminsterProperties = transformedData?.filter(app => 
+          properties?.find(p => p.id === app.id)?.lpa_name?.toLowerCase().includes('westminster')
+        );
+        console.log('✨ Westminster properties after transformation:', westminsterProperties?.length);
+        console.log('✨ Westminster properties details:', westminsterProperties?.map(app => ({
           id: app.id,
           coordinates: app.coordinates,
-          address: app.address
+          address: app.address,
+          distance: coordinates ? calculateDistance(coordinates, app.coordinates!) : 'No search coordinates'
         })));
 
         if (!transformedData?.length) {
