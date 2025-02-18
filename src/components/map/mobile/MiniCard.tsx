@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { MapPin, Factory, Building, Construction, HousePlus, HospitalSquare, PlusSquare, Store, Landmark, Trash2 } from "lucide-react";
+import { MapPin, Factory, Building, Construction, HousePlus, Hospital, PlusSquare, Store, Landmark, Trash2 } from "lucide-react";
 import { ApplicationTitle } from "@/components/applications/ApplicationTitle";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageResolver } from "./components/ImageResolver";
@@ -8,7 +8,7 @@ import { ImageResolver } from "./components/ImageResolver";
 // Define category icons mapping
 const CATEGORY_ICONS: { [key: string]: JSX.Element } = {
   'Industrial': <Factory className="h-4 w-4" />,
-  'Hospital': <HospitalSquare className="h-4 w-4" />,
+  'Hospital': <Hospital className="h-4 w-4" />,
   'Commercial': <Store className="h-4 w-4" />,
   'Extension': <HousePlus className="h-4 w-4" />,
   'New Build': <Building className="h-4 w-4" />,
