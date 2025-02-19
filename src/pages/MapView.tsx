@@ -1,4 +1,3 @@
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,45 +22,12 @@ const MapViewPage = () => {
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates } = useCoordinates(postcode);
 
-  // Filter applications by distance and other filters
-  const filteredByDistance = applications.filter(app => {
-    if (!coordinates || !app.coordinates) {
-      console.log('Filtered out due to missing coordinates:', app.id);
-      return false;
-    }
-    const distance = calculateDistance(coordinates, app.coordinates);
-    const isWithinRadius = distance <= 3; // Set back to 3km
-    if (!isWithinRadius) {
-      console.log(`Filtered out due to distance (${distance.toFixed(2)}km):`, app.id);
-    }
-    return isWithinRadius;
-  });
-
-  // Use the filtered applications hook with distance-filtered applications
-  const filteredApplications = useFilteredApplications(filteredByDistance, activeFilters, activeSort);
-
-  // Default coordinates for central London
-  const defaultCoordinates: [number, number] = [51.5074, -0.1278];
-
   useEffect(() => {
     const fetchPropertyData = async () => {
       console.log('🔍 Starting to fetch property data...');
       setIsLoading(true);
       
       try {
-        // Let's specifically query Westminster properties first to see how many there are
-        const { data: westminsterCount, error: countError } = await supabase
-          .from('property_data_api')
-          .select('id', { count: 'exact' })
-          .ilike('authority', '%westminster%');
-
-        if (countError) {
-          console.error('Error getting Westminster count:', countError);
-        } else {
-          console.log('Total Westminster properties in database:', westminsterCount?.length);
-        }
-
-        // Removed the .range(0, 99) to get all properties
         const { data: properties, error } = await supabase
           .from('property_data_api')
           .select('id, geom, proposal, address, status, streetview_url, category, authority')
@@ -77,70 +43,21 @@ const MapViewPage = () => {
           return;
         }
 
-        console.log('📦 Raw property data count:', properties?.length);
-        
-        // Log ALL Westminster properties before any filtering
-        const westminsterProps = properties?.filter(p => p.authority?.toLowerCase().includes('westminster'));
-        console.log('📦 Westminster properties found:', westminsterProps?.length);
-        
-        // Detailed logging of each Westminster property's coordinates
-        westminsterProps?.forEach(prop => {
-          console.log('Westminster property raw data:', {
-            id: prop.id,
-            address: prop.address,
-            authority: prop.authority,
-            rawGeom: prop.geom,
-            coordinates: prop.geom?.coordinates ? 
-              Array.isArray(prop.geom.coordinates[0]) ? 
-                [prop.geom.coordinates[0][1], prop.geom.coordinates[0][0]] :
-                [prop.geom.coordinates[1], prop.geom.coordinates[0]]
-              : null
-          });
-        });
-
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
           try {
             if (item.geom?.coordinates && Array.isArray(item.geom.coordinates)) {
-              // Handle both single coordinate pair and array of coordinates
               const coords = Array.isArray(item.geom.coordinates[0]) 
-                ? item.geom.coordinates[0]  // Take first coordinate if array
-                : item.geom.coordinates;    // Use directly if single pair
-              
-              // IMPORTANT: Swap lat/lng if needed - log this for Westminster properties
+                ? item.geom.coordinates[0]
+                : item.geom.coordinates;
               coordinates = [coords[1], coords[0]];
-              
-              if (item.authority?.toLowerCase().includes('westminster')) {
-                console.log('Westminster property coordinate transformation:', {
-                  id: item.id,
-                  address: item.address,
-                  originalCoords: coords,
-                  transformedCoords: coordinates,
-                  distance: defaultCoordinates ? calculateDistance(defaultCoordinates, coordinates) : 'No default coordinates'
-                });
-              }
             }
           } catch (err) {
             console.error('⚠️ Error parsing coordinates for item:', item.id, err);
-            if (item.authority?.toLowerCase().includes('westminster')) {
-              console.error('Failed to parse Westminster property coordinates:', {
-                id: item.id,
-                geom: item.geom,
-                error: err
-              });
-            }
             return null;
           }
 
-          if (!coordinates) {
-            if (item.authority?.toLowerCase().includes('westminster')) {
-              console.warn('⚠️ Missing coordinates for Westminster property:', {
-                id: item.id,
-                geom: item.geom
-              });
-            }
-            return null;
-          }
+          if (!coordinates) return null;
 
           const result: Application = {
             id: item.id || Math.random(),
@@ -173,23 +90,6 @@ const MapViewPage = () => {
           return result;
         }).filter((app): app is Application => app !== null);
 
-        console.log('✨ Transformed data count:', transformedData?.length);
-        
-        // Log final Westminster properties
-        const finalWestminsterProps = transformedData?.filter(app => 
-          properties?.find(p => p.id === app.id)?.authority?.toLowerCase().includes('westminster')
-        );
-        
-        console.log('Final Westminster properties check:', {
-          total: finalWestminsterProps?.length,
-          properties: finalWestminsterProps?.map(app => ({
-            id: app.id,
-            address: app.address,
-            coordinates: app.coordinates,
-            distance: coordinates ? calculateDistance(coordinates, app.coordinates!) : 'No search coordinates'
-          }))
-        });
-
         if (!transformedData?.length) {
           toast({
             title: "No properties found",
@@ -213,6 +113,19 @@ const MapViewPage = () => {
 
     fetchPropertyData();
   }, []);
+
+  // Filter applications by distance and other filters
+  const filteredByDistance = applications.filter(app => {
+    if (!coordinates || !app.coordinates) return false;
+    const distance = calculateDistance(coordinates, app.coordinates);
+    return distance <= 3;
+  });
+
+  // Use the filtered applications hook with distance-filtered applications
+  const filteredApplications = useFilteredApplications(filteredByDistance, activeFilters, activeSort);
+
+  // Default coordinates for central London
+  const defaultCoordinates: [number, number] = [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('New postcode selected:', newPostcode);
