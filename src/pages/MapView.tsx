@@ -30,7 +30,7 @@ const MapViewPage = () => {
       return false;
     }
     const distance = calculateDistance(coordinates, app.coordinates);
-    const isWithinRadius = distance <= 5;
+    const isWithinRadius = distance <= 25; // Increased from 5km to 25km
     if (!isWithinRadius) {
       console.log(`Filtered out due to distance (${distance.toFixed(2)}km):`, app.id);
     }
