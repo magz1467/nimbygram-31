@@ -61,10 +61,10 @@ const MapViewPage = () => {
           console.log('Total Westminster properties in database:', westminsterCount?.length);
         }
 
+        // Removed the .range(0, 99) to get all properties
         const { data: properties, error } = await supabase
           .from('property_data_api')
           .select('id, geom, proposal, address, status, streetview_url, category, authority')
-          .range(0, 99)
           .not('geom', 'is', null);
 
         if (error) {
