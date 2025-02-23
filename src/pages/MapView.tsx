@@ -31,7 +31,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('crystal_roof')
-          .select('id, geometry, description, short_title')
+          .select('id, geometry, description, short_title, address')
           .not('geometry', 'is', null);
 
         if (error) {
@@ -65,7 +65,7 @@ const MapViewPage = () => {
           const result: Application = {
             id: item.id || Math.random(),
             title: item.short_title || item.description || `Property ${item.id}`,
-            address: 'Address unavailable',
+            address: item.address || 'Address unavailable',
             status: 'Status unavailable',
             reference: item.id?.toString() || '',
             description: item.description || '',
@@ -92,6 +92,7 @@ const MapViewPage = () => {
           console.log('Transformed application:', {
             id: result.id,
             title: result.title,
+            address: result.address,
             short_title: item.short_title,
             description: item.description
           });
