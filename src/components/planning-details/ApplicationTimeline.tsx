@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Clock, AlertCircle } from "lucide-react";
@@ -53,23 +54,23 @@ export const ApplicationTimeline = ({ application }: ApplicationTimelineProps) =
   const getStages = (): TimelineStage[] => {
     const today = new Date();
     
-    const validDate = application.valid_date ? 
-      parse(application.valid_date, 'dd/MM/yyyy', new Date()) : null;
+    const validDate = application.received ? 
+      parse(application.received, 'dd/MM/yyyy', new Date()) : null;
     
     const consultationEnd = application.last_date_consultation_comments ? 
       parse(application.last_date_consultation_comments, 'dd/MM/yyyy', new Date()) : null;
     
-    const decisionDue = application.decisionDue ? 
-      parse(application.decisionDue, 'dd/MM/yyyy', new Date()) : null;
+    const decisionDate = application.decision ? 
+      parse(application.decision, 'dd/MM/yyyy', new Date()) : null;
 
     const decisionStatus = getDecisionStatus(application.status);
 
     return [
       {
         label: "Submitted",
-        date: application.valid_date,
+        date: application.received,
         status: validDate && isValid(validDate) && validDate < today ? 'completed' : 'upcoming',
-        tooltip: `Application submitted on ${formatDate(application.valid_date)}`
+        tooltip: `Application submitted on ${formatDate(application.received)}`
       },
       {
         label: "Consultation",
@@ -81,12 +82,12 @@ export const ApplicationTimeline = ({ application }: ApplicationTimelineProps) =
       },
       {
         label: "Decision Due",
-        date: application.decisionDue,
-        status: decisionDue ? 
-          (isValid(decisionDue) && decisionDue < today ? 'completed' : 'upcoming') : 'upcoming',
-        tooltip: decisionStatus ? 
-          `Application ${decisionStatus}` : 
-          `Decision due by ${formatDate(application.decisionDue)}`,
+        date: application.decision,
+        status: decisionDate ? 
+          (isValid(decisionDate) && decisionDate < today ? 'completed' : 'upcoming') : 'upcoming',
+        tooltip: application.decision ? 
+          `Decision due by ${formatDate(application.decision)}` :
+          'Decision upcoming',
         decisionStatus
       }
     ];
@@ -140,9 +141,8 @@ export const ApplicationTimeline = ({ application }: ApplicationTimelineProps) =
                   stage.decisionStatus === 'refused' ? 'text-red-600' :
                   'text-gray-500'
                 }`}>
-                  {stage.decisionStatus ? 
-                    stage.decisionStatus.charAt(0).toUpperCase() + stage.decisionStatus.slice(1) :
-                    formatDate(stage.date)}
+                  {stage.date ? formatDate(stage.date) : 
+                   stage.label === 'Decision Due' ? 'Decision upcoming' : 'Not available'}
                 </p>
               </div>
             </div>
