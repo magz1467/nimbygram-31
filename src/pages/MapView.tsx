@@ -35,8 +35,8 @@ const MapViewPage = () => {
     setSelectedId(null);
   }, [postcode]);
 
-  // Use the filtered applications hook with applications
-  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort);
+  // Use the filtered applications hook with applications and coordinates
+  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
 
   // Default coordinates for central London if none provided
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
