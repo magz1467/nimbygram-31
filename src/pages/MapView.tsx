@@ -12,30 +12,10 @@ const MapViewPage = () => {
   const [postcode, setPostcode] = useState("SW1A 1AA");
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates } = useCoordinates(postcode);
-  const { applications, isLoading } = useMapApplications();
+  const { applications, isLoading } = useMapApplications(coordinates);
 
-  // Filter applications by distance - increased radius to 20km and added detailed logging
-  const filteredByDistance = applications.filter(app => {
-    if (!coordinates || !app.coordinates) {
-      console.log(`❌ Skipping application ${app.id} - Missing coordinates:`, {
-        searchCoordinates: coordinates,
-        appCoordinates: app.coordinates
-      });
-      return false;
-    }
-    
-    const distance = calculateDistance(coordinates, app.coordinates);
-    console.log(`📍 Application ${app.id} at ${app.address}:`, {
-      distance,
-      coordinates: app.coordinates,
-      withinRadius: distance <= 20
-    });
-    
-    return distance <= 20; // Increased from 10km to 20km for testing
-  });
-
-  // Use the filtered applications hook with distance-filtered applications
-  const filteredApplications = useFilteredApplications(filteredByDistance, activeFilters, activeSort);
+  // Use the filtered applications hook with applications
+  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort);
 
   // Default coordinates for central London
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
@@ -47,12 +27,11 @@ const MapViewPage = () => {
 
   console.log('🎯 MapContent rendering stats:', {
     rawApplicationCount: applications.length,
-    filteredByDistanceCount: filteredByDistance.length,
     finalFilteredCount: filteredApplications.length,
     searchCoordinates: coordinates,
     activeFilters,
     searchPostcode: postcode,
-    sampleApplications: filteredByDistance.slice(0, 3).map(app => ({
+    sampleApplications: applications.slice(0, 3).map(app => ({
       id: app.id,
       coordinates: app.coordinates,
       title: app.title,

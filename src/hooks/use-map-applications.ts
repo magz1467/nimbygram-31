@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { toast } from "@/components/ui/use-toast";
 
-export const useMapApplications = () => {
+export const useMapApplications = (coordinates?: [number, number] | null) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -14,22 +14,24 @@ export const useMapApplications = () => {
       setIsLoading(true);
       
       try {
-        // Get total count first
-        const { count, error: countError } = await supabase
-          .from('crystal_roof')
-          .select('*', { count: 'exact', head: true });
-
-        if (countError) {
-          throw countError;
+        if (!coordinates) {
+          console.log('⚠️ No coordinates provided, skipping fetch');
+          setApplications([]);
+          return;
         }
 
-        console.log(`📊 Total records in database: ${count}`);
-
-        // Now fetch all records with a higher limit and no filtering on geometry
+        // Build PostGIS query to filter by distance (20km)
+        const [lat, lng] = coordinates;
+        const radius = 20000; // 20km in meters
+        
         const { data: properties, error } = await supabase
           .from('crystal_roof')
           .select('id, geometry, description, short_title, address')
-          .limit(10000); // Keeping high limit
+          .rpc('properties_within_distance', {
+            ref_lat: lat,
+            ref_lon: lng,
+            radius_meters: radius
+          });
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -48,7 +50,6 @@ export const useMapApplications = () => {
           
           try {
             if (item.geometry?.coordinates && Array.isArray(item.geometry.coordinates)) {
-              // Log the raw geometry data for debugging
               console.log(`🗺️ Processing geometry for item ${item.id}:`, {
                 raw: item.geometry,
                 coordinates: item.geometry.coordinates
@@ -107,7 +108,7 @@ export const useMapApplications = () => {
         if (!transformedData?.length) {
           toast({
             title: "No properties found",
-            description: "No properties with valid coordinates were found",
+            description: "No properties found within 20km of your location",
             variant: "destructive"
           });
         }
@@ -126,7 +127,7 @@ export const useMapApplications = () => {
     };
 
     fetchPropertyData();
-  }, []);
+  }, [coordinates]);
 
   return { applications, isLoading };
 };
