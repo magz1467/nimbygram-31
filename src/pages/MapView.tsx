@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
@@ -8,16 +9,23 @@ import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { useMapApplications } from "@/hooks/use-map-applications";
 
 const MapViewPage = () => {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [postcode, setPostcode] = useState("SW1A 1AA");
+  const location = useLocation();
+  const searchPostcode = location.state?.postcode || "SW1A 1AA";
+  const [postcode, setPostcode] = useState(searchPostcode);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
-  const { coordinates } = useCoordinates(postcode);
-  const { applications, isLoading } = useMapApplications(coordinates);
+  const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
+  const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Reset selected application when postcode changes
+  useEffect(() => {
+    setSelectedId(null);
+  }, [postcode]);
 
   // Use the filtered applications hook with applications
   const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort);
 
-  // Default coordinates for central London
+  // Default coordinates for central London if none provided
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
@@ -36,7 +44,7 @@ const MapViewPage = () => {
       coordinates: app.coordinates,
       title: app.title,
       address: app.address,
-      distance: calculateDistance(coordinates || defaultCoordinates, app.coordinates || [0, 0])
+      distance: coordinates ? calculateDistance(coordinates, app.coordinates || [0, 0]) : 0
     }))
   });
 
@@ -46,7 +54,7 @@ const MapViewPage = () => {
       selectedId={selectedId}
       postcode={postcode}
       coordinates={coordinates || defaultCoordinates}
-      isLoading={isLoading}
+      isLoading={isLoadingCoordinates || isLoadingApplications}
       activeFilters={activeFilters}
       activeSort={activeSort}
       onPostcodeSelect={handlePostcodeSelect}
@@ -62,3 +70,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+

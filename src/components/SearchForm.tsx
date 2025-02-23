@@ -14,6 +14,7 @@ interface SearchFormProps {
 
 export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const [postcode, setPostcode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,9 +52,11 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!postcode.trim()) {
+    if (!postcode.trim() || isSubmitting) {
       return;
     }
+
+    setIsSubmitting(true);
 
     const trimmedPostcode = postcode.trim();
 
@@ -68,10 +71,18 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         state: { 
           postcode: trimmedPostcode,
           tab: activeTab
-        }
+        },
+        replace: true // Use replace to prevent back button issues
       });
     } catch (error) {
       console.error('Error during search:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem processing your search. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -85,9 +96,10 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-secondary hover:bg-secondary/90 text-white py-6 text-lg font-semibold rounded-xl shadow-sm"
+        disabled={isSubmitting}
       >
         <Search className="w-5 h-5 mr-2" />
-        Show my feed
+        {isSubmitting ? 'Loading...' : 'Show my feed'}
       </Button>
     </form>
   );
