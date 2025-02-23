@@ -2,6 +2,9 @@
 import { Application } from "@/types/planning";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
+import { SortType } from "@/types/application-types";
+import { FilterBar } from "@/components/FilterBar";
+import { AlertSection } from "./AlertSection";
 
 interface ApplicationListViewProps {
   applications: Application[];
@@ -9,6 +12,19 @@ interface ApplicationListViewProps {
   postcode: string;
   onSelectApplication: (id: number) => void;
   onShowEmailDialog: () => void;
+  onFilterChange?: (filterType: string, value: string) => void;
+  onSortChange?: (sortType: SortType) => void;
+  activeFilters?: {
+    status?: string;
+    type?: string;
+  };
+  activeSort?: SortType;
+  statusCounts?: {
+    'Under Review': number;
+    'Approved': number;
+    'Declined': number;
+    'Other': number;
+  };
   hideFilterBar?: boolean;
   onClose?: () => void;
 }
@@ -19,11 +35,32 @@ export const ApplicationListView = ({
   postcode,
   onSelectApplication,
   onShowEmailDialog,
+  onFilterChange,
+  onSortChange,
+  activeFilters,
+  activeSort,
+  statusCounts,
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
   return (
     <div className="h-full flex flex-col">
+      {!hideFilterBar && (
+        <>
+          <AlertSection 
+            postcode={postcode} 
+            onShowEmailDialog={onShowEmailDialog} 
+          />
+          <FilterBar
+            onFilterChange={onFilterChange}
+            onSortChange={onSortChange}
+            activeFilters={activeFilters}
+            activeSort={activeSort}
+            applications={applications}
+            statusCounts={statusCounts}
+          />
+        </>
+      )}
       <div className="flex-1 overflow-y-auto">
         {applications.map((app) => (
           <div
