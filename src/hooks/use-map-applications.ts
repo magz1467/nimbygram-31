@@ -11,6 +11,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
   useEffect(() => {
     const fetchPropertyData = async () => {
       console.log('🔍 Starting to fetch property data from crystal_roof...');
+      console.log('🌍 Search coordinates:', coordinates);
       setIsLoading(true);
       
       try {
@@ -24,6 +25,12 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const radius = 20000; // 20km in meters
         
+        console.log('📍 Querying with parameters:', {
+          ref_lat: lat,
+          ref_lon: lng,
+          radius_meters: radius
+        });
+
         // Call the RPC function directly
         const { data: properties, error } = await supabase.rpc('properties_within_distance', {
           ref_lat: lat,
@@ -41,7 +48,15 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
-        console.log('📦 Raw properties data sample:', properties?.slice(0, 3));
+        console.log('📦 Raw properties response:', {
+          count: properties?.length || 0,
+          firstRecord: properties?.[0],
+          coordinatesSample: properties?.slice(0, 5).map((p: any) => ({
+            id: p.id,
+            address: p.address,
+            coordinates: p.geometry?.coordinates
+          }))
+        });
 
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
@@ -129,3 +144,4 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
   return { applications, isLoading };
 };
+
