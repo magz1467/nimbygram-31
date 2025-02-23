@@ -31,7 +31,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('crystal_roof')
-          .select('id, geometry, description, address, status, streetview_url, authority, short_title')
+          .select('id, geometry, description, short_title')
           .not('geometry', 'is', null);
 
         if (error) {
@@ -63,8 +63,8 @@ const MapViewPage = () => {
           const result: Application = {
             id: item.id || Math.random(),
             title: item.short_title || item.description || `Property ${item.id}`,
-            address: item.address || 'Address unavailable',
-            status: item.status || 'Status unavailable',
+            address: 'Address unavailable',
+            status: 'Status unavailable',
             reference: item.id?.toString() || '',
             description: item.description || '',
             submissionDate: '',
@@ -76,7 +76,7 @@ const MapViewPage = () => {
             ward: 'Not specified',
             officer: 'Not assigned',
             consultationEnd: '',
-            image: item.streetview_url,
+            image: undefined,
             image_map_url: undefined,
             ai_title: undefined,
             last_date_consultation_comments: undefined,
@@ -196,3 +196,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+
