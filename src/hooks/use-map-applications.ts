@@ -54,7 +54,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           coordinatesSample: properties?.slice(0, 5).map((p: any) => ({
             id: p.id,
             address: p.address,
-            coordinates: p.geometry?.coordinates
+            coordinates: p.geometry?.coordinates,
+            raw_geometry: p.geometry
           }))
         });
 
@@ -62,26 +63,26 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           let coordinates: [number, number] | undefined;
           
           try {
-            if (item.geometry?.coordinates && Array.isArray(item.geometry.coordinates)) {
-              console.log(`🗺️ Processing geometry for item ${item.id}:`, {
-                raw: item.geometry,
-                coordinates: item.geometry.coordinates
-              });
+            if (item.geometry?.coordinates) {
+              // PostGIS returns coordinates in [longitude, latitude] order
+              // We need to swap them to [latitude, longitude] for Leaflet
+              coordinates = [
+                parseFloat(item.geometry.coordinates[1]), // latitude
+                parseFloat(item.geometry.coordinates[0])  // longitude
+              ];
               
-              const coords = Array.isArray(item.geometry.coordinates[0]) 
-                ? item.geometry.coordinates[0]
-                : item.geometry.coordinates;
-              coordinates = [coords[1], coords[0]];
-            } else {
-              console.log(`⚠️ Invalid geometry format for item ${item.id}:`, item.geometry);
+              console.log(`🗺️ Processing coordinates for item ${item.id}:`, {
+                original: item.geometry.coordinates,
+                transformed: coordinates
+              });
             }
           } catch (err) {
             console.error('⚠️ Error parsing coordinates for item:', item.id, err);
             return null;
           }
 
-          if (!coordinates) {
-            console.log(`❌ No valid coordinates for item ${item.id}`);
+          if (!coordinates || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+            console.log(`❌ Invalid coordinates for item ${item.id}`);
             return null;
           }
 
@@ -89,27 +90,27 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             id: item.id || Math.random(),
             title: item.short_title || item.description || `Property ${item.id}`,
             address: item.address || 'Address unavailable',
-            status: 'Status unavailable',
+            status: item.status || 'Status unavailable',
             reference: item.id?.toString() || '',
             description: item.description || '',
-            submissionDate: '',
+            submissionDate: item.valid_date || '',
             coordinates: coordinates,
-            postcode: 'N/A',
-            applicant: 'Not specified',
-            decisionDue: '',
-            type: 'Planning Application',
-            ward: 'Not specified',
-            officer: 'Not assigned',
-            consultationEnd: '',
-            image: undefined,
-            image_map_url: undefined,
-            ai_title: undefined,
-            last_date_consultation_comments: undefined,
-            valid_date: undefined,
-            centroid: undefined,
-            impact_score: null,
-            impact_score_details: undefined,
-            impacted_services: undefined
+            postcode: item.postcode || 'N/A',
+            applicant: item.applicant || 'Not specified',
+            decisionDue: item.decision_target_date || '',
+            type: item.application_type || 'Planning Application',
+            ward: item.ward_name || 'Not specified',
+            officer: item.case_officer || 'Not assigned',
+            consultationEnd: item.last_date_consultation_comments || '',
+            image: item.image,
+            image_map_url: item.image_map_url,
+            ai_title: item.ai_title,
+            last_date_consultation_comments: item.last_date_consultation_comments,
+            valid_date: item.valid_date,
+            centroid: item.centroid,
+            impact_score: item.impact_score,
+            impact_score_details: item.impact_score_details,
+            impacted_services: item.impacted_services
           };
 
           return result;
@@ -144,4 +145,3 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
   return { applications, isLoading };
 };
-
