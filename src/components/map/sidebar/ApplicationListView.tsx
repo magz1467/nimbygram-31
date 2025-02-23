@@ -34,10 +34,17 @@ export const ApplicationListView = ({
   postcode,
   onSelectApplication,
   onShowEmailDialog,
+  hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
   return (
     <div className="h-full flex flex-col">
+      {!hideFilterBar && (
+        <AlertSection 
+          postcode={postcode} 
+          onShowEmailDialog={onShowEmailDialog} 
+        />
+      )}
       <div className="flex-1 overflow-y-auto">
         {applications.map((app) => (
           <div
@@ -87,3 +94,4 @@ export const ApplicationListView = ({
     </div>
   );
 };
+
