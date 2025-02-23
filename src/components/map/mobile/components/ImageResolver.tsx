@@ -41,8 +41,15 @@ export const ImageResolver = ({
 
     // First try the streetview image (from Supabase)
     if (image) {
-      console.log('Using streetview_url image:', image);
+      console.log(`Using streetview URL for application ${applicationId}:`, image);
       setCurrentImageSource(image);
+      return;
+    }
+
+    // Then try map image if available
+    if (imageMapUrl) {
+      console.log(`Using map URL for application ${applicationId}:`, imageMapUrl);
+      setCurrentImageSource(imageMapUrl);
       return;
     }
 
