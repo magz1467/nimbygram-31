@@ -1,3 +1,4 @@
+
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,13 +25,13 @@ const MapViewPage = () => {
 
   useEffect(() => {
     const fetchPropertyData = async () => {
-      console.log('🔍 Starting to fetch property data...');
+      console.log('🔍 Starting to fetch property data from crystal_roof...');
       setIsLoading(true);
       
       try {
         const { data: properties, error } = await supabase
-          .from('property_data_api')
-          .select('id, geom, proposal, address, status, streetview_url, category, authority')
+          .from('crystal_roof')
+          .select('id, geom, description, address, status, streetview_url, category, authority, short_title')
           .not('geom', 'is', null);
 
         if (error) {
@@ -61,11 +62,11 @@ const MapViewPage = () => {
 
           const result: Application = {
             id: item.id || Math.random(),
-            title: item.proposal || `Property ${item.id}`,
+            title: item.short_title || item.description || `Property ${item.id}`,
             address: item.address || 'Address unavailable',
             status: item.status || 'Status unavailable',
             reference: item.id?.toString() || '',
-            description: item.proposal || '',
+            description: item.description || '',
             submissionDate: '',
             coordinates: coordinates,
             postcode: 'N/A',
@@ -194,3 +195,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+
