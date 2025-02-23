@@ -14,10 +14,23 @@ export const useMapApplications = () => {
       setIsLoading(true);
       
       try {
+        // Get total count first
+        const { count, error: countError } = await supabase
+          .from('crystal_roof')
+          .select('*', { count: 'exact', head: true });
+
+        if (countError) {
+          throw countError;
+        }
+
+        console.log(`📊 Total records in database: ${count}`);
+
+        // Now fetch all records with a higher limit
         const { data: properties, error } = await supabase
           .from('crystal_roof')
           .select('id, geometry, description, short_title, address')
-          .not('geometry', 'is', null);
+          .not('geometry', 'is', null)
+          .limit(10000); // Increased from default 1000 to 10000
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -75,7 +88,7 @@ export const useMapApplications = () => {
           return result;
         }).filter((app): app is Application => app !== null);
 
-        console.log(`📊 Found ${transformedData?.length || 0} valid applications`);
+        console.log(`📊 Found ${transformedData?.length || 0} valid applications out of ${properties?.length || 0} total records`);
         
         if (!transformedData?.length) {
           toast({
