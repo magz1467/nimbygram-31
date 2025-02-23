@@ -118,7 +118,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             ward: item.ward_name || 'Not specified',
             officer: item.case_officer || 'Not assigned',
             consultationEnd: item.last_date_consultation_comments || '',
-            image: item.image,
+            image: item.streetview_url, // Using streetview_url instead of image
             image_map_url: item.image_map_url,
             ai_title: item.ai_title,
             last_date_consultation_comments: item.last_date_consultation_comments,
