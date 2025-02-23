@@ -14,11 +14,15 @@ const MapViewPage = () => {
   const { coordinates } = useCoordinates(postcode);
   const { applications, isLoading } = useMapApplications();
 
-  // Filter applications by distance
+  // Filter applications by distance - increased radius to 10km
   const filteredByDistance = applications.filter(app => {
-    if (!coordinates || !app.coordinates) return false;
+    if (!coordinates || !app.coordinates) {
+      console.log('Skipping application due to missing coordinates:', app.id);
+      return false;
+    }
     const distance = calculateDistance(coordinates, app.coordinates);
-    return distance <= 3;
+    console.log('Application distance:', { id: app.id, distance, coordinates: app.coordinates });
+    return distance <= 10; // Increased from 3km to 10km
   });
 
   // Use the filtered applications hook with distance-filtered applications
@@ -38,7 +42,11 @@ const MapViewPage = () => {
     finalFilteredCount: filteredApplications.length,
     searchCoordinates: coordinates,
     activeFilters,
-    sampleTitles: filteredApplications.slice(0, 3).map(app => app.title)
+    sampleApplications: filteredByDistance.slice(0, 3).map(app => ({
+      id: app.id,
+      coordinates: app.coordinates,
+      title: app.title
+    }))
   });
 
   return (
@@ -63,3 +71,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+
