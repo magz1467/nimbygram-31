@@ -10,12 +10,25 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 
 const MapViewPage = () => {
   const location = useLocation();
-  const searchPostcode = location.state?.postcode || "SW1A 1AA";
-  const [postcode, setPostcode] = useState(searchPostcode);
+  const [postcode, setPostcode] = useState(location.state?.postcode || "SW1A 1AA");
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
   const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Listen for postcode search events
+  useEffect(() => {
+    const handlePostcodeSearch = (event: CustomEvent<{ postcode: string }>) => {
+      console.log('Received postcode search event:', event.detail.postcode);
+      setPostcode(event.detail.postcode);
+    };
+
+    window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
+
+    return () => {
+      window.removeEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
+    };
+  }, []);
 
   // Reset selected application when postcode changes
   useEffect(() => {
@@ -70,4 +83,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-

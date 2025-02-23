@@ -60,20 +60,26 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
     const trimmedPostcode = postcode.trim();
 
-    if (onSearch) {
-      onSearch(trimmedPostcode);
-    }
-
     try {
       await logSearch(trimmedPostcode);
       
-      navigate('/map', { 
-        state: { 
-          postcode: trimmedPostcode,
-          tab: activeTab
-        },
-        replace: true // Use replace to prevent back button issues
-      });
+      // Instead of navigate, update URL without reload
+      window.history.pushState(
+        { postcode: trimmedPostcode, tab: activeTab },
+        '',
+        '/map'
+      );
+
+      // Call onSearch to update parent components
+      if (onSearch) {
+        onSearch(trimmedPostcode);
+      }
+      
+      // Dispatch a custom event to notify MapView of the new search
+      window.dispatchEvent(new CustomEvent('postcodeSearch', {
+        detail: { postcode: trimmedPostcode }
+      }));
+
     } catch (error) {
       console.error('Error during search:', error);
       toast({

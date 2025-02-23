@@ -14,32 +14,26 @@ export const useCoordinates = (postcode: string | undefined) => {
       
       setIsLoading(true);
       try {
+        console.log('Fetching coordinates for postcode:', postcode);
         const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
         const data = await response.json();
         
         if (isMounted && data.status === 200) {
+          console.log('Received coordinates:', [data.result.latitude, data.result.longitude]);
           setCoordinates([data.result.latitude, data.result.longitude]);
         }
       } catch (error) {
         console.error("Error fetching coordinates:", error);
+        setCoordinates(null);
       } finally {
         if (isMounted) {
-          // Add a small delay to ensure smooth loading state
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 1500);
+          setIsLoading(false);
         }
       }
     };
 
     fetchCoordinates();
     
-    // Reset coordinates when postcode changes
-    if (!postcode) {
-      setCoordinates(null);
-    }
-
-    // Cleanup function
     return () => {
       isMounted = false;
     };
