@@ -21,8 +21,26 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
-        // Build PostGIS query to filter by distance (20km)
+        // Get the raw response first to check the structure
         const [lat, lng] = coordinates;
+        const { data: rawData, error: rawError } = await supabase
+          .from('crystal_roof')
+          .select('*')
+          .limit(1000);
+
+        console.log('📊 Raw query response:', {
+          totalRecords: rawData?.length,
+          firstRecord: rawData?.[0],
+          wendoverCount: rawData?.filter(r => r.ward_name?.includes('Wendover')).length,
+          uniqueWards: [...new Set(rawData?.map(r => r.ward_name))]
+        });
+
+        if (rawError) {
+          console.error('❌ Error fetching raw data:', rawError);
+          return;
+        }
+
+        // Now proceed with the distance-filtered query
         const radius = 20000; // 20km in meters
         
         console.log('📍 Querying with parameters:', {
