@@ -25,12 +25,11 @@ export const useMapApplications = () => {
 
         console.log(`📊 Total records in database: ${count}`);
 
-        // Now fetch all records with a higher limit
+        // Now fetch all records with a higher limit and no filtering on geometry
         const { data: properties, error } = await supabase
           .from('crystal_roof')
           .select('id, geometry, description, short_title, address')
-          .not('geometry', 'is', null)
-          .limit(10000); // Increased from default 1000 to 10000
+          .limit(10000); // Keeping high limit
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -42,21 +41,35 @@ export const useMapApplications = () => {
           return;
         }
 
+        console.log('📦 Raw properties data sample:', properties?.slice(0, 3));
+
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
+          
           try {
             if (item.geometry?.coordinates && Array.isArray(item.geometry.coordinates)) {
+              // Log the raw geometry data for debugging
+              console.log(`🗺️ Processing geometry for item ${item.id}:`, {
+                raw: item.geometry,
+                coordinates: item.geometry.coordinates
+              });
+              
               const coords = Array.isArray(item.geometry.coordinates[0]) 
                 ? item.geometry.coordinates[0]
                 : item.geometry.coordinates;
               coordinates = [coords[1], coords[0]];
+            } else {
+              console.log(`⚠️ Invalid geometry format for item ${item.id}:`, item.geometry);
             }
           } catch (err) {
             console.error('⚠️ Error parsing coordinates for item:', item.id, err);
             return null;
           }
 
-          if (!coordinates) return null;
+          if (!coordinates) {
+            console.log(`❌ No valid coordinates for item ${item.id}`);
+            return null;
+          }
 
           const result: Application = {
             id: item.id || Math.random(),
@@ -89,6 +102,7 @@ export const useMapApplications = () => {
         }).filter((app): app is Application => app !== null);
 
         console.log(`📊 Found ${transformedData?.length || 0} valid applications out of ${properties?.length || 0} total records`);
+        console.log('📍 Sample of transformed applications:', transformedData?.slice(0, 3));
         
         if (!transformedData?.length) {
           toast({

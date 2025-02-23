@@ -14,15 +14,24 @@ const MapViewPage = () => {
   const { coordinates } = useCoordinates(postcode);
   const { applications, isLoading } = useMapApplications();
 
-  // Filter applications by distance - increased radius to 10km
+  // Filter applications by distance - increased radius to 20km and added detailed logging
   const filteredByDistance = applications.filter(app => {
     if (!coordinates || !app.coordinates) {
-      console.log('Skipping application due to missing coordinates:', app.id);
+      console.log(`❌ Skipping application ${app.id} - Missing coordinates:`, {
+        searchCoordinates: coordinates,
+        appCoordinates: app.coordinates
+      });
       return false;
     }
+    
     const distance = calculateDistance(coordinates, app.coordinates);
-    console.log('Application distance:', { id: app.id, distance, coordinates: app.coordinates });
-    return distance <= 10; // Increased from 3km to 10km
+    console.log(`📍 Application ${app.id} at ${app.address}:`, {
+      distance,
+      coordinates: app.coordinates,
+      withinRadius: distance <= 20
+    });
+    
+    return distance <= 20; // Increased from 10km to 20km for testing
   });
 
   // Use the filtered applications hook with distance-filtered applications
@@ -42,10 +51,13 @@ const MapViewPage = () => {
     finalFilteredCount: filteredApplications.length,
     searchCoordinates: coordinates,
     activeFilters,
+    searchPostcode: postcode,
     sampleApplications: filteredByDistance.slice(0, 3).map(app => ({
       id: app.id,
       coordinates: app.coordinates,
-      title: app.title
+      title: app.title,
+      address: app.address,
+      distance: calculateDistance(coordinates || defaultCoordinates, app.coordinates || [0, 0])
     }))
   });
 
@@ -71,4 +83,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-
