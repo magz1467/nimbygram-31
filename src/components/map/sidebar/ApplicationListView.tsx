@@ -67,11 +67,11 @@ export const ApplicationListView = ({
                 <div className="font-semibold text-primary mb-1">
                   {app.category ? (
                     <>
-                      <span className="text-blue-600">{app.category}</span>
+                      <span className="text-primary">{app.category}</span>
                       <span className="text-gray-600">: </span>
                     </>
                   ) : null}
-                  <span className="text-gray-900 line-clamp-2">{app.title || app.description}</span>
+                  <span className="text-primary line-clamp-2">{app.title || app.description}</span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{app.address}</p>
                 <div className="flex flex-col gap-1.5 mt-2">
@@ -94,4 +94,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
