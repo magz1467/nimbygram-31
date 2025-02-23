@@ -31,8 +31,8 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('crystal_roof')
-          .select('id, geom, description, address, status, streetview_url, category, authority, short_title')
-          .not('geom', 'is', null);
+          .select('id, geometry, description, address, status, streetview_url, category, authority, short_title')
+          .not('geometry', 'is', null);
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -47,10 +47,10 @@ const MapViewPage = () => {
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
           try {
-            if (item.geom?.coordinates && Array.isArray(item.geom.coordinates)) {
-              const coords = Array.isArray(item.geom.coordinates[0]) 
-                ? item.geom.coordinates[0]
-                : item.geom.coordinates;
+            if (item.geometry?.coordinates && Array.isArray(item.geometry.coordinates)) {
+              const coords = Array.isArray(item.geometry.coordinates[0]) 
+                ? item.geometry.coordinates[0]
+                : item.geometry.coordinates;
               coordinates = [coords[1], coords[0]];
             }
           } catch (err) {
