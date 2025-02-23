@@ -24,14 +24,12 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const radius = 20000; // 20km in meters
         
-        const { data: properties, error } = await supabase
-          .from('crystal_roof')
-          .select('id, geometry, description, short_title, address')
-          .rpc('properties_within_distance', {
-            ref_lat: lat,
-            ref_lon: lng,
-            radius_meters: radius
-          });
+        // Call the RPC function directly
+        const { data: properties, error } = await supabase.rpc('properties_within_distance', {
+          ref_lat: lat,
+          ref_lon: lng,
+          radius_meters: radius
+        });
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
