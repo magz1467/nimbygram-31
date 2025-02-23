@@ -1,4 +1,3 @@
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,7 +30,7 @@ const MapViewPage = () => {
       try {
         const { data: properties, error } = await supabase
           .from('crystal_roof')
-          .select('id, geometry, description, address, status, streetview_url, category, authority, short_title')
+          .select('id, geometry, description, address, status, streetview_url, authority, short_title')
           .not('geometry', 'is', null);
 
         if (error) {
@@ -85,12 +84,14 @@ const MapViewPage = () => {
             impact_score: null,
             impact_score_details: undefined,
             impacted_services: undefined,
-            category: item.category || 'New Build'
+            category: 'New Build' // Default category since it's not in the database
           };
 
           return result;
         }).filter((app): app is Application => app !== null);
 
+        console.log(`📊 Found ${transformedData?.length || 0} valid applications`);
+        
         if (!transformedData?.length) {
           toast({
             title: "No properties found",
@@ -195,4 +196,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-
