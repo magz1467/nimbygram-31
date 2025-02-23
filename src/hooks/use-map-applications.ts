@@ -31,7 +31,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           radius_meters: radius
         });
 
-        // Call the RPC function directly
+        // Call the RPC function
         const { data: properties, error } = await supabase.rpc('properties_within_distance', {
           ref_lat: lat,
           ref_lon: lng,
@@ -48,32 +48,31 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
-        console.log('📦 Raw properties response:', {
-          count: properties?.length || 0,
-          firstRecord: properties?.[0],
-          coordinatesSample: properties?.slice(0, 5).map((p: any) => ({
-            id: p.id,
-            address: p.address,
-            coordinates: p.geometry?.coordinates,
-            raw_geometry: p.geometry
-          }))
-        });
+        // Log raw properties data for debugging
+        console.log('📦 Raw properties response:', properties);
+        console.log('📊 Total properties returned:', properties?.length);
+        console.log('🏠 Properties in Wendover:', 
+          properties?.filter((p: any) => p.ward_name?.includes('Wendover')).length
+        );
+
+        // Log first few Wendover properties
+        const wendoverProperties = properties?.filter((p: any) => p.ward_name?.includes('Wendover'));
+        console.log('🏘️ First 5 Wendover properties:', wendoverProperties?.slice(0, 5));
 
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
           
           try {
             if (item.geometry?.coordinates) {
-              // PostGIS returns coordinates in [longitude, latitude] order
-              // We need to swap them to [latitude, longitude] for Leaflet
               coordinates = [
                 parseFloat(item.geometry.coordinates[1]), // latitude
                 parseFloat(item.geometry.coordinates[0])  // longitude
               ];
               
-              console.log(`🗺️ Processing coordinates for item ${item.id}:`, {
+              console.log(`🗺️ Processing coordinates for item ${item.id} (${item.ward_name}):`, {
                 original: item.geometry.coordinates,
-                transformed: coordinates
+                transformed: coordinates,
+                ward: item.ward_name
               });
             }
           } catch (err) {
@@ -116,9 +115,12 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return result;
         }).filter((app): app is Application => app !== null);
 
-        console.log(`📊 Found ${transformedData?.length || 0} valid applications out of ${properties?.length || 0} total records`);
-        console.log('📍 Sample of transformed applications:', transformedData?.slice(0, 3));
-        
+        console.log('📊 Post-transform statistics:', {
+          totalApplications: transformedData?.length,
+          wendoverApplications: transformedData?.filter(app => app.ward?.includes('Wendover')).length,
+          sampleWendover: transformedData?.filter(app => app.ward?.includes('Wendover')).slice(0, 3)
+        });
+
         if (!transformedData?.length) {
           toast({
             title: "No properties found",
