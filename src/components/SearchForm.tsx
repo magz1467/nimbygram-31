@@ -67,12 +67,15 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(trimmedPostcode);
       }
 
-      // First dispatch the event so MapView can update
+      // First dispatch loading state
+      window.dispatchEvent(new CustomEvent('searchStarted'));
+
+      // Then dispatch the postcode search event
       window.dispatchEvent(new CustomEvent('postcodeSearch', {
         detail: { postcode: trimmedPostcode }
       }));
 
-      // Then navigate to the map page
+      // Navigate to map page
       navigate('/map', { 
         state: { postcode: trimmedPostcode },
         replace: true
@@ -85,7 +88,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         description: "There was a problem processing your search. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

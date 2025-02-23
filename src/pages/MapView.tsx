@@ -11,10 +11,24 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 const MapViewPage = () => {
   const location = useLocation();
   const [postcode, setPostcode] = useState(location.state?.postcode || "SW1A 1AA");
+  const [isSearching, setIsSearching] = useState(false);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
   const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Listen for search start events
+  useEffect(() => {
+    const handleSearchStart = () => {
+      console.log('Search started event received');
+      setIsSearching(true);
+    };
+
+    window.addEventListener('searchStarted', handleSearchStart);
+    return () => {
+      window.removeEventListener('searchStarted', handleSearchStart);
+    };
+  }, []);
 
   // Listen for postcode search events
   useEffect(() => {
@@ -24,21 +38,24 @@ const MapViewPage = () => {
     };
 
     window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
-
     return () => {
       window.removeEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     };
   }, []);
+
+  // Reset search state when loading is complete
+  useEffect(() => {
+    if (!isLoadingCoordinates && !isLoadingApplications) {
+      setIsSearching(false);
+    }
+  }, [isLoadingCoordinates, isLoadingApplications]);
 
   // Reset selected application when postcode changes
   useEffect(() => {
     setSelectedId(null);
   }, [postcode]);
 
-  // Use the filtered applications hook with applications and coordinates
   const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
-
-  // Default coordinates for central London if none provided
   const defaultCoordinates: [number, number] = [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
@@ -52,6 +69,7 @@ const MapViewPage = () => {
     searchCoordinates: coordinates,
     activeFilters,
     searchPostcode: postcode,
+    isLoading: isLoadingCoordinates || isLoadingApplications || isSearching,
     sampleApplications: applications.slice(0, 3).map(app => ({
       id: app.id,
       coordinates: app.coordinates,
@@ -67,7 +85,7 @@ const MapViewPage = () => {
       selectedId={selectedId}
       postcode={postcode}
       coordinates={coordinates || defaultCoordinates}
-      isLoading={isLoadingCoordinates || isLoadingApplications}
+      isLoading={isLoadingCoordinates || isLoadingApplications || isSearching}
       activeFilters={activeFilters}
       activeSort={activeSort}
       onPostcodeSelect={handlePostcodeSelect}
