@@ -63,22 +63,20 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     try {
       await logSearch(trimmedPostcode);
       
-      // Instead of navigate, update URL without reload
-      window.history.pushState(
-        { postcode: trimmedPostcode, tab: activeTab },
-        '',
-        '/map'
-      );
-
-      // Call onSearch to update parent components
       if (onSearch) {
         onSearch(trimmedPostcode);
       }
-      
-      // Dispatch a custom event to notify MapView of the new search
+
+      // First dispatch the event so MapView can update
       window.dispatchEvent(new CustomEvent('postcodeSearch', {
         detail: { postcode: trimmedPostcode }
       }));
+
+      // Then navigate to the map page
+      navigate('/map', { 
+        state: { postcode: trimmedPostcode },
+        replace: true
+      });
 
     } catch (error) {
       console.error('Error during search:', error);

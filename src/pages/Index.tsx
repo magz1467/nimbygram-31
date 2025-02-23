@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/components/Hero";
 import Features from "@/components/Features";
@@ -8,6 +9,7 @@ import GetInTouch from "@/components/GetInTouch";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { QuoteSection } from "@/components/QuoteSection";
+import { SearchForm } from "@/components/SearchForm";
 
 const Index = () => {
   return (
@@ -15,6 +17,9 @@ const Index = () => {
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 lg:px-8">
         <Hero />
+        <div className="max-w-lg mx-auto my-8">
+          <SearchForm />
+        </div>
         <Features />
         <QuoteSection />
         <Services />
