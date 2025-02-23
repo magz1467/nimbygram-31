@@ -1,8 +1,5 @@
 
 import { Application } from "@/types/planning";
-import { FilterBar } from "@/components/FilterBar";
-import { AlertSection } from "./AlertSection";
-import { SortType } from "@/types/application-types";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 
@@ -12,33 +9,9 @@ interface ApplicationListViewProps {
   postcode: string;
   onSelectApplication: (id: number) => void;
   onShowEmailDialog: () => void;
-  onFilterChange?: (filterType: string, value: string) => void;
-  onSortChange?: (sortType: SortType) => void;
-  activeFilters?: {
-    status?: string;
-    type?: string;
-  };
-  activeSort?: SortType;
-  statusCounts?: {
-    'Under Review': number;
-    'Approved': number;
-    'Declined': number;
-    'Other': number;
-  };
+  hideFilterBar?: boolean;
+  onClose?: () => void;
 }
-
-const categoryEmojis: { [key: string]: string } = {
-  'Demolition': '🏚️',
-  'Extension': '🏗️',
-  'New Build': '🏘️',
-  'Change of Use': '🔄',
-  'Listed Building': '🏛️',
-  'Commercial': '🏢',
-  'Industrial': '🏭',
-  'Hospital': '🏥',
-  'Planning Conditions': '📋',
-  'Miscellaneous': '📝'
-};
 
 export const ApplicationListView = ({
   applications,
@@ -46,19 +19,11 @@ export const ApplicationListView = ({
   postcode,
   onSelectApplication,
   onShowEmailDialog,
-  onFilterChange,
-  onSortChange,
-  activeFilters,
-  activeSort,
-  statusCounts,
+  hideFilterBar,
+  onClose
 }: ApplicationListViewProps) => {
   return (
     <div className="h-full flex flex-col">
-      <AlertSection 
-        postcode={postcode} 
-        onShowEmailDialog={onShowEmailDialog} 
-      />
-      
       <div className="flex-1 overflow-y-auto">
         {applications.map((app) => (
           <div
@@ -79,17 +44,15 @@ export const ApplicationListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-primary mb-1">
-                  <span className="text-gray-900 line-clamp-2">
-                    {app.category ? (
-                      <span style={{ color: "#af5662" }}>
-                        {categoryEmojis[app.category] || '📝'} {app.category}: 
-                      </span>
-                    ) : ''}{app.engaging_title || app.description}
-                  </span>
+                  {app.category ? (
+                    <>
+                      <span className="text-blue-600">{app.category}</span>
+                      <span className="text-gray-600">: </span>
+                    </>
+                  ) : null}
+                  <span className="text-gray-900 line-clamp-2">{app.title || app.description}</span>
                 </div>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                  {app.address}
-                </p>
+                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{app.address}</p>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
                     status={app.status}

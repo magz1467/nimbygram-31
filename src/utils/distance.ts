@@ -19,12 +19,6 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
 
-  console.log('Distance calculation:', {
-    point1: point1,
-    point2: point2,
-    distance: distance.toFixed(2) + 'km'
-  });
-
   return distance;
 };
 
@@ -46,3 +40,4 @@ export const findClosestApplication = (
 
   return closestId;
 };
+
