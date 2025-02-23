@@ -1,3 +1,4 @@
+
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -83,8 +84,7 @@ const MapViewPage = () => {
             centroid: undefined,
             impact_score: null,
             impact_score_details: undefined,
-            impacted_services: undefined,
-            category: 'New Build' // Default category since it's not in the database
+            impacted_services: undefined
           };
 
           return result;
