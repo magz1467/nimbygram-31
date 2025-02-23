@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     try {
       await logSearch(trimmedPostcode);
       
-      navigate('/applications/dashboard/map', { 
+      navigate('/map', { 
         state: { 
           postcode: trimmedPostcode,
           tab: activeTab
