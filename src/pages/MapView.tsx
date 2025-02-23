@@ -44,6 +44,8 @@ const MapViewPage = () => {
           return;
         }
 
+        console.log('Raw properties data:', properties?.slice(0, 3));
+
         const transformedData = properties?.map((item: any) => {
           let coordinates: [number, number] | undefined;
           try {
@@ -86,6 +88,13 @@ const MapViewPage = () => {
             impact_score_details: undefined,
             impacted_services: undefined
           };
+
+          console.log('Transformed application:', {
+            id: result.id,
+            title: result.title,
+            short_title: item.short_title,
+            description: item.description
+          });
 
           return result;
         }).filter((app): app is Application => app !== null);
@@ -139,7 +148,8 @@ const MapViewPage = () => {
     filteredByDistanceCount: filteredByDistance.length,
     finalFilteredCount: filteredApplications.length,
     searchCoordinates: coordinates,
-    activeFilters
+    activeFilters,
+    sampleTitles: filteredApplications.slice(0, 3).map(app => app.title)
   });
   
   return (
@@ -196,4 +206,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-

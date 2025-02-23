@@ -13,8 +13,9 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
   // Add debug logging
   console.log('MiniCard received application:', {
     id: application.id,
-    category: application.category,
-    title: application.title
+    title: application.title,
+    description: application.description,
+    category: application.category
   });
 
   return (
