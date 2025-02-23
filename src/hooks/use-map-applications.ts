@@ -25,8 +25,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const { data: rawData, error: rawError } = await supabase
           .from('crystal_roof')
-          .select('*')
-          .limit(1000);
+          .select('*');
 
         console.log('📊 Raw query response:', {
           totalRecords: rawData?.length,
@@ -165,3 +164,4 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
   return { applications, isLoading };
 };
+
