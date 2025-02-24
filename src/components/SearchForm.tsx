@@ -73,17 +73,17 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(trimmedPostcode);
       }
 
+      // Navigate to map page with loading state
+      navigate('/map', { 
+        state: { postcode: trimmedPostcode, isLoading: true },
+        replace: true
+      });
+
       // Then dispatch the postcode search event
       window.dispatchEvent(new CustomEvent('postcodeSearch', {
         detail: { postcode: trimmedPostcode }
       }));
       console.log('Dispatched postcodeSearch event');
-
-      // Navigate to map page
-      navigate('/map', { 
-        state: { postcode: trimmedPostcode },
-        replace: true
-      });
 
     } catch (error) {
       console.error('Error during search:', error);

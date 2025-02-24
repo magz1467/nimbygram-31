@@ -6,6 +6,7 @@ import { SidebarSection } from "@/components/applications/dashboard/components/S
 import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Application } from "@/types/planning";
+import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 
 interface MapViewLayoutProps {
   applications: Application[];
@@ -86,6 +87,8 @@ export const MapViewLayout = ({
             />
           </div>
         </div>
+
+        {isLoading && <LoadingOverlay />}
       </div>
     </ErrorBoundary>
   );
