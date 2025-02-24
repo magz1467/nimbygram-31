@@ -1,3 +1,4 @@
+
 export interface Application {
   id: number;
   title?: string;
@@ -54,23 +55,7 @@ export interface Application {
   category?: string;
   received?: string;
   decision?: string;
+  storybook?: string;
+  storybook_header?: string;
 }
 
-export interface Comment {
-  id: number;
-  created_at: string;
-  comment: string;
-  user_id?: string;
-  application_id?: number;
-  parent_id?: number;
-  upvotes?: number;
-  downvotes?: number;
-  user?: {
-    username?: string;
-  };
-  profiles?: {
-    username?: string;
-  };
-  user_email?: string;
-  replies?: Comment[];
-}
