@@ -37,6 +37,9 @@ export const ApplicationListView = ({
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
+  // Filter applications to only show those with storybook content
+  const filteredApplications = applications.filter(app => app.storybook !== null);
+
   return (
     <div className="h-full flex flex-col">
       {!hideFilterBar && (
@@ -46,7 +49,7 @@ export const ApplicationListView = ({
         />
       )}
       <div className="flex-1 overflow-y-auto">
-        {applications.map((app) => (
+        {filteredApplications.map((app) => (
           <div
             key={app.id}
             className="py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
@@ -68,7 +71,7 @@ export const ApplicationListView = ({
                   {app.storybook_header || ''}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {app.storybook || app.description || app.address}
+                  {app.storybook}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
@@ -90,3 +93,4 @@ export const ApplicationListView = ({
     </div>
   );
 };
+

@@ -27,6 +27,9 @@ export const MobileListView = ({
 }: MobileListViewProps) => {
   const [showAlerts, setShowAlerts] = useState(true);
 
+  // Filter applications to only show those with storybook content
+  const filteredApplications = applications.filter(app => app.storybook !== null);
+
   return (
     <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
       {showAlerts && (
@@ -57,7 +60,7 @@ export const MobileListView = ({
         </div>
       )}
       <div className="p-4 space-y-4 overflow-y-auto">
-        {applications.map((app) => (
+        {filteredApplications.map((app) => (
           <div
             key={app.id}
             className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -77,7 +80,7 @@ export const MobileListView = ({
                   {app.storybook_header || ''}
                 </h3>
                 <div className="text-sm text-gray-600 mt-1">
-                  {app.storybook || app.description || app.address}
+                  {app.storybook}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
@@ -91,3 +94,4 @@ export const MobileListView = ({
     </div>
   );
 };
+
