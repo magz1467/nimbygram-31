@@ -20,7 +20,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
   const logSearch = async (postcode: string) => {
     try {
-      console.log('Logging search from SearchForm:', {
+      console.log('🔍 Logging search:', {
         postcode,
         status: activeTab,
         timestamp: new Date().toISOString()
@@ -41,8 +41,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
           description: "Your search was processed but we couldn't log it. This won't affect your results.",
           variant: "default",
         });
-      } else {
-        console.log('Search logged successfully from SearchForm');
       }
     } catch (error) {
       console.error('Error logging search:', error);
@@ -57,38 +55,45 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     }
 
     setIsSubmitting(true);
-    console.log('Search started, setting loading state...');
+    console.log('🔄 Search started for postcode:', postcode);
 
     const trimmedPostcode = postcode.trim();
 
     try {
-      // Log the search first
+      console.log('📝 Before logging search');
       await logSearch(trimmedPostcode);
+      console.log('✅ After logging search');
       
       if (onSearch) {
         onSearch(trimmedPostcode);
       }
 
-      // Navigate to map page with loading state
+      console.log('🚀 Navigating to map with postcode:', trimmedPostcode);
+      // Navigate first
       navigate('/map', { 
         state: { postcode: trimmedPostcode },
         replace: true
       });
 
-      // Then dispatch the search events after navigation
-      window.dispatchEvent(new CustomEvent('searchStarted'));
-      window.dispatchEvent(new CustomEvent('postcodeSearch', {
-        detail: { postcode: trimmedPostcode }
-      }));
-      console.log('Dispatched search events');
+      // Brief delay before dispatching events to ensure navigation is complete
+      setTimeout(() => {
+        console.log('🔔 Dispatching searchStarted event');
+        window.dispatchEvent(new CustomEvent('searchStarted'));
+        
+        console.log('📨 Dispatching postcodeSearch event:', trimmedPostcode);
+        window.dispatchEvent(new CustomEvent('postcodeSearch', {
+          detail: { postcode: trimmedPostcode }
+        }));
+      }, 100);
 
     } catch (error) {
-      console.error('Error during search:', error);
+      console.error('❌ Error during search:', error);
       toast({
         title: "Error",
         description: "There was a problem processing your search. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -96,7 +101,10 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <PostcodeSearch
-        onSelect={setPostcode}
+        onSelect={(value) => {
+          console.log('📮 Postcode selected:', value);
+          setPostcode(value);
+        }}
         placeholder="Enter postcode"
         className="flex-1"
       />
@@ -111,4 +119,3 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
-

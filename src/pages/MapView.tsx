@@ -10,7 +10,14 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 
 const MapViewPage = () => {
   const location = useLocation();
-  const [postcode, setPostcode] = useState(location.state?.postcode || "SW1A 1AA");
+  console.log('📍 MapView initial location state:', location.state);
+  
+  const [postcode, setPostcode] = useState(() => {
+    const initialPostcode = location.state?.postcode || "SW1A 1AA";
+    console.log('🏠 Setting initial postcode:', initialPostcode);
+    return initialPostcode;
+  });
+  
   const [isSearching, setIsSearching] = useState(!!location.state?.postcode);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
@@ -19,9 +26,9 @@ const MapViewPage = () => {
 
   // Listen for search start events
   useEffect(() => {
-    console.log('Setting up searchStarted event listener');
+    console.log('🎯 Setting up searchStarted event listener');
     const handleSearchStart = () => {
-      console.log('Search started event received, setting isSearching to true');
+      console.log('🔄 Search started event received');
       setIsSearching(true);
     };
 
@@ -33,10 +40,12 @@ const MapViewPage = () => {
 
   // Listen for postcode search events
   useEffect(() => {
-    console.log('Setting up postcodeSearch event listener');
+    console.log('📬 Setting up postcodeSearch event listener');
     const handlePostcodeSearch = (event: CustomEvent<{ postcode: string }>) => {
-      console.log('Received postcode search event:', event.detail.postcode);
-      setPostcode(event.detail.postcode);
+      const newPostcode = event.detail.postcode;
+      console.log('📨 Received postcodeSearch event:', newPostcode);
+      console.log('Current postcode:', postcode);
+      setPostcode(newPostcode);
     };
 
     window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
@@ -48,13 +57,14 @@ const MapViewPage = () => {
   // Reset search state when loading is complete
   useEffect(() => {
     if (!isLoadingCoordinates && !isLoadingApplications && isSearching) {
-      console.log('Loading complete, resetting search state');
+      console.log('✅ Loading complete, resetting search state');
       setIsSearching(false);
     }
   }, [isLoadingCoordinates, isLoadingApplications, isSearching]);
 
   // Reset selected application when postcode changes
   useEffect(() => {
+    console.log('🔄 Postcode changed, resetting selected application');
     setSelectedId(null);
   }, [postcode]);
 
@@ -62,29 +72,22 @@ const MapViewPage = () => {
   const defaultCoordinates: [number, number] = coordinates || [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
-    console.log('New postcode selected:', newPostcode);
+    console.log('📍 New postcode selected:', newPostcode);
     setPostcode(newPostcode);
     setIsSearching(true);
   };
 
-  console.log('🎯 MapContent rendering stats:', {
-    rawApplicationCount: applications.length,
-    finalFilteredCount: filteredApplications.length,
-    searchCoordinates: coordinates,
-    activeFilters,
-    searchPostcode: postcode,
-    isLoading: isLoadingCoordinates || isLoadingApplications || isSearching,
-    sampleApplications: applications.slice(0, 3).map(app => ({
-      id: app.id,
-      coordinates: app.coordinates,
-      title: app.title,
-      address: app.address,
-      distance: coordinates ? calculateDistance(coordinates, app.coordinates || [0, 0]) : 0
-    }))
+  console.log('🎯 MapView rendering with:', {
+    postcode,
+    coordinates,
+    isSearching,
+    isLoadingCoordinates,
+    isLoadingApplications,
+    applicationCount: applications.length,
+    filteredCount: filteredApplications.length
   });
 
   const isLoading = isLoadingCoordinates || isLoadingApplications || isSearching;
-  console.log('Loading state:', { isLoadingCoordinates, isLoadingApplications, isSearching, isLoading });
 
   return (
     <MapViewLayout
@@ -108,4 +111,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-
