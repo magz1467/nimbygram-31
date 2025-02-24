@@ -9,6 +9,8 @@ import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { useMapApplications } from "@/hooks/use-map-applications";
 
 const MapViewPage = () => {
+  console.log('🔄 MapView component mounting');
+  
   const location = useLocation();
   console.log('📍 MapView initial location state:', location.state);
   
@@ -16,17 +18,30 @@ const MapViewPage = () => {
     const locationPostcode = location.state?.postcode;
     console.log('🏠 Initial postcode from location:', locationPostcode);
     if (!locationPostcode) {
-      console.log('⚠️ No postcode in location state, using default');
+      console.log('⚠️ No postcode in location state, using default SW1A 1AA');
       return "SW1A 1AA";
     }
+    console.log('✅ Using postcode from location state:', locationPostcode);
     return locationPostcode;
   });
   
   const [isSearching, setIsSearching] = useState(false);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
+  
+  console.log('🌍 Before useCoordinates hook, postcode:', postcode);
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
+  console.log('📌 After useCoordinates hook:', { coordinates, isLoadingCoordinates });
+  
   const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Track mount/unmount for debugging
+  useEffect(() => {
+    console.log('🎯 MapView mounted with initial postcode:', postcode);
+    return () => {
+      console.log('👋 MapView unmounting');
+    };
+  }, []);
 
   // Listen for search start events
   useEffect(() => {
@@ -42,12 +57,15 @@ const MapViewPage = () => {
     };
   }, []);
 
-  // Listen for postcode search events
+  // Listen for postcode search events with more detailed logging
   useEffect(() => {
-    console.log('📬 Setting up postcodeSearch event listener');
+    console.log('📬 Setting up postcodeSearch event listener, current postcode:', postcode);
+    
     const handlePostcodeSearch = (event: CustomEvent<{ postcode: string }>) => {
       const newPostcode = event.detail.postcode;
       console.log('📨 Received postcodeSearch event:', newPostcode);
+      console.log('Current postcode state before update:', postcode);
+      
       if (newPostcode) {
         console.log('🔄 Updating postcode to:', newPostcode);
         setPostcode(newPostcode);
@@ -57,12 +75,21 @@ const MapViewPage = () => {
 
     window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     return () => {
+      console.log('🔇 Removing postcodeSearch event listener');
       window.removeEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     };
   }, []); // Removed postcode from dependencies to prevent re-subscriptions
 
   // Reset search state when loading is complete
   useEffect(() => {
+    console.log('🔍 Loading state check:', {
+      isLoadingCoordinates,
+      isLoadingApplications,
+      isSearching,
+      postcode,
+      coordinates
+    });
+    
     if (!isLoadingCoordinates && !isLoadingApplications && isSearching) {
       console.log('✅ Loading complete, resetting search state');
       setIsSearching(false);

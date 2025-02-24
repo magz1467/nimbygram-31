@@ -10,23 +10,31 @@ export const useCoordinates = (postcode: string | undefined) => {
     let isMounted = true;
 
     const fetchCoordinates = async () => {
-      if (!postcode) return;
+      if (!postcode) {
+        console.log('❌ useCoordinates: No postcode provided');
+        return;
+      }
       
       setIsLoading(true);
+      console.log('🔍 useCoordinates: Fetching coordinates for postcode:', postcode);
+      
       try {
-        console.log('Fetching coordinates for postcode:', postcode);
         const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
         const data = await response.json();
         
+        console.log('📍 useCoordinates: API response:', data);
+        
         if (isMounted && data.status === 200) {
-          console.log('Received coordinates:', [data.result.latitude, data.result.longitude]);
-          setCoordinates([data.result.latitude, data.result.longitude]);
+          const newCoordinates: [number, number] = [data.result.latitude, data.result.longitude];
+          console.log('✅ useCoordinates: Setting coordinates:', newCoordinates);
+          setCoordinates(newCoordinates);
         }
       } catch (error) {
-        console.error("Error fetching coordinates:", error);
+        console.error("❌ useCoordinates: Error fetching coordinates:", error);
         setCoordinates(null);
       } finally {
         if (isMounted) {
+          console.log('🏁 useCoordinates: Finished loading');
           setIsLoading(false);
         }
       }
@@ -35,6 +43,7 @@ export const useCoordinates = (postcode: string | undefined) => {
     fetchCoordinates();
     
     return () => {
+      console.log('🔇 useCoordinates: Cleanup');
       isMounted = false;
     };
   }, [postcode]);
