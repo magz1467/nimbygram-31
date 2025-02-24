@@ -78,7 +78,7 @@ export const MobileListView = ({
                     `${app.category}: ${app.title || ''}`
                   ) : app.ai_title || app.title || app.description)}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                <p className="text-sm text-gray-600 mt-1">
                   {app.storybook || app.description || app.address}
                 </p>
                 <div className="flex justify-between items-center mt-2">

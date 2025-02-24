@@ -69,11 +69,11 @@ export const ApplicationListView = ({
                     <>
                       <span className="text-primary">{app.category}</span>
                       <span className="text-gray-600">: </span>
-                      <span className="text-primary line-clamp-2">{app.title || app.description}</span>
+                      <span className="text-primary">{app.title || app.description}</span>
                     </>
                   ) : app.title || app.description)}
                 </div>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                <p className="text-sm text-gray-600 mt-1">
                   {app.storybook || app.description || app.address}
                 </p>
                 <div className="flex flex-col gap-1.5 mt-2">
