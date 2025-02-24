@@ -68,23 +68,21 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(trimmedPostcode);
       }
 
+      // Dispatch events first
+      console.log('🔔 Dispatching searchStarted event');
+      window.dispatchEvent(new CustomEvent('searchStarted'));
+      
+      console.log('📨 Dispatching postcodeSearch event:', trimmedPostcode);
+      window.dispatchEvent(new CustomEvent('postcodeSearch', {
+        detail: { postcode: trimmedPostcode }
+      }));
+
+      // Then navigate
       console.log('🚀 Navigating to map with postcode:', trimmedPostcode);
-      // Navigate first
       navigate('/map', { 
         state: { postcode: trimmedPostcode },
         replace: true
       });
-
-      // Brief delay before dispatching events to ensure navigation is complete
-      setTimeout(() => {
-        console.log('🔔 Dispatching searchStarted event');
-        window.dispatchEvent(new CustomEvent('searchStarted'));
-        
-        console.log('📨 Dispatching postcodeSearch event:', trimmedPostcode);
-        window.dispatchEvent(new CustomEvent('postcodeSearch', {
-          detail: { postcode: trimmedPostcode }
-        }));
-      }, 100);
 
     } catch (error) {
       console.error('❌ Error during search:', error);
