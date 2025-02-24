@@ -1,3 +1,4 @@
+
 import { MapContainer } from "@/components/map/MapContainer";
 import { Application } from "@/types/planning";
 import { memo } from "react";
