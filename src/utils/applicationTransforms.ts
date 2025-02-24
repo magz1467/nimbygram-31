@@ -8,7 +8,7 @@ export const transformApplicationData = (
   center: LatLngTuple,
   imageUrl = '/placeholder.svg'
 ): Application | null => {
-  console.group(`🔄 Transforming application ${app.application_id}`);
+  console.group(`🔄 Transforming application ${app.id}`);
   console.log('Raw application data:', app);
   
   // Extract coordinates from geometry
@@ -35,13 +35,13 @@ export const transformApplicationData = (
       return null;
     }
   } else {
-    console.warn('⚠️ Missing geometry for application:', app.application_id);
+    console.warn('⚠️ Missing geometry for application:', app.id);
     console.groupEnd();
     return null;
   }
 
   if (!coordinates || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
-    console.warn('⚠️ Invalid coordinates for application:', app.application_id);
+    console.warn('⚠️ Invalid coordinates for application:', app.id);
     console.groupEnd();
     return null;
   }
@@ -50,30 +50,14 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  // Log storybook data for debugging
-  console.log('Storybook data:', {
-    raw: app.storybook,
-    type: typeof app.storybook,
-    header: app.storybook_header
-  });
+  // Get storybook content directly from the raw data
+  const storybook = app.storybook || '';
+  const storybookHeader = app.storybook_header || '';
 
-  // Check if storybook is a string or an object with _type and value
-  let storybook = '';
-  if (typeof app.storybook === 'string') {
-    storybook = app.storybook;
-  } else if (app.storybook && typeof app.storybook === 'object') {
-    if (app.storybook.value && typeof app.storybook.value === 'string') {
-      storybook = app.storybook.value;
-    }
-  }
-
-  // Log impact score data for debugging
-  console.log('Impact Score Data:', {
-    score: app.impact_score,
-    final_score: app.final_impact_score,
-    details: app.impact_score_details,
-    raw_final_score: typeof app.final_impact_score,
-    raw_value: app.final_impact_score
+  console.log('Storybook data for application:', {
+    id: app.id,
+    storybook,
+    storybookHeader
   });
 
   // Parse final_impact_score carefully
@@ -82,18 +66,11 @@ export const transformApplicationData = (
     const parsed = parseFloat(app.final_impact_score);
     if (!isNaN(parsed)) {
       finalImpactScore = Math.round(parsed);
-      console.log('✅ Successfully parsed and rounded final_impact_score:', {
-        original: app.final_impact_score,
-        parsed: parsed,
-        rounded: finalImpactScore
-      });
-    } else {
-      console.warn('⚠️ Failed to parse final_impact_score:', app.final_impact_score);
     }
   }
 
   const application: Application = {
-    id: app.application_id,
+    id: app.id,
     title: app.description || '',
     address: `${app.site_name || ''} ${app.street_name || ''} ${app.locality || ''} ${app.postcode || ''}`.trim(),
     status: app.status || '',
@@ -122,18 +99,14 @@ export const transformApplicationData = (
     class_3: app.class_3 === null || app.class_3 === undefined || app.class_3 === 'undefined' ? 'Miscellaneous' : app.class_3,
     final_impact_score: finalImpactScore,
     engaging_title: app.engaging_title || null,
-    storybook: storybook,
-    storybook_header: app.storybook_header || ''
+    storybook,
+    storybook_header: storybookHeader
   };
 
   console.log('✅ Transformed application:', {
     id: application.id,
     coordinates: application.coordinates,
     distance: application.distance,
-    impact_score: application.impact_score,
-    final_impact_score: application.final_impact_score,
-    class_3: application.class_3,
-    engaging_title: application.engaging_title,
     storybook: application.storybook,
     storybook_header: application.storybook_header
   });

@@ -39,38 +39,23 @@ export const useApplicationsData = () => {
     });
 
     try {
-      // Single RPC call to get both applications and counts
-      const { data, error } = await supabase
-        .rpc('get_applications_with_counts_optimized', {
-          center_lng: center[1],
-          center_lat: center[0],
-          radius_meters: radius,
-          page_size: pageSize,
-          page_number: page
-        });
+      // Query the crystal_roof table directly to get raw data
+      const { data: rawData, error: queryError } = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .order('id');
 
-      if (error) {
-        console.error('Error fetching applications:', error);
-        throw error;
+      if (queryError) {
+        console.error('Error fetching applications:', queryError);
+        throw queryError;
       }
 
-      console.log('Raw response from Supabase:', data);
-
-      if (!data || !data[0]) {
-        console.log('No applications found in response');
-        setApplications([]);
-        setTotalCount(0);
-        return;
-      }
-
-      const { applications: appsData, total_count, status_counts } = data[0];
-
-      console.log('Raw applications data:', appsData);
-      console.log('Applications with storybook:', appsData?.filter(app => app.storybook)?.length);
-      console.log('Sample storybook data:', appsData?.[0]?.storybook);
-
-      const transformedApplications = appsData
-        ?.map(app => transformApplicationData(app, center))
+      // Log raw data from crystal_roof
+      console.log('Raw data from crystal_roof:', rawData);
+      
+      // Transform into the expected format
+      const transformedApplications = rawData
+        .map(app => transformApplicationData(app, center))
         .filter((app): app is Application => app !== null);
 
       console.log('✨ Transformed applications:', {
@@ -80,7 +65,7 @@ export const useApplicationsData = () => {
       });
 
       setApplications(transformedApplications || []);
-      setTotalCount(total_count || 0);
+      setTotalCount(transformedApplications.length || 0);
 
       // Calculate status counts
       const counts = {
