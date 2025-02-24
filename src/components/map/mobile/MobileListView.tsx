@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { Button } from "@/components/ui/button";
 import { Bell, X } from "lucide-react";
@@ -12,7 +13,7 @@ interface MobileListViewProps {
   onSelectApplication: (id: number) => void;
   onShowEmailDialog: () => void;
   hideFilterBar?: boolean;
-  onClose?: () => void;  // Added this prop definition
+  onClose?: () => void;
 }
 
 export const MobileListView = ({
@@ -73,9 +74,13 @@ export const MobileListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-primary truncate">
-                  {app.ai_title || app.description}
+                  {app.storybook_header || (app.category ? (
+                    `${app.category}: ${app.title || ''}`
+                  ) : app.ai_title || app.title || app.description)}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{app.address}</p>
+                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                  {app.storybook || app.description || app.address}
+                </p>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
                   <span className="text-xs text-gray-500">{app.distance}</span>
