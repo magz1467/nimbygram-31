@@ -17,12 +17,7 @@ const MapViewPage = () => {
   const [postcode, setPostcode] = useState<string>(() => {
     const locationPostcode = location.state?.postcode;
     console.log('🏠 Initial postcode from location:', locationPostcode);
-    if (!locationPostcode) {
-      console.log('⚠️ No postcode in location state, using default SW1A 1AA');
-      return "SW1A 1AA";
-    }
-    console.log('✅ Using postcode from location state:', locationPostcode);
-    return locationPostcode;
+    return locationPostcode || "SW1A 1AA"; // Only use default if no postcode in state
   });
   
   const [isSearching, setIsSearching] = useState(false);
@@ -41,10 +36,12 @@ const MapViewPage = () => {
       current: postcode,
       new: newPostcode
     });
-    setPostcode(newPostcode);
-    setIsSearching(true);
-    setSelectedId(null);
-  }, []);
+    if (newPostcode !== postcode) {
+      setPostcode(newPostcode);
+      setIsSearching(true);
+      setSelectedId(null);
+    }
+  }, [postcode]);
 
   // Track mount/unmount for debugging
   useEffect(() => {
@@ -52,7 +49,7 @@ const MapViewPage = () => {
     return () => {
       console.log('👋 MapView unmounting');
     };
-  }, []);
+  }, [postcode]);
 
   // Listen for search start events
   useEffect(() => {
@@ -74,18 +71,17 @@ const MapViewPage = () => {
     
     const handlePostcodeSearch = (event: CustomEvent<{ postcode: string }>) => {
       const newPostcode = event.detail.postcode;
+      console.log('📨 Received postcodeSearch event:', {
+        current: postcode,
+        new: newPostcode
+      });
       if (newPostcode && newPostcode !== postcode) {
-        console.log('📨 New postcode received:', {
-          current: postcode,
-          new: newPostcode
-        });
         handlePostcodeUpdate(newPostcode);
       }
     };
 
     window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     return () => {
-      console.log('🔇 Removing postcodeSearch event listener');
       window.removeEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     };
   }, [postcode, handlePostcodeUpdate]);
@@ -107,7 +103,6 @@ const MapViewPage = () => {
   }, [isLoadingCoordinates, isLoadingApplications, isSearching]);
 
   const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
-  const defaultCoordinates: [number, number] = coordinates || [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('📍 New postcode selected:', newPostcode);
@@ -131,7 +126,7 @@ const MapViewPage = () => {
       applications={filteredApplications}
       selectedId={selectedId}
       postcode={postcode}
-      coordinates={defaultCoordinates}
+      coordinates={coordinates || [51.5074, -0.1278]} // Fallback coordinates if needed
       isLoading={isLoading}
       activeFilters={activeFilters}
       activeSort={activeSort}
@@ -148,4 +143,3 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
-
