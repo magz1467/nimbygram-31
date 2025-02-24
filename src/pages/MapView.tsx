@@ -12,10 +12,14 @@ const MapViewPage = () => {
   const location = useLocation();
   console.log('📍 MapView initial location state:', location.state);
   
-  const [postcode, setPostcode] = useState(() => {
-    const initialPostcode = location.state?.postcode || "SW1A 1AA";
-    console.log('🏠 Setting initial postcode:', initialPostcode);
-    return initialPostcode;
+  // Only use Westminster as fallback if there's no postcode in location state
+  const [postcode, setPostcode] = useState<string>(() => {
+    if (!location.state?.postcode) {
+      console.log('⚠️ No postcode in location state, using default');
+      return "SW1A 1AA";
+    }
+    console.log('🏠 Using postcode from location state:', location.state.postcode);
+    return location.state.postcode;
   });
   
   const [isSearching, setIsSearching] = useState(!!location.state?.postcode);
@@ -45,14 +49,18 @@ const MapViewPage = () => {
       const newPostcode = event.detail.postcode;
       console.log('📨 Received postcodeSearch event:', newPostcode);
       console.log('Current postcode:', postcode);
-      setPostcode(newPostcode);
+      if (newPostcode && newPostcode !== postcode) {
+        console.log('🔄 Updating postcode to:', newPostcode);
+        setPostcode(newPostcode);
+        setIsSearching(true);
+      }
     };
 
     window.addEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     return () => {
       window.removeEventListener('postcodeSearch', handlePostcodeSearch as EventListener);
     };
-  }, []);
+  }, [postcode]);
 
   // Reset search state when loading is complete
   useEffect(() => {
@@ -64,17 +72,21 @@ const MapViewPage = () => {
 
   // Reset selected application when postcode changes
   useEffect(() => {
-    console.log('🔄 Postcode changed, resetting selected application');
+    console.log('🔄 Postcode changed to:', postcode);
     setSelectedId(null);
   }, [postcode]);
 
   const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
+  
+  // Only use coordinates from postcode search, fallback to London if none available
   const defaultCoordinates: [number, number] = coordinates || [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('📍 New postcode selected:', newPostcode);
-    setPostcode(newPostcode);
-    setIsSearching(true);
+    if (newPostcode !== postcode) {
+      setPostcode(newPostcode);
+      setIsSearching(true);
+    }
   };
 
   console.log('🎯 MapView rendering with:', {
@@ -111,3 +123,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+
