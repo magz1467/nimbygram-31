@@ -1,4 +1,3 @@
-
 export interface Application {
   id: number;
   title?: string;
@@ -52,7 +51,9 @@ export interface Application {
     yimby?: number;
     nimby?: number;
   };
-  category?: string;  // Added this line to define the category property
+  category?: string;
+  received?: string;
+  decision?: string;
 }
 
 export interface Comment {

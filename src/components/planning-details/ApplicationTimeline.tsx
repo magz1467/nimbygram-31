@@ -54,23 +54,24 @@ export const ApplicationTimeline = ({ application }: ApplicationTimelineProps) =
   const getStages = (): TimelineStage[] => {
     const today = new Date();
     
-    const validDate = application.received ? 
-      parse(application.received, 'dd/MM/yyyy', new Date()) : null;
+    const submissionDate = application.received || application.valid_date;
+    const validDate = submissionDate ? 
+      parse(submissionDate, 'dd/MM/yyyy', new Date()) : null;
     
     const consultationEnd = application.last_date_consultation_comments ? 
       parse(application.last_date_consultation_comments, 'dd/MM/yyyy', new Date()) : null;
     
-    const decisionDate = application.decision ? 
-      parse(application.decision, 'dd/MM/yyyy', new Date()) : null;
+    const decisionDate = application.decision || application.decisionDue ? 
+      parse(application.decision || application.decisionDue || '', 'dd/MM/yyyy', new Date()) : null;
 
     const decisionStatus = getDecisionStatus(application.status);
 
     return [
       {
         label: "Submitted",
-        date: application.received,
+        date: submissionDate,
         status: validDate && isValid(validDate) && validDate < today ? 'completed' : 'upcoming',
-        tooltip: `Application submitted on ${formatDate(application.received)}`
+        tooltip: `Application submitted on ${formatDate(submissionDate)}`
       },
       {
         label: "Consultation",
@@ -82,11 +83,11 @@ export const ApplicationTimeline = ({ application }: ApplicationTimelineProps) =
       },
       {
         label: "Decision Due",
-        date: application.decision,
+        date: application.decision || application.decisionDue,
         status: decisionDate ? 
           (isValid(decisionDate) && decisionDate < today ? 'completed' : 'upcoming') : 'upcoming',
-        tooltip: application.decision ? 
-          `Decision due by ${formatDate(application.decision)}` :
+        tooltip: application.decision || application.decisionDue ? 
+          `Decision due by ${formatDate(application.decision || application.decisionDue)}` :
           'Decision upcoming',
         decisionStatus
       }
