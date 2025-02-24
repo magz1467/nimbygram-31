@@ -28,7 +28,16 @@ export const MobileListView = ({
   const [showAlerts, setShowAlerts] = useState(true);
 
   // Filter applications to only show those with storybook content
-  const filteredApplications = applications.filter(app => app.storybook !== null);
+  const filteredApplications = applications.filter(app => {
+    console.log('Application storybook content:', {
+      id: app.id,
+      storybook: app.storybook,
+      header: app.storybook_header
+    });
+    return app.storybook !== null && app.storybook !== undefined && app.storybook.trim() !== '';
+  });
+
+  console.log('Filtered applications count:', filteredApplications.length);
 
   return (
     <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
@@ -73,18 +82,20 @@ export const MobileListView = ({
                   image={app.image}
                   title={app.title || app.description || ''}
                   applicationId={app.id}
+                  coordinates={app.coordinates}
+                  class_3={app.category}
                 />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-primary">
                   {app.storybook_header || ''}
                 </h3>
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
                   {app.storybook}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
-                  <span className="text-xs text-gray-500">{app.distance}</span>
+                  {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
                 </div>
               </div>
             </div>

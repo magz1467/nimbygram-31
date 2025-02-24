@@ -38,7 +38,16 @@ export const ApplicationListView = ({
   onClose
 }: ApplicationListViewProps) => {
   // Filter applications to only show those with storybook content
-  const filteredApplications = applications.filter(app => app.storybook !== null);
+  const filteredApplications = applications.filter(app => {
+    console.log('Application storybook content:', {
+      id: app.id,
+      storybook: app.storybook,
+      header: app.storybook_header
+    });
+    return app.storybook !== null && app.storybook !== undefined && app.storybook.trim() !== '';
+  });
+
+  console.log('Filtered applications count:', filteredApplications.length);
 
   return (
     <div className="h-full flex flex-col">
@@ -70,7 +79,7 @@ export const ApplicationListView = ({
                 <div className="font-semibold text-primary">
                   {app.storybook_header || ''}
                 </div>
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
                   {app.storybook}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
