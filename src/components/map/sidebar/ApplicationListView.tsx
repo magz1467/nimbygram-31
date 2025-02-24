@@ -65,13 +65,7 @@ export const ApplicationListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-primary">
-                  {app.storybook_header || (app.category ? (
-                    <>
-                      <span className="text-primary">{app.category}</span>
-                      <span className="text-gray-600">: </span>
-                      <span className="text-primary">{app.title || ''}</span>
-                    </>
-                  ) : app.ai_title || app.title || app.description)}
+                  {app.storybook_header || ''}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {app.storybook || app.description || app.address}
@@ -96,4 +90,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
