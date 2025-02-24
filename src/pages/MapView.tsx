@@ -11,7 +11,7 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 const MapViewPage = () => {
   const location = useLocation();
   const [postcode, setPostcode] = useState(location.state?.postcode || "SW1A 1AA");
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(location.state?.postcode ? true : false);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
   const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
@@ -19,8 +19,9 @@ const MapViewPage = () => {
 
   // Listen for search start events
   useEffect(() => {
+    console.log('Setting up searchStarted event listener');
     const handleSearchStart = () => {
-      console.log('Search started event received');
+      console.log('Search started event received, setting isSearching to true');
       setIsSearching(true);
     };
 
@@ -32,6 +33,7 @@ const MapViewPage = () => {
 
   // Listen for postcode search events
   useEffect(() => {
+    console.log('Setting up postcodeSearch event listener');
     const handlePostcodeSearch = (event: CustomEvent<{ postcode: string }>) => {
       console.log('Received postcode search event:', event.detail.postcode);
       setPostcode(event.detail.postcode);
@@ -45,10 +47,11 @@ const MapViewPage = () => {
 
   // Reset search state when loading is complete
   useEffect(() => {
-    if (!isLoadingCoordinates && !isLoadingApplications) {
+    if (!isLoadingCoordinates && !isLoadingApplications && isSearching) {
+      console.log('Loading complete, resetting search state');
       setIsSearching(false);
     }
-  }, [isLoadingCoordinates, isLoadingApplications]);
+  }, [isLoadingCoordinates, isLoadingApplications, isSearching]);
 
   // Reset selected application when postcode changes
   useEffect(() => {
@@ -61,6 +64,7 @@ const MapViewPage = () => {
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('New postcode selected:', newPostcode);
     setPostcode(newPostcode);
+    setIsSearching(true);
   };
 
   console.log('🎯 MapContent rendering stats:', {
@@ -79,13 +83,16 @@ const MapViewPage = () => {
     }))
   });
 
+  const isLoading = isLoadingCoordinates || isLoadingApplications || isSearching;
+  console.log('Loading state:', { isLoadingCoordinates, isLoadingApplications, isSearching, isLoading });
+
   return (
     <MapViewLayout
       applications={filteredApplications}
       selectedId={selectedId}
       postcode={postcode}
       coordinates={coordinates || defaultCoordinates}
-      isLoading={isLoadingCoordinates || isLoadingApplications || isSearching}
+      isLoading={isLoading}
       activeFilters={activeFilters}
       activeSort={activeSort}
       onPostcodeSelect={handlePostcodeSelect}
