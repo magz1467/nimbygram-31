@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -49,12 +50,20 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  if (app.application_details && typeof app.application_details === 'object') {
-    const details = app.application_details as any;
-    if (details.images && Array.isArray(details.images) && details.images.length > 0) {
-      const imgUrl = details.images[0];
-      imageUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/images/${imgUrl}`;
-      console.log('🖼️ Image URL processed:', imageUrl);
+  // Log storybook data for debugging
+  console.log('Storybook data:', {
+    raw: app.storybook,
+    type: typeof app.storybook,
+    header: app.storybook_header
+  });
+
+  // Check if storybook is a string or an object with _type and value
+  let storybook = '';
+  if (typeof app.storybook === 'string') {
+    storybook = app.storybook;
+  } else if (app.storybook && typeof app.storybook === 'object') {
+    if (app.storybook.value && typeof app.storybook.value === 'string') {
+      storybook = app.storybook.value;
     }
   }
 
@@ -112,7 +121,9 @@ export const transformApplicationData = (
     centroid: app.centroid || null,
     class_3: app.class_3 === null || app.class_3 === undefined || app.class_3 === 'undefined' ? 'Miscellaneous' : app.class_3,
     final_impact_score: finalImpactScore,
-    engaging_title: app.engaging_title || null
+    engaging_title: app.engaging_title || null,
+    storybook: storybook,
+    storybook_header: app.storybook_header || ''
   };
 
   console.log('✅ Transformed application:', {
@@ -122,7 +133,9 @@ export const transformApplicationData = (
     impact_score: application.impact_score,
     final_impact_score: application.final_impact_score,
     class_3: application.class_3,
-    engaging_title: application.engaging_title
+    engaging_title: application.engaging_title,
+    storybook: application.storybook,
+    storybook_header: application.storybook_header
   });
   console.groupEnd();
   return application;

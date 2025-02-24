@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,8 +54,10 @@ export const useApplicationsData = () => {
         throw error;
       }
 
+      console.log('Raw response from Supabase:', data);
+
       if (!data || !data[0]) {
-        console.log('No applications found');
+        console.log('No applications found in response');
         setApplications([]);
         setTotalCount(0);
         return;
@@ -62,21 +65,19 @@ export const useApplicationsData = () => {
 
       const { applications: appsData, total_count, status_counts } = data[0];
 
-      console.log(`📦 Raw applications data:`, appsData?.map(app => ({
-        id: app.id,
-        class_3: app.class_3,
-        title: app.title
-      })));
+      console.log('Raw applications data:', appsData);
+      console.log('Applications with storybook:', appsData?.filter(app => app.storybook)?.length);
+      console.log('Sample storybook data:', appsData?.[0]?.storybook);
 
       const transformedApplications = appsData
         ?.map(app => transformApplicationData(app, center))
         .filter((app): app is Application => app !== null);
 
-      console.log('✨ Transformed applications:', transformedApplications?.map(app => ({
-        id: app.id,
-        class_3: app.class_3,
-        title: app.title
-      })));
+      console.log('✨ Transformed applications:', {
+        total: transformedApplications?.length,
+        withStorybook: transformedApplications?.filter(app => app.storybook)?.length,
+        sampleStorybook: transformedApplications?.[0]?.storybook
+      });
 
       setApplications(transformedApplications || []);
       setTotalCount(total_count || 0);
@@ -89,7 +90,7 @@ export const useApplicationsData = () => {
         'Other': 0
       };
 
-      transformedApplications.forEach(app => {
+      transformedApplications?.forEach(app => {
         const status = app.status.toLowerCase();
         if (status.includes('under consideration')) {
           counts['Under Review']++;
@@ -107,7 +108,6 @@ export const useApplicationsData = () => {
 
     } catch (error: any) {
       console.error('Failed to fetch applications:', error);
-      // Show more detailed error information
       console.error('Error details:', {
         message: error.message,
         details: error.details,
