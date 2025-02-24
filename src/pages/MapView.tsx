@@ -11,7 +11,7 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 const MapViewPage = () => {
   const location = useLocation();
   const [postcode, setPostcode] = useState(location.state?.postcode || "SW1A 1AA");
-  const [isSearching, setIsSearching] = useState(location.state?.postcode ? true : false);
+  const [isSearching, setIsSearching] = useState(!!location.state?.postcode);
   const { activeFilters, activeSort, isMapView, handleFilterChange, handleSortChange } = useFilterSortState();
   const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
   const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
@@ -59,7 +59,7 @@ const MapViewPage = () => {
   }, [postcode]);
 
   const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
-  const defaultCoordinates: [number, number] = [51.5074, -0.1278];
+  const defaultCoordinates: [number, number] = coordinates || [51.5074, -0.1278];
 
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('New postcode selected:', newPostcode);
@@ -91,7 +91,7 @@ const MapViewPage = () => {
       applications={filteredApplications}
       selectedId={selectedId}
       postcode={postcode}
-      coordinates={coordinates || defaultCoordinates}
+      coordinates={defaultCoordinates}
       isLoading={isLoading}
       activeFilters={activeFilters}
       activeSort={activeSort}
@@ -108,3 +108,4 @@ const MapViewPage = () => {
 };
 
 export default MapViewPage;
+
