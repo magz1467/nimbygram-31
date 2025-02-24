@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import {
   Collapsible,
@@ -29,7 +30,7 @@ export const CollapsibleApplicationDetails = ({
       <CollapsibleContent className="space-y-4 pt-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="text-gray-500">Reference</div>
-          <div>{application.reference}</div>
+          <div>{application.reference || application.id?.toString() || 'Not available'}</div>
 
           <div className="text-gray-500">Status</div>
           <div>{application.status}</div>
