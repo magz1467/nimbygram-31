@@ -27,14 +27,15 @@ export const MobileListView = ({
 }: MobileListViewProps) => {
   const [showAlerts, setShowAlerts] = useState(true);
 
-  // Filter applications to only show those with storybook content
+  // Filter applications to only show those with valid storybook content
   const filteredApplications = applications.filter(app => {
+    const storybook = typeof app.storybook === 'string' ? app.storybook : '';
     console.log('Application storybook content:', {
       id: app.id,
-      storybook: app.storybook,
+      storybook: storybook,
       header: app.storybook_header
     });
-    return app.storybook !== null && app.storybook !== undefined && app.storybook.trim() !== '';
+    return storybook.trim() !== '';
   });
 
   console.log('Filtered applications count:', filteredApplications.length);
@@ -91,7 +92,7 @@ export const MobileListView = ({
                   {app.storybook_header || ''}
                 </h3>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.storybook}
+                  {typeof app.storybook === 'string' ? app.storybook : ''}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
@@ -105,4 +106,3 @@ export const MobileListView = ({
     </div>
   );
 };
-

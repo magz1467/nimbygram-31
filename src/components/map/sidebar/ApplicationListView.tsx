@@ -37,14 +37,15 @@ export const ApplicationListView = ({
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
-  // Filter applications to only show those with storybook content
+  // Filter applications to only show those with valid storybook content
   const filteredApplications = applications.filter(app => {
+    const storybook = typeof app.storybook === 'string' ? app.storybook : '';
     console.log('Application storybook content:', {
       id: app.id,
-      storybook: app.storybook,
+      storybook: storybook,
       header: app.storybook_header
     });
-    return app.storybook !== null && app.storybook !== undefined && app.storybook.trim() !== '';
+    return storybook.trim() !== '';
   });
 
   console.log('Filtered applications count:', filteredApplications.length);
@@ -80,7 +81,7 @@ export const ApplicationListView = ({
                   {app.storybook_header || ''}
                 </div>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.storybook}
+                  {typeof app.storybook === 'string' ? app.storybook : ''}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
@@ -102,4 +103,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
