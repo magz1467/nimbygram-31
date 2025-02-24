@@ -73,14 +73,14 @@ export const MobileListView = ({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-primary truncate">
+                <h3 className="font-semibold text-primary">
                   {app.storybook_header || (app.category ? (
                     `${app.category}: ${app.title || ''}`
                   ) : app.ai_title || app.title || app.description)}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-600 mt-1">
                   {app.storybook || app.description || app.address}
-                </p>
+                </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
                   <span className="text-xs text-gray-500">{app.distance}</span>
@@ -93,3 +93,4 @@ export const MobileListView = ({
     </div>
   );
 };
+

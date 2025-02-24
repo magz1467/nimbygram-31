@@ -64,18 +64,18 @@ export const ApplicationListView = ({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-primary mb-1">
+                <div className="font-semibold text-primary">
                   {app.storybook_header || (app.category ? (
                     <>
                       <span className="text-primary">{app.category}</span>
                       <span className="text-gray-600">: </span>
-                      <span className="text-primary">{app.title || app.description}</span>
+                      <span className="text-primary">{app.title || ''}</span>
                     </>
-                  ) : app.title || app.description)}
+                  ) : app.ai_title || app.title || app.description)}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-600 mt-1">
                   {app.storybook || app.description || app.address}
-                </p>
+                </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
                     status={app.status}
@@ -96,3 +96,4 @@ export const ApplicationListView = ({
     </div>
   );
 };
+
