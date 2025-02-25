@@ -53,11 +53,23 @@ export const formatStorybook = (content: string | null) => {
   // Format bold text
   bodyContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  // Clean up whitespace and line breaks
+  // Format section headers (like "The Details:", "What's next:")
+  bodyContent = bodyContent.replace(/([A-Za-z\s]+:)(\s*)/g, '<strong>$1</strong>$2');
+
+  // Add spacing after section headers and between paragraphs
   bodyContent = bodyContent
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/^\s+|\s+$/gm, '')
+    .replace(/<\/strong>\s*/g, '</strong><br/>')
+    .replace(/\n{3,}/g, '\n\n')  // Replace multiple line breaks with double line break
+    .replace(/\n/g, '<br/>')     // Convert remaining line breaks to <br/>
+    .replace(/<br\/><br\/>/g, '</p><p>') // Convert double breaks to paragraphs
+    .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of lines
     .trim();
+
+  // Wrap content in paragraphs if not already wrapped
+  if (!bodyContent.startsWith('<p>')) {
+    bodyContent = `<p>${bodyContent}</p>`;
+  }
 
   return { header, content: bodyContent };
 };
+
