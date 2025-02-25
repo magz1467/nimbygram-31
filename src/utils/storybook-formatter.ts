@@ -9,45 +9,43 @@ export const formatStorybook = (content: string | null) => {
   // Get content without the header tags
   let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
   
-  // If there's a header, remove it and any variations from the content
+  // If there's a header, remove all variations of it from the content
   if (header) {
-    // Create a base version of the header by removing formatting
-    const baseHeader = header.replace(/\[|\]|\{|\}|\(|\)|#|\*/g, '').trim();
+    // Create a base version of the header by removing all formatting
+    const baseHeader = header
+      .replace(/\[|\]|\{|\}|\(|\)|#|\*|🏗️|🏘️|👷‍♂️|👨‍👩‍👧‍👦|📏/g, '')
+      .replace(/(?:What'?s the [Dd]eal:?|The Deal:?)\s*/g, '')
+      .trim();
     
-    // Create an array of possible header variations to remove
-    const headerVariations = [
-      header,
-      `[${header}]`,
-      `[${baseHeader}]`,
-      `What's the Deal: ${header}`,
-      `What's the deal: ${header}`,
-      `Whats the Deal: ${header}`,
-      `Whats the deal: ${header}`,
-      baseHeader,
-      // Add color-formatted versions
-      `\\[.*?\\]\\(${baseHeader}\\)`,
-      // Add markdown-style headers
-      `#\\s*${baseHeader}`,
-      `##\\s*${baseHeader}`,
-      // Add any HTML-like formatting
-      `<[^>]*>${baseHeader}<\\/[^>]*>`,
+    // Create regex patterns for different variations
+    const patterns = [
+      // Exact matches with optional whitespace
+      `^\\s*${header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
+      // Base header with optional formatting characters
+      `^\\s*[\\[\\{]*\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*[\\]\\}]*\\s*`,
+      // "What's the Deal" variations
+      `^\\s*(?:What'?s the [Dd]eal:?|The Deal:?)\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
+      // Markdown headers
+      `^\\s*#{1,3}\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
+      // HTML-like tags
+      `<[^>]*>${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}<\\/[^>]*>`,
+      // Color formatting
+      `\\[.*?\\]\\(${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\)`
     ];
 
-    // Remove each variation from the start of the content
-    headerVariations.forEach(variant => {
-      if (!variant) return;
+    // Apply each pattern
+    patterns.forEach(pattern => {
       try {
-        // Create a case-insensitive regex that matches the variant at the start or anywhere in the text
-        const regex = new RegExp(`(^\\s*|\\n\\s*)${variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gi');
+        const regex = new RegExp(pattern, 'gmi');
         bodyContent = bodyContent.replace(regex, '');
       } catch (e) {
-        console.error('Error with regex:', e);
+        console.error('Error with regex pattern:', pattern, e);
       }
     });
   }
 
-  // Remove any remaining markdown heading indicators
-  bodyContent = bodyContent.replace(/^##?\s*/gm, '');
+  // Remove any remaining markdown headers
+  bodyContent = bodyContent.replace(/^#{1,3}\s+/gm, '');
 
   // Convert asterisk list items to bullet points
   bodyContent = bodyContent.replace(/^\*\s/gm, '• ');
@@ -55,9 +53,10 @@ export const formatStorybook = (content: string | null) => {
   // Format bold text
   bodyContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  // Clean up any double line breaks or extra whitespace
+  // Clean up whitespace and line breaks
   bodyContent = bodyContent
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\s+|\s+$/gm, '')
     .trim();
 
   return { header, content: bodyContent };
