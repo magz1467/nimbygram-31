@@ -33,19 +33,27 @@ const formatStorybook = (content: string | null) => {
 
   // Extract header if it exists
   const headerMatch = content.match(/<header>(.*?)<\/header>/);
-  let header = headerMatch ? headerMatch[1].replace(/[\[\]]/g, '').trim() : null;
+  const header = headerMatch ? headerMatch[1].trim() : null;
   
-  // Remove header tags and content from the main content
+  // Get content without the header tags
   let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
 
-  // Remove any occurrence of the header from the start of the content
   if (header) {
-    // Escape special characters in the header for regex
-    const escapedHeader = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Remove the header if it appears at the start (case insensitive)
-    bodyContent = bodyContent.replace(new RegExp(`^${escapedHeader}`, 'i'), '').trim();
-    // Also try removing with "What's the Deal:" prefix
-    bodyContent = bodyContent.replace(new RegExp(`^What's the Deal:\\s*${escapedHeader}`, 'i'), '').trim();
+    // Create an array of possible header variations to remove
+    const headerVariations = [
+      header,
+      `What's the Deal: ${header}`,
+      `What's the deal: ${header}`,
+      `Whats the Deal: ${header}`,
+      `Whats the deal: ${header}`,
+    ];
+
+    // Remove each variation from the start of the content
+    headerVariations.forEach(variant => {
+      // Create a case-insensitive regex that matches the variant at the start
+      const regex = new RegExp(`^\\s*${variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'i');
+      bodyContent = bodyContent.replace(regex, '');
+    });
   }
 
   // Remove markdown heading indicators (##)
@@ -57,7 +65,7 @@ const formatStorybook = (content: string | null) => {
   // Format bold text
   const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  return { header, content: formattedContent };
+  return { header, content: formattedContent.trim() };
 };
 
 export const ApplicationListView = ({
