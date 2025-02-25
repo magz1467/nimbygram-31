@@ -25,11 +25,16 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const { data: rawData, error: rawError } = await supabase
           .from('crystal_roof')
-          .select('*');
+          .select(`
+            *,
+            storybook,
+            storybook_header
+          `);
 
         console.log('📊 Raw query response:', {
           totalRecords: rawData?.length,
           firstRecord: rawData?.[0],
+          sampleStorybook: rawData?.[0]?.storybook,
           wendoverCount: rawData?.filter(r => r.ward_name?.includes('Wendover')).length,
           uniqueWards: [...new Set(rawData?.map(r => r.ward_name))]
         });
@@ -89,7 +94,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
               console.log(`🗺️ Processing coordinates for item ${item.id} (${item.ward_name}):`, {
                 original: item.geometry.coordinates,
                 transformed: coordinates,
-                ward: item.ward_name
+                ward: item.ward_name,
+                storybook: item.storybook
               });
             }
           } catch (err) {
@@ -126,7 +132,9 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             centroid: item.centroid,
             impact_score: item.impact_score,
             impact_score_details: item.impact_score_details,
-            impacted_services: item.impacted_services
+            impacted_services: item.impacted_services,
+            storybook: item.storybook || null,
+            storybook_header: item.storybook_header || null
           };
 
           return result;
@@ -135,7 +143,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         console.log('📊 Post-transform statistics:', {
           totalApplications: transformedData?.length,
           wendoverApplications: transformedData?.filter(app => app.ward?.includes('Wendover')).length,
-          sampleWendover: transformedData?.filter(app => app.ward?.includes('Wendover')).slice(0, 3)
+          sampleStorybook: transformedData?.[0]?.storybook,
+          sampleApplication: transformedData?.[0]
         });
 
         if (!transformedData?.length) {
