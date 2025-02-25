@@ -44,6 +44,9 @@ const formatStorybook = (content: string | null) => {
     bodyContent = bodyContent.replace(headerRegex, '').trim();
   }
 
+  // Remove markdown heading indicators (##)
+  bodyContent = bodyContent.replace(/^##\s*/gm, '');
+
   // Format bold text
   const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
