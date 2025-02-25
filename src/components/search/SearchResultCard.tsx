@@ -84,7 +84,7 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
                   .split('The Details:')[1]
                   ?.split('Considerations:')[0]
                   .split('•')
-                  .filter(Boolean)
+                  .filter(detail => detail.trim().length > 0) // Filter out empty details
                   .map((detail, index) => (
                     <div key={index} className="flex gap-2 items-start">
                       <div className="w-2 h-2 rounded-full bg-primary mt-2" />
@@ -131,3 +131,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
