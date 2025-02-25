@@ -13,34 +13,32 @@ export const formatStorybook = (content: string | null) => {
   if (header) {
     // Create a base version of the header by removing all formatting
     const baseHeader = header
-      .replace(/\[|\]|\{|\}|\(|\)|#|\*|🏗️|🏘️|👷‍♂️|👨‍👩‍👧‍👦|📏/g, '')
-      .replace(/(?:What'?s the [Dd]eal:?|The Deal:?)\s*/g, '')
+      .replace(/[📝🏗️🏘️👷‍♂️👨‍👩‍👧‍👦📏\[\]{}()#*]/g, '') // Remove all emojis and formatting chars
+      .replace(/^[📝🏗️🏘️👷‍♂️👨‍👩‍👧‍👦📏]/g, '') // Remove leading emojis
+      .replace(/(?:What'?s the [Dd]eal:?|The Deal:?)\s*/g, '') // Remove "What's the Deal:" variations
       .trim();
     
-    // Create regex patterns for different variations
+    // Create regex patterns for different header variations
     const patterns = [
-      // Exact matches with optional whitespace
-      `^\\s*${header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
-      // Base header with optional formatting characters
-      `^\\s*[\\[\\{]*\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*[\\]\\}]*\\s*`,
-      // "What's the Deal" variations
-      `^\\s*(?:What'?s the [Dd]eal:?|The Deal:?)\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
-      // Markdown headers
-      `^\\s*#{1,3}\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`,
-      // HTML-like tags
-      `<[^>]*>${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}<\\/[^>]*>`,
-      // Color formatting
-      `\\[.*?\\]\\(${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\)`
+      // Full title with formatting
+      new RegExp(`^\\s*${header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
+      // Title without emojis or formatting
+      new RegExp(`^\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
+      // Title with "What's the Deal:" prefix
+      new RegExp(`^\\s*(?:What'?s the [Dd]eal:?|The Deal:?)\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
+      // Title with markdown headers
+      new RegExp(`^\\s*#{1,3}\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
+      // Title with brackets or parentheses
+      new RegExp(`^\\s*[\\[\\{\\(]\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*[\\]\\}\\)]\\s*`, 'gmi'),
+      // Title with HTML-like tags
+      new RegExp(`<[^>]*>${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}<\\/[^>]*>`, 'gmi'),
+      // Title as a link
+      new RegExp(`\\[.*?\\]\\(${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\)`, 'gmi')
     ];
 
     // Apply each pattern
     patterns.forEach(pattern => {
-      try {
-        const regex = new RegExp(pattern, 'gmi');
-        bodyContent = bodyContent.replace(regex, '');
-      } catch (e) {
-        console.error('Error with regex pattern:', pattern, e);
-      }
+      bodyContent = bodyContent.replace(pattern, '');
     });
   }
 
@@ -56,20 +54,24 @@ export const formatStorybook = (content: string | null) => {
   // Format section headers (like "The Details:", "What's next:")
   bodyContent = bodyContent.replace(/([A-Za-z\s]+:)(\s*)/g, '<strong>$1</strong>$2');
 
-  // Add spacing after section headers and between paragraphs
-  bodyContent = bodyContent
-    .replace(/<\/strong>\s*/g, '</strong><br/>')
-    .replace(/\n{3,}/g, '\n\n')  // Replace multiple line breaks with double line break
-    .replace(/\n/g, '<br/>')     // Convert remaining line breaks to <br/>
-    .replace(/<br\/><br\/>/g, '</p><p>') // Convert double breaks to paragraphs
-    .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of lines
-    .trim();
+  // Clean up excess whitespace before processing line breaks
+  bodyContent = bodyContent.replace(/\s+/g, ' ').trim();
 
-  // Wrap content in paragraphs if not already wrapped
+  // Format paragraphs and line breaks
+  bodyContent = bodyContent
+    .split(/\n{2,}/)
+    .map(para => para.trim())
+    .filter(para => para)
+    .map(para => `<p>${para}</p>`)
+    .join('');
+
+  // Handle single line breaks within paragraphs
+  bodyContent = bodyContent.replace(/\n/g, '<br/>');
+
+  // Ensure content is wrapped in paragraphs
   if (!bodyContent.startsWith('<p>')) {
     bodyContent = `<p>${bodyContent}</p>`;
   }
 
   return { header, content: bodyContent };
 };
-
