@@ -38,9 +38,12 @@ const formatStorybook = (content: string | null) => {
   // Remove header from content if it exists
   let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
 
-  // Remove duplicate header from the beginning of content if it exists
+  // Remove duplicate header from the beginning if it exists
   if (header) {
-    bodyContent = bodyContent.replace(new RegExp(`^${header}\\s*`), '');
+    // Escape all special regex characters in the header
+    const escapedHeader = header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    // Only remove if it's at the start of the content
+    bodyContent = bodyContent.replace(new RegExp(`^${escapedHeader}`), '').trim();
   }
 
   // Remove markdown heading indicators (##)
@@ -132,4 +135,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
