@@ -10,13 +10,18 @@ export const transformApplicationData = (
 ): Application | null => {
   console.group(`🔄 Transforming application ${app.id}`);
   console.log('Raw application data:', JSON.stringify(app, null, 2));
+  console.log('Raw storybook:', {
+    value: app.storybook,
+    type: typeof app.storybook,
+    length: app.storybook?.length,
+    firstChars: app.storybook?.substring(0, 100)
+  });
   
   // Extract coordinates from geometry
   let coordinates: [number, number] | null = null;
   
   if (app.geom) {
     try {
-      // Handle both GeoJSON and raw coordinate formats
       if (typeof app.geom === 'object' && app.geom.type === 'Point') {
         coordinates = [
           parseFloat(app.geom.coordinates[1]),
@@ -53,7 +58,6 @@ export const transformApplicationData = (
   // Process storybook content with detailed logging
   console.group('📖 Processing storybook content');
   
-  // Simple text column handling
   const storybookContent = app.storybook || '';
   const storybookHeader = app.storybook_header || '';
 
@@ -61,7 +65,8 @@ export const transformApplicationData = (
     raw: app.storybook,
     content: storybookContent,
     header: storybookHeader,
-    contentLength: storybookContent.length
+    contentLength: storybookContent.length,
+    contentPreview: storybookContent.substring(0, 100)
   });
   console.groupEnd();
 
@@ -108,15 +113,15 @@ export const transformApplicationData = (
     storybook_header: storybookHeader
   };
 
-  console.log('✅ Transformed application:', {
+  console.log('✅ Final application object:', {
     id: application.id,
     coordinates: application.coordinates,
     distance: application.distance,
     storybook_present: !!application.storybook,
     storybook_length: application.storybook?.length || 0,
+    storybook_content: application.storybook?.substring(0, 100),
     storybook_header: application.storybook_header
   });
   console.groupEnd();
   return application;
 };
-
