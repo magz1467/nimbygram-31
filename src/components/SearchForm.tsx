@@ -77,9 +77,9 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         detail: { postcode: trimmedPostcode }
       }));
 
-      // Then navigate
-      console.log('🚀 Navigating to map with postcode:', trimmedPostcode);
-      navigate('/map', { 
+      // Then navigate to search-results instead of map
+      console.log('🚀 Navigating to search-results with postcode:', trimmedPostcode);
+      navigate('/search-results', { 
         state: { postcode: trimmedPostcode },
         replace: true
       });

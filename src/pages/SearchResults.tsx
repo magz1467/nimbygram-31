@@ -10,14 +10,19 @@ import { FilterBar } from "@/components/FilterBar";
 import { useEffect, useState } from "react";
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
+import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
+import { useLocation } from "react-router-dom";
 
 const SearchResultsPage = () => {
+  const location = useLocation();
+  const initialPostcode = location.state?.postcode;
+
   const {
     postcode,
     coordinates,
     isLoadingCoords,
     handlePostcodeSelect,
-  } = useSearchState();
+  } = useSearchState(initialPostcode);
 
   const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
   const [isLoadingInteresting, setIsLoadingInteresting] = useState(true);
@@ -96,6 +101,7 @@ const SearchResultsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {isLoading && <LoadingOverlay />}
       <Header />
       <SearchSection
         onPostcodeSelect={handlePostcodeSelect}
@@ -142,4 +148,3 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
-
