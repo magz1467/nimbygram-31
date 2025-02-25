@@ -93,9 +93,9 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
               <h3 className="font-semibold text-gray-900">Key Details</h3>
               <div className="grid gap-4">
                 {getKeyDetails(storybook.content).map((detail, index) => (
-                  <div key={index} className="flex gap-2 items-start">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                    <p className="text-gray-700">{parseHtmlContent(detail)}</p>
+                  <div key={index} className="flex gap-3 items-start">
+                    <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <p className="text-gray-700 flex-1">{parseHtmlContent(detail)}</p>
                   </div>
                 ))}
               </div>
