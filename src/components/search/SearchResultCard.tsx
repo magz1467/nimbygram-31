@@ -13,6 +13,13 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
   const navigate = useNavigate();
   const storybook = formatStorybook(application.storybook);
 
+  console.log('SearchResultCard - Application:', {
+    id: application.id,
+    title: application.title,
+    streetview_url: application.streetview_url,
+    type: typeof application.streetview_url
+  });
+
   const handleSeeOnMap = () => {
     navigate('/map', {
       state: {
