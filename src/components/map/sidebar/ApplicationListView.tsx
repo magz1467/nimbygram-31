@@ -28,6 +28,22 @@ interface ApplicationListViewProps {
   onClose?: () => void;
 }
 
+const formatStorybook = (content: string | null) => {
+  if (!content) return null;
+
+  // Extract header if it exists
+  const headerMatch = content.match(/<header>(.*?)<\/header>/);
+  const header = headerMatch ? headerMatch[1] : null;
+  
+  // Remove header from content if it exists
+  const bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+
+  // Format bold text
+  const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  return { header, content: formattedContent };
+};
+
 export const ApplicationListView = ({
   applications,
   selectedApplication,
@@ -46,47 +62,61 @@ export const ApplicationListView = ({
         />
       )}
       <div className="flex-1 overflow-y-auto">
-        {applications.map((app) => (
-          <div
-            key={app.id}
-            className="py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => onSelectApplication(app.id)}
-          >
-            <div className="flex gap-3">
-              <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                <ImageResolver
-                  imageMapUrl={app.image_map_url}
-                  image={app.image}
-                  title={app.title || app.description || ''}
-                  applicationId={app.id}
-                  coordinates={app.coordinates}
-                  class_3={app.category}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-primary">
-                  {app.title || 'Planning Application'}
-                </div>
-                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed">
-                  {app.storybook || app.description || 'No description available'}
-                </div>
-                <div className="flex flex-col gap-1.5 mt-2">
-                  <ApplicationBadges
-                    status={app.status}
-                    lastDateConsultationComments={app.last_date_consultation_comments}
-                    impactScore={app.final_impact_score}
+        {applications.map((app) => {
+          const storybook = formatStorybook(app.storybook);
+          
+          return (
+            <div
+              key={app.id}
+              className="py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => onSelectApplication(app.id)}
+            >
+              <div className="flex gap-3">
+                <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                  <ImageResolver
+                    imageMapUrl={app.image_map_url}
+                    image={app.image}
+                    title={app.title || app.description || ''}
+                    applicationId={app.id}
+                    coordinates={app.coordinates}
+                    class_3={app.category}
                   />
-                  {app.distance && (
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-gray-500">{app.distance}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {storybook?.header ? (
+                    <h3 className="font-semibold text-primary text-lg mb-2">
+                      {storybook.header}
+                    </h3>
+                  ) : (
+                    <div className="font-semibold text-primary">
+                      {app.title || 'Planning Application'}
                     </div>
                   )}
+                  <div 
+                    className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
+                    dangerouslySetInnerHTML={{ 
+                      __html: storybook?.content || app.description || 'No description available'
+                    }}
+                  />
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <ApplicationBadges
+                      status={app.status}
+                      lastDateConsultationComments={app.last_date_consultation_comments}
+                      impactScore={app.final_impact_score}
+                    />
+                    {app.distance && (
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-gray-500">{app.distance}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
+

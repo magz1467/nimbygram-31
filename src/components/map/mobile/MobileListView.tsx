@@ -16,6 +16,22 @@ interface MobileListViewProps {
   onClose?: () => void;
 }
 
+const formatStorybook = (content: string | null) => {
+  if (!content) return null;
+
+  // Extract header if it exists
+  const headerMatch = content.match(/<header>(.*?)<\/header>/);
+  const header = headerMatch ? headerMatch[1] : null;
+  
+  // Remove header from content if it exists
+  const bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+
+  // Format bold text
+  const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  return { header, content: formattedContent };
+};
+
 export const MobileListView = ({
   postcode,
   applications,
@@ -57,39 +73,53 @@ export const MobileListView = ({
         </div>
       )}
       <div className="p-4 space-y-4 overflow-y-auto">
-        {applications.map((app) => (
-          <div
-            key={app.id}
-            className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => onSelectApplication(app.id)}
-          >
-            <div className="flex gap-4">
-              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                <ImageResolver
-                  imageMapUrl={app.image_map_url}
-                  image={app.image}
-                  title={app.title || app.description || ''}
-                  applicationId={app.id}
-                  coordinates={app.coordinates}
-                  class_3={app.category}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-primary">
-                  {app.title || 'Planning Application'}
-                </h3>
-                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed">
-                  {app.storybook || app.description || 'No description available'}
+        {applications.map((app) => {
+          const storybook = formatStorybook(app.storybook);
+          
+          return (
+            <div
+              key={app.id}
+              className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => onSelectApplication(app.id)}
+            >
+              <div className="flex gap-4">
+                <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                  <ImageResolver
+                    imageMapUrl={app.image_map_url}
+                    image={app.image}
+                    title={app.title || app.description || ''}
+                    applicationId={app.id}
+                    coordinates={app.coordinates}
+                    class_3={app.category}
+                  />
                 </div>
-                <div className="flex justify-between items-center mt-2">
-                  <StatusBadge status={app.status} />
-                  {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
+                <div className="flex-1 min-w-0">
+                  {storybook?.header ? (
+                    <h3 className="font-semibold text-primary text-lg mb-2">
+                      {storybook.header}
+                    </h3>
+                  ) : (
+                    <h3 className="font-semibold text-primary">
+                      {app.title || 'Planning Application'}
+                    </h3>
+                  )}
+                  <div 
+                    className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
+                    dangerouslySetInnerHTML={{ 
+                      __html: storybook?.content || app.description || 'No description available'
+                    }}
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <StatusBadge status={app.status} />
+                    {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
+
