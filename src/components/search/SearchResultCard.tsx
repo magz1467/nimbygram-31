@@ -23,9 +23,14 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     });
   };
 
+  console.log('SearchResultCard - Application data:', {
+    title: application.title,
+    streetview_url: application.streetview_url,
+    id: application.id
+  });
+
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden">
-      {/* Header with title */}
       <header className="p-4">
         <h2 className="font-semibold text-lg text-primary">
           {storybook?.header || application.title || 'Planning Application'}
@@ -36,8 +41,7 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         </p>
       </header>
 
-      {/* Image at half width */}
-      <div className="w-1/2 mx-auto aspect-[4/3] relative">
+      <div className="relative w-full aspect-[4/3] max-w-2xl mx-auto">
         <Image
           src={application.streetview_url || ''}
           alt={storybook?.header || application.title || 'Planning application image'}
@@ -45,7 +49,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         />
       </div>
 
-      {/* Content */}
       <div className="p-4 space-y-4">
         {storybook?.content && (
           <div 
@@ -69,4 +72,3 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
-
