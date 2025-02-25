@@ -14,21 +14,15 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
   const storybook = formatStorybook(application.storybook);
 
   return (
-    <div className="fixed bottom-2 left-2 right-2 bg-white border rounded-lg shadow-lg z-[1000]">
+    <div className="fixed bottom-2 left-2 right-2 bg-white border rounded-lg shadow-lg z-[1000] max-h-[calc(100vh-4rem)] overflow-y-auto">
       <div 
         className="flex flex-col p-4 cursor-pointer touch-pan-y" 
         onClick={onClick}
       >
         {/* Header Section */}
-        {storybook?.header ? (
-          <div className="font-semibold text-primary mb-3 line-clamp-2">
-            {storybook.header}
-          </div>
-        ) : (
-          <div className="font-semibold text-primary mb-3 line-clamp-2">
-            {application.title || 'Planning Application'}
-          </div>
-        )}
+        <div className="font-semibold text-primary mb-3 line-clamp-2">
+          {storybook?.header || application.title || 'Planning Application'}
+        </div>
 
         {/* Centrally Aligned Larger Image */}
         <div className="w-full aspect-video mb-3 rounded-lg overflow-hidden bg-gray-100">
@@ -78,4 +72,3 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
     </div>
   );
 };
-
