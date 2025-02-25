@@ -4,7 +4,6 @@ import { formatStorybook } from "@/utils/storybook-formatter";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import Image from "@/components/ui/image";
 
 interface SearchResultCardProps {
   application: Application;
@@ -23,8 +22,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     });
   };
 
-  console.log('SearchResultCard - Image URL:', application.streetview_url);
-
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden">
       <header className="p-4">
@@ -38,7 +35,7 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       </header>
 
       <div className="relative w-full aspect-[4/3] max-w-2xl mx-auto">
-        {application.streetview_url && (
+        {typeof application.streetview_url === 'string' && application.streetview_url && (
           <img
             src={application.streetview_url}
             alt={storybook?.header || application.title || 'Planning application image'}
