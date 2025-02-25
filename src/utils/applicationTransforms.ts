@@ -9,7 +9,7 @@ export const transformApplicationData = (
   imageUrl = '/placeholder.svg'
 ): Application | null => {
   console.group(`🔄 Transforming application ${app.id}`);
-  console.log('Raw application data:', app);
+  console.log('Raw application data:', JSON.stringify(app, null, 2));
   
   // Extract coordinates from geometry
   let coordinates: [number, number] | null = null;
@@ -50,24 +50,33 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  // Process storybook content
+  // Process storybook content with detailed logging
+  console.group('📖 Processing storybook content');
+  console.log('Raw storybook value:', app.storybook);
+  console.log('Raw storybook type:', typeof app.storybook);
+  if (typeof app.storybook === 'object') {
+    console.log('Storybook object keys:', Object.keys(app.storybook));
+  }
+
   let storybookContent = '';
   let storybookHeader = '';
 
   if (app.storybook) {
     if (typeof app.storybook === 'object' && app.storybook !== null) {
-      console.log('Processing storybook object:', app.storybook);
-      
-      // For Prismic-like objects with _type
+      console.log('Processing storybook as object');
       if ('_type' in app.storybook) {
+        console.log('Found _type property:', app.storybook._type);
         if (app.storybook._type !== 'undefined') {
           storybookContent = app.storybook.content || '';
           storybookHeader = app.storybook.header || '';
         }
-      } else {
-        // For regular objects
-        storybookContent = app.storybook.content || app.storybook.toString() || '';
+      } else if ('content' in app.storybook) {
+        console.log('Found direct content property');
+        storybookContent = app.storybook.content;
         storybookHeader = app.storybook.header || '';
+      } else {
+        console.log('No recognized content structure, attempting toString()');
+        storybookContent = app.storybook.toString();
       }
     } else if (typeof app.storybook === 'string') {
       console.log('Processing storybook as string');
@@ -78,8 +87,10 @@ export const transformApplicationData = (
 
   console.log('Final storybook content:', {
     content: storybookContent,
-    header: storybookHeader
+    header: storybookHeader,
+    contentLength: storybookContent?.length || 0
   });
+  console.groupEnd();
 
   // Parse final_impact_score carefully
   let finalImpactScore: number | null = null;
