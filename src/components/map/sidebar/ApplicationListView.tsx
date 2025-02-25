@@ -33,7 +33,7 @@ const formatStorybook = (content: string | null) => {
 
   // Extract header if it exists
   const headerMatch = content.match(/<header>(.*?)<\/header>/);
-  const header = headerMatch ? headerMatch[1] : null;
+  let header = headerMatch ? headerMatch[1].replace(/[\[\]]/g, '').trim() : null;
   
   // Remove header from content if it exists
   let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
@@ -130,3 +130,4 @@ export const ApplicationListView = ({
     </div>
   );
 };
+
