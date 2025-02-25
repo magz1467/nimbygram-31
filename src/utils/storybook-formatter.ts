@@ -9,7 +9,7 @@ export const formatStorybook = (content: string | null) => {
   // Get content without the header tags
   let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
   
-  // If there's a header, remove all variations of it from the content
+  // If there's a header, remove all variations of it from the beginning of the content
   if (header) {
     // Create a base version of the header by removing all formatting
     const baseHeader = header
@@ -20,23 +20,14 @@ export const formatStorybook = (content: string | null) => {
     
     // Create regex patterns for different header variations
     const patterns = [
-      // Full title with formatting
-      new RegExp(`^\\s*${header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
-      // Title without emojis or formatting
-      new RegExp(`^\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
-      // Title with "What's the Deal:" prefix
-      new RegExp(`^\\s*(?:What'?s the [Dd]eal:?|The Deal:?)\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
-      // Title with markdown headers
-      new RegExp(`^\\s*#{1,3}\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gmi'),
-      // Title with brackets or parentheses
-      new RegExp(`^\\s*[\\[\\{\\(]\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*[\\]\\}\\)]\\s*`, 'gmi'),
-      // Title with HTML-like tags
-      new RegExp(`<[^>]*>${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}<\\/[^>]*>`, 'gmi'),
-      // Title as a link
-      new RegExp(`\\[.*?\\]\\(${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\)`, 'gmi')
+      new RegExp(`^\\s*${header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'mi'),
+      new RegExp(`^\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'mi'),
+      new RegExp(`^\\s*(?:What'?s the [Dd]eal:?|The Deal:?)\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'mi'),
+      new RegExp(`^\\s*#{1,3}\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'mi'),
+      new RegExp(`^\\s*[\\[\\{\\(]\\s*${baseHeader.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*[\\]\\}\\)]\\s*`, 'mi')
     ];
 
-    // Apply each pattern
+    // Apply each pattern to remove header variations from the start of content
     patterns.forEach(pattern => {
       bodyContent = bodyContent.replace(pattern, '');
     });
@@ -52,21 +43,25 @@ export const formatStorybook = (content: string | null) => {
   bodyContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   // Format section headers (like "The Details:", "What's next:")
-  bodyContent = bodyContent.replace(/([A-Za-z\s]+:)(\s*)/g, '<strong>$1</strong>$2');
+  bodyContent = bodyContent.replace(/^([A-Za-z\s']+:)(\s*)/gm, '<strong>$1</strong>$2');
 
-  // Clean up excess whitespace before processing line breaks
-  bodyContent = bodyContent.replace(/\s+/g, ' ').trim();
-
-  // Format paragraphs and line breaks
+  // Preserve line breaks and handle paragraphs
   bodyContent = bodyContent
-    .split(/\n{2,}/)
-    .map(para => para.trim())
-    .filter(para => para)
-    .map(para => `<p>${para}</p>`)
-    .join('');
+    .split(/\n\n+/) // Split on multiple newlines
+    .map(para => {
+      // Handle line breaks within paragraphs
+      const formattedPara = para
+        .trim()
+        .replace(/\n/g, '<br/>');
+      return `<p>${formattedPara}</p>`;
+    })
+    .join('\n');
 
-  // Handle single line breaks within paragraphs
-  bodyContent = bodyContent.replace(/\n/g, '<br/>');
+  // Clean up any empty paragraphs
+  bodyContent = bodyContent
+    .replace(/<p>\s*<\/p>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Ensure content is wrapped in paragraphs
   if (!bodyContent.startsWith('<p>')) {
@@ -75,3 +70,4 @@ export const formatStorybook = (content: string | null) => {
 
   return { header, content: bodyContent };
 };
+
