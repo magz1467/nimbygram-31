@@ -22,6 +22,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         }
 
         const [lat, lng] = coordinates;
+        console.log(`📍 Fetching properties within 20km of [${lat}, ${lng}]`);
+        
         const { data: properties, error } = await supabase.rpc('properties_within_distance', {
           ref_lat: lat,
           ref_lon: lng,
@@ -38,12 +40,14 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
+        console.log(`✨ Received ${properties?.length || 0} properties from database`);
+
         const transformedData = properties?.map((item: any) => {
-          let coordinates: [number, number] | undefined;
+          let coords: [number, number] | undefined;
           
           try {
             if (item.geometry?.coordinates) {
-              coordinates = [
+              coords = [
                 parseFloat(item.geometry.coordinates[1]),
                 parseFloat(item.geometry.coordinates[0])
               ];
@@ -53,7 +57,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             return null;
           }
 
-          if (!coordinates || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+          if (!coords || isNaN(coords[0]) || isNaN(coords[1])) {
             console.log(`❌ Invalid coordinates for item ${item.id}`);
             return null;
           }
@@ -66,7 +70,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             reference: item.id?.toString() || '',
             description: item.description || '',
             submissionDate: item.valid_date || '',
-            coordinates: coordinates,
+            coordinates: coords,
             postcode: item.postcode || 'N/A',
             applicant: item.applicant || 'Not specified',
             decisionDue: item.decision_target_date || '',
@@ -89,6 +93,14 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return result;
         }).filter((app): app is Application => app !== null);
 
+        console.log('✅ Transformed applications:', {
+          total: transformedData?.length,
+          withStorybook: transformedData?.filter(app => app.storybook)?.length,
+          sampleStorybook: transformedData?.[0]?.storybook
+        });
+
+        setApplications(transformedData || []);
+
         if (!transformedData?.length) {
           toast({
             title: "No properties found",
@@ -97,7 +109,6 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           });
         }
 
-        setApplications(transformedData || []);
       } catch (error) {
         console.error('💥 Error in fetchPropertyData:', error);
         toast({
@@ -107,6 +118,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         });
       } finally {
         setIsLoading(false);
+        console.log('🏁 Property fetch completed');
       }
     };
 
