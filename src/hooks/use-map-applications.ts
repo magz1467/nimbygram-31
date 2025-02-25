@@ -62,6 +62,11 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             return null;
           }
 
+          // Handle streetview_url - ensure it's a string or null
+          const streetview_url = typeof item.streetview_url === 'string' ? 
+            item.streetview_url : 
+            (item.streetview_url?.value || null);
+
           const result: Application = {
             id: item.id || Math.random(),
             title: item.short_title || item.description || `Property ${item.id}`,
@@ -87,7 +92,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             impact_score: item.impact_score,
             impact_score_details: item.impact_score_details,
             impacted_services: item.impacted_services,
-            storybook: item.storybook || null
+            storybook: item.storybook || null,
+            streetview_url
           };
 
           return result;
@@ -96,7 +102,11 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         console.log('✅ Transformed applications:', {
           total: transformedData?.length,
           withStorybook: transformedData?.filter(app => app.storybook)?.length,
-          sampleStorybook: transformedData?.[0]?.storybook
+          sampleApplication: transformedData?.[0] ? {
+            id: transformedData[0].id,
+            streetview_url: transformedData[0].streetview_url,
+            type: typeof transformedData[0].streetview_url
+          } : null
         });
 
         setApplications(transformedData || []);
