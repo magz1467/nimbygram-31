@@ -50,26 +50,23 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  // Log raw storybook data
-  console.group('📖 Storybook data processing');
-  console.log('Raw storybook:', app.storybook);
-  console.log('Raw storybook_header:', app.storybook_header);
-  console.log('Storybook type:', typeof app.storybook);
-
-  // Extract storybook content from nested object if necessary
+  // Process storybook content
   let storybookContent = '';
   let storybookHeader = '';
 
   if (app.storybook) {
     if (typeof app.storybook === 'object' && app.storybook !== null) {
-      console.log('Processing storybook as object:', app.storybook);
-      // Check if it's a Prismic-like content object
-      if (app.storybook._type === 'undefined') {
-        console.log('Found Prismic-like undefined type, setting empty content');
-        storybookContent = '';
-        storybookHeader = '';
+      console.log('Processing storybook object:', app.storybook);
+      
+      // For Prismic-like objects with _type
+      if ('_type' in app.storybook) {
+        if (app.storybook._type !== 'undefined') {
+          storybookContent = app.storybook.content || '';
+          storybookHeader = app.storybook.header || '';
+        }
       } else {
-        storybookContent = app.storybook.content || '';
+        // For regular objects
+        storybookContent = app.storybook.content || app.storybook.toString() || '';
         storybookHeader = app.storybook.header || '';
       }
     } else if (typeof app.storybook === 'string') {
@@ -83,7 +80,6 @@ export const transformApplicationData = (
     content: storybookContent,
     header: storybookHeader
   });
-  console.groupEnd();
 
   // Parse final_impact_score carefully
   let finalImpactScore: number | null = null;

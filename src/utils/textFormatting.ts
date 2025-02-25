@@ -2,22 +2,22 @@
 export const formatStorybook = (text: string): string => {
   if (!text) return '';
 
-  // Split text into lines
-  const lines = text.split('\n');
-  const formattedLines = lines.map(line => {
-    // Convert bullet points
-    line = line.replace(/^[-*]\s+/g, '• ');
-    
-    // Add spacing after bullet points
-    if (line.startsWith('•')) {
-      line = line + '\n';
+  // Split text into paragraphs
+  const paragraphs = text.split('\n').map(p => p.trim()).filter(p => p);
+  
+  return paragraphs.map(paragraph => {
+    // Handle bullet points
+    if (paragraph.startsWith('-') || paragraph.startsWith('*')) {
+      return '• ' + paragraph.substring(1).trim() + '\n';
     }
     
-    // Add spacing after periods that end sentences
-    line = line.replace(/\.\s+/g, '.\n\n');
+    // Handle header-like text (all caps sections)
+    if (paragraph === paragraph.toUpperCase() && paragraph.length > 3) {
+      return paragraph + '\n\n';
+    }
     
-    return line;
-  });
-
-  return formattedLines.join('\n').trim();
+    // Regular paragraphs
+    return paragraph + '\n\n';
+  }).join('').trim();
 };
+
