@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -52,36 +51,54 @@ export const transformApplicationData = (
 
   // Process storybook content with detailed logging
   console.group('📖 Processing storybook content');
-  console.log('Raw storybook value:', app.storybook);
-  console.log('Raw storybook type:', typeof app.storybook);
-  if (typeof app.storybook === 'object') {
-    console.log('Storybook object keys:', Object.keys(app.storybook));
-  }
 
   let storybookContent = '';
   let storybookHeader = '';
 
-  if (app.storybook) {
-    if (typeof app.storybook === 'object' && app.storybook !== null) {
-      console.log('Processing storybook as object');
-      if ('_type' in app.storybook) {
-        console.log('Found _type property:', app.storybook._type);
-        if (app.storybook._type !== 'undefined') {
+  // Handle storybook data
+  if (app.storybook !== null && app.storybook !== undefined) {
+    console.log('Raw storybook value:', app.storybook);
+    console.log('Raw storybook type:', typeof app.storybook);
+
+    try {
+      if (typeof app.storybook === 'object') {
+        console.log('Storybook object keys:', Object.keys(app.storybook));
+        
+        if (app.storybook._type && app.storybook._type !== 'undefined') {
+          // Handle Prismic-like structure
           storybookContent = app.storybook.content || '';
           storybookHeader = app.storybook.header || '';
+        } else if (app.storybook.content || app.storybook.header) {
+          // Handle direct content/header structure
+          storybookContent = app.storybook.content || '';
+          storybookHeader = app.storybook.header || '';
+        } else {
+          // Try to get string representation
+          storybookContent = JSON.stringify(app.storybook);
         }
-      } else if ('content' in app.storybook) {
-        console.log('Found direct content property');
-        storybookContent = app.storybook.content;
-        storybookHeader = app.storybook.header || '';
-      } else {
-        console.log('No recognized content structure, attempting toString()');
-        storybookContent = app.storybook.toString();
+      } else if (typeof app.storybook === 'string') {
+        storybookContent = app.storybook;
+        storybookHeader = app.storybook_header || '';
       }
-    } else if (typeof app.storybook === 'string') {
-      console.log('Processing storybook as string');
-      storybookContent = app.storybook;
-      storybookHeader = app.storybook_header || '';
+
+      // If content is JSON string, try to parse it
+      if (typeof storybookContent === 'string' && 
+          (storybookContent.startsWith('{') || storybookContent.startsWith('['))) {
+        try {
+          const parsed = JSON.parse(storybookContent);
+          if (parsed.content) {
+            storybookContent = parsed.content;
+          }
+          if (parsed.header) {
+            storybookHeader = parsed.header;
+          }
+        } catch (e) {
+          // If parsing fails, keep original string
+          console.log('Failed to parse JSON storybook content, keeping as string');
+        }
+      }
+    } catch (e) {
+      console.warn('Error processing storybook:', e);
     }
   }
 
@@ -139,10 +156,10 @@ export const transformApplicationData = (
     id: application.id,
     coordinates: application.coordinates,
     distance: application.distance,
-    storybook: application.storybook,
+    storybook: !!application.storybook,
+    storybook_length: application.storybook?.length || 0,
     storybook_header: application.storybook_header
   });
   console.groupEnd();
   return application;
 };
-
