@@ -17,14 +17,36 @@ export const MobileApplicationCards = ({
   onSelectApplication,
   postcode,
 }: MobileApplicationCardsProps) => {
-  const selectedApplication = applications.find(app => app.id === selectedId);
+  console.log('🔄 MobileApplicationCards rendering with:', {
+    applicationsCount: applications.length,
+    selectedId,
+    postcode
+  });
 
-  if (!selectedApplication) return null;
+  const selectedApplication = applications.find(app => app.id === selectedId);
+  
+  console.log('📱 Selected application:', selectedApplication);
+
+  useEffect(() => {
+    console.log('💫 MobileApplicationCards mounted/updated');
+    return () => {
+      console.log('👋 MobileApplicationCards unmounting');
+    };
+  }, [selectedId]);
+
+  if (!selectedApplication) {
+    console.log('⚠️ No selected application found');
+    return null;
+  }
 
   return (
     <MiniCard 
       application={selectedApplication}
-      onClick={() => onSelectApplication(selectedApplication.id)}
+      onClick={() => {
+        console.log('🖱️ MiniCard clicked, calling onSelectApplication with:', selectedApplication.id);
+        onSelectApplication(selectedApplication.id);
+      }}
     />
   );
 };
+
