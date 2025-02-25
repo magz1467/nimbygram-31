@@ -11,34 +11,54 @@ export const formatStorybook = (content: string | null) => {
   
   // If there's a header, remove it and any variations from the content
   if (header) {
+    // Create a base version of the header by removing formatting
+    const baseHeader = header.replace(/\[|\]|\{|\}|\(|\)|#|\*/g, '').trim();
+    
     // Create an array of possible header variations to remove
     const headerVariations = [
       header,
       `[${header}]`,
+      `[${baseHeader}]`,
       `What's the Deal: ${header}`,
       `What's the deal: ${header}`,
       `Whats the Deal: ${header}`,
       `Whats the deal: ${header}`,
-      header.replace(/[\[\]]/g, ''), // Remove any brackets from header
+      baseHeader,
+      // Add color-formatted versions
+      `\\[.*?\\]\\(${baseHeader}\\)`,
+      // Add markdown-style headers
+      `#\\s*${baseHeader}`,
+      `##\\s*${baseHeader}`,
+      // Add any HTML-like formatting
+      `<[^>]*>${baseHeader}<\\/[^>]*>`,
     ];
 
     // Remove each variation from the start of the content
     headerVariations.forEach(variant => {
       if (!variant) return;
-      // Create a case-insensitive regex that matches the variant at the start
-      const regex = new RegExp(`^\\s*${variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'i');
-      bodyContent = bodyContent.replace(regex, '');
+      try {
+        // Create a case-insensitive regex that matches the variant at the start or anywhere in the text
+        const regex = new RegExp(`(^\\s*|\\n\\s*)${variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'gi');
+        bodyContent = bodyContent.replace(regex, '');
+      } catch (e) {
+        console.error('Error with regex:', e);
+      }
     });
   }
 
-  // Remove markdown heading indicators (##)
-  bodyContent = bodyContent.replace(/^##\s*/gm, '');
+  // Remove any remaining markdown heading indicators
+  bodyContent = bodyContent.replace(/^##?\s*/gm, '');
 
   // Convert asterisk list items to bullet points
   bodyContent = bodyContent.replace(/^\*\s/gm, '• ');
 
   // Format bold text
-  const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  bodyContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  return { header, content: formattedContent.trim() };
+  // Clean up any double line breaks or extra whitespace
+  bodyContent = bodyContent
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return { header, content: bodyContent };
 };
