@@ -5,6 +5,7 @@ import { Bell, X } from "lucide-react";
 import { useState } from "react";
 import { ImageResolver } from "./components/ImageResolver";
 import { StatusBadge } from "./components/StatusBadge";
+import { formatStorybook } from "@/utils/storybook-formatter";
 
 interface MobileListViewProps {
   postcode: string;
@@ -15,46 +16,6 @@ interface MobileListViewProps {
   hideFilterBar?: boolean;
   onClose?: () => void;
 }
-
-const formatStorybook = (content: string | null) => {
-  if (!content) return null;
-
-  // Extract header if it exists
-  const headerMatch = content.match(/<header>(.*?)<\/header>/);
-  const header = headerMatch ? headerMatch[1].trim() : null;
-  
-  // Get content without the header tags
-  let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
-
-  if (header) {
-    // Create an array of possible header variations to remove
-    const headerVariations = [
-      header,
-      `What's the Deal: ${header}`,
-      `What's the deal: ${header}`,
-      `Whats the Deal: ${header}`,
-      `Whats the deal: ${header}`,
-    ];
-
-    // Remove each variation from the start of the content
-    headerVariations.forEach(variant => {
-      // Create a case-insensitive regex that matches the variant at the start
-      const regex = new RegExp(`^\\s*${variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*`, 'i');
-      bodyContent = bodyContent.replace(regex, '');
-    });
-  }
-
-  // Remove markdown heading indicators (##)
-  bodyContent = bodyContent.replace(/^##\s*/gm, '');
-
-  // Convert asterisk list items to bullet points
-  bodyContent = bodyContent.replace(/^\*\s/gm, '• ');
-
-  // Format bold text
-  const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  return { header, content: formattedContent.trim() };
-};
 
 export const MobileListView = ({
   postcode,
@@ -111,7 +72,7 @@ export const MobileListView = ({
                   <ImageResolver
                     imageMapUrl={app.image_map_url}
                     image={app.image}
-                    title={app.title || app.description || ''}
+                    title={storybook?.header || app.title || ''}
                     applicationId={app.id}
                     coordinates={app.coordinates}
                     class_3={app.category}

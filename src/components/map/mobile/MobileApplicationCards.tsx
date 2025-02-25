@@ -1,11 +1,13 @@
 
 import { Application } from "@/types/planning";
-import { ApplicationListView } from "../sidebar/ApplicationListView";
+import { useMemo } from "react";
+import { MiniCard } from "./MiniCard";
+import { formatStorybook } from "@/utils/storybook-formatter";
 
 interface MobileApplicationCardsProps {
   applications: Application[];
   selectedId: number | null;
-  onSelectApplication: (id: number) => void;
+  onSelectApplication: (id: number | null) => void;
   postcode: string;
 }
 
@@ -13,18 +15,18 @@ export const MobileApplicationCards = ({
   applications,
   selectedId,
   onSelectApplication,
-  postcode,
+  postcode
 }: MobileApplicationCardsProps) => {
+  const selectedApplication = useMemo(() => {
+    return applications.find(app => app.id === selectedId);
+  }, [applications, selectedId]);
+
+  if (!selectedApplication) return null;
+
   return (
-    <div className="absolute bottom-0 left-0 w-full bg-white shadow-lg rounded-t-xl z-10 max-h-[40vh] overflow-hidden">
-      <ApplicationListView
-        applications={applications}
-        selectedApplication={selectedId}
-        onSelectApplication={onSelectApplication}
-        onShowEmailDialog={() => {}}
-        postcode={postcode}
-        hideFilterBar={true}
-      />
-    </div>
+    <MiniCard
+      application={selectedApplication}
+      onClick={() => onSelectApplication(selectedApplication.id)}
+    />
   );
 };

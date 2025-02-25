@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { MapPin } from "lucide-react";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageResolver } from "./components/ImageResolver";
+import { formatStorybook } from "@/utils/storybook-formatter";
 
 interface MiniCardProps {
   application: Application;
@@ -10,12 +11,7 @@ interface MiniCardProps {
 }
 
 export const MiniCard = ({ application, onClick }: MiniCardProps) => {
-  // Determine content to display (storybook or fallback)
-  const title = application.storybook_header || (application.category ? (
-    `${application.category}: ${application.title || ''}`
-  ) : application.title) || '';
-
-  const content = application.storybook || application.description || '';
+  const storybook = formatStorybook(application.storybook);
 
   return (
     <div className="fixed bottom-2 left-2 right-2 bg-white border rounded-lg shadow-lg z-[1000]">
@@ -27,25 +23,36 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           <ImageResolver
             imageMapUrl={application.image_map_url}
             image={application.image}
-            title={title}
+            title={storybook?.header || application.title || ''}
             applicationId={application.id}
             coordinates={application.coordinates}
-            class_3={application.category || null}
+            class_3={application.category}
           />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-primary mb-1 line-clamp-2">
-            {title}
-          </div>
+          {storybook?.header ? (
+            <div className="font-semibold text-primary mb-1 line-clamp-2">
+              {storybook.header}
+            </div>
+          ) : (
+            <div className="font-semibold text-primary mb-1 line-clamp-2">
+              {application.title || 'Planning Application'}
+            </div>
+          )}
           <p className="text-sm text-gray-600 mb-2">
             <span className="inline-flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               <span className="line-clamp-2">{application.address}</span>
             </span>
           </p>
-          <div className="text-sm text-gray-600 mb-2 line-clamp-2">
-            {content}
-          </div>
+          {storybook?.content && (
+            <div 
+              className="text-sm text-gray-600 mb-2 line-clamp-2"
+              dangerouslySetInnerHTML={{ 
+                __html: storybook.content
+              }}
+            />
+          )}
           <div className="flex items-center gap-2">
             <ApplicationBadges
               status={application.status}
@@ -64,4 +71,3 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
     </div>
   );
 };
-
