@@ -56,7 +56,7 @@ export const formatStorybook = (content: string | null) => {
         })
         .join('<br/>');
 
-      return line => `<p>${lines}</p>`;
+      return `<p>${lines}</p>`;
     })
     .filter(Boolean) // Remove empty paragraphs
     .join('\n');
