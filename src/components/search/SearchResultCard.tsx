@@ -23,11 +23,7 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     });
   };
 
-  console.log('SearchResultCard - Application data:', {
-    title: application.title,
-    streetview_url: application.streetview_url,
-    id: application.id
-  });
+  console.log('SearchResultCard - Image URL:', application.streetview_url);
 
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -42,11 +38,13 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       </header>
 
       <div className="relative w-full aspect-[4/3] max-w-2xl mx-auto">
-        <Image
-          src={application.streetview_url || ''}
-          alt={storybook?.header || application.title || 'Planning application image'}
-          className="w-full h-full object-cover"
-        />
+        {application.streetview_url && (
+          <img
+            src={application.streetview_url}
+            alt={storybook?.header || application.title || 'Planning application image'}
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
 
       <div className="p-4 space-y-4">
@@ -72,3 +70,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
