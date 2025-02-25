@@ -36,10 +36,10 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         </p>
       </header>
 
-      {/* Image */}
-      <div className="aspect-[4/3] relative">
+      {/* Image at half width */}
+      <div className="w-1/2 mx-auto aspect-[4/3] relative">
         <Image
-          src={application.streetview_url || application.image_map_url || ''}
+          src={application.streetview_url || ''}
           alt={storybook?.header || application.title || 'Planning application image'}
           className="w-full h-full object-cover"
         />
@@ -69,3 +69,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
