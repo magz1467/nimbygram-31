@@ -29,6 +29,15 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     });
   };
 
+  const parseHtmlContent = (content: string) => {
+    // Remove HTML tags but preserve line breaks
+    return content
+      .replace(/<\/?strong>/g, '') // Remove strong tags
+      .replace(/<\/?p>/g, '') // Remove p tags
+      .replace(/<br\/?>/g, '\n') // Convert <br> to newlines
+      .trim();
+  };
+
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       {/* Header Section */}
@@ -56,18 +65,21 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       {/* Content Section */}
       <div className="px-8 py-4">
         {storybook?.content && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* What's the Deal Section */}
             <div className="prose prose-sm max-w-none">
-              <div className="bg-primary/5 rounded-lg p-4 mb-4">
+              <div className="bg-primary/5 rounded-lg p-4">
                 <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
                 <div className="text-gray-700">
-                  {storybook.content.split('The Details:')[0]}
+                  {parseHtmlContent(storybook.content.split('The Details:')[0])}
                 </div>
               </div>
+            </div>
 
-              {/* Key Details Section */}
-              <div className="grid gap-4 mb-4">
+            {/* Key Details Section */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Key Details</h3>
+              <div className="grid gap-4">
                 {storybook.content
                   .split('The Details:')[1]
                   ?.split('Considerations:')[0]
@@ -76,31 +88,31 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
                   .map((detail, index) => (
                     <div key={index} className="flex gap-2 items-start">
                       <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                      <p className="text-gray-700">{detail.trim()}</p>
+                      <p className="text-gray-700">{parseHtmlContent(detail.trim())}</p>
                     </div>
                   ))}
               </div>
-
-              {/* Nimbywatch Section */}
-              {storybook.content.includes('Nimbywatch:') && (
-                <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    🏘️ Nimbywatch
-                  </h3>
-                  <div className="space-y-2 text-white/90">
-                    {storybook.content
-                      .split('Nimbywatch:')[1]
-                      .split('•')
-                      .filter(Boolean)
-                      .map((point, index) => (
-                        <p key={index} className="text-sm">
-                          {point.trim()}
-                        </p>
-                      ))}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Nimbywatch Section */}
+            {storybook.content.includes('Nimbywatch:') && (
+              <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  🏘️ Nimbywatch
+                </h3>
+                <div className="space-y-2 text-white/90">
+                  {storybook.content
+                    .split('Nimbywatch:')[1]
+                    .split('•')
+                    .filter(Boolean)
+                    .map((point, index) => (
+                      <p key={index} className="text-sm">
+                        {parseHtmlContent(point.trim())}
+                      </p>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         
