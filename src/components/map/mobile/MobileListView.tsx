@@ -27,7 +27,7 @@ export const MobileListView = ({
 }: MobileListViewProps) => {
   const [showAlerts, setShowAlerts] = useState(true);
   
-  console.log('MobileListView - Total applications:', applications.length);
+  console.log('MobileListView - Applications with storybook:', applications.filter(app => app.storybook).length);
 
   return (
     <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
@@ -78,10 +78,10 @@ export const MobileListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-primary">
-                  {app.title || app.engaging_title || app.description || 'Planning Application'}
+                  {app.storybook_header || app.title || app.engaging_title || 'Planning Application'}
                 </h3>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.description || 'No description available'}
+                  {app.storybook || app.description || 'No description available'}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
@@ -95,4 +95,3 @@ export const MobileListView = ({
     </div>
   );
 };
-

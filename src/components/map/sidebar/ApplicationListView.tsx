@@ -37,7 +37,7 @@ export const ApplicationListView = ({
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
-  console.log('ApplicationListView - Total applications:', applications.length);
+  console.log('ApplicationListView - Applications with storybook:', applications.filter(app => app.storybook).length);
   
   return (
     <div className="h-full flex flex-col">
@@ -67,10 +67,10 @@ export const ApplicationListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-primary">
-                  {app.title || app.engaging_title || app.description || 'Planning Application'}
+                  {app.storybook_header || app.title || app.engaging_title || 'Planning Application'}
                 </div>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.description || 'No description available'}
+                  {app.storybook || app.description || 'No description available'}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
@@ -92,4 +92,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
