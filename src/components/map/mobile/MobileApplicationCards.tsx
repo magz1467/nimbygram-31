@@ -1,8 +1,8 @@
 
 import { Application } from "@/types/planning";
-import { useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import { MiniCard } from "./MiniCard";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface MobileApplicationCardsProps {
   applications: Application[];
@@ -15,16 +15,14 @@ export const MobileApplicationCards = ({
   applications,
   selectedId,
   onSelectApplication,
-  postcode
+  postcode,
 }: MobileApplicationCardsProps) => {
-  const selectedApplication = useMemo(() => {
-    return applications.find(app => app.id === selectedId);
-  }, [applications, selectedId]);
+  const selectedApplication = applications.find(app => app.id === selectedId);
 
   if (!selectedApplication) return null;
 
   return (
-    <MiniCard
+    <MiniCard 
       application={selectedApplication}
       onClick={() => onSelectApplication(selectedApplication.id)}
     />

@@ -19,12 +19,12 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
         className="flex flex-col p-4 cursor-pointer touch-pan-y" 
         onClick={onClick}
       >
-        {/* Header Section */}
+        {/* Title Section */}
         <div className="font-semibold text-primary mb-3 line-clamp-2">
           {storybook?.header || application.title || 'Planning Application'}
         </div>
 
-        {/* Centrally Aligned Larger Image */}
+        {/* Large Centered Image */}
         <div className="w-full aspect-video mb-3 rounded-lg overflow-hidden bg-gray-100">
           <ImageResolver
             imageMapUrl={application.image_map_url}
@@ -36,7 +36,7 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           />
         </div>
 
-        {/* Address */}
+        {/* Location */}
         <p className="text-sm text-gray-600 mb-2">
           <span className="inline-flex items-center gap-1">
             <MapPin className="w-3 h-3" />
@@ -44,7 +44,7 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           </span>
         </p>
 
-        {/* Content */}
+        {/* Description */}
         {storybook?.content && (
           <div 
             className="text-sm text-gray-600 mb-2 line-clamp-2"
