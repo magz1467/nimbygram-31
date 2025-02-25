@@ -28,13 +28,14 @@ export const ImageResolver = ({
   });
 
   return (
-    <Image
-      src={imageMapUrl || image || ''}
-      alt={title}
-      width={800}
-      height={450}
-      className={`w-full h-full object-cover ${className}`}
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={imageMapUrl || image || ''}
+        alt={title}
+        width={800}
+        height={450}
+        className={`w-full h-full object-cover ${className}`}
+      />
+    </div>
   );
 };
-
