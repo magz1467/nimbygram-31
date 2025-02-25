@@ -37,19 +37,8 @@ export const ApplicationListView = ({
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
-  // Filter applications to only show those with valid storybook content
-  const filteredApplications = applications.filter(app => {
-    const storybook = typeof app.storybook === 'string' ? app.storybook : '';
-    console.log('Application storybook content:', {
-      id: app.id,
-      storybook: storybook,
-      header: app.storybook_header
-    });
-    return storybook.trim() !== '';
-  });
-
-  console.log('Filtered applications count:', filteredApplications.length);
-
+  console.log('ApplicationListView - Total applications:', applications.length);
+  
   return (
     <div className="h-full flex flex-col">
       {!hideFilterBar && (
@@ -59,7 +48,7 @@ export const ApplicationListView = ({
         />
       )}
       <div className="flex-1 overflow-y-auto">
-        {filteredApplications.map((app) => (
+        {applications.map((app) => (
           <div
             key={app.id}
             className="py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
@@ -78,10 +67,10 @@ export const ApplicationListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-primary">
-                  {app.storybook_header || ''}
+                  {app.title || app.engaging_title || app.description || 'Planning Application'}
                 </div>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {typeof app.storybook === 'string' ? app.storybook : ''}
+                  {app.description || 'No description available'}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges
@@ -103,3 +92,4 @@ export const ApplicationListView = ({
     </div>
   );
 };
+

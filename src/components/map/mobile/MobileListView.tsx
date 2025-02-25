@@ -26,19 +26,8 @@ export const MobileListView = ({
   onClose
 }: MobileListViewProps) => {
   const [showAlerts, setShowAlerts] = useState(true);
-
-  // Filter applications to only show those with valid storybook content
-  const filteredApplications = applications.filter(app => {
-    const storybook = typeof app.storybook === 'string' ? app.storybook : '';
-    console.log('Application storybook content:', {
-      id: app.id,
-      storybook: storybook,
-      header: app.storybook_header
-    });
-    return storybook.trim() !== '';
-  });
-
-  console.log('Filtered applications count:', filteredApplications.length);
+  
+  console.log('MobileListView - Total applications:', applications.length);
 
   return (
     <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
@@ -70,7 +59,7 @@ export const MobileListView = ({
         </div>
       )}
       <div className="p-4 space-y-4 overflow-y-auto">
-        {filteredApplications.map((app) => (
+        {applications.map((app) => (
           <div
             key={app.id}
             className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -89,10 +78,10 @@ export const MobileListView = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-primary">
-                  {app.storybook_header || ''}
+                  {app.title || app.engaging_title || app.description || 'Planning Application'}
                 </h3>
                 <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {typeof app.storybook === 'string' ? app.storybook : ''}
+                  {app.description || 'No description available'}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
@@ -106,3 +95,4 @@ export const MobileListView = ({
     </div>
   );
 };
+
