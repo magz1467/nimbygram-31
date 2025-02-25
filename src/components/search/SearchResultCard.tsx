@@ -38,6 +38,16 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       .trim();
   };
 
+  const getKeyDetails = (content: string) => {
+    const detailsSection = content.split('The Details:')[1]?.split('Considerations:')[0];
+    if (!detailsSection) return [];
+    
+    return detailsSection
+      .split('•')
+      .map(detail => detail.trim())
+      .filter(detail => detail.length > 0);
+  };
+
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       {/* Header Section */}
@@ -80,17 +90,12 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Key Details</h3>
               <div className="grid gap-4">
-                {storybook.content
-                  .split('The Details:')[1]
-                  ?.split('Considerations:')[0]
-                  .split('•')
-                  .filter(detail => detail.trim().length > 0) // Filter out empty details
-                  .map((detail, index) => (
-                    <div key={index} className="flex gap-2 items-start">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                      <p className="text-gray-700">{parseHtmlContent(detail.trim())}</p>
-                    </div>
-                  ))}
+                {getKeyDetails(storybook.content).map((detail, index) => (
+                  <div key={index} className="flex gap-2 items-start">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                    <p className="text-gray-700">{parseHtmlContent(detail)}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -131,4 +136,3 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
-
