@@ -63,8 +63,15 @@ export const transformApplicationData = (
   if (app.storybook) {
     if (typeof app.storybook === 'object' && app.storybook !== null) {
       console.log('Processing storybook as object:', app.storybook);
-      storybookContent = app.storybook.content || '';
-      storybookHeader = app.storybook.header || '';
+      // Check if it's a Prismic-like content object
+      if (app.storybook._type === 'undefined') {
+        console.log('Found Prismic-like undefined type, setting empty content');
+        storybookContent = '';
+        storybookHeader = '';
+      } else {
+        storybookContent = app.storybook.content || '';
+        storybookHeader = app.storybook.header || '';
+      }
     } else if (typeof app.storybook === 'string') {
       console.log('Processing storybook as string');
       storybookContent = app.storybook;
