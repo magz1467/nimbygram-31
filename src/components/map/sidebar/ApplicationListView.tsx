@@ -38,14 +38,16 @@ const formatStorybook = (content: string | null) => {
   // Remove header from content if it exists
   let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
 
-  // Remove any duplicate of the header in the content
+  // Remove duplicate header from the beginning of content if it exists
   if (header) {
-    const headerRegex = new RegExp(header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-    bodyContent = bodyContent.replace(headerRegex, '').trim();
+    bodyContent = bodyContent.replace(new RegExp(`^${header}\\s*`), '');
   }
 
   // Remove markdown heading indicators (##)
   bodyContent = bodyContent.replace(/^##\s*/gm, '');
+
+  // Convert asterisk list items to bullet points
+  bodyContent = bodyContent.replace(/^\*\s/gm, '• ');
 
   // Format bold text
   const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
