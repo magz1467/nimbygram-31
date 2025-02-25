@@ -51,25 +51,32 @@ export const transformApplicationData = (
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
   // Log raw storybook data
-  console.log('Raw storybook data:', {
-    storybook: app.storybook,
-    storybook_header: app.storybook_header,
-    type: typeof app.storybook
-  });
+  console.group('📖 Storybook data processing');
+  console.log('Raw storybook:', app.storybook);
+  console.log('Raw storybook_header:', app.storybook_header);
+  console.log('Storybook type:', typeof app.storybook);
 
   // Extract storybook content from nested object if necessary
   let storybookContent = '';
   let storybookHeader = '';
 
   if (app.storybook) {
-    if (typeof app.storybook === 'object') {
+    if (typeof app.storybook === 'object' && app.storybook !== null) {
+      console.log('Processing storybook as object:', app.storybook);
       storybookContent = app.storybook.content || '';
       storybookHeader = app.storybook.header || '';
     } else if (typeof app.storybook === 'string') {
+      console.log('Processing storybook as string');
       storybookContent = app.storybook;
       storybookHeader = app.storybook_header || '';
     }
   }
+
+  console.log('Final storybook content:', {
+    content: storybookContent,
+    header: storybookHeader
+  });
+  console.groupEnd();
 
   // Parse final_impact_score carefully
   let finalImpactScore: number | null = null;
