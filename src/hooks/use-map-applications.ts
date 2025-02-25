@@ -27,8 +27,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           .from('crystal_roof')
           .select(`
             *,
-            storybook,
-            storybook_header
+            storybook
           `);
 
         console.log('📊 Raw query response:', {
@@ -124,7 +123,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             ward: item.ward_name || 'Not specified',
             officer: item.case_officer || 'Not assigned',
             consultationEnd: item.last_date_consultation_comments || '',
-            image: item.streetview_url, // Using streetview_url instead of image
+            image: item.streetview_url,
             image_map_url: item.image_map_url,
             ai_title: item.ai_title,
             last_date_consultation_comments: item.last_date_consultation_comments,
@@ -133,8 +132,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             impact_score: item.impact_score,
             impact_score_details: item.impact_score_details,
             impacted_services: item.impacted_services,
-            storybook: item.storybook || null,
-            storybook_header: item.storybook_header || null
+            storybook: item.storybook || null
           };
 
           return result;

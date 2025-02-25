@@ -83,7 +83,7 @@ export const MobileListView = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-primary">
-                    {app.storybook_header || app.title || app.engaging_title || 'Planning Application'}
+                    {app.title || 'Planning Application'}
                   </h3>
                   <div className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed">
                     {app.storybook || app.description || 'No description available'}
@@ -101,4 +101,3 @@ export const MobileListView = ({
     </div>
   );
 };
-
