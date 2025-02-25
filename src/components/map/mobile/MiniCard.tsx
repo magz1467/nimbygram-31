@@ -26,7 +26,7 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
   useEffect(() => {
     console.log('🔍 MiniCard mounted with styles:', {
       container: document.querySelector('.fixed.bottom-2')?.className,
-      image: document.querySelector('.aspect-video')?.className
+      image: document.querySelector('.aspect-[16/9]')?.className
     });
     return () => {
       console.log('👋 MiniCard unmounting');
@@ -42,14 +42,12 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
       }}
     >
       <div className="flex flex-col p-4 cursor-pointer touch-pan-y">
-        <div className="font-semibold text-primary mb-3 line-clamp-2">
+        <div className="font-semibold text-primary mb-4 text-lg line-clamp-2">
           {storybook?.header || application.title || 'Planning Application'}
         </div>
 
-        <div 
-          className="w-full aspect-video mb-3 rounded-lg overflow-hidden bg-gray-100"
-          style={{ minHeight: '200px' }}
-        >
+        {/* Full-width image container */}
+        <div className="w-full aspect-[16/9] mb-4 rounded-lg overflow-hidden bg-gray-100">
           <ImageResolver
             imageMapUrl={application.image_map_url}
             image={application.image}
@@ -57,10 +55,11 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             applicationId={application.id}
             coordinates={application.coordinates}
             class_3={application.category}
+            className="w-full h-full object-cover"
           />
         </div>
 
-        <p className="text-sm text-gray-600 mb-2">
+        <p className="text-sm text-gray-600 mb-3">
           <span className="inline-flex items-center gap-1">
             <MapPin className="w-3 h-3" />
             <span className="line-clamp-2">{application.address}</span>
@@ -69,14 +68,14 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
 
         {storybook?.content && (
           <div 
-            className="text-sm text-gray-600 mb-2 line-clamp-2"
+            className="text-sm text-gray-600 mb-3 line-clamp-3"
             dangerouslySetInnerHTML={{ 
               __html: storybook.content
             }}
           />
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-auto">
           <ApplicationBadges
             status={application.status}
             lastDateConsultationComments={application.last_date_consultation_comments}
