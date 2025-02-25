@@ -30,18 +30,20 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
   };
 
   return (
-    <article className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <header className="p-4">
-        <h2 className="font-semibold text-lg text-primary">
+    <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
+      {/* Header Section - Centered above image */}
+      <header className="px-4 py-4 text-center">
+        <h2 className="font-semibold text-lg text-primary mb-2">
           {storybook?.header || application.title || 'Planning Application'}
         </h2>
-        <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
+        <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
           <MapPin className="h-4 w-4" />
           {application.address}
         </p>
       </header>
 
-      <div className="relative w-full aspect-[4/3] max-w-2xl mx-auto">
+      {/* Image Section - Full width */}
+      <div className="relative w-full aspect-[4/3]">
         {typeof application.streetview_url === 'string' && application.streetview_url && (
           <img
             src={application.streetview_url}
@@ -51,10 +53,11 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         )}
       </div>
 
-      <div className="p-4 space-y-4">
+      {/* Content Section - Centered below image with consistent width */}
+      <div className="px-8 py-4">
         {storybook?.content && (
           <div 
-            className="text-gray-600 text-sm prose prose-sm max-w-none"
+            className="text-gray-600 text-sm prose prose-sm max-w-none mb-4"
             dangerouslySetInnerHTML={{ __html: storybook.content }}
           />
         )}
@@ -74,4 +77,3 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
-
