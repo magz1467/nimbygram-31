@@ -50,12 +50,17 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       .filter(detail => detail.length > 0);
   };
 
+  // Remove square brackets from the header if they exist
+  const cleanHeader = (header: string) => {
+    return header.replace(/^\[(.*)\]$/, '$1').trim();
+  };
+
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       {/* Header Section */}
       <header className="px-4 py-4 text-center">
         <h2 className="font-semibold text-lg text-primary mb-2">
-          {storybook?.header || application.title || 'Planning Application'}
+          {cleanHeader(storybook?.header || application.title || 'Planning Application')}
         </h2>
         <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
           <MapPin className="h-4 w-4" />
