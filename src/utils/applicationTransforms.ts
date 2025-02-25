@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -51,61 +52,16 @@ export const transformApplicationData = (
 
   // Process storybook content with detailed logging
   console.group('📖 Processing storybook content');
+  
+  // Simple text column handling
+  const storybookContent = app.storybook || '';
+  const storybookHeader = app.storybook_header || '';
 
-  let storybookContent = '';
-  let storybookHeader = '';
-
-  // Handle storybook data
-  if (app.storybook !== null && app.storybook !== undefined) {
-    console.log('Raw storybook value:', app.storybook);
-    console.log('Raw storybook type:', typeof app.storybook);
-
-    try {
-      if (typeof app.storybook === 'object') {
-        console.log('Storybook object keys:', Object.keys(app.storybook));
-        
-        if (app.storybook._type && app.storybook._type !== 'undefined') {
-          // Handle Prismic-like structure
-          storybookContent = app.storybook.content || '';
-          storybookHeader = app.storybook.header || '';
-        } else if (app.storybook.content || app.storybook.header) {
-          // Handle direct content/header structure
-          storybookContent = app.storybook.content || '';
-          storybookHeader = app.storybook.header || '';
-        } else {
-          // Try to get string representation
-          storybookContent = JSON.stringify(app.storybook);
-        }
-      } else if (typeof app.storybook === 'string') {
-        storybookContent = app.storybook;
-        storybookHeader = app.storybook_header || '';
-      }
-
-      // If content is JSON string, try to parse it
-      if (typeof storybookContent === 'string' && 
-          (storybookContent.startsWith('{') || storybookContent.startsWith('['))) {
-        try {
-          const parsed = JSON.parse(storybookContent);
-          if (parsed.content) {
-            storybookContent = parsed.content;
-          }
-          if (parsed.header) {
-            storybookHeader = parsed.header;
-          }
-        } catch (e) {
-          // If parsing fails, keep original string
-          console.log('Failed to parse JSON storybook content, keeping as string');
-        }
-      }
-    } catch (e) {
-      console.warn('Error processing storybook:', e);
-    }
-  }
-
-  console.log('Final storybook content:', {
+  console.log('📖 Storybook content:', {
+    raw: app.storybook,
     content: storybookContent,
     header: storybookHeader,
-    contentLength: storybookContent?.length || 0
+    contentLength: storybookContent.length
   });
   console.groupEnd();
 
@@ -156,10 +112,11 @@ export const transformApplicationData = (
     id: application.id,
     coordinates: application.coordinates,
     distance: application.distance,
-    storybook: !!application.storybook,
+    storybook_present: !!application.storybook,
     storybook_length: application.storybook?.length || 0,
     storybook_header: application.storybook_header
   });
   console.groupEnd();
   return application;
 };
+
