@@ -79,11 +79,11 @@ export const MobileListView = ({
           return (
             <div
               key={app.id}
-              className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
               onClick={() => onSelectApplication(app.id)}
             >
-              <div className="flex gap-4">
-                <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+              <div className="flex flex-col">
+                <div className="w-full aspect-[4/3] relative">
                   <ImageResolver
                     imageMapUrl={app.image_map_url}
                     image={app.image}
@@ -93,7 +93,7 @@ export const MobileListView = ({
                     class_3={app.category}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="p-4">
                   {storybook?.header ? (
                     <h3 className="font-semibold text-primary text-lg mb-2">
                       {storybook.header}
@@ -109,7 +109,7 @@ export const MobileListView = ({
                       __html: storybook?.content || app.description || 'No description available'
                     }}
                   />
-                  <div className="flex justify-between items-center mt-2">
+                  <div className="flex justify-between items-center mt-4">
                     <StatusBadge status={app.status} />
                     {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
                   </div>
