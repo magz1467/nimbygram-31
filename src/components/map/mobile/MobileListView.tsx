@@ -23,15 +23,17 @@ const formatStorybook = (content: string | null) => {
   const headerMatch = content.match(/<header>(.*?)<\/header>/);
   let header = headerMatch ? headerMatch[1].replace(/[\[\]]/g, '').trim() : null;
   
-  // Remove header from content if it exists
-  let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+  // Remove header tags and content from the main content
+  let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
 
-  // Remove duplicate header from the beginning if it exists
+  // Remove any occurrence of the header from the start of the content
   if (header) {
-    // Escape all special regex characters in the header
-    const escapedHeader = header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    // Only remove if it's at the start of the content
-    bodyContent = bodyContent.replace(new RegExp(`^${escapedHeader}`), '').trim();
+    // Escape special characters in the header for regex
+    const escapedHeader = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Remove the header if it appears at the start (case insensitive)
+    bodyContent = bodyContent.replace(new RegExp(`^${escapedHeader}`, 'i'), '').trim();
+    // Also try removing with "What's the Deal:" prefix
+    bodyContent = bodyContent.replace(new RegExp(`^What's the Deal:\\s*${escapedHeader}`, 'i'), '').trim();
   }
 
   // Remove markdown heading indicators (##)
