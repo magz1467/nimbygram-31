@@ -42,8 +42,10 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     const detailsSection = content.split('The Details:')[1]?.split('Considerations:')[0];
     if (!detailsSection) return [];
     
+    // Split by bullet points and filter out empty strings or whitespace-only strings
     return detailsSection
       .split('•')
+      .slice(1) // Skip the first empty element before the first bullet point
       .map(detail => detail.trim())
       .filter(detail => detail.length > 0);
   };
@@ -136,3 +138,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
