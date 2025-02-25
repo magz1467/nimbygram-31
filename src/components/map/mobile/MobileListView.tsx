@@ -24,7 +24,13 @@ const formatStorybook = (content: string | null) => {
   const header = headerMatch ? headerMatch[1] : null;
   
   // Remove header from content if it exists
-  const bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+  let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+
+  // Remove any duplicate of the header in the content
+  if (header) {
+    const headerRegex = new RegExp(header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    bodyContent = bodyContent.replace(headerRegex, '').trim();
+  }
 
   // Format bold text
   const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -103,12 +109,14 @@ export const MobileListView = ({
                       {app.title || 'Planning Application'}
                     </h3>
                   )}
-                  <div 
-                    className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
-                    dangerouslySetInnerHTML={{ 
-                      __html: storybook?.content || app.description || 'No description available'
-                    }}
-                  />
+                  {storybook?.content && (
+                    <div 
+                      className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
+                      dangerouslySetInnerHTML={{ 
+                        __html: storybook.content
+                      }}
+                    />
+                  )}
                   <div className="flex justify-between items-center mt-4">
                     <StatusBadge status={app.status} />
                     {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
@@ -122,4 +130,3 @@ export const MobileListView = ({
     </div>
   );
 };
-

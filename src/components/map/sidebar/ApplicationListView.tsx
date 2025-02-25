@@ -36,7 +36,13 @@ const formatStorybook = (content: string | null) => {
   const header = headerMatch ? headerMatch[1] : null;
   
   // Remove header from content if it exists
-  const bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+  let bodyContent = content.replace(/<header>.*?<\/header>/, '').trim();
+
+  // Remove any duplicate of the header in the content
+  if (header) {
+    const headerRegex = new RegExp(header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    bodyContent = bodyContent.replace(headerRegex, '').trim();
+  }
 
   // Format bold text
   const formattedContent = bodyContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -92,12 +98,14 @@ export const ApplicationListView = ({
                       {app.title || 'Planning Application'}
                     </div>
                   )}
-                  <div 
-                    className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
-                    dangerouslySetInnerHTML={{ 
-                      __html: storybook?.content || app.description || 'No description available'
-                    }}
-                  />
+                  {storybook?.content && (
+                    <div 
+                      className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
+                      dangerouslySetInnerHTML={{ 
+                        __html: storybook.content
+                      }}
+                    />
+                  )}
                   <div className="flex flex-col gap-1.5 mt-2">
                     <ApplicationBadges
                       status={app.status}
@@ -119,4 +127,3 @@ export const ApplicationListView = ({
     </div>
   );
 };
-
