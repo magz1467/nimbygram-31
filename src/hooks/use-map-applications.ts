@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { toast } from "@/components/ui/use-toast";
+import { calculateDistance } from "@/utils/distance";
 
 export const useMapApplications = (coordinates?: [number, number] | null) => {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -109,7 +110,15 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           } : null
         });
 
-        setApplications(transformedData || []);
+        // Sort applications by distance from search coordinates
+        const sortedData = transformedData.sort((a, b) => {
+          if (!a.coordinates || !b.coordinates) return 0;
+          const distanceA = calculateDistance(coordinates, a.coordinates);
+          const distanceB = calculateDistance(coordinates, b.coordinates);
+          return distanceA - distanceB;
+        });
+
+        setApplications(sortedData || []);
 
         if (!transformedData?.length) {
           toast({
@@ -137,3 +146,4 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
   return { applications, isLoading };
 };
+

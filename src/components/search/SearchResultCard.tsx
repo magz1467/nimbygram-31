@@ -42,13 +42,13 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         </p>
       </header>
 
-      {/* Image Section - Full width */}
+      {/* Image Section - Full width with rounded corners */}
       <div className="relative w-full aspect-[4/3]">
         {typeof application.streetview_url === 'string' && application.streetview_url && (
           <img
             src={application.streetview_url}
             alt={storybook?.header || application.title || 'Planning application image'}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-lg"
           />
         )}
       </div>
@@ -77,3 +77,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
