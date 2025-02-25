@@ -1,4 +1,3 @@
-
 export interface Application {
   id: number;
   title?: string;
@@ -35,6 +34,7 @@ export interface Application {
     };
   };
   image_map_url?: string | null;
+  streetview_url?: string | null;
   last_date_consultation_comments?: string | null;
   valid_date?: string | null;
   centroid?: any;
@@ -77,4 +77,3 @@ export interface Comment {
   user_email?: string;
   replies?: Comment[];
 }
-
