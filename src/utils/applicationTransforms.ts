@@ -50,15 +50,26 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  // Get storybook content directly from the raw data
-  const storybook = app.storybook || '';
-  const storybookHeader = app.storybook_header || '';
-
-  console.log('Storybook data for application:', {
-    id: app.id,
-    storybook,
-    storybookHeader
+  // Log raw storybook data
+  console.log('Raw storybook data:', {
+    storybook: app.storybook,
+    storybook_header: app.storybook_header,
+    type: typeof app.storybook
   });
+
+  // Extract storybook content from nested object if necessary
+  let storybookContent = '';
+  let storybookHeader = '';
+
+  if (app.storybook) {
+    if (typeof app.storybook === 'object') {
+      storybookContent = app.storybook.content || '';
+      storybookHeader = app.storybook.header || '';
+    } else if (typeof app.storybook === 'string') {
+      storybookContent = app.storybook;
+      storybookHeader = app.storybook_header || '';
+    }
+  }
 
   // Parse final_impact_score carefully
   let finalImpactScore: number | null = null;
@@ -99,7 +110,7 @@ export const transformApplicationData = (
     class_3: app.class_3 === null || app.class_3 === undefined || app.class_3 === 'undefined' ? 'Miscellaneous' : app.class_3,
     final_impact_score: finalImpactScore,
     engaging_title: app.engaging_title || null,
-    storybook,
+    storybook: storybookContent,
     storybook_header: storybookHeader
   };
 
@@ -113,3 +124,4 @@ export const transformApplicationData = (
   console.groupEnd();
   return application;
 };
+
