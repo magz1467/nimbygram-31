@@ -36,25 +36,26 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         </p>
       </header>
 
-      {/* Image at half width */}
-      <div className="w-1/2 mx-auto aspect-[4/3] relative">
+      {/* Image container with text overlay */}
+      <div className="relative w-full aspect-[4/3]">
         <Image
-          src={application.streetview_url || ''}
+          src={application.streetview_url || application.image_map_url || ''}
           alt={storybook?.header || application.title || 'Planning application image'}
           className="w-full h-full object-cover"
         />
+        {storybook?.content && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-6">
+            <div 
+              className="text-white text-sm prose prose-sm max-w-none prose-invert text-center"
+              dangerouslySetInnerHTML={{ __html: storybook.content }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
-        {storybook?.content && (
-          <div 
-            className="text-gray-600 text-sm prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: storybook.content }}
-          />
-        )}
-        
-        <div className="flex items-center justify-between pt-2 border-t">
+      {/* Actions */}
+      <div className="p-4">
+        <div className="flex items-center justify-between">
           <Button 
             variant="outline" 
             size="sm"
