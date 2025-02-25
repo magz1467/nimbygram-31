@@ -4,6 +4,7 @@ import { ImageResolver } from "@/components/map/mobile/components/ImageResolver"
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { SortType } from "@/types/application-types";
 import { AlertSection } from "./AlertSection";
+import { formatStorybook } from "@/utils/textFormatting";
 
 interface ApplicationListViewProps {
   applications: Application[];
@@ -69,8 +70,8 @@ export const ApplicationListView = ({
                 <div className="font-semibold text-primary">
                   {app.storybook_header || app.title || app.engaging_title || 'Planning Application'}
                 </div>
-                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.storybook || app.description || 'No description available'}
+                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed">
+                  {formatStorybook(app.storybook || app.description || 'No description available')}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   <ApplicationBadges

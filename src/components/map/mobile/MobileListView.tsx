@@ -5,6 +5,7 @@ import { Bell, X } from "lucide-react";
 import { useState } from "react";
 import { ImageResolver } from "./components/ImageResolver";
 import { StatusBadge } from "./components/StatusBadge";
+import { formatStorybook } from "@/utils/textFormatting";
 
 interface MobileListViewProps {
   postcode: string;
@@ -80,8 +81,8 @@ export const MobileListView = ({
                 <h3 className="font-semibold text-primary">
                   {app.storybook_header || app.title || app.engaging_title || 'Planning Application'}
                 </h3>
-                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                  {app.storybook || app.description || 'No description available'}
+                <div className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed">
+                  {formatStorybook(app.storybook || app.description || 'No description available')}
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <StatusBadge status={app.status} />
