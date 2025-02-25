@@ -9,12 +9,11 @@ export const transformApplicationData = (
   imageUrl = '/placeholder.svg'
 ): Application | null => {
   console.group(`🔄 Transforming application ${app.id}`);
-  console.log('Raw application data:', JSON.stringify(app, null, 2));
-  console.log('Raw storybook:', {
-    value: app.storybook,
-    type: typeof app.storybook,
-    length: app.storybook?.length,
-    firstChars: app.storybook?.substring(0, 100)
+  console.log('Raw application:', {
+    id: app.id,
+    storybook: app.storybook,
+    storybook_header: app.storybook_header,
+    title: app.title
   });
   
   // Extract coordinates from geometry
@@ -55,21 +54,6 @@ export const transformApplicationData = (
   const distanceInMiles = distanceInKm * 0.621371;
   const formattedDistance = `${distanceInMiles.toFixed(1)} mi`;
 
-  // Process storybook content with detailed logging
-  console.group('📖 Processing storybook content');
-  
-  const storybookContent = app.storybook || '';
-  const storybookHeader = app.storybook_header || '';
-
-  console.log('📖 Storybook content:', {
-    raw: app.storybook,
-    content: storybookContent,
-    header: storybookHeader,
-    contentLength: storybookContent.length,
-    contentPreview: storybookContent.substring(0, 100)
-  });
-  console.groupEnd();
-
   // Parse final_impact_score carefully
   let finalImpactScore: number | null = null;
   if (app.final_impact_score !== null && app.final_impact_score !== undefined) {
@@ -109,19 +93,17 @@ export const transformApplicationData = (
     class_3: app.class_3 === null || app.class_3 === undefined || app.class_3 === 'undefined' ? 'Miscellaneous' : app.class_3,
     final_impact_score: finalImpactScore,
     engaging_title: app.engaging_title || null,
-    storybook: storybookContent,
-    storybook_header: storybookHeader
+    storybook: app.storybook || null,
+    storybook_header: app.storybook_header || null
   };
 
-  console.log('✅ Final application object:', {
+  console.log('✅ Transformed application:', {
     id: application.id,
-    coordinates: application.coordinates,
-    distance: application.distance,
-    storybook_present: !!application.storybook,
-    storybook_length: application.storybook?.length || 0,
-    storybook_content: application.storybook?.substring(0, 100),
-    storybook_header: application.storybook_header
+    storybook: application.storybook,
+    storybook_header: application.storybook_header,
+    title: application.title
   });
   console.groupEnd();
+  
   return application;
 };
