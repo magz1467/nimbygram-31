@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { SearchResultsList } from "@/components/search/SearchResultsList";
@@ -188,7 +187,7 @@ const SearchResultsPage = () => {
         </div>
       </div>
       <main className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
+        <div className="flex gap-6 relative">
           <div className={`${showMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
             <SearchResultsList 
               applications={displayApplications}
@@ -201,26 +200,24 @@ const SearchResultsPage = () => {
           </div>
           {showMap && coordinates && (
             <div className="w-1/2 relative">
-              <div className="sticky top-4">
-                <div className="relative h-[calc(100vh-8rem)] rounded-lg overflow-hidden border border-gray-200 shadow-lg">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
-                    onClick={() => {
-                      setShowMap(false);
-                      setSelectedId(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <MapView 
-                    applications={applications}
-                    selectedId={selectedId}
-                    coordinates={coordinates}
-                    onMarkerClick={handleMarkerClick}
-                  />
-                </div>
+              <div className="sticky top-4 h-[calc(100vh-8rem)] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
+                  onClick={() => {
+                    setShowMap(false);
+                    setSelectedId(null);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <MapView 
+                  applications={applications}
+                  selectedId={selectedId}
+                  coordinates={coordinates}
+                  onMarkerClick={handleMarkerClick}
+                />
               </div>
             </div>
           )}
@@ -231,4 +228,3 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
-
