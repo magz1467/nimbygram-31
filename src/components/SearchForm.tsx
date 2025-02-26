@@ -1,26 +1,12 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
 import { PostcodeSearch } from "@/components/PostcodeSearch";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAddressSuggestions } from "@/hooks/use-address-suggestions";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LocationSearch } from "@/components/search/LocationSearch";
+import { SearchButton } from "@/components/search/SearchButton";
+import { logSearch } from "@/utils/searchLogger";
 
 interface SearchFormProps {
   activeTab?: string;
@@ -35,37 +21,13 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: locationSuggestions = [], isLoading: isLoadingLocations } = useAddressSuggestions(location);
+  const handleLocationChange = (value: string) => {
+    console.log('📍 Location input changed:', value);
+    setLocation(value);
+  };
 
-  const logSearch = async (searchTerm: string, type: 'postcode' | 'location') => {
-    try {
-      console.log('🔍 Logging search:', {
-        searchTerm,
-        type,
-        status: activeTab,
-        timestamp: new Date().toISOString()
-      });
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const { error } = await supabase.from('Searches').insert({
-        'Post Code': type === 'postcode' ? searchTerm : null,
-        'Location': type === 'location' ? searchTerm : null,
-        'Status': activeTab,
-        'User_logged_in': !!session?.user
-      });
-
-      if (error) {
-        console.error('Error logging search:', error);
-        toast({
-          title: "Analytics Error",
-          description: "Your search was processed but we couldn't log it. This won't affect your results.",
-          variant: "default",
-        });
-      }
-    } catch (error) {
-      console.error('Error logging search:', error);
-    }
+  const handleLocationSelect = (selectedLocation: string) => {
+    setLocation(selectedLocation);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,7 +44,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
     try {
       console.log('📝 Before logging search');
-      await logSearch(searchTerm, searchType);
+      await logSearch(searchTerm, searchType, activeTab);
       console.log('✅ After logging search');
       
       if (onSearch && searchType === 'postcode') {
@@ -123,16 +85,20 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     }
   };
 
-  const handleLocationSelect = (selectedLocation: string) => {
-    setLocation(selectedLocation);
-  };
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <Tabs defaultValue="postcode" className="w-full" onValueChange={(value) => setSearchType(value as 'postcode' | 'location')}>
+      <Tabs 
+        defaultValue="postcode" 
+        className="w-full" 
+        onValueChange={(value) => setSearchType(value as 'postcode' | 'location')}
+      >
         <TabsList className="grid w-full grid-cols-2 mb-4 bg-background">
-          <TabsTrigger value="postcode" className="data-[state=active]:bg-white">Search by Postcode</TabsTrigger>
-          <TabsTrigger value="location" className="data-[state=active]:bg-white">Search by Location</TabsTrigger>
+          <TabsTrigger value="postcode" className="data-[state=active]:bg-white">
+            Search by Postcode
+          </TabsTrigger>
+          <TabsTrigger value="location" className="data-[state=active]:bg-white">
+            Search by Location
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="postcode" className="mt-0">
           <PostcodeSearch
@@ -145,56 +111,14 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
           />
         </TabsContent>
         <TabsContent value="location" className="mt-0">
-          <div className="relative w-full">
-            <Command className="rounded-lg border shadow-md">
-              <CommandInput
-                placeholder="Enter location (e.g., street, town, or city)"
-                value={location}
-                onValueChange={(value) => {
-                  setLocation(value);
-                  console.log('📍 Location input changed:', value);
-                }}
-              />
-              {location.length >= 2 && (
-                <CommandList>
-                  {isLoadingLocations ? (
-                    <CommandEmpty>Loading suggestions...</CommandEmpty>
-                  ) : locationSuggestions.length === 0 ? (
-                    <CommandEmpty>No results found.</CommandEmpty>
-                  ) : (
-                    <CommandGroup>
-                      {locationSuggestions.map((suggestion: any) => (
-                        <CommandItem
-                          key={suggestion.postcode}
-                          value={suggestion.address || suggestion.postcode}
-                          onSelect={handleLocationSelect}
-                          className="hover:bg-primary/10"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{suggestion.address || suggestion.postcode}</span>
-                            <span className="text-sm text-gray-500">
-                              {suggestion.admin_district}, {suggestion.country}
-                            </span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  )}
-                </CommandList>
-              )}
-            </Command>
-          </div>
+          <LocationSearch
+            location={location}
+            onLocationChange={handleLocationChange}
+            onLocationSelect={handleLocationSelect}
+          />
         </TabsContent>
       </Tabs>
-      <Button 
-        type="submit" 
-        className="w-full bg-secondary hover:bg-secondary/90 text-white py-6 text-lg font-semibold rounded-xl shadow-sm"
-        disabled={isSubmitting}
-      >
-        <Search className="w-5 h-5 mr-2" />
-        {isSubmitting ? 'Loading...' : 'Show my feed'}
-      </Button>
+      <SearchButton isSubmitting={isSubmitting} />
     </form>
   );
 };
-
