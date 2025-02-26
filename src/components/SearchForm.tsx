@@ -27,6 +27,10 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   };
 
   const handleLocationSelect = (selectedLocation: string) => {
+    if (!selectedLocation) {
+      console.warn('No location selected');
+      return;
+    }
     setLocation(selectedLocation);
   };
 
@@ -36,6 +40,11 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     const searchTerm = searchType === 'postcode' ? postcode.trim() : location.trim();
     
     if (!searchTerm || isSubmitting) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid search term",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -43,19 +52,14 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     console.log(`🔄 Search started for ${searchType}:`, searchTerm);
 
     try {
-      console.log('📝 Before logging search');
       await logSearch(searchTerm, searchType, activeTab);
-      console.log('✅ After logging search');
       
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);
       }
 
-      // Dispatch events first
-      console.log('🔔 Dispatching searchStarted event');
       window.dispatchEvent(new CustomEvent('searchStarted'));
       
-      console.log('📨 Dispatching search event:', { type: searchType, term: searchTerm });
       window.dispatchEvent(new CustomEvent('postcodeSearch', {
         detail: { 
           postcode: searchType === 'postcode' ? searchTerm : null,
@@ -63,8 +67,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         }
       }));
 
-      // Navigate to search-results
-      console.log('🚀 Navigating to search-results with search term:', searchTerm);
       navigate('/search-results', { 
         state: { 
           postcode: searchType === 'postcode' ? searchTerm : null,

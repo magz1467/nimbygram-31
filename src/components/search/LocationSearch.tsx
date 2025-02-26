@@ -23,21 +23,23 @@ export const LocationSearch = ({ location, onLocationChange, onLocationSelect }:
           <CommandList>
             {isLoadingLocations ? (
               <CommandEmpty>Loading suggestions...</CommandEmpty>
-            ) : locationSuggestions.length === 0 ? (
+            ) : !locationSuggestions || locationSuggestions.length === 0 ? (
               <CommandEmpty>No results found.</CommandEmpty>
             ) : (
               <CommandGroup>
                 {locationSuggestions.map((suggestion: any) => (
                   <CommandItem
-                    key={suggestion.postcode}
-                    value={suggestion.address || suggestion.postcode}
+                    key={suggestion?.postcode || suggestion?.address || Math.random()}
+                    value={suggestion?.address || suggestion?.postcode || ''}
                     onSelect={onLocationSelect}
                     className="hover:bg-primary/10"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium">{suggestion.address || suggestion.postcode}</span>
+                      <span className="font-medium">
+                        {suggestion?.address || suggestion?.postcode || 'Unknown location'}
+                      </span>
                       <span className="text-sm text-gray-500">
-                        {suggestion.admin_district}, {suggestion.country}
+                        {suggestion?.admin_district || ''}, {suggestion?.country || ''}
                       </span>
                     </div>
                   </CommandItem>
