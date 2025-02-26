@@ -8,7 +8,7 @@ import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +30,6 @@ export const SearchView = () => {
   const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
   const [isLoadingInteresting, setIsLoadingInteresting] = useState(false);
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
-  const [shouldFetchInteresting, setShouldFetchInteresting] = useState(!hasSearched);
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -66,8 +65,8 @@ export const SearchView = () => {
     })?.length || 0
   };
 
-  const fetchInterestingApplications = async () => {
-    if (!shouldFetchInteresting) {
+  const fetchInterestingApplications = useCallback(async () => {
+    if (hasSearched) {
       return;
     }
 
@@ -104,18 +103,17 @@ export const SearchView = () => {
     } finally {
       setIsLoadingInteresting(false);
     }
-  };
+  }, [hasSearched, toast]);
 
   useEffect(() => {
-    if (shouldFetchInteresting && !hasSearched) {
+    if (!hasSearched) {
       fetchInterestingApplications();
     }
-  }, [shouldFetchInteresting, hasSearched]);
+  }, [hasSearched, fetchInterestingApplications]);
 
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
       setHasSearched(true);
-      setShouldFetchInteresting(false);
     }
   }, [coordinates, applications]);
 
