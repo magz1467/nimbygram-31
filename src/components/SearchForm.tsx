@@ -59,18 +59,12 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(searchTerm);
       }
 
-      // Use state object for navigation
-      const searchState = {
-        postcode: searchType === 'postcode' ? searchTerm : null,
-        location: searchType === 'location' ? searchTerm : null
-      };
-
-      // Only dispatch event after successful search logging
-      window.dispatchEvent(new CustomEvent('searchStarted', { detail: searchState }));
-
       // Use replace: true to prevent adding to history stack
       navigate('/search-results', { 
-        state: searchState,
+        state: {
+          postcode: searchType === 'postcode' ? searchTerm : null,
+          location: searchType === 'location' ? searchTerm : null
+        },
         replace: true
       });
 
@@ -123,3 +117,4 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
+
