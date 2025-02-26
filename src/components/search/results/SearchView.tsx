@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { useSearchState } from "@/hooks/applications/use-search-state";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
-import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
@@ -11,6 +10,8 @@ import { useLocation } from "react-router-dom";
 import { useStatusCounts } from "@/hooks/applications/use-status-counts";
 import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Application } from "@/types/planning";
+import { calculateDistance } from "@/utils/distance";
 
 export const SearchView = () => {
   const location = useLocation();
@@ -36,15 +37,29 @@ export const SearchView = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  // Memoize filtered applications
-  const filteredApplications = useMemo(() => 
-    useFilteredApplications(
-      applications,
-      activeFilters,
-      activeSort,
-      coordinates
-    )
-  , [applications, activeFilters, activeSort, coordinates]);
+  // Move filtering logic here instead of using a separate hook
+  const filteredApplications = useMemo(() => {
+    const filtered = applications.filter(app => {
+      if (activeFilters.status && app.status !== activeFilters.status) {
+        return false;
+      }
+      // Add other filter conditions as needed
+      return true;
+    });
+
+    // Sort applications
+    return filtered.sort((a, b) => {
+      if (activeSort === 'newest') {
+        return new Date(b.submissionDate || '').getTime() - new Date(a.submissionDate || '').getTime();
+      }
+      if (activeSort === 'closest' && coordinates) {
+        const distanceA = a.coordinates ? calculateDistance(coordinates, a.coordinates) : Infinity;
+        const distanceB = b.coordinates ? calculateDistance(coordinates, b.coordinates) : Infinity;
+        return distanceA - distanceB;
+      }
+      return 0;
+    });
+  }, [applications, activeFilters, activeSort, coordinates]);
 
   const statusCounts = useStatusCounts(applications);
 
@@ -54,16 +69,11 @@ export const SearchView = () => {
     fetchInterestingApplications 
   } = useInterestingApplications(hasSearched);
 
-  // Memoize fetchInterestingApplications to prevent infinite loop
-  const fetchInterestingMemo = useCallback(() => {
+  useEffect(() => {
     if (!hasSearched) {
       fetchInterestingApplications();
     }
   }, [hasSearched, fetchInterestingApplications]);
-
-  useEffect(() => {
-    fetchInterestingMemo();
-  }, [fetchInterestingMemo]);
 
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
@@ -158,4 +168,3 @@ export const SearchView = () => {
     </div>
   );
 };
-
