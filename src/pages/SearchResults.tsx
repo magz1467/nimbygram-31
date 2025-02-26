@@ -30,6 +30,7 @@ const SearchResultsPage = () => {
   const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
   const [isLoadingInteresting, setIsLoadingInteresting] = useState(false);
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
+  const [shouldFetchInteresting, setShouldFetchInteresting] = useState(!hasSearched);
 
   const { applications, isLoading: isLoadingApps } = useMapApplications(coordinates);
 
@@ -64,6 +65,10 @@ const SearchResultsPage = () => {
   };
 
   const fetchInterestingApplications = useCallback(async () => {
+    if (!shouldFetchInteresting) {
+      return;
+    }
+
     console.log('🌟 Fetching interesting applications...');
     setIsLoadingInteresting(true);
     
@@ -97,19 +102,20 @@ const SearchResultsPage = () => {
     } finally {
       setIsLoadingInteresting(false);
     }
-  }, [toast]);
+  }, [toast, shouldFetchInteresting]);
 
   useEffect(() => {
-    // Only fetch interesting applications if we haven't searched yet
-    if (!hasSearched && !coordinates && !applications?.length) {
+    // Only fetch interesting applications if we should and haven't searched yet
+    if (shouldFetchInteresting && !hasSearched) {
       fetchInterestingApplications();
     }
-  }, [coordinates, applications, fetchInterestingApplications, hasSearched]);
+  }, [shouldFetchInteresting, hasSearched, fetchInterestingApplications]);
 
   // Update hasSearched when coordinates or applications change
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
       setHasSearched(true);
+      setShouldFetchInteresting(false); // Prevent future interesting application fetches
     }
   }, [coordinates, applications]);
 
