@@ -50,10 +50,19 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
       .filter(detail => detail.length > 0);
   };
 
-  // Remove square brackets from the header if they exist
+  // Enhanced cleanHeader function to handle various bracket formats
   const cleanHeader = (header: string) => {
-    // This pattern will match square brackets at both start and end of the string
-    return header.replace(/^\[(.+)\]$/, '$1').trim();
+    // First, trim any whitespace
+    let cleanedHeader = header.trim();
+    
+    // Remove square brackets from start and end, handling multiple formats:
+    // [text], [ text ], [text, more text], etc.
+    cleanedHeader = cleanedHeader.replace(/^\s*\[(.*?)\]\s*$/, '$1').trim();
+    
+    // If somehow there are still brackets, remove them (fallback)
+    cleanedHeader = cleanedHeader.replace(/[\[\]]/g, '').trim();
+    
+    return cleanedHeader;
   };
 
   return (
