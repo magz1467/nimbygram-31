@@ -10,8 +10,6 @@ import { useLocation } from "react-router-dom";
 import { useStatusCounts } from "@/hooks/applications/use-status-counts";
 import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Application } from "@/types/planning";
-import { calculateDistance } from "@/utils/distance";
 
 export const SearchView = () => {
   const location = useLocation();
@@ -37,17 +35,21 @@ export const SearchView = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  // Move filtering logic here instead of using a separate hook
+  // Memoize filtered and sorted applications
   const filteredApplications = useMemo(() => {
+    console.log('🔍 Filtering applications:', {
+      total: applications.length,
+      filters: activeFilters,
+      sort: activeSort
+    });
+
     const filtered = applications.filter(app => {
       if (activeFilters.status && app.status !== activeFilters.status) {
         return false;
       }
-      // Add other filter conditions as needed
       return true;
     });
 
-    // Sort applications
     return filtered.sort((a, b) => {
       if (activeSort === 'newest') {
         return new Date(b.submissionDate || '').getTime() - new Date(a.submissionDate || '').getTime();
@@ -69,18 +71,21 @@ export const SearchView = () => {
     fetchInterestingApplications 
   } = useInterestingApplications(hasSearched);
 
+  // Only fetch interesting applications when needed
   useEffect(() => {
     if (!hasSearched) {
       fetchInterestingApplications();
     }
   }, [hasSearched, fetchInterestingApplications]);
 
+  // Update search status when we have results
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
       setHasSearched(true);
     }
   }, [coordinates, applications]);
 
+  // Memoize marker click handler
   const handleMarkerClick = useCallback((id: number | null) => {
     setSelectedId(id);
     if (id) {
@@ -168,4 +173,3 @@ export const SearchView = () => {
     </div>
   );
 };
-

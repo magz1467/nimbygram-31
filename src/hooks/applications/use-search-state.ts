@@ -1,25 +1,47 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { useLocation } from 'react-router-dom';
-import { useMapApplications } from "@/hooks/use-map-applications";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
+
+const fetchApplications = async (coordinates: [number, number] | null) => {
+  if (!coordinates) return [];
+  
+  console.log('🔍 Fetching applications for coordinates:', coordinates);
+  
+  const { data, error } = await supabase
+    .from('crystal_roof')
+    .select('*')
+    .order('id');
+
+  if (error) {
+    console.error('Error fetching applications:', error);
+    throw error;
+  }
+
+  return data || [];
+};
 
 export const useSearchState = (initialPostcode = '') => {
   const location = useLocation();
   const [postcode, setPostcode] = useState(initialPostcode);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchPoint, setSearchPoint] = useState<[number, number] | null>(null);
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const { toast } = useToast();
 
-  // Memoize coordinates to prevent unnecessary re-renders
+  // Use useCoordinates hook with useMemo to prevent unnecessary re-renders
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
-  
-  // Only fetch applications when we have valid coordinates
-  const { applications, isLoading: isLoadingApps } = useMapApplications(
-    searchPoint || coordinates
-  );
+
+  // Use React Query for applications data
+  const { data: applications = [], isLoading: isLoadingApps } = useQuery({
+    queryKey: ['applications', coordinates],
+    queryFn: () => fetchApplications(coordinates),
+    enabled: !!coordinates,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes
+  });
 
   // Handle search state from URL - only on mount or navigation
   useEffect(() => {
@@ -32,14 +54,7 @@ export const useSearchState = (initialPostcode = '') => {
     }
   }, [location.state?.searchTerm, location.state?.searchType]);
 
-  // Update search point when coordinates change
-  useEffect(() => {
-    if (coordinates && isSearching) {
-      console.log('🎯 Updating search point with coordinates:', coordinates);
-      setSearchPoint(coordinates);
-    }
-  }, [coordinates, isSearching]);
-
+  // Memoize handlePostcodeSelect to prevent unnecessary re-renders
   const handlePostcodeSelect = useCallback(async (newPostcode: string) => {
     if (!newPostcode) {
       toast({
@@ -61,8 +76,6 @@ export const useSearchState = (initialPostcode = '') => {
     isLoadingCoords,
     isLoadingApps,
     applications,
-    searchPoint,
-    setSearchPoint,
     isSearching,
     setIsSearching,
     handlePostcodeSelect,
