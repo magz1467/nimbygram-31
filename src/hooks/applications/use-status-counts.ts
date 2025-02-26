@@ -2,8 +2,15 @@
 import { Application } from "@/types/planning";
 import { useMemo } from "react";
 
-export const useStatusCounts = (applications: Application[] = []) => {
-  return useMemo(() => ({
+export type StatusCounts = {
+  'Under Review': number;
+  'Approved': number;
+  'Declined': number;
+  'Other': number;
+};
+
+export const calculateStatusCounts = (applications: Application[] = []): StatusCounts => {
+  return {
     'Under Review': applications?.filter(app => 
       app.status?.toLowerCase().includes('under consideration'))?.length || 0,
     'Approved': applications?.filter(app => 
@@ -17,6 +24,9 @@ export const useStatusCounts = (applications: Application[] = []) => {
              !appStatus.includes('approved') && 
              !appStatus.includes('declined');
     })?.length || 0
-  }), [applications]);
+  };
 };
 
+export const useStatusCounts = (applications: Application[] = []) => {
+  return useMemo(() => calculateStatusCounts(applications), [applications]);
+};
