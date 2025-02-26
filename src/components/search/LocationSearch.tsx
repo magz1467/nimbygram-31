@@ -9,32 +9,29 @@ interface LocationSearchProps {
 }
 
 export const LocationSearch = ({ location, onLocationChange, onLocationSelect }: LocationSearchProps) => {
-  const { data: suggestions = [], isLoading: isLoadingLocations } = useAddressSuggestions(location);
-
-  // Ensure suggestions is always an array
-  const locationSuggestions = Array.isArray(suggestions) ? suggestions : [];
+  const { data: suggestions = [], isLoading } = useAddressSuggestions(location);
 
   return (
     <div className="relative w-full">
       <Command className="rounded-lg border shadow-md">
         <CommandInput
           placeholder="Enter location (e.g., street, town, or city)"
-          value={location || ''}
+          value={location}
           onValueChange={onLocationChange}
         />
-        {location.length >= 2 && (
-          <CommandList>
-            {isLoadingLocations ? (
+        <CommandList>
+          {location.length >= 2 && (
+            isLoading ? (
               <CommandEmpty>Loading suggestions...</CommandEmpty>
-            ) : locationSuggestions.length === 0 ? (
+            ) : suggestions.length === 0 ? (
               <CommandEmpty>No results found.</CommandEmpty>
             ) : (
               <CommandGroup heading="Locations">
-                {locationSuggestions.map((suggestion) => {
-                  const address = suggestion?.address || suggestion?.postcode || '';
-                  const key = `${suggestion?.postcode}-${suggestion?.admin_district}-${Date.now()}`;
+                {suggestions.map((suggestion) => {
+                  if (!suggestion?.address && !suggestion?.postcode) return null;
                   
-                  if (!address) return null;
+                  const address = suggestion.address || suggestion.postcode;
+                  const key = `${suggestion.postcode}-${suggestion.admin_district}-${Date.now()}`;
                   
                   return (
                     <CommandItem
@@ -46,10 +43,8 @@ export const LocationSearch = ({ location, onLocationChange, onLocationSelect }:
                       className="cursor-pointer hover:bg-primary/10"
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium">
-                          {address}
-                        </span>
-                        {(suggestion?.admin_district || suggestion?.country) && (
+                        <span className="font-medium">{address}</span>
+                        {(suggestion.admin_district || suggestion.country) && (
                           <span className="text-sm text-gray-500">
                             {[suggestion.admin_district, suggestion.country]
                               .filter(Boolean)
@@ -61,9 +56,9 @@ export const LocationSearch = ({ location, onLocationChange, onLocationSelect }:
                   );
                 })}
               </CommandGroup>
-            )}
-          </CommandList>
-        )}
+            )
+          )}
+        </CommandList>
       </Command>
     </div>
   );
