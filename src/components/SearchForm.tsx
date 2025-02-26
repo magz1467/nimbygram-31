@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchType, setSearchType] = useState<'postcode' | 'location'>('postcode');
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -125,7 +125,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
-    setShowLocationSuggestions(false);
   };
 
   return (
@@ -147,47 +146,43 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         </TabsContent>
         <TabsContent value="location" className="mt-0">
           <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Enter location (e.g., street, town, or city)"
-              value={location}
-              onChange={(e) => {
-                setLocation(e.target.value);
-                setShowLocationSuggestions(e.target.value.length >= 2);
-              }}
-              onFocus={() => location.length >= 2 && setShowLocationSuggestions(true)}
-              className="w-full pl-4 pr-10 py-2 rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
-            {showLocationSuggestions && location.length >= 2 && (
-              <div className="absolute z-[9999] w-full mt-1">
-                <Command className="rounded-lg border shadow-md bg-white">
-                  <CommandList>
-                    {isLoadingLocations ? (
-                      <CommandEmpty>Loading suggestions...</CommandEmpty>
-                    ) : locationSuggestions.length === 0 ? (
-                      <CommandEmpty>No results found.</CommandEmpty>
-                    ) : (
-                      <CommandGroup>
-                        {locationSuggestions.map((suggestion) => (
-                          <CommandItem
-                            key={suggestion.postcode}
-                            onSelect={() => handleLocationSelect(suggestion.address || suggestion.postcode)}
-                            className="hover:bg-primary/10"
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{suggestion.address || suggestion.postcode}</span>
-                              <span className="text-sm text-gray-500">
-                                {suggestion.admin_district}, {suggestion.country}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                  </CommandList>
-                </Command>
-              </div>
-            )}
+            <Command className="rounded-lg border shadow-md">
+              <CommandInput
+                placeholder="Enter location (e.g., street, town, or city)"
+                value={location}
+                onValueChange={(value) => {
+                  setLocation(value);
+                  console.log('📍 Location input changed:', value);
+                }}
+              />
+              {location.length >= 2 && (
+                <CommandList>
+                  {isLoadingLocations ? (
+                    <CommandEmpty>Loading suggestions...</CommandEmpty>
+                  ) : locationSuggestions.length === 0 ? (
+                    <CommandEmpty>No results found.</CommandEmpty>
+                  ) : (
+                    <CommandGroup>
+                      {locationSuggestions.map((suggestion: any) => (
+                        <CommandItem
+                          key={suggestion.postcode}
+                          value={suggestion.address || suggestion.postcode}
+                          onSelect={handleLocationSelect}
+                          className="hover:bg-primary/10"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{suggestion.address || suggestion.postcode}</span>
+                            <span className="text-sm text-gray-500">
+                              {suggestion.admin_district}, {suggestion.country}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              )}
+            </Command>
           </div>
         </TabsContent>
       </Tabs>
@@ -202,3 +197,4 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
+
