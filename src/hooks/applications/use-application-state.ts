@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { Application } from "@/types/planning";
-import { SortType, FilterType, StatusCounts } from "@/types/application-types";
 import { useApplicationsData } from "@/components/applications/dashboard/hooks/useApplicationsData";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { useSearchState } from './use-search-state';
@@ -14,11 +13,11 @@ export const useApplicationState = (initialPostcode = '') => {
     isLoadingCoords,
     searchPoint,
     setSearchPoint,
-    searchStartTime,
-    setSearchStartTime,
     isSearching,
     setIsSearching,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    searchStartTime,
+    setSearchStartTime
   } = useSearchState(initialPostcode);
 
   const {
@@ -64,10 +63,12 @@ export const useApplicationState = (initialPostcode = '') => {
 
   useEffect(() => {
     if (searchStartTime && !isLoadingApps && !isLoadingCoords) {
+      const searchDuration = Date.now() - searchStartTime;
+      console.log(`🕒 Search completed in ${searchDuration}ms`);
       setSearchStartTime(null);
       setIsSearching(false);
     }
-  }, [isLoadingApps, isLoadingCoords, searchStartTime]);
+  }, [isLoadingApps, isLoadingCoords, searchStartTime, setSearchStartTime]);
 
   // Set default sort to 'newest' when applications are loaded
   useEffect(() => {

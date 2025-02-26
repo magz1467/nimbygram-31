@@ -10,6 +10,7 @@ export const useSearchState = (initialPostcode = '') => {
   const [postcode, setPostcode] = useState(initialPostcode);
   const [isSearching, setIsSearching] = useState(false);
   const [searchPoint, setSearchPoint] = useState<[number, number] | null>(null);
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Memoize coordinates to prevent unnecessary re-renders
@@ -27,6 +28,7 @@ export const useSearchState = (initialPostcode = '') => {
       console.log('📍 Setting postcode from URL state:', newPostcode);
       setPostcode(newPostcode);
       setIsSearching(true);
+      setSearchStartTime(Date.now());
     }
   }, [location.state?.searchTerm, location.state?.searchType]);
 
@@ -50,6 +52,7 @@ export const useSearchState = (initialPostcode = '') => {
     console.log('🔍 Starting new postcode search:', newPostcode);
     setIsSearching(true);
     setPostcode(newPostcode);
+    setSearchStartTime(Date.now());
   }, [toast]);
 
   return {
@@ -62,6 +65,8 @@ export const useSearchState = (initialPostcode = '') => {
     setSearchPoint,
     isSearching,
     setIsSearching,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    searchStartTime,
+    setSearchStartTime
   };
 };
