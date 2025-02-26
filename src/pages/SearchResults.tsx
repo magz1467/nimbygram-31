@@ -62,10 +62,10 @@ const SearchResultsPage = () => {
       app.status?.toLowerCase().includes('declined'))?.length || 0,
     'Other': applications?.filter(app => {
       if (!app.status) return true;
-      const status = status.toLowerCase();
-      return !status.includes('under consideration') && 
-             !status.includes('approved') && 
-             !status.includes('declined');
+      const appStatus = app.status.toLowerCase();
+      return !appStatus.includes('under consideration') && 
+             !appStatus.includes('approved') && 
+             !appStatus.includes('declined');
     })?.length || 0
   };
 
@@ -231,3 +231,4 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
+
