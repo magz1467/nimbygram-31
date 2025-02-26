@@ -31,11 +31,22 @@ export const ResultsContainer = ({
   console.log('🌍 Map visibility state:', {
     showMap,
     hasCoordinates: !!coordinates,
+    coordinates: coordinates,
     selectedId,
-    applications: applications.length
+    applications: applications.length,
+    isLoading
   });
 
   const shouldShowMap = showMap && coordinates && applications.length > 0;
+  
+  console.log('🎯 Should show map?', {
+    shouldShowMap,
+    conditions: {
+      showMap,
+      hasCoordinates: !!coordinates,
+      hasApplications: applications.length > 0
+    }
+  });
 
   return (
     <main className="container mx-auto px-4 py-6 min-h-[calc(100vh-16rem)]">
@@ -45,7 +56,7 @@ export const ResultsContainer = ({
             applications={displayApplications}
             isLoading={isLoading}
             onSeeOnMap={(id) => {
-              console.log('📍 See on map clicked:', id);
+              console.log('📍 See on map clicked:', { id, currentCoords: coordinates });
               setSelectedId(id);
               setShowMap(true);
             }}
