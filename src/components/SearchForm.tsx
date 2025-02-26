@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -116,9 +115,9 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <Tabs defaultValue="postcode" className="w-full" onValueChange={(value) => setSearchType(value as 'postcode' | 'location')}>
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="postcode">Search by Postcode</TabsTrigger>
-          <TabsTrigger value="location">Search by Location</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-4 bg-background">
+          <TabsTrigger value="postcode" className="data-[state=active]:bg-white">Search by Postcode</TabsTrigger>
+          <TabsTrigger value="location" className="data-[state=active]:bg-white">Search by Location</TabsTrigger>
         </TabsList>
         <TabsContent value="postcode" className="mt-0">
           <PostcodeSearch
@@ -151,4 +150,3 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
-
