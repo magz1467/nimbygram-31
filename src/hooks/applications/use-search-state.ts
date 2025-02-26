@@ -29,18 +29,19 @@ export const useSearchState = (initialPostcode = '') => {
   const [postcode, setPostcode] = useState(initialPostcode);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  const [searchPoint, setSearchPoint] = useState<[number, number] | null>(null);
   const { toast } = useToast();
 
   // Use useCoordinates hook with useMemo to prevent unnecessary re-renders
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
 
-  // Use React Query for applications data
+  // Use React Query for applications data - updated to use gcTime instead of cacheTime
   const { data: applications = [], isLoading: isLoadingApps } = useQuery({
     queryKey: ['applications', coordinates],
     queryFn: () => fetchApplications(coordinates),
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes
+    gcTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes (replacing cacheTime)
   });
 
   // Handle search state from URL - only on mount or navigation
@@ -80,6 +81,8 @@ export const useSearchState = (initialPostcode = '') => {
     setIsSearching,
     handlePostcodeSelect,
     searchStartTime,
-    setSearchStartTime
+    setSearchStartTime,
+    searchPoint,
+    setSearchPoint
   };
 };
