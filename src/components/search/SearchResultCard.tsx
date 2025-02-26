@@ -52,7 +52,8 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
 
   // Remove square brackets from the header if they exist
   const cleanHeader = (header: string) => {
-    return header.replace(/^\[(.*)\]$/, '$1').trim();
+    // This pattern will match square brackets at both start and end of the string
+    return header.replace(/^\[(.+)\]$/, '$1').trim();
   };
 
   return (
@@ -143,4 +144,3 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
-
