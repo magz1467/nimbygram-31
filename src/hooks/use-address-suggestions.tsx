@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -32,67 +33,59 @@ export const useAddressSuggestions = (search: string) => {
           `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`
         );
         
-        if (!autocompleteResponse.ok) {
-          if (autocompleteResponse.status !== 404) {
-            throw new Error('Postcode API error');
-          }
-          return []; // No results found
-        }
-
-        const autocompleteData = await autocompleteResponse.json();
+        const suggestions: PostcodeSuggestion[] = [];
         
-        if (autocompleteData.result) {
-          // Fetch details for each suggested postcode
-          const detailsPromises = autocompleteData.result.map(async (postcode: string) => {
-            const detailsResponse = await fetch(
-              `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
-            );
-            
-            if (!detailsResponse.ok) {
-              return null;
-            }
-
-            const details = await detailsResponse.json();
-            
-            if (details.result) {
-              return {
-                ...details.result,
-                postcode: details.result.postcode,
-                address: `${details.result.admin_ward}, ${details.result.parish || ''} ${details.result.admin_district}, ${details.result.postcode}`.trim()
-              };
-            }
-            return null;
-          });
+        if (autocompleteResponse.ok) {
+          const autocompleteData = await autocompleteResponse.json();
           
-          const results = await Promise.all(detailsPromises);
-          return results.filter(Boolean);
+          if (autocompleteData.result && Array.isArray(autocompleteData.result)) {
+            // Fetch details for each suggested postcode
+            for (const postcode of autocompleteData.result) {
+              try {
+                const detailsResponse = await fetch(
+                  `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+                );
+                
+                if (detailsResponse.ok) {
+                  const details = await detailsResponse.json();
+                  if (details.result) {
+                    suggestions.push({
+                      ...details.result,
+                      postcode: details.result.postcode,
+                      address: `${details.result.admin_ward || ''}, ${details.result.parish || ''} ${details.result.admin_district || ''}, ${details.result.postcode}`.trim()
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching postcode details:', error);
+              }
+            }
+          }
+        } else if (autocompleteResponse.status !== 404) {
+          // Only try general search if autocomplete failed for reasons other than 404
+          const generalResponse = await fetch(
+            `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`
+          );
+          
+          if (generalResponse.ok) {
+            const generalData = await generalResponse.json();
+            
+            if (generalData.result && Array.isArray(generalData.result)) {
+              suggestions.push(...generalData.result.map((result: any) => ({
+                ...result,
+                postcode: result.postcode,
+                address: `${result.admin_ward || ''}, ${result.parish || ''} ${result.admin_district || ''}, ${result.postcode}`.trim()
+              })));
+            }
+          }
         }
-
-        // If no autocomplete results or search doesn't include numbers, try general address search
-        const generalResponse = await fetch(
-          `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`
-        );
         
-        if (!generalResponse.ok) {
-          throw new Error('Address search failed');
-        }
-
-        const generalData = await generalResponse.json();
-        
-        if (generalData.result && generalData.result.length > 0) {
-          return generalData.result.map((result: any) => ({
-            ...result,
-            postcode: result.postcode,
-            address: `${result.admin_ward}, ${result.parish || ''} ${result.admin_district}, ${result.postcode}`.trim()
-          }));
-        }
-        
-        return [];
+        return suggestions;
       } catch (error) {
         console.error('Error fetching suggestions:', error);
         toast({
-          title: "Address lookup error",
-          description: "There was a problem looking up addresses. Please try again later.",
+          title: "Error",
+          description: "Unable to fetch location suggestions. Please try again.",
           variant: "destructive"
         });
         return [];
@@ -100,6 +93,7 @@ export const useAddressSuggestions = (search: string) => {
     },
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 1, // Only retry once to avoid too many failed requests
+    retry: 1,
+    initialData: [], // Ensure we always have an array
   });
 };
