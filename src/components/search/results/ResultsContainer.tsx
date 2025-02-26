@@ -62,7 +62,7 @@ export const ResultsContainer = ({
             }}
           />
         </div>
-        {shouldShowMap && (
+        {shouldShowMap && coordinates && (
           <div className="w-1/2 relative">
             <div className="sticky top-4 h-[calc(100vh-8rem)] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
               <Button
@@ -77,7 +77,7 @@ export const ResultsContainer = ({
               >
                 <X className="h-4 w-4" />
               </Button>
-              <div className="w-full h-full">
+              <div className="w-full h-full z-0">
                 <MapView 
                   applications={applications}
                   selectedId={selectedId}
