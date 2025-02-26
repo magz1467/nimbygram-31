@@ -17,7 +17,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const [postcode, setPostcode] = useState('');
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchType, setSearchType] = useState<'postcode' | 'location'>('postcode');
+  const [searchType, setSearchType] = useState<'postcode' | 'location'>(activeTab as 'postcode' | 'location' || 'postcode');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -49,27 +49,30 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     }
 
     setIsSubmitting(true);
-    console.log(`🔄 Search started for ${searchType}:`, searchTerm);
+    console.log(`🔄 Starting search for ${searchType}:`, searchTerm);
 
     try {
+      // Log search first
       await logSearch(searchTerm, searchType, activeTab);
       
-      // Call onSearch first if provided (for postcode searches)
+      // Call onSearch callback for postcode searches if provided
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);
       }
 
-      // Use replace: true to prevent adding to history stack
-      navigate('/search-results', { 
+      // Navigate to search results with state
+      // Using replace to prevent history build-up
+      navigate('/search-results', {
         state: {
-          postcode: searchType === 'postcode' ? searchTerm : null,
-          location: searchType === 'location' ? searchTerm : null
+          searchType,
+          searchTerm,
+          timestamp: Date.now() // Add timestamp to ensure state changes are detected
         },
         replace: true
       });
 
     } catch (error) {
-      console.error('❌ Error during search:', error);
+      console.error('❌ Search error:', error);
       toast({
         title: "Error",
         description: "There was a problem processing your search. Please try again.",
@@ -83,7 +86,8 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <Tabs 
-        defaultValue="postcode" 
+        defaultValue={searchType}
+        value={searchType}
         className="w-full" 
         onValueChange={(value) => setSearchType(value as 'postcode' | 'location')}
       >
@@ -117,4 +121,3 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
-
