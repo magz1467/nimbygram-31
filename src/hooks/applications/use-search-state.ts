@@ -21,7 +21,10 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
     throw error;
   }
 
-  return data || [];
+  return data.map(app => ({
+    ...app,
+    title: app.description || app.title || `Application ${app.id}`,
+  })) || [];
 };
 
 export const useSearchState = (initialPostcode = '') => {
@@ -37,25 +40,27 @@ export const useSearchState = (initialPostcode = '') => {
 
   // Use React Query for applications data with modified caching strategy
   const { data: applications = [], isLoading: isLoadingApps } = useQuery({
-    queryKey: ['applications', coordinates],
+    queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
     enabled: !!coordinates,
-    staleTime: Infinity, // Data never becomes stale automatically
-    gcTime: 24 * 60 * 60 * 1000, // Keep unused data in cache for 24 hours
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    refetchOnReconnect: false, // Disable refetch on reconnect
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
   });
 
   // Handle search state from URL - only on mount or navigation
   useEffect(() => {
-    if (location.state?.searchType === 'postcode' && location.state?.searchTerm) {
-      const newPostcode = location.state.searchTerm;
+    const searchState = location.state;
+    if (searchState?.searchType === 'postcode' && searchState?.searchTerm && !postcode) {
+      const newPostcode = searchState.searchTerm;
       console.log('📍 Setting postcode from URL state:', newPostcode);
       setPostcode(newPostcode);
       setIsSearching(true);
       setSearchStartTime(Date.now());
     }
-  }, [location.state?.searchTerm, location.state?.searchType]);
+  }, [location.state?.searchTerm, location.state?.searchType, postcode]);
 
   // Memoize handlePostcodeSelect to prevent unnecessary re-renders
   const handlePostcodeSelect = useCallback(async (newPostcode: string) => {
@@ -67,11 +72,15 @@ export const useSearchState = (initialPostcode = '') => {
       });
       return;
     }
-    console.log('🔍 Starting new postcode search:', newPostcode);
-    setIsSearching(true);
-    setPostcode(newPostcode);
-    setSearchStartTime(Date.now());
-  }, [toast]);
+    
+    // Only update if postcode has changed
+    if (newPostcode !== postcode) {
+      console.log('🔍 Starting new postcode search:', newPostcode);
+      setIsSearching(true);
+      setPostcode(newPostcode);
+      setSearchStartTime(Date.now());
+    }
+  }, [postcode, toast]);
 
   return {
     postcode,

@@ -26,10 +26,17 @@ export const MapContainer = memo(({
 }: MapContainerProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
 
+  console.log('🗺️ MapContainer render:', {
+    coordinates,
+    applicationsCount: applications.length,
+    selectedId,
+    firstApp: applications[0]
+  });
+
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapRef.current && coordinates) {
       console.log('🗺️ Setting map view to coordinates:', coordinates);
-      mapRef.current.setView(coordinates, 14);
+      mapRef.current.setView(coordinates, mapRef.current.getZoom() || 14);
       mapRef.current.invalidateSize();
     }
   }, [coordinates]);
