@@ -31,13 +31,16 @@ export const ResultsContainer = ({
   console.log('🌍 Map visibility state:', {
     showMap,
     hasCoordinates: !!coordinates,
-    selectedId
+    selectedId,
+    applications: applications.length
   });
+
+  const shouldShowMap = showMap && coordinates && applications.length > 0;
 
   return (
     <main className="container mx-auto px-4 py-6 min-h-[calc(100vh-16rem)]">
       <div className="flex gap-6 relative min-h-full">
-        <div className={`${showMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
+        <div className={`${shouldShowMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
           <SearchResultsList 
             applications={displayApplications}
             isLoading={isLoading}
@@ -48,7 +51,7 @@ export const ResultsContainer = ({
             }}
           />
         </div>
-        {showMap && coordinates && (
+        {shouldShowMap && (
           <div className="w-1/2 relative">
             <div className="sticky top-4 h-[calc(100vh-8rem)] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
               <Button
@@ -78,4 +81,3 @@ export const ResultsContainer = ({
     </main>
   );
 };
-
