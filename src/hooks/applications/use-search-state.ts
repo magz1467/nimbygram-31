@@ -35,13 +35,15 @@ export const useSearchState = (initialPostcode = '') => {
   // Use useCoordinates hook with useMemo to prevent unnecessary re-renders
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
 
-  // Use React Query for applications data - updated to use gcTime instead of cacheTime
+  // Use React Query for applications data with modified caching strategy
   const { data: applications = [], isLoading: isLoadingApps } = useQuery({
     queryKey: ['applications', coordinates],
     queryFn: () => fetchApplications(coordinates),
     enabled: !!coordinates,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes (replacing cacheTime)
+    staleTime: Infinity, // Data never becomes stale automatically
+    gcTime: 24 * 60 * 60 * 1000, // Keep unused data in cache for 24 hours
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    refetchOnReconnect: false, // Disable refetch on reconnect
   });
 
   // Handle search state from URL - only on mount or navigation
