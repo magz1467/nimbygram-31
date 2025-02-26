@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { SearchResultsList } from "@/components/search/SearchResultsList";

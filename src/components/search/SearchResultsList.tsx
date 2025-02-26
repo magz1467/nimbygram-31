@@ -3,6 +3,9 @@ import { Application } from "@/types/planning";
 import { SearchResultCard } from "./SearchResultCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 interface SearchResultsListProps {
   applications: Application[];
@@ -10,6 +13,15 @@ interface SearchResultsListProps {
 }
 
 export const SearchResultsList = ({ applications, isLoading }: SearchResultsListProps) => {
+  const [displayCount, setDisplayCount] = useState(10);
+
+  const displayedApplications = applications.slice(0, displayCount);
+  const hasMore = displayCount < applications.length;
+
+  const handleSeeMore = () => {
+    setDisplayCount(prevCount => prevCount + 10);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -38,11 +50,25 @@ export const SearchResultsList = ({ applications, isLoading }: SearchResultsList
   }
 
   return (
-    <div className="grid gap-8">
-      {applications.map((application) => (
-        <SearchResultCard key={application.id} application={application} />
-      ))}
+    <div className="space-y-8">
+      <div className="grid gap-8">
+        {displayedApplications.map((application) => (
+          <SearchResultCard key={application.id} application={application} />
+        ))}
+      </div>
+      
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="outline"
+            onClick={handleSeeMore}
+            className="flex items-center gap-2"
+          >
+            <ChevronDown className="h-4 w-4" />
+            See More ({applications.length - displayCount} remaining)
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
-
