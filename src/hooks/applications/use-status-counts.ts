@@ -19,3 +19,4 @@ export const useStatusCounts = (applications: Application[] = []) => {
     })?.length || 0
   }), [applications]);
 };
+

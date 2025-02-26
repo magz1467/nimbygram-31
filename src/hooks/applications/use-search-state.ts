@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useCoordinates } from "@/hooks/use-coordinates";
@@ -37,3 +38,4 @@ export const useSearchState = (initialPostcode = '') => {
     handlePostcodeSelect
   };
 };
+

@@ -55,3 +55,4 @@ export const useInterestingApplications = (hasSearched: boolean) => {
     fetchInterestingApplications
   };
 };
+
