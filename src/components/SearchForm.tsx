@@ -54,24 +54,23 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     try {
       await logSearch(searchTerm, searchType, activeTab);
       
+      // Call onSearch first if provided (for postcode searches)
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);
       }
 
-      window.dispatchEvent(new CustomEvent('searchStarted'));
-      
-      window.dispatchEvent(new CustomEvent('postcodeSearch', {
-        detail: { 
-          postcode: searchType === 'postcode' ? searchTerm : null,
-          location: searchType === 'location' ? searchTerm : null
-        }
-      }));
+      // Use state object for navigation
+      const searchState = {
+        postcode: searchType === 'postcode' ? searchTerm : null,
+        location: searchType === 'location' ? searchTerm : null
+      };
 
+      // Only dispatch event after successful search logging
+      window.dispatchEvent(new CustomEvent('searchStarted', { detail: searchState }));
+
+      // Use replace: true to prevent adding to history stack
       navigate('/search-results', { 
-        state: { 
-          postcode: searchType === 'postcode' ? searchTerm : null,
-          location: searchType === 'location' ? searchTerm : null
-        },
+        state: searchState,
         replace: true
       });
 
