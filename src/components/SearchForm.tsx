@@ -6,6 +6,13 @@ import { Search } from "lucide-react";
 import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface SearchFormProps {
   activeTab?: string;
@@ -14,14 +21,17 @@ interface SearchFormProps {
 
 export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const [postcode, setPostcode] = useState('');
+  const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchType, setSearchType] = useState<'postcode' | 'location'>('postcode');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const logSearch = async (postcode: string) => {
+  const logSearch = async (searchTerm: string, type: 'postcode' | 'location') => {
     try {
       console.log('🔍 Logging search:', {
-        postcode,
+        searchTerm,
+        type,
         status: activeTab,
         timestamp: new Date().toISOString()
       });
@@ -29,7 +39,8 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       const { error } = await supabase.from('Searches').insert({
-        'Post Code': postcode,
+        'Post Code': type === 'postcode' ? searchTerm : null,
+        'Location': type === 'location' ? searchTerm : null,
         'Status': activeTab,
         'User_logged_in': !!session?.user
       });
@@ -50,37 +61,43 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!postcode.trim() || isSubmitting) {
+    const searchTerm = searchType === 'postcode' ? postcode.trim() : location.trim();
+    
+    if (!searchTerm || isSubmitting) {
       return;
     }
 
     setIsSubmitting(true);
-    console.log('🔄 Search started for postcode:', postcode);
-
-    const trimmedPostcode = postcode.trim();
+    console.log(`🔄 Search started for ${searchType}:`, searchTerm);
 
     try {
       console.log('📝 Before logging search');
-      await logSearch(trimmedPostcode);
+      await logSearch(searchTerm, searchType);
       console.log('✅ After logging search');
       
-      if (onSearch) {
-        onSearch(trimmedPostcode);
+      if (onSearch && searchType === 'postcode') {
+        onSearch(searchTerm);
       }
 
       // Dispatch events first
       console.log('🔔 Dispatching searchStarted event');
       window.dispatchEvent(new CustomEvent('searchStarted'));
       
-      console.log('📨 Dispatching postcodeSearch event:', trimmedPostcode);
+      console.log('📨 Dispatching search event:', { type: searchType, term: searchTerm });
       window.dispatchEvent(new CustomEvent('postcodeSearch', {
-        detail: { postcode: trimmedPostcode }
+        detail: { 
+          postcode: searchType === 'postcode' ? searchTerm : null,
+          location: searchType === 'location' ? searchTerm : null
+        }
       }));
 
-      // Then navigate to search-results instead of map
-      console.log('🚀 Navigating to search-results with postcode:', trimmedPostcode);
+      // Navigate to search-results
+      console.log('🚀 Navigating to search-results with search term:', searchTerm);
       navigate('/search-results', { 
-        state: { postcode: trimmedPostcode },
+        state: { 
+          postcode: searchType === 'postcode' ? searchTerm : null,
+          location: searchType === 'location' ? searchTerm : null
+        },
         replace: true
       });
 
@@ -98,14 +115,31 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <PostcodeSearch
-        onSelect={(value) => {
-          console.log('📮 Postcode selected:', value);
-          setPostcode(value);
-        }}
-        placeholder="Enter postcode"
-        className="flex-1"
-      />
+      <Tabs defaultValue="postcode" className="w-full" onValueChange={(value) => setSearchType(value as 'postcode' | 'location')}>
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="postcode">Search by Postcode</TabsTrigger>
+          <TabsTrigger value="location">Search by Location</TabsTrigger>
+        </TabsList>
+        <TabsContent value="postcode" className="mt-0">
+          <PostcodeSearch
+            onSelect={(value) => {
+              console.log('📮 Postcode selected:', value);
+              setPostcode(value);
+            }}
+            placeholder="Enter postcode"
+            className="flex-1"
+          />
+        </TabsContent>
+        <TabsContent value="location" className="mt-0">
+          <Input
+            type="text"
+            placeholder="Enter location (e.g., street, town, or city)"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full"
+          />
+        </TabsContent>
+      </Tabs>
       <Button 
         type="submit" 
         className="w-full bg-secondary hover:bg-secondary/90 text-white py-6 text-lg font-semibold rounded-xl shadow-sm"
@@ -117,3 +151,4 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
+
