@@ -3,33 +3,31 @@ import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { useSearchState } from "@/hooks/applications/use-search-state";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
-import { useMapApplications } from "@/hooks/use-map-applications";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useStatusCounts } from "@/hooks/applications/use-status-counts";
 import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
 
 export const SearchView = () => {
   const location = useLocation();
-  const initialPostcode = location.state?.postcode;
-  const initialLocation = location.state?.location;
+  const initialPostcode = location.state?.searchType === 'postcode' ? location.state.searchTerm : '';
 
   const {
     postcode,
     coordinates,
     isLoadingCoords,
+    isLoadingApps,
+    applications = [],
     handlePostcodeSelect,
   } = useSearchState(initialPostcode);
 
-  const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
+  const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode));
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  const { applications, isLoading: isLoadingApps } = useMapApplications(coordinates);
 
   const {
     activeFilters,
@@ -38,12 +36,15 @@ export const SearchView = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  const filteredApplications = useFilteredApplications(
-    applications,
-    activeFilters,
-    activeSort,
-    coordinates
-  );
+  // Memoize filtered applications to prevent unnecessary re-renders
+  const filteredApplications = useMemo(() => (
+    useFilteredApplications(
+      applications,
+      activeFilters,
+      activeSort,
+      coordinates
+    )
+  ), [applications, activeFilters, activeSort, coordinates]);
 
   const statusCounts = useStatusCounts(applications);
 
@@ -75,6 +76,13 @@ export const SearchView = () => {
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
   const displayApplications = hasSearched ? filteredApplications : interestingApplications;
+
+  console.log('🔄 SearchView render:', {
+    hasSearched,
+    hasCoordinates: !!coordinates,
+    applicationsCount: applications.length,
+    isLoading
+  });
 
   if (!isLoading && !displayApplications?.length && !coordinates) {
     return (
@@ -144,4 +152,3 @@ export const SearchView = () => {
     </div>
   );
 };
-
