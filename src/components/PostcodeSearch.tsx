@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,25 +26,10 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
   const { data: suggestions = [], isLoading } = useAddressSuggestions(search);
 
   const handleSelect = async (postcode: string) => {
+    console.log('📮 Selected postcode:', postcode);
     setSearch(postcode);
     setOpen(false);
     await onSelect(postcode);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearch(value);
-    if (value.length >= 2) {
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (search) {
-      onSelect(search);
-    }
   };
 
   return (
@@ -53,16 +39,26 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
           type="text"
           placeholder={placeholder}
           value={search}
-          onChange={handleInputChange}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearch(value);
+            if (value.length >= 2) {
+              setOpen(true);
+            } else {
+              setOpen(false);
+            }
+          }}
           className="w-full pl-4 pr-10 py-2"
           onFocus={() => search.length >= 2 && setOpen(true)}
         />
         <Button 
-          type="submit" 
+          type="button"
           size="icon" 
           variant="ghost" 
           className="absolute right-1 top-1/2 -translate-y-1/2"
-          onClick={handleSubmit}
+          onClick={() => {
+            if (search) onSelect(search);
+          }}
         >
           <Search className="h-4 w-4" />
         </Button>
@@ -80,9 +76,9 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                 <CommandGroup>
                   {suggestions.map((suggestion) => (
                     <CommandItem
-                      key={suggestion.postcode}
+                      key={`${suggestion.postcode}-${Date.now()}`}
                       onSelect={() => handleSelect(suggestion.postcode)}
-                      className="hover:bg-primary/10"
+                      className="cursor-pointer hover:bg-primary/10"
                     >
                       <div className="flex flex-col">
                         <span className="font-medium">{suggestion.postcode}</span>

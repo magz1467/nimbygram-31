@@ -30,61 +30,73 @@ export const useAddressSuggestions = (search: string) => {
       try {
         const suggestions: PostcodeSuggestion[] = [];
         
-        // First try the autocomplete endpoint for partial postcodes
-        const autocompleteResponse = await fetch(
-          `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`
-        );
+        // First try the postcode autocomplete
+        const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`;
+        console.log('🔍 Fetching autocomplete:', autocompleteUrl);
         
-        if (autocompleteResponse.ok) {
-          const autocompleteData = await autocompleteResponse.json();
-          
-          if (autocompleteData.result && Array.isArray(autocompleteData.result)) {
-            // Fetch details for each suggested postcode
-            const detailsPromises = autocompleteData.result.map(async (postcode) => {
-              try {
-                const detailsResponse = await fetch(
-                  `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
-                );
-                
-                if (detailsResponse.ok) {
-                  const details = await detailsResponse.json();
-                  if (details.result) {
-                    return {
-                      ...details.result,
-                      postcode: details.result.postcode,
-                      address: `${details.result.admin_ward || ''}, ${details.result.parish || ''} ${details.result.admin_district || ''}, ${details.result.postcode}`.trim()
-                    };
-                  }
+        const autocompleteResponse = await fetch(autocompleteUrl);
+        const autocompleteData = await autocompleteResponse.json();
+        
+        if (autocompleteData.result && Array.isArray(autocompleteData.result)) {
+          // Fetch details for each suggested postcode
+          const detailsPromises = autocompleteData.result.map(async (postcode) => {
+            try {
+              const detailsResponse = await fetch(
+                `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+              );
+              
+              if (detailsResponse.ok) {
+                const details = await detailsResponse.json();
+                if (details.result) {
+                  return {
+                    ...details.result,
+                    postcode: details.result.postcode,
+                    address: [
+                      details.result.admin_ward,
+                      details.result.parish,
+                      details.result.admin_district,
+                      details.result.postcode
+                    ].filter(Boolean).join(', ')
+                  };
                 }
-                return null;
-              } catch (error) {
-                console.error('Error fetching postcode details:', error);
-                return null;
               }
-            });
+              return null;
+            } catch (error) {
+              console.error('Error fetching postcode details:', error);
+              return null;
+            }
+          });
 
-            const results = await Promise.all(detailsPromises);
-            suggestions.push(...results.filter((result): result is PostcodeSuggestion => result !== null));
-          }
-        } else if (autocompleteResponse.status !== 404) {
-          // Only try general search if autocomplete failed for reasons other than 404
-          const generalResponse = await fetch(
-            `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`
-          );
+          const results = await Promise.all(detailsPromises);
+          suggestions.push(...results.filter((result): result is PostcodeSuggestion => result !== null));
+        }
+
+        // If no results from autocomplete, try general search
+        if (suggestions.length === 0) {
+          const searchUrl = `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`;
+          console.log('🔍 Trying general search:', searchUrl);
           
-          if (generalResponse.ok) {
-            const generalData = await generalResponse.json();
+          const searchResponse = await fetch(searchUrl);
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
             
-            if (generalData.result && Array.isArray(generalData.result)) {
-              suggestions.push(...generalData.result.map((result: any) => ({
+            if (searchData.result && Array.isArray(searchData.result)) {
+              const searchResults = searchData.result.map((result: any) => ({
                 ...result,
                 postcode: result.postcode,
-                address: `${result.admin_ward || ''}, ${result.parish || ''} ${result.admin_district || ''}, ${result.postcode}`.trim()
-              })));
+                address: [
+                  result.admin_ward,
+                  result.parish,
+                  result.admin_district,
+                  result.postcode
+                ].filter(Boolean).join(', ')
+              }));
+              suggestions.push(...searchResults);
             }
           }
         }
         
+        console.log('📍 Found suggestions:', suggestions.length);
         return suggestions;
       } catch (error) {
         console.error('Error fetching suggestions:', error);
@@ -96,7 +108,6 @@ export const useAddressSuggestions = (search: string) => {
         return [];
       }
     },
-    initialData: [], // Always initialize with empty array
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
