@@ -1,6 +1,5 @@
 
 import { Application } from "@/types/planning";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
@@ -10,10 +9,10 @@ import { CardFooter } from "./card/CardFooter";
 
 interface SearchResultCardProps {
   application: Application;
+  onSeeOnMap?: (id: number) => void;
 }
 
-export const SearchResultCard = ({ application }: SearchResultCardProps) => {
-  const navigate = useNavigate();
+export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
   const { toast } = useToast();
 
   console.log('SearchResultCard - Application:', {
@@ -22,15 +21,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     streetview_url: application.streetview_url,
     type: typeof application.streetview_url
   });
-
-  const handleSeeOnMap = () => {
-    navigate('/map', {
-      state: {
-        selectedApplication: application,
-        coordinates: application.coordinates
-      }
-    });
-  };
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -50,17 +40,13 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
   };
 
   const handleShowComments = () => {
-    navigate('/map', {
-      state: {
-        selectedApplication: application,
-        coordinates: application.coordinates,
-        showComments: true
-      }
-    });
+    if (onSeeOnMap) {
+      onSeeOnMap(application.id);
+    }
   };
 
   return (
-    <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
+    <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       <CardHeader 
         title={application.title || ''} 
         address={application.address} 
@@ -82,9 +68,10 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
 
       <div className="px-8 py-4">
         <CardContent storybook={application.storybook} />
-        <CardFooter onSeeOnMap={handleSeeOnMap} />
+        <CardFooter 
+          onSeeOnMap={() => onSeeOnMap?.(application.id)} 
+        />
       </div>
     </article>
   );
 };
-

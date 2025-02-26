@@ -13,6 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { MapView } from "@/components/applications/dashboard/components/MapView";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -31,6 +34,8 @@ const SearchResultsPage = () => {
   const [isLoadingInteresting, setIsLoadingInteresting] = useState(false);
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
   const [shouldFetchInteresting, setShouldFetchInteresting] = useState(!hasSearched);
+  const [showMap, setShowMap] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const { applications, isLoading: isLoadingApps } = useMapApplications(coordinates);
 
@@ -57,7 +62,7 @@ const SearchResultsPage = () => {
       app.status?.toLowerCase().includes('declined'))?.length || 0,
     'Other': applications?.filter(app => {
       if (!app.status) return true;
-      const status = app.status.toLowerCase();
+      const status = status.toLowerCase();
       return !status.includes('under consideration') && 
              !status.includes('approved') && 
              !status.includes('declined');
@@ -105,24 +110,29 @@ const SearchResultsPage = () => {
   }, [toast, shouldFetchInteresting]);
 
   useEffect(() => {
-    // Only fetch interesting applications if we should and haven't searched yet
     if (shouldFetchInteresting && !hasSearched) {
       fetchInterestingApplications();
     }
   }, [shouldFetchInteresting, hasSearched, fetchInterestingApplications]);
 
-  // Update hasSearched when coordinates or applications change
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
       setHasSearched(true);
-      setShouldFetchInteresting(false); // Prevent future interesting application fetches
+      setShouldFetchInteresting(false);
     }
   }, [coordinates, applications]);
+
+  const handleMarkerClick = (id: number | null) => {
+    setSelectedId(id);
+    if (id) {
+      const element = document.getElementById(`application-${id}`);
+      element?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
   const displayApplications = hasSearched ? filteredApplications : interestingApplications;
 
-  // Prevent render until we have either applications or interesting applications
   if (!isLoading && !displayApplications?.length && !coordinates) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -178,14 +188,46 @@ const SearchResultsPage = () => {
         </div>
       </div>
       <main className="container mx-auto px-4 py-6">
-        <SearchResultsList 
-          applications={displayApplications}
-          isLoading={isLoading}
-        />
+        <div className="flex gap-6">
+          <div className={`${showMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
+            <SearchResultsList 
+              applications={displayApplications}
+              isLoading={isLoading}
+              onSeeOnMap={(id) => {
+                setSelectedId(id);
+                setShowMap(true);
+              }}
+            />
+          </div>
+          {showMap && coordinates && (
+            <div className="w-1/2 relative">
+              <div className="sticky top-4">
+                <div className="relative h-[calc(100vh-8rem)] rounded-lg overflow-hidden border border-gray-200 shadow-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
+                    onClick={() => {
+                      setShowMap(false);
+                      setSelectedId(null);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <MapView 
+                    applications={applications}
+                    selectedId={selectedId}
+                    coordinates={coordinates}
+                    onMarkerClick={handleMarkerClick}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
 };
 
 export default SearchResultsPage;
-

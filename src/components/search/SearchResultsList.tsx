@@ -10,9 +10,10 @@ import { ChevronDown } from "lucide-react";
 interface SearchResultsListProps {
   applications: Application[];
   isLoading: boolean;
+  onSeeOnMap?: (id: number) => void;
 }
 
-export const SearchResultsList = ({ applications, isLoading }: SearchResultsListProps) => {
+export const SearchResultsList = ({ applications, isLoading, onSeeOnMap }: SearchResultsListProps) => {
   const [displayCount, setDisplayCount] = useState(10);
 
   const displayedApplications = applications.slice(0, displayCount);
@@ -53,7 +54,11 @@ export const SearchResultsList = ({ applications, isLoading }: SearchResultsList
     <div className="space-y-8">
       <div className="grid gap-8">
         {displayedApplications.map((application) => (
-          <SearchResultCard key={application.id} application={application} />
+          <SearchResultCard 
+            key={application.id} 
+            application={application}
+            onSeeOnMap={onSeeOnMap}
+          />
         ))}
       </div>
       
