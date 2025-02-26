@@ -1,3 +1,4 @@
+
 import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { SearchResultsList } from "@/components/search/SearchResultsList";
@@ -6,15 +7,17 @@ import { useMapApplications } from "@/hooks/use-map-applications";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { FilterBar } from "@/components/FilterBar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { useLocation } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const initialPostcode = location.state?.postcode;
+  const { toast } = useToast();
 
   const {
     postcode,
@@ -35,7 +38,7 @@ const SearchResultsPage = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  // Apply filters and sorting to applications
+  // Memoize filtered applications to prevent unnecessary recalculations
   const filteredApplications = useFilteredApplications(
     applications,
     activeFilters,
@@ -43,7 +46,6 @@ const SearchResultsPage = () => {
     coordinates
   );
 
-  // Calculate status counts for the filter dropdown
   const statusCounts = {
     'Under Review': applications?.filter(app => 
       app.status?.toLowerCase().includes('under consideration'))?.length || 0,
@@ -60,43 +62,67 @@ const SearchResultsPage = () => {
     })?.length || 0
   };
 
-  useEffect(() => {
-    const fetchInterestingApplications = async () => {
-      console.log('🌟 Fetching interesting applications...');
-      setIsLoadingInteresting(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('crystal_roof')
-          .select('*')
-          .not('storybook', 'is', null)  // Only get applications with storybook content
-          .order('id', { ascending: false })  // Get newest first
-          .limit(10);  // Limit to 10 interesting applications
+  const fetchInterestingApplications = useCallback(async () => {
+    console.log('🌟 Fetching interesting applications...');
+    setIsLoadingInteresting(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .not('storybook', 'is', null)
+        .order('id', { ascending: false })
+        .limit(10);
 
-        if (error) {
-          console.error('Error fetching interesting applications:', error);
-          return;
-        }
-
-        console.log('📊 Fetched interesting applications:', data?.length);
-        setInterestingApplications(data || []);
-      } catch (error) {
-        console.error('Failed to fetch interesting applications:', error);
-      } finally {
-        setIsLoadingInteresting(false);
+      if (error) {
+        console.error('Error fetching interesting applications:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch interesting applications",
+          variant: "destructive",
+        });
+        return;
       }
-    };
 
-    // Only fetch interesting applications if no search has been made
+      console.log('📊 Fetched interesting applications:', data?.length);
+      setInterestingApplications(data || []);
+    } catch (error) {
+      console.error('Failed to fetch interesting applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch interesting applications",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingInteresting(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
     if (!coordinates && !applications?.length) {
       fetchInterestingApplications();
     }
-  }, [coordinates, applications]);
+  }, [coordinates, applications, fetchInterestingApplications]);
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
-
-  // Determine which applications to show
   const displayApplications = coordinates ? filteredApplications : interestingApplications;
+
+  // Prevent render until we have either applications or interesting applications
+  if (!isLoading && !displayApplications?.length && !coordinates) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <SearchSection
+          onPostcodeSelect={handlePostcodeSelect}
+          isMapView={false}
+          applications={[]}
+        />
+        <div className="container mx-auto px-4 py-12 text-center">
+          <p className="text-lg text-gray-600">No applications found. Try searching for a different location.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
