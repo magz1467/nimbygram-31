@@ -1,9 +1,10 @@
 
 import { Application } from "@/types/planning";
 import { formatStorybook } from "@/utils/storybook-formatter";
-import { MapPin } from "lucide-react";
+import { MapPin, Share2, MessageCircle, ThumbsUp, ThumbsDown, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SearchResultCardProps {
   application: Application;
@@ -11,6 +12,7 @@ interface SearchResultCardProps {
 
 export const SearchResultCard = ({ application }: SearchResultCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const storybook = formatStorybook(application.storybook);
 
   console.log('SearchResultCard - Application:', {
@@ -27,6 +29,29 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         coordinates: application.coordinates
       }
     });
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: "You can now share this planning application with others.",
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't copy link",
+        description: "Please try again or copy the URL manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    const url = window.location.href;
+    const text = `Check out this planning application: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const parseHtmlContent = (content: string) => {
@@ -52,22 +77,14 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
 
   // Enhanced cleanHeader function to handle various bracket formats
   const cleanHeader = (header: string) => {
-    // First, trim any whitespace
     let cleanedHeader = header.trim();
-    
-    // Remove square brackets from start and end, handling multiple formats:
-    // [text], [ text ], [text, more text], etc.
     cleanedHeader = cleanedHeader.replace(/^\s*\[(.*?)\]\s*$/, '$1').trim();
-    
-    // If somehow there are still brackets, remove them (fallback)
     cleanedHeader = cleanedHeader.replace(/[\[\]]/g, '').trim();
-    
     return cleanedHeader;
   };
 
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
-      {/* Header Section */}
       <header className="px-4 py-4 text-center">
         <h2 className="font-semibold text-lg text-primary mb-2">
           {cleanHeader(storybook?.header || application.title || 'Planning Application')}
@@ -78,7 +95,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         </p>
       </header>
 
-      {/* Image Section */}
       <div className="relative w-full aspect-[4/3]">
         {typeof application.streetview_url === 'string' && application.streetview_url && (
           <img
@@ -89,11 +105,70 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
         )}
       </div>
 
-      {/* Content Section */}
+      <div className="border-y border-gray-100 py-3 px-4">
+        <div className="grid grid-cols-4 gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex flex-col items-center gap-1 h-auto py-2"
+            onClick={() => toast({
+              title: "Coming soon!",
+              description: "This feature will be available once you connect to Supabase.",
+            })}
+          >
+            <ThumbsUp className="h-5 w-5" />
+            <span className="text-xs">Hot</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex flex-col items-center gap-1 h-auto py-2"
+            onClick={() => toast({
+              title: "Coming soon!",
+              description: "This feature will be available once you connect to Supabase.",
+            })}
+          >
+            <ThumbsDown className="h-5 w-5" />
+            <span className="text-xs">Not</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex flex-col items-center gap-1 h-auto py-2"
+            onClick={() => toast({
+              title: "Coming soon!",
+              description: "This feature will be available once you connect to Supabase.",
+            })}
+          >
+            <Heart className="h-5 w-5" />
+            <span className="text-xs">Support</span>
+          </Button>
+          <div className="flex flex-col gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-8"
+              onClick={handleWhatsAppShare}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              WhatsApp
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="px-8 py-4">
         {storybook?.content && (
           <div className="space-y-6">
-            {/* What's the Deal Section */}
             <div className="prose prose-sm max-w-none">
               <div className="bg-primary/5 rounded-lg p-4">
                 <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
@@ -103,7 +178,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
               </div>
             </div>
 
-            {/* Key Details Section */}
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Key Details</h3>
               <div className="grid gap-4">
@@ -116,7 +190,6 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
               </div>
             </div>
 
-            {/* Nimbywatch Section */}
             {storybook.content.includes('Nimbywatch:') && (
               <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
@@ -153,3 +226,4 @@ export const SearchResultCard = ({ application }: SearchResultCardProps) => {
     </article>
   );
 };
+
