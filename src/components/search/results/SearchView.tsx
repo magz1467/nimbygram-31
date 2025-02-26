@@ -7,10 +7,10 @@ import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
-import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useStatusCounts } from "@/hooks/applications/use-status-counts";
 import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const SearchView = () => {
   const location = useLocation();
@@ -36,15 +36,15 @@ export const SearchView = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  // Memoize filtered applications to prevent unnecessary re-renders
-  const filteredApplications = useMemo(() => (
+  // Memoize filtered applications
+  const filteredApplications = useMemo(() => 
     useFilteredApplications(
       applications,
       activeFilters,
       activeSort,
       coordinates
     )
-  ), [applications, activeFilters, activeSort, coordinates]);
+  , [applications, activeFilters, activeSort, coordinates]);
 
   const statusCounts = useStatusCounts(applications);
 
@@ -54,11 +54,16 @@ export const SearchView = () => {
     fetchInterestingApplications 
   } = useInterestingApplications(hasSearched);
 
-  useEffect(() => {
+  // Memoize fetchInterestingApplications to prevent infinite loop
+  const fetchInterestingMemo = useCallback(() => {
     if (!hasSearched) {
       fetchInterestingApplications();
     }
   }, [hasSearched, fetchInterestingApplications]);
+
+  useEffect(() => {
+    fetchInterestingMemo();
+  }, [fetchInterestingMemo]);
 
   useEffect(() => {
     if (coordinates || applications?.length > 0) {
@@ -66,13 +71,13 @@ export const SearchView = () => {
     }
   }, [coordinates, applications]);
 
-  const handleMarkerClick = (id: number | null) => {
+  const handleMarkerClick = useCallback((id: number | null) => {
     setSelectedId(id);
     if (id) {
       const element = document.getElementById(`application-${id}`);
       element?.scrollIntoView({ behavior: 'smooth' });
     }
-  };
+  }, []);
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
   const displayApplications = hasSearched ? filteredApplications : interestingApplications;
@@ -81,7 +86,8 @@ export const SearchView = () => {
     hasSearched,
     hasCoordinates: !!coordinates,
     applicationsCount: applications.length,
-    isLoading
+    isLoading,
+    displayApplicationsCount: displayApplications?.length
   });
 
   if (!isLoading && !displayApplications?.length && !coordinates) {
@@ -152,3 +158,4 @@ export const SearchView = () => {
     </div>
   );
 };
+
