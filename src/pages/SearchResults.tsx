@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 const SearchResultsPage = () => {
   const location = useLocation();
   const initialPostcode = location.state?.postcode;
+  const initialLocation = location.state?.location;
   const { toast } = useToast();
 
   const {
@@ -27,7 +28,8 @@ const SearchResultsPage = () => {
   } = useSearchState(initialPostcode);
 
   const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
-  const [isLoadingInteresting, setIsLoadingInteresting] = useState(true);
+  const [isLoadingInteresting, setIsLoadingInteresting] = useState(false);
+  const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
 
   const { applications, isLoading: isLoadingApps } = useMapApplications(coordinates);
 
@@ -38,7 +40,6 @@ const SearchResultsPage = () => {
     handleSortChange,
   } = useFilterSortState();
 
-  // Memoize filtered applications to prevent unnecessary recalculations
   const filteredApplications = useFilteredApplications(
     applications,
     activeFilters,
@@ -99,13 +100,21 @@ const SearchResultsPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    if (!coordinates && !applications?.length) {
+    // Only fetch interesting applications if we haven't searched yet
+    if (!hasSearched && !coordinates && !applications?.length) {
       fetchInterestingApplications();
     }
-  }, [coordinates, applications, fetchInterestingApplications]);
+  }, [coordinates, applications, fetchInterestingApplications, hasSearched]);
+
+  // Update hasSearched when coordinates or applications change
+  useEffect(() => {
+    if (coordinates || applications?.length > 0) {
+      setHasSearched(true);
+    }
+  }, [coordinates, applications]);
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
-  const displayApplications = coordinates ? filteredApplications : interestingApplications;
+  const displayApplications = hasSearched ? filteredApplications : interestingApplications;
 
   // Prevent render until we have either applications or interesting applications
   if (!isLoading && !displayApplications?.length && !coordinates) {
@@ -148,7 +157,7 @@ const SearchResultsPage = () => {
                   isMapView={false}
                 />
               )}
-              {!coordinates && !isLoading && (
+              {!coordinates && !isLoading && !hasSearched && (
                 <div className="p-4 text-center w-full">
                   <h2 className="text-xl font-semibold text-primary">
                     Interesting Planning Applications Across the UK
@@ -173,3 +182,4 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
+
