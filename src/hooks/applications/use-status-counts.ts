@@ -1,33 +1,21 @@
+
 import { Application } from "@/types/planning";
+import { useMemo } from "react";
 
-export interface StatusCounts {
-  'Under Review': number;
-  'Approved': number;
-  'Declined': number;
-  'Other': number;
-}
-
-export const calculateStatusCounts = (applications: Application[]): StatusCounts => {
-  const counts: StatusCounts = {
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
-  };
-
-  applications.forEach(app => {
-    const status = app.status.toLowerCase();
-    if (status.includes('under consideration')) {
-      counts['Under Review']++;
-    } else if (status.includes('approved')) {
-      counts['Approved']++;
-    } else if (status.includes('declined')) {
-      counts['Declined']++;
-    } else {
-      counts['Other']++;
-    }
-  });
-
-  console.log('📊 Status counts:', counts);
-  return counts;
+export const useStatusCounts = (applications: Application[] = []) => {
+  return useMemo(() => ({
+    'Under Review': applications?.filter(app => 
+      app.status?.toLowerCase().includes('under consideration'))?.length || 0,
+    'Approved': applications?.filter(app => 
+      app.status?.toLowerCase().includes('approved'))?.length || 0,
+    'Declined': applications?.filter(app => 
+      app.status?.toLowerCase().includes('declined'))?.length || 0,
+    'Other': applications?.filter(app => {
+      if (!app.status) return true;
+      const appStatus = app.status.toLowerCase();
+      return !appStatus.includes('under consideration') && 
+             !appStatus.includes('approved') && 
+             !appStatus.includes('declined');
+    })?.length || 0
+  }), [applications]);
 };

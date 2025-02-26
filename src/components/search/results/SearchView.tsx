@@ -8,17 +8,15 @@ import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Application } from "@/types/planning";
+import { useStatusCounts } from "@/hooks/applications/use-status-counts";
+import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
 
 export const SearchView = () => {
   const location = useLocation();
   const initialPostcode = location.state?.postcode;
   const initialLocation = location.state?.location;
-  const { toast } = useToast();
 
   const {
     postcode,
@@ -27,8 +25,6 @@ export const SearchView = () => {
     handlePostcodeSelect,
   } = useSearchState(initialPostcode);
 
-  const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
-  const [isLoadingInteresting, setIsLoadingInteresting] = useState(false);
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode || initialLocation));
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -49,61 +45,13 @@ export const SearchView = () => {
     coordinates
   );
 
-  const statusCounts = {
-    'Under Review': applications?.filter(app => 
-      app.status?.toLowerCase().includes('under consideration'))?.length || 0,
-    'Approved': applications?.filter(app => 
-      app.status?.toLowerCase().includes('approved'))?.length || 0,
-    'Declined': applications?.filter(app => 
-      app.status?.toLowerCase().includes('declined'))?.length || 0,
-    'Other': applications?.filter(app => {
-      if (!app.status) return true;
-      const appStatus = app.status.toLowerCase();
-      return !appStatus.includes('under consideration') && 
-             !appStatus.includes('approved') && 
-             !appStatus.includes('declined');
-    })?.length || 0
-  };
+  const statusCounts = useStatusCounts(applications);
 
-  const fetchInterestingApplications = useCallback(async () => {
-    if (hasSearched) {
-      return;
-    }
-
-    console.log('🌟 Fetching interesting applications...');
-    setIsLoadingInteresting(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('crystal_roof')
-        .select('*')
-        .not('storybook', 'is', null)
-        .order('id', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('Error fetching interesting applications:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch interesting applications",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('📊 Fetched interesting applications:', data?.length);
-      setInterestingApplications(data || []);
-    } catch (error) {
-      console.error('Failed to fetch interesting applications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch interesting applications",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingInteresting(false);
-    }
-  }, [hasSearched, toast]);
+  const { 
+    interestingApplications, 
+    isLoadingInteresting,
+    fetchInterestingApplications 
+  } = useInterestingApplications(hasSearched);
 
   useEffect(() => {
     if (!hasSearched) {
