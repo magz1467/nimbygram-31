@@ -28,14 +28,21 @@ export const ResultsContainer = ({
   handleMarkerClick,
   isLoading,
 }: ResultsContainerProps) => {
+  console.log('🌍 Map visibility state:', {
+    showMap,
+    hasCoordinates: !!coordinates,
+    selectedId
+  });
+
   return (
-    <main className="container mx-auto px-4 py-6">
-      <div className="flex gap-6 relative">
+    <main className="container mx-auto px-4 py-6 min-h-[calc(100vh-16rem)]">
+      <div className="flex gap-6 relative min-h-full">
         <div className={`${showMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
           <SearchResultsList 
             applications={displayApplications}
             isLoading={isLoading}
             onSeeOnMap={(id) => {
+              console.log('📍 See on map clicked:', id);
               setSelectedId(id);
               setShowMap(true);
             }}
@@ -49,18 +56,21 @@ export const ResultsContainer = ({
                 size="icon"
                 className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
                 onClick={() => {
+                  console.log('❌ Closing map');
                   setShowMap(false);
                   setSelectedId(null);
                 }}
               >
                 <X className="h-4 w-4" />
               </Button>
-              <MapView 
-                applications={applications}
-                selectedId={selectedId}
-                coordinates={coordinates}
-                onMarkerClick={handleMarkerClick}
-              />
+              <div className="w-full h-full">
+                <MapView 
+                  applications={applications}
+                  selectedId={selectedId}
+                  coordinates={coordinates}
+                  onMarkerClick={handleMarkerClick}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -68,3 +78,4 @@ export const ResultsContainer = ({
     </main>
   );
 };
+
