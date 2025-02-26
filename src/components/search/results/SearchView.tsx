@@ -52,10 +52,10 @@ export const SearchView = () => {
       if (activeSort === 'newest') {
         return new Date(b.submissionDate || '').getTime() - new Date(a.submissionDate || '').getTime();
       }
-      if (activeSort === 'closest' && coordinates) {
-        const distanceA = a.coordinates ? calculateDistance(coordinates, a.coordinates) : Infinity;
-        const distanceB = b.coordinates ? calculateDistance(coordinates, b.coordinates) : Infinity;
-        return distanceA - distanceB;
+      if (activeSort === 'closingSoon' && coordinates) {
+        const dateA = new Date(a.last_date_consultation_comments || '').getTime();
+        const dateB = new Date(b.last_date_consultation_comments || '').getTime();
+        return dateA - dateB;
       }
       return 0;
     });
@@ -168,3 +168,4 @@ export const SearchView = () => {
     </div>
   );
 };
+
