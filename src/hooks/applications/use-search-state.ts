@@ -21,9 +21,14 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
     throw error;
   }
 
+  // Transform the data to ensure correct types and values
   return data.map(app => ({
     ...app,
     title: app.description || app.title || `Application ${app.id}`,
+    coordinates: app.geom?.coordinates ? [
+      parseFloat(app.geom.coordinates[1]),
+      parseFloat(app.geom.coordinates[0])
+    ] as [number, number] : undefined
   })) || [];
 };
 
@@ -35,35 +40,34 @@ export const useSearchState = (initialPostcode = '') => {
   const [searchPoint, setSearchPoint] = useState<[number, number] | null>(null);
   const { toast } = useToast();
 
-  // Use useCoordinates hook with useMemo to prevent unnecessary re-renders
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
 
-  // Use React Query for applications data with modified caching strategy
-  const { data: applications = [], isLoading: isLoadingApps } = useQuery({
+  const { 
+    data: applications = [], 
+    isLoading: isLoadingApps
+  } = useQuery({
     queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
     enabled: !!coordinates,
     staleTime: Infinity,
-    gcTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false
   });
 
-  // Handle search state from URL - only on mount or navigation
+  // Handle search state from URL - only on mount
   useEffect(() => {
     const searchState = location.state;
     if (searchState?.searchType === 'postcode' && searchState?.searchTerm && !postcode) {
-      const newPostcode = searchState.searchTerm;
-      console.log('📍 Setting postcode from URL state:', newPostcode);
-      setPostcode(newPostcode);
+      console.log('📍 Setting initial postcode from URL state:', searchState.searchTerm);
+      setPostcode(searchState.searchTerm);
       setIsSearching(true);
       setSearchStartTime(Date.now());
     }
-  }, [location.state?.searchTerm, location.state?.searchType, postcode]);
+  }, []);
 
-  // Memoize handlePostcodeSelect to prevent unnecessary re-renders
-  const handlePostcodeSelect = useCallback(async (newPostcode: string) => {
+  const handlePostcodeSelect = useCallback((newPostcode: string) => {
     if (!newPostcode) {
       toast({
         title: "Invalid Postcode",
@@ -73,7 +77,6 @@ export const useSearchState = (initialPostcode = '') => {
       return;
     }
     
-    // Only update if postcode has changed
     if (newPostcode !== postcode) {
       console.log('🔍 Starting new postcode search:', newPostcode);
       setIsSearching(true);

@@ -33,18 +33,35 @@ export const MapContainer = memo(({
     firstApp: applications[0]
   });
 
+  // Handle map view updates
   useEffect(() => {
     if (mapRef.current && coordinates) {
-      console.log('🗺️ Setting map view to coordinates:', coordinates);
-      mapRef.current.setView(coordinates, mapRef.current.getZoom() || 14);
-      mapRef.current.invalidateSize();
+      const map = mapRef.current;
+      const currentCenter = map.getCenter();
+      const targetCoords = coordinates;
+      
+      // Only update view if coordinates have actually changed
+      if (currentCenter.lat !== targetCoords[0] || currentCenter.lng !== targetCoords[1]) {
+        console.log('🗺️ Updating map view to:', coordinates);
+        map.setView(coordinates, map.getZoom() || 14, { animate: true });
+        map.invalidateSize();
+      }
     }
   }, [coordinates]);
 
+  // Handle map move events
   useEffect(() => {
-    if (mapRef.current && onMapMove) {
-      onMapMove(mapRef.current);
-    }
+    if (!mapRef.current || !onMapMove) return;
+    
+    const map = mapRef.current;
+    onMapMove(map);
+    
+    return () => {
+      // Cleanup if needed
+      if (map) {
+        map.off();
+      }
+    };
   }, [onMapMove]);
 
   return (
@@ -76,4 +93,3 @@ export const MapContainer = memo(({
 });
 
 MapContainer.displayName = 'MapContainer';
-

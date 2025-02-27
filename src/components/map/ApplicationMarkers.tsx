@@ -25,6 +25,7 @@ const getStatusColor = (status: string): string => {
 
 const createIcon = (color: string, isSelected: boolean) => {
   const size = isSelected ? 40 : 24;
+  const shadowSize = size * 1.4;
 
   return L.divIcon({
     className: 'custom-pin',
@@ -45,54 +46,45 @@ export const ApplicationMarkers = ({
   console.log('🎯 ApplicationMarkers props:', {
     applicationsCount: applications.length,
     selectedId,
-    baseCoordinates,
-    firstApp: applications[0]
+    baseCoordinates
   });
 
   const markers = useMemo(() => {
-    return applications.map(app => {
-      if (!app.coordinates) {
-        console.log(`⚠️ Missing coordinates for application ${app.id}:`, app);
-        return null;
-      }
+    return applications
+      .filter(app => {
+        if (!app.coordinates) {
+          console.log(`⚠️ Missing coordinates for application ${app.id}`);
+          return false;
+        }
+        
+        const [lat, lng] = app.coordinates;
+        if (isNaN(lat) || isNaN(lng)) {
+          console.log(`⚠️ Invalid coordinates for application ${app.id}:`, app.coordinates);
+          return false;
+        }
+        
+        return true;
+      })
+      .map(app => {
+        const color = getStatusColor(app.status || 'pending');
+        const isSelected = app.id === selectedId;
 
-      // Ensure coordinates are numbers
-      const coords: [number, number] = [
-        typeof app.coordinates[0] === 'string' ? parseFloat(app.coordinates[0]) : app.coordinates[0],
-        typeof app.coordinates[1] === 'string' ? parseFloat(app.coordinates[1]) : app.coordinates[1]
-      ];
-
-      if (isNaN(coords[0]) || isNaN(coords[1])) {
-        console.log(`⚠️ Invalid coordinates for application ${app.id}:`, app.coordinates);
-        return null;
-      }
-
-      const color = getStatusColor(app.status || 'pending');
-      const isSelected = app.id === selectedId;
-      
-      console.log(`📍 Creating marker for application ${app.id}:`, {
-        coordinates: coords,
-        isSelected,
-        color
+        return (
+          <Marker
+            key={app.id}
+            position={app.coordinates as LatLngTuple}
+            eventHandlers={{
+              click: () => {
+                console.log('🖱️ Marker clicked:', app.id);
+                onMarkerClick(app.id);
+              }
+            }}
+            icon={createIcon(color, isSelected)}
+            zIndexOffset={isSelected ? 1000 : 0}
+          />
+        );
       });
-
-      return (
-        <Marker
-          key={app.id}
-          position={coords}
-          eventHandlers={{
-            click: () => {
-              console.log('🖱️ Marker clicked:', app.id);
-              onMarkerClick(app.id);
-            }
-          }}
-          icon={createIcon(color, isSelected)}
-          zIndexOffset={isSelected ? 1000 : 0}
-        />
-      );
-    }).filter(Boolean);
   }, [applications, selectedId, onMarkerClick]);
 
   return <>{markers}</>;
 };
-
