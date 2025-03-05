@@ -131,8 +131,11 @@ export const useCardActions = (applicationId: number) => {
         table: 'application_votes',
         filter: user ? `application_id=eq.${applicationId} AND user_id=eq.${user.id}` : `application_id=eq.${applicationId}`
       }, (payload) => {
-        if (user && payload.new && payload.new.user_id === user.id) {
-          setVoteStatus(payload.new.vote_type);
+        // Fix for TS2339 error: check if payload.new exists and has user_id and vote_type properties
+        if (user && payload.new && 'user_id' in payload.new && 'vote_type' in payload.new) {
+          if (payload.new.user_id === user.id) {
+            setVoteStatus(payload.new.vote_type as 'hot' | 'not' | null);
+          }
         }
       })
       .subscribe();
