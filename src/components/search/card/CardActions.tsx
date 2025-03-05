@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 
 interface CardActionsProps {
   applicationId: number;
@@ -17,6 +18,8 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   const [voteStatus, setVoteStatus] = useState<'hot' | 'not' | null>(null);
   const [commentsCount, setCommentsCount] = useState(0);
   const [supportCount, setSupportCount] = useState(0);
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -61,15 +64,17 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
     getSupportCount();
   }, [applicationId, user]);
 
-  const handleVote = async (type: 'hot' | 'not') => {
+  const checkAuth = (callback: () => void) => {
     if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to vote on applications",
-        variant: "destructive"
-      });
-      return;
+      setShowAuthDialog(true);
+      return false;
     }
+    callback();
+    return true;
+  };
+
+  const handleVote = async (type: 'hot' | 'not') => {
+    if (!checkAuth(() => {})) return;
 
     try {
       if (voteStatus === type) {
@@ -102,14 +107,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   };
 
   const handleSupport = async () => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to support this application",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!checkAuth(() => {})) return;
 
     try {
       const { data: existingSupport } = await supabase
@@ -151,6 +149,18 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
     }
   };
 
+  const handleCommentsClick = () => {
+    setCommentsExpanded(!commentsExpanded);
+    onShowComments();
+  };
+
+  const getCommentButtonText = () => {
+    if (commentsCount === 0) {
+      return 'Be the first to have your say';
+    }
+    return `Show comments${commentsCount > 0 ? ` (${commentsCount})` : ''}`;
+  };
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
@@ -160,7 +170,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           className={`flex flex-col items-center gap-1 h-auto py-2 rounded-md ${
             voteStatus === 'hot' ? 'text-primary bg-primary/10' : ''
           } hover:bg-[#F2FCE2] hover:text-primary transition-colors`}
-          onClick={() => handleVote('hot')}
+          onClick={() => checkAuth(() => handleVote('hot'))}
         >
           <ThumbsUp className="h-5 w-5" />
           <span className="text-xs">Hot</span>
@@ -169,9 +179,9 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           variant="ghost" 
           size="sm"
           className={`flex flex-col items-center gap-1 h-auto py-2 ${
-            voteStatus === 'not' ? 'text-primary' : ''
+            voteStatus === 'not' ? 'text-primary bg-primary/10' : ''
           }`}
-          onClick={() => handleVote('not')}
+          onClick={() => checkAuth(() => handleVote('not'))}
         >
           <ThumbsDown className="h-5 w-5" />
           <span className="text-xs">Not</span>
@@ -179,8 +189,8 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
         <Button 
           variant="ghost" 
           size="sm"
-          className="flex flex-col items-center gap-1 h-auto py-2"
-          onClick={handleSupport}
+          className="flex flex-col items-center gap-1 h-auto py-2 hover:[&_svg]:text-[#ea384c] hover:[&_svg]:fill-[#ea384c]"
+          onClick={() => checkAuth(() => handleSupport())}
         >
           <div className="relative">
             <Heart className={`h-5 w-5 ${supportCount > 0 ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
@@ -199,17 +209,17 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           variant="ghost" 
           size="sm" 
           className="justify-start h-8 w-full"
-          onClick={onShowComments}
+          onClick={handleCommentsClick}
         >
-          <div className="relative">
+          <div className="relative flex items-center">
             <MessageCircle className="h-4 w-4 mr-2" />
             {commentsCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                 {commentsCount}
               </span>
             )}
+            <span>{getCommentButtonText()}</span>
           </div>
-          Comments {commentsCount > 0 ? `(${commentsCount})` : ''}
         </Button>
 
         <Button 
@@ -222,6 +232,11 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           Share
         </Button>
       </div>
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+      />
     </div>
   );
 };

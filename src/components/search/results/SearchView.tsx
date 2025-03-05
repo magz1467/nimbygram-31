@@ -92,6 +92,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
         setSelectedId={setSelectedId}
         handleMarkerClick={handleMarkerClick}
         isLoading={isLoading}
+        searchTerm={initialSearch?.searchTerm}
       />
     </div>
   );

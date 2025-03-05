@@ -1,10 +1,12 @@
 
 import { Application } from "@/types/planning";
 import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
 import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
+import { CommentList } from "@/components/comments/CommentList";
 
 interface SearchResultCardProps {
   application: Application;
@@ -13,6 +15,7 @@ interface SearchResultCardProps {
 
 export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
   const { toast } = useToast();
+  const [showComments, setShowComments] = useState(false);
 
   console.log('SearchResultCard - Application:', {
     id: application.id,
@@ -38,10 +41,8 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
     }
   };
 
-  const handleShowComments = () => {
-    if (onSeeOnMap) {
-      onSeeOnMap(application.id);
-    }
+  const handleToggleComments = () => {
+    setShowComments(prev => !prev);
   };
 
   return (
@@ -60,7 +61,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       <div className="border-y border-gray-100 py-3 px-4">
         <CardActions
           applicationId={application.id}
-          onShowComments={handleShowComments}
+          onShowComments={handleToggleComments}
           onShare={handleShare}
         />
       </div>
@@ -70,6 +71,13 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
           storybook={application.storybook} 
           onSeeOnMap={() => onSeeOnMap?.(application.id)}
         />
+
+        {showComments && (
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <h3 className="text-sm font-medium mb-2">Comments</h3>
+            <CommentList applicationId={application.id} />
+          </div>
+        )}
       </div>
     </article>
   );
