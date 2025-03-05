@@ -49,6 +49,13 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     displayApplicationsCount: displayApplications?.length || 0
   });
 
+  // Handle marker click to show map and select application
+  const handleMapMarkerClick = (id: number) => {
+    setShowMap(true);
+    handleMarkerClick(id);
+    setSelectedId(id);
+  };
+
   // Show no results view if appropriate
   if (!isLoading && !displayApplications?.length && !coordinates) {
     return <NoResultsView onPostcodeSelect={handlePostcodeSelect} />;
@@ -90,7 +97,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
         setShowMap={setShowMap}
         selectedId={selectedId}
         setSelectedId={setSelectedId}
-        handleMarkerClick={handleMarkerClick}
+        handleMarkerClick={handleMapMarkerClick}
         isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
       />

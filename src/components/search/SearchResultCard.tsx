@@ -7,7 +7,6 @@ import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
 import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
-import { getImageUrl } from "@/utils/imageUtils";
 
 interface SearchResultCardProps {
   application: Application;
@@ -49,6 +48,13 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
   // Determine the best image URL to use
   const imageUrl = application.streetview_url || application.image || application.image_map_url;
 
+  // Handle see on map button click
+  const handleSeeOnMap = () => {
+    if (onSeeOnMap && application.id) {
+      onSeeOnMap(application.id);
+    }
+  };
+
   return (
     <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       <CardHeader 
@@ -79,7 +85,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
         
         <CardContent 
           storybook={application.storybook} 
-          onSeeOnMap={() => onSeeOnMap?.(application.id)}
+          onSeeOnMap={handleSeeOnMap}
         />
 
         {showComments && (
