@@ -53,7 +53,12 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
     try {
       // Log search first
-      await logSearch(searchTerm, searchType, activeTab);
+      try {
+        await logSearch(searchTerm, searchType, activeTab);
+      } catch (logError) {
+        console.error('Error logging search:', logError);
+        // Continue with search even if logging fails
+      }
       
       // Clear any existing search state from session storage
       sessionStorage.removeItem('lastSearchLocation');
@@ -71,6 +76,12 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);
       }
+
+      console.log('🧭 Navigating to search results with state:', {
+        searchType,
+        searchTerm,
+        timestamp: Date.now()
+      });
 
       // Navigate to search results with state
       navigate('/search-results', {
@@ -132,3 +143,4 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
+

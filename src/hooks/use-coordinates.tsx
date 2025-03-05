@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { LatLngTuple } from "leaflet";
 
 export const useCoordinates = (postcode: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
@@ -28,6 +27,9 @@ export const useCoordinates = (postcode: string | undefined) => {
           const newCoordinates: [number, number] = [data.result.latitude, data.result.longitude];
           console.log('✅ useCoordinates: Setting coordinates:', newCoordinates);
           setCoordinates(newCoordinates);
+        } else {
+          console.error('❌ useCoordinates: Invalid response', data);
+          setCoordinates(null);
         }
       } catch (error) {
         console.error("❌ useCoordinates: Error fetching coordinates:", error);
@@ -40,7 +42,11 @@ export const useCoordinates = (postcode: string | undefined) => {
       }
     };
 
-    fetchCoordinates();
+    if (postcode && postcode.trim()) {
+      console.log('🔄 useCoordinates: Postcode changed, fetching new coordinates:', postcode);
+      setCoordinates(null); // Reset coordinates when postcode changes
+      fetchCoordinates();
+    }
     
     return () => {
       console.log('🔇 useCoordinates: Cleanup');

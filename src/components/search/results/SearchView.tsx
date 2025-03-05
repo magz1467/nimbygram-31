@@ -15,6 +15,8 @@ export const SearchView = () => {
   const location = useLocation();
   const initialPostcode = location.state?.searchType === 'postcode' ? location.state.searchTerm : '';
 
+  console.log('🔄 SearchView rendering with initialPostcode:', initialPostcode);
+
   const {
     postcode,
     coordinates,
@@ -23,6 +25,9 @@ export const SearchView = () => {
     applications = [],
     handlePostcodeSelect,
   } = useSearchState(initialPostcode);
+
+  console.log('🌍 SearchView received coordinates:', coordinates);
+  console.log('📊 SearchView received applications:', applications?.length);
 
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcode));
   const [showMap, setShowMap] = useState(false);
@@ -38,10 +43,14 @@ export const SearchView = () => {
   // Memoize filtered and sorted applications
   const filteredApplications = useMemo(() => {
     console.log('🔍 Filtering applications:', {
-      total: applications.length,
+      total: applications?.length || 0,
       filters: activeFilters,
       sort: activeSort
     });
+
+    if (!applications || applications.length === 0) {
+      return [];
+    }
 
     const filtered = applications.filter(app => {
       if (activeFilters.status && app.status !== activeFilters.status) {
@@ -78,9 +87,13 @@ export const SearchView = () => {
     }
   }, [hasSearched, fetchInterestingApplications]);
 
-  // Update search status when we have results
+  // Update search status when we have results or coordinates
   useEffect(() => {
-    if (coordinates || applications?.length > 0) {
+    if (coordinates || (applications && applications.length > 0)) {
+      console.log('🔍 Search completed with results:', { 
+        hasCoordinates: !!coordinates, 
+        applicationsCount: applications?.length || 0 
+      });
       setHasSearched(true);
     }
   }, [coordinates, applications]);
@@ -100,9 +113,9 @@ export const SearchView = () => {
   console.log('🔄 SearchView render:', {
     hasSearched,
     hasCoordinates: !!coordinates,
-    applicationsCount: applications.length,
+    applicationsCount: applications?.length || 0,
     isLoading,
-    displayApplicationsCount: displayApplications?.length
+    displayApplicationsCount: displayApplications?.length || 0
   });
 
   if (!isLoading && !displayApplications?.length && !coordinates) {

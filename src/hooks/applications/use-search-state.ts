@@ -8,7 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/distance";
 
 const fetchApplications = async (coordinates: [number, number] | null) => {
-  if (!coordinates) return [];
+  if (!coordinates) {
+    console.log('❌ fetchApplications: No coordinates provided');
+    return [];
+  }
   
   console.log('🔍 Fetching applications for coordinates:', coordinates);
   
@@ -25,40 +28,47 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
   
   console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
   
-  // Query crystal_roof table with geospatial filter
-  const { data, error } = await supabase
-    .from('crystal_roof')
-    .select('*')
-    .filter('geom->coordinates->1', 'gte', latMin)
-    .filter('geom->coordinates->1', 'lte', latMax)
-    .filter('geom->coordinates->0', 'gte', lngMin)
-    .filter('geom->coordinates->0', 'lte', lngMax)
-    .order('id');
+  try {
+    // Query crystal_roof table with geospatial filter
+    const { data, error } = await supabase
+      .from('crystal_roof')
+      .select('*')
+      .filter('geom->coordinates->1', 'gte', latMin)
+      .filter('geom->coordinates->1', 'lte', latMax)
+      .filter('geom->coordinates->0', 'gte', lngMin)
+      .filter('geom->coordinates->0', 'lte', lngMax)
+      .order('id');
 
-  if (error) {
-    console.error('Error fetching applications:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching applications:', error);
+      throw error;
+    }
+
+    console.log(`✅ Raw data from supabase: ${data?.length} results`);
+
+    // Transform the data to ensure correct types and values
+    const transformedData = data?.map(app => ({
+      ...app,
+      title: app.description || app.title || `Application ${app.id}`,
+      coordinates: app.geom?.coordinates ? [
+        parseFloat(app.geom.coordinates[1]),
+        parseFloat(app.geom.coordinates[0])
+      ] as [number, number] : undefined
+    })) || [];
+    
+    console.log(`Found ${transformedData.length} applications within the search radius`);
+    
+    // Sort by distance from search coordinates
+    return transformedData.sort((a, b) => {
+      if (!a.coordinates || !b.coordinates) return 0;
+      const distanceA = calculateDistance(coordinates, a.coordinates);
+      const distanceB = calculateDistance(coordinates, b.coordinates);
+      return distanceA - distanceB;
+    });
+  } catch (err) {
+    console.error('❌ Error in fetchApplications:', err);
+    return [];
   }
-
-  // Transform the data to ensure correct types and values
-  const transformedData = data.map(app => ({
-    ...app,
-    title: app.description || app.title || `Application ${app.id}`,
-    coordinates: app.geom?.coordinates ? [
-      parseFloat(app.geom.coordinates[1]),
-      parseFloat(app.geom.coordinates[0])
-    ] as [number, number] : undefined
-  })) || [];
-  
-  console.log(`Found ${transformedData.length} applications within the search radius`);
-  
-  // Sort by distance from search coordinates
-  return transformedData.sort((a, b) => {
-    if (!a.coordinates || !b.coordinates) return 0;
-    const distanceA = calculateDistance(coordinates, a.coordinates);
-    const distanceB = calculateDistance(coordinates, b.coordinates);
-    return distanceA - distanceB;
-  });
 };
 
 export const useSearchState = (initialPostcode = '') => {
@@ -71,10 +81,19 @@ export const useSearchState = (initialPostcode = '') => {
 
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
 
+  console.log('📍 useSearchState: Current state:', { 
+    postcode, 
+    coordinates, 
+    isLoadingCoords, 
+    locationState: location.state
+  });
+
   const { 
     data: applications = [], 
     isLoading: isLoadingApps,
-    refetch
+    refetch,
+    isError,
+    error
   } = useQuery({
     queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
@@ -82,9 +101,13 @@ export const useSearchState = (initialPostcode = '') => {
     staleTime: 0, // Always fetch fresh data
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnReconnect: false
   });
+
+  if (isError) {
+    console.error('❌ Error fetching applications:', error);
+  }
 
   // Handle search state from URL - only on mount
   useEffect(() => {
@@ -95,7 +118,15 @@ export const useSearchState = (initialPostcode = '') => {
       setIsSearching(true);
       setSearchStartTime(Date.now());
     }
-  }, [location.state, postcode]);  // Added location.state dependency
+  }, [location.state, postcode]);
+
+  // Handle coordinates change
+  useEffect(() => {
+    if (coordinates && !searchPoint) {
+      console.log('🌍 New coordinates received, updating search point:', coordinates);
+      setSearchPoint(coordinates);
+    }
+  }, [coordinates, searchPoint]);
 
   const handlePostcodeSelect = useCallback((newPostcode: string) => {
     if (!newPostcode) {
@@ -116,6 +147,7 @@ export const useSearchState = (initialPostcode = '') => {
     
     // Force refetch when postcode changes
     if (coordinates) {
+      console.log('🔄 Forcing refetch with new coordinates:', coordinates);
       refetch();
     }
   }, [toast, coordinates, refetch]);

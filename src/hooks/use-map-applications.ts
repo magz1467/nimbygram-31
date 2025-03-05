@@ -19,6 +19,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         if (!coordinates) {
           console.log('⚠️ No coordinates provided, skipping fetch');
           setApplications([]);
+          setIsLoading(false);
           return;
         }
 
@@ -38,6 +39,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           
           properties = rpcResult.data;
           error = rpcResult.error;
+          
+          console.log('🔍 RPC query result:', { success: !error, count: properties?.length || 0 });
         } catch (rpcError) {
           console.warn('RPC method failed, falling back to query:', rpcError);
           error = rpcError;
@@ -69,6 +72,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             
           properties = queryResult.data;
           error = queryResult.error;
+          
+          console.log('🔍 Standard query result:', { success: !error, count: properties?.length || 0 });
         }
 
         if (error) {
@@ -78,6 +83,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
             description: "Please try again later",
             variant: "destructive"
           });
+          setApplications([]);
+          setIsLoading(false);
           return;
         }
 
@@ -91,6 +98,11 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
               coords = [
                 parseFloat(item.geometry.coordinates[1]),
                 parseFloat(item.geometry.coordinates[0])
+              ];
+            } else if (item.geom?.coordinates) {
+              coords = [
+                parseFloat(item.geom.coordinates[1]),
+                parseFloat(item.geom.coordinates[0])
               ];
             }
           } catch (err) {
@@ -141,8 +153,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         }).filter((app): app is Application => app !== null);
 
         console.log('✅ Transformed applications:', {
-          total: transformedData?.length,
-          withStorybook: transformedData?.filter(app => app.storybook)?.length,
+          total: transformedData?.length || 0,
+          withStorybook: transformedData?.filter(app => app.storybook)?.length || 0,
           sampleApplication: transformedData?.[0] ? {
             id: transformedData[0].id,
             streetview_url: transformedData[0].streetview_url,
