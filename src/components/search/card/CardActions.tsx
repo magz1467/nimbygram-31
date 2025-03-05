@@ -19,6 +19,8 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
     voteStatus,
     commentsCount,
     supportCount,
+    hotCount,
+    notCount,
     isSupportedByUser,
     showAuthDialog,
     setShowAuthDialog,
@@ -41,6 +43,8 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
         <VoteButtons 
           applicationId={applicationId}
           voteStatus={voteStatus}
+          hotCount={hotCount}
+          notCount={notCount}
           checkAuth={checkAuth}
         />
         <SupportButton

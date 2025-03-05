@@ -9,6 +9,8 @@ export const useCardActions = (applicationId: number) => {
   const [voteStatus, setVoteStatus] = useState<'hot' | 'not' | null>(null);
   const [commentsCount, setCommentsCount] = useState(0);
   const [supportCount, setSupportCount] = useState(0);
+  const [hotCount, setHotCount] = useState(0);
+  const [notCount, setNotCount] = useState(0);
   const [isSupportedByUser, setIsSupportedByUser] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,8 +96,27 @@ export const useCardActions = (applicationId: number) => {
       setSupportCount(count || 0);
     };
 
+    // Fetch vote counts
+    const getVoteCounts = async () => {
+      const { data: hotData } = await supabase
+        .from('application_votes')
+        .select('*', { count: 'exact' })
+        .eq('application_id', applicationId)
+        .eq('vote_type', 'hot');
+      
+      const { data: notData } = await supabase
+        .from('application_votes')
+        .select('*', { count: 'exact' })
+        .eq('application_id', applicationId)
+        .eq('vote_type', 'not');
+
+      setHotCount(hotData?.length || 0);
+      setNotCount(notData?.length || 0);
+    };
+
     getCommentsCount();
     getSupportCount();
+    getVoteCounts();
 
     // Set up realtime subscriptions
     const commentsSubscription = supabase
@@ -129,13 +150,23 @@ export const useCardActions = (applicationId: number) => {
         event: '*',
         schema: 'public',
         table: 'application_votes',
-        filter: user ? `application_id=eq.${applicationId} AND user_id=eq.${user.id}` : `application_id=eq.${applicationId}`
-      }, (payload) => {
-        // Fix for TS2339 error: check if payload.new exists and has user_id and vote_type properties
-        if (user && payload.new && 'user_id' in payload.new && 'vote_type' in payload.new) {
-          if (payload.new.user_id === user.id) {
-            setVoteStatus(payload.new.vote_type as 'hot' | 'not' | null);
-          }
+        filter: `application_id=eq.${applicationId}`
+      }, () => {
+        getVoteCounts();
+        if (user) {
+          // Also check if the user's vote status changed
+          const getUserVoteStatus = async () => {
+            const { data } = await supabase
+              .from('application_votes')
+              .select('vote_type')
+              .eq('application_id', applicationId)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            setVoteStatus(data?.vote_type as 'hot' | 'not' | null);
+          };
+          
+          getUserVoteStatus();
         }
       })
       .subscribe();
@@ -161,6 +192,8 @@ export const useCardActions = (applicationId: number) => {
     voteStatus,
     commentsCount,
     supportCount,
+    hotCount,
+    notCount,
     isSupportedByUser,
     showAuthDialog,
     setShowAuthDialog,

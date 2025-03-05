@@ -1,12 +1,12 @@
 
 import { Application } from "@/types/planning";
-import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
 import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
 import { CommentList } from "@/components/comments/CommentList";
+import { format } from "date-fns";
 
 interface SearchResultCardProps {
   application: Application;
@@ -14,36 +14,35 @@ interface SearchResultCardProps {
 }
 
 export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
-  const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
 
   console.log('SearchResultCard - Application:', {
     id: application.id,
     title: application.title,
     streetview_url: application.streetview_url,
-    type: typeof application.streetview_url
+    type: typeof application.streetview_url,
+    submittedDate: application.submittedDate || application.received_date
   });
 
   const handleShare = async () => {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
-      toast({
-        title: "Link copied!",
-        description: "You can now share this planning application with others.",
-      });
     } catch (err) {
-      toast({
-        title: "Couldn't copy link",
-        description: "Please try again or copy the URL manually.",
-        variant: "destructive",
-      });
+      console.error("Couldn't copy link:", err);
     }
   };
 
   const handleToggleComments = () => {
     setShowComments(prev => !prev);
   };
+
+  // Format the submitted date
+  const formattedSubmittedDate = application.submittedDate || application.received_date
+    ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
+      ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
+      : null
+    : null;
 
   return (
     <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
@@ -67,6 +66,12 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       </div>
 
       <div className="px-8 py-4">
+        {formattedSubmittedDate && (
+          <div className="text-sm text-gray-500 mb-3">
+            <span className="font-medium">Submitted date:</span> {formattedSubmittedDate}
+          </div>
+        )}
+        
         <CardContent 
           storybook={application.storybook} 
           onSeeOnMap={() => onSeeOnMap?.(application.id)}

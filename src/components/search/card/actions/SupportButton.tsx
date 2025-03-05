@@ -1,7 +1,6 @@
 
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
@@ -18,7 +17,6 @@ export const SupportButton = ({
   isSupportedByUser, 
   checkAuth 
 }: SupportButtonProps) => {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSupport = async () => {
@@ -36,11 +34,6 @@ export const SupportButton = ({
           .delete()
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
-        
-        toast({
-          title: "Support removed",
-          description: "You've removed your support for this application",
-        });
       } else {
         // Add support
         await supabase
@@ -49,19 +42,9 @@ export const SupportButton = ({
             application_id: applicationId,
             user_id: user.id
           });
-        
-        toast({
-          title: "Support added",
-          description: "You're now supporting this application",
-        });
       }
     } catch (error) {
       console.error('Error toggling support:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update support status. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -77,11 +60,9 @@ export const SupportButton = ({
     >
       <div className="relative">
         <Heart className={`h-5 w-5 ${isSupportedByUser ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
-        {supportCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-            {supportCount}
-          </span>
-        )}
+        <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+          {supportCount}
+        </span>
       </div>
       <span className="text-xs">Support</span>
     </Button>

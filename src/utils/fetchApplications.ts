@@ -29,7 +29,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Instead, use latitude and longitude columns directly if they exist
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')
+      .select('*, received_date')
       .order('id');
 
     if (error) {
@@ -67,6 +67,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     const transformedData = filteredData.map(app => ({
       ...app,
       title: app.description || app.title || `Application ${app.id}`,
+      submittedDate: app.received_date || app.valid_date || null,
       coordinates: (app.latitude && app.longitude) ? 
         [parseFloat(app.latitude), parseFloat(app.longitude)] as [number, number] : 
         (app.geom?.coordinates ? 

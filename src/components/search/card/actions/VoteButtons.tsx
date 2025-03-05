@@ -1,18 +1,18 @@
 
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
 interface VoteButtonsProps {
   applicationId: number;
   voteStatus: 'hot' | 'not' | null;
+  hotCount: number;
+  notCount: number;
   checkAuth: (callback: () => void) => boolean;
 }
 
-export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButtonsProps) => {
-  const { toast } = useToast();
+export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, checkAuth }: VoteButtonsProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleVote = async (type: 'hot' | 'not') => {
@@ -30,11 +30,6 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
           .delete()
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
-        
-        toast({
-          title: "Vote removed",
-          description: `You no longer voted on this application`,
-        });
       } else {
         // Adding or changing vote
         await supabase
@@ -46,19 +41,9 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
           }, {
             onConflict: 'application_id,user_id'
           });
-        
-        toast({
-          title: "Vote recorded",
-          description: `You've marked this application as ${type}`,
-        });
       }
     } catch (error) {
       console.error('Error voting:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save your vote. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +60,14 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
         } hover:bg-[#F2FCE2] hover:text-primary transition-colors`}
         onClick={() => checkAuth(() => handleVote('hot'))}
       >
-        <ThumbsUp className="h-5 w-5" />
+        <div className="relative">
+          <ThumbsUp className="h-5 w-5" />
+          {hotCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+              {hotCount}
+            </span>
+          )}
+        </div>
         <span className="text-xs">Hot</span>
       </Button>
       <Button 
@@ -87,7 +79,14 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
         }`}
         onClick={() => checkAuth(() => handleVote('not'))}
       >
-        <ThumbsDown className="h-5 w-5" />
+        <div className="relative">
+          <ThumbsDown className="h-5 w-5" />
+          {notCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+              {notCount}
+            </span>
+          )}
+        </div>
         <span className="text-xs">Not</span>
       </Button>
     </div>
