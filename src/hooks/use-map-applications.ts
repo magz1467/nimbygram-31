@@ -25,11 +25,49 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         const [lat, lng] = coordinates;
         console.log(`📍 Fetching properties within 20km of [${lat}, ${lng}]`);
         
-        const { data: properties, error } = await supabase.rpc('properties_within_distance', {
-          ref_lat: lat,
-          ref_lon: lng,
-          radius_meters: 20000 // 20km radius
-        });
+        // Try using the RPC function first
+        let properties;
+        let error;
+        
+        try {
+          const rpcResult = await supabase.rpc('properties_within_distance', {
+            ref_lat: lat,
+            ref_lon: lng,
+            radius_meters: 20000 // 20km radius
+          });
+          
+          properties = rpcResult.data;
+          error = rpcResult.error;
+        } catch (rpcError) {
+          console.warn('RPC method failed, falling back to query:', rpcError);
+          error = rpcError;
+        }
+        
+        // If RPC fails, use a regular query as fallback
+        if (error || !properties || properties.length === 0) {
+          console.log('⚠️ Falling back to regular query method');
+          
+          // Calculate bounds for a radius search (approximately 20km)
+          const radius = 20; // km
+          const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
+          const lngDiff = radius / (111.32 * Math.cos(lat * Math.PI / 180));
+          
+          const latMin = lat - latDiff;
+          const latMax = lat + latDiff;
+          const lngMin = lng - lngDiff;
+          const lngMax = lng + lngDiff;
+          
+          console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
+          
+          const queryResult = await supabase
+            .from('crystal_roof')
+            .select('*')
+            .or(`geom->coordinates->1.gte.${latMin},geom->coordinates->1.lte.${latMax}`)
+            .or(`geom->coordinates->0.gte.${lngMin},geom->coordinates->0.lte.${lngMax}`);
+            
+          properties = queryResult.data;
+          error = queryResult.error;
+        }
 
         if (error) {
           console.error('❌ Error fetching property data:', error);
@@ -146,4 +184,3 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
   return { applications, isLoading };
 };
-
