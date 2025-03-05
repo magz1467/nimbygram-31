@@ -22,7 +22,10 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Content-Security-Policy = "upgrade-insecure-requests"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Vary = "User-Agent"
 
 # SSL settings
 [dev]
   https = true
+
