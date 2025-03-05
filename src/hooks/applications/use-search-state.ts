@@ -46,15 +46,20 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
 
     console.log(`✅ Raw data from supabase: ${data?.length} results`);
 
+    if (!data || data.length === 0) {
+      console.log('No applications found in this area');
+      return [];
+    }
+
     // Transform the data to ensure correct types and values
-    const transformedData = data?.map(app => ({
+    const transformedData = data.map(app => ({
       ...app,
       title: app.description || app.title || `Application ${app.id}`,
       coordinates: app.geom?.coordinates ? [
         parseFloat(app.geom.coordinates[1]),
         parseFloat(app.geom.coordinates[0])
       ] as [number, number] : undefined
-    })) || [];
+    }));
     
     console.log(`Found ${transformedData.length} applications within the search radius`);
     
@@ -67,7 +72,7 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
     });
   } catch (err) {
     console.error('❌ Error in fetchApplications:', err);
-    return [];
+    throw err; // Re-throw to allow proper error handling
   }
 };
 
@@ -79,7 +84,7 @@ export const useSearchState = (initialPostcode = '') => {
   const [searchPoint, setSearchPoint] = useState<[number, number] | null>(null);
   const { toast } = useToast();
 
-  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(postcode);
+  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(postcode);
 
   console.log('📍 useSearchState: Current state:', { 
     postcode, 
@@ -87,6 +92,18 @@ export const useSearchState = (initialPostcode = '') => {
     isLoadingCoords, 
     locationState: location.state
   });
+
+  // Show toast for coordinate errors
+  useEffect(() => {
+    if (coordsError) {
+      console.error('Error fetching coordinates:', coordsError);
+      toast({
+        title: "Postcode Error",
+        description: "Could not find coordinates for this postcode. Please try another postcode.",
+        variant: "destructive",
+      });
+    }
+  }, [coordsError, toast]);
 
   const { 
     data: applications = [], 
@@ -102,12 +119,21 @@ export const useSearchState = (initialPostcode = '') => {
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,
     refetchOnMount: true,
-    refetchOnReconnect: false
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
-  if (isError) {
-    console.error('❌ Error fetching applications:', error);
-  }
+  // Show toast for application fetch errors
+  useEffect(() => {
+    if (isError && error) {
+      console.error('❌ Error fetching applications:', error);
+      toast({
+        title: "Search Error",
+        description: "There was a problem finding planning applications. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
 
   // Handle search state from URL - only on mount
   useEffect(() => {
@@ -164,6 +190,7 @@ export const useSearchState = (initialPostcode = '') => {
     searchStartTime,
     setSearchStartTime,
     searchPoint,
-    setSearchPoint
+    setSearchPoint,
+    error
   };
 };

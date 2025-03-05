@@ -1,14 +1,29 @@
 
 import { SearchView } from "@/components/search/results/SearchView";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const SearchResultsPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const searchState = location.state;
 
-  // Clear any cached data when the component mounts
+  // Validate that we have search state
   useEffect(() => {
+    if (!searchState?.searchTerm) {
+      console.warn('No search term provided in state, redirecting to homepage');
+      toast({
+        title: "Search Error",
+        description: "No search term provided. Please try your search again.",
+        variant: "destructive",
+      });
+      navigate('/', { replace: true });
+      return;
+    }
+
+    // Clear any cached data when the component mounts
     if (typeof window !== 'undefined') {
       window.sessionStorage.setItem('forceRefresh', 'true');
       
@@ -21,18 +36,21 @@ const SearchResultsPage = () => {
         window.sessionStorage.removeItem(key);
       });
     }
-  }, []);
 
-  // Only log if we have valid search state
-  if (searchState?.searchTerm) {
+    // Log valid search state
     console.log('📍 Processing search:', {
       type: searchState.searchType,
       term: searchState.searchTerm,
       timestamp: searchState.timestamp
     });
+  }, [searchState, navigate, toast]);
+
+  // Only render SearchView if we have valid search state
+  if (!searchState?.searchTerm) {
+    return null;
   }
 
-  return <SearchView />;
+  return <SearchView initialSearch={searchState} />;
 };
 
 export default SearchResultsPage;

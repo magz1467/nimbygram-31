@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 export const useCoordinates = (postcode: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -15,24 +16,33 @@ export const useCoordinates = (postcode: string | undefined) => {
       }
       
       setIsLoading(true);
+      setError(null);
       console.log('🔍 useCoordinates: Fetching coordinates for postcode:', postcode);
       
       try {
-        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+        const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        
+        if (!response.ok) {
+          throw new Error(`Postcode API returned ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         console.log('📍 useCoordinates: API response:', data);
         
-        if (isMounted && data.status === 200) {
+        if (isMounted && data.status === 200 && data.result) {
           const newCoordinates: [number, number] = [data.result.latitude, data.result.longitude];
           console.log('✅ useCoordinates: Setting coordinates:', newCoordinates);
           setCoordinates(newCoordinates);
         } else {
           console.error('❌ useCoordinates: Invalid response', data);
+          setError(new Error("Invalid response from postcode API"));
           setCoordinates(null);
         }
       } catch (error) {
-        console.error("❌ useCoordinates: Error fetching coordinates:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("❌ useCoordinates: Error fetching coordinates:", errorMessage);
+        setError(error instanceof Error ? error : new Error(String(error)));
         setCoordinates(null);
       } finally {
         if (isMounted) {
@@ -46,6 +56,9 @@ export const useCoordinates = (postcode: string | undefined) => {
       console.log('🔄 useCoordinates: Postcode changed, fetching new coordinates:', postcode);
       setCoordinates(null); // Reset coordinates when postcode changes
       fetchCoordinates();
+    } else {
+      setCoordinates(null);
+      setIsLoading(false);
     }
     
     return () => {
@@ -54,5 +67,5 @@ export const useCoordinates = (postcode: string | undefined) => {
     };
   }, [postcode]);
 
-  return { coordinates, isLoading };
+  return { coordinates, isLoading, error };
 };

@@ -6,16 +6,22 @@ import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { FilterBar } from "@/components/FilterBar";
 import { ResultsContainer } from "./ResultsContainer";
-import { useLocation } from "react-router-dom";
 import { useStatusCounts } from "@/hooks/applications/use-status-counts";
 import { useInterestingApplications } from "@/hooks/applications/use-interesting-applications";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const SearchView = () => {
-  const location = useLocation();
-  const initialPostcode = location.state?.searchType === 'postcode' ? location.state.searchTerm : '';
+interface SearchViewProps {
+  initialSearch?: {
+    searchType: 'postcode' | 'location';
+    searchTerm: string;
+    timestamp?: number;
+  };
+}
 
-  console.log('🔄 SearchView rendering with initialPostcode:', initialPostcode);
+export const SearchView = ({ initialSearch }: SearchViewProps) => {
+  console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
+
+  const initialPostcode = initialSearch?.searchType === 'postcode' ? initialSearch.searchTerm : '';
 
   const {
     postcode,
@@ -97,6 +103,14 @@ export const SearchView = () => {
       setHasSearched(true);
     }
   }, [coordinates, applications]);
+
+  // Trigger initial search with provided search term
+  useEffect(() => {
+    if (initialSearch?.searchTerm && initialSearch.searchType === 'postcode') {
+      console.log('🔍 Triggering initial postcode search:', initialSearch.searchTerm);
+      handlePostcodeSelect(initialSearch.searchTerm);
+    }
+  }, [initialSearch, handlePostcodeSelect]);
 
   // Memoize marker click handler
   const handleMarkerClick = useCallback((id: number | null) => {

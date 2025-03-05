@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useToast } from "@/hooks/use-toast";
@@ -52,18 +52,16 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     console.log(`🔄 Starting search for ${searchType}:`, searchTerm);
 
     try {
-      // Log search first
-      try {
-        await logSearch(searchTerm, searchType, activeTab);
-      } catch (logError) {
+      // Log search but don't wait for it to complete - this was causing issues
+      logSearch(searchTerm, searchType, activeTab).catch(logError => {
         console.error('Error logging search:', logError);
         // Continue with search even if logging fails
-      }
+      });
       
       // Clear any existing search state from session storage
       sessionStorage.removeItem('lastSearchLocation');
       
-      // Clear query cache
+      // Clear query cache for fresh search results
       const cacheKeys = Object.keys(sessionStorage).filter(key => 
         key.startsWith('tanstack-query-')
       );
@@ -90,7 +88,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
           searchTerm,
           timestamp: Date.now() // Add timestamp to ensure state changes are detected
         },
-        replace: true // Use replace to prevent back button issues
+        replace: false // Changed to false to ensure history is preserved
       });
 
     } catch (error) {
@@ -143,4 +141,3 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     </form>
   );
 };
-
