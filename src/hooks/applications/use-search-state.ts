@@ -89,21 +89,23 @@ export const useSearchState = (initialPostcode = '') => {
   console.log('📍 useSearchState: Current state:', { 
     postcode, 
     coordinates, 
-    isLoadingCoords, 
+    isLoadingCoords,
+    coordsError: coordsError?.message,
     locationState: location.state
   });
 
-  // Show toast for coordinate errors
+  // Handle coordinates error with toast
   useEffect(() => {
-    if (coordsError) {
+    if (coordsError && isSearching) {
       console.error('Error fetching coordinates:', coordsError);
       toast({
         title: "Postcode Error",
         description: "Could not find coordinates for this postcode. Please try another postcode.",
         variant: "destructive",
       });
+      setIsSearching(false);
     }
-  }, [coordsError, toast]);
+  }, [coordsError, toast, isSearching]);
 
   const { 
     data: applications = [], 
@@ -114,7 +116,7 @@ export const useSearchState = (initialPostcode = '') => {
   } = useQuery({
     queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
-    enabled: !!coordinates,
+    enabled: !!coordinates && !coordsError,
     staleTime: 0, // Always fetch fresh data
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,
@@ -148,11 +150,11 @@ export const useSearchState = (initialPostcode = '') => {
 
   // Handle coordinates change
   useEffect(() => {
-    if (coordinates && !searchPoint) {
+    if (coordinates && isSearching && !searchPoint) {
       console.log('🌍 New coordinates received, updating search point:', coordinates);
       setSearchPoint(coordinates);
     }
-  }, [coordinates, searchPoint]);
+  }, [coordinates, searchPoint, isSearching]);
 
   const handlePostcodeSelect = useCallback((newPostcode: string) => {
     if (!newPostcode) {
@@ -191,6 +193,7 @@ export const useSearchState = (initialPostcode = '') => {
     setSearchStartTime,
     searchPoint,
     setSearchPoint,
-    error
+    error,
+    coordsError
   };
 };

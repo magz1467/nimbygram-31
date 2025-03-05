@@ -15,19 +15,24 @@ export const useCoordinates = (postcode: string | undefined) => {
         return;
       }
       
+      // Reset state on new request
       setIsLoading(true);
       setError(null);
+      setCoordinates(null);
+      
       console.log('🔍 useCoordinates: Fetching coordinates for postcode:', postcode);
       
       try {
-        const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const formattedPostcode = postcode.replace(/\s+/g, '').toUpperCase();
+        const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(formattedPostcode)}`);
         
         if (!response.ok) {
-          throw new Error(`Postcode API returned ${response.status}: ${response.statusText}`);
+          const errorData = await response.json();
+          console.error('❌ useCoordinates: API error response:', errorData);
+          throw new Error(errorData.error || `Postcode API returned ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
-        
         console.log('📍 useCoordinates: API response:', data);
         
         if (isMounted && data.status === 200 && data.result) {
@@ -37,13 +42,11 @@ export const useCoordinates = (postcode: string | undefined) => {
         } else {
           console.error('❌ useCoordinates: Invalid response', data);
           setError(new Error("Invalid response from postcode API"));
-          setCoordinates(null);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("❌ useCoordinates: Error fetching coordinates:", errorMessage);
         setError(error instanceof Error ? error : new Error(String(error)));
-        setCoordinates(null);
       } finally {
         if (isMounted) {
           console.log('🏁 useCoordinates: Finished loading');
@@ -54,11 +57,11 @@ export const useCoordinates = (postcode: string | undefined) => {
 
     if (postcode && postcode.trim()) {
       console.log('🔄 useCoordinates: Postcode changed, fetching new coordinates:', postcode);
-      setCoordinates(null); // Reset coordinates when postcode changes
       fetchCoordinates();
     } else {
       setCoordinates(null);
       setIsLoading(false);
+      setError(null);
     }
     
     return () => {

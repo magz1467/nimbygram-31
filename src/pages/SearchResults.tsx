@@ -23,8 +23,15 @@ const SearchResultsPage = () => {
       return;
     }
 
-    // Clear any cached data when the component mounts
+    console.log('📍 Processing search:', {
+      type: searchState.searchType,
+      term: searchState.searchTerm,
+      timestamp: searchState.timestamp
+    });
+    
+    // Ensure we don't have stale data in session storage
     if (typeof window !== 'undefined') {
+      // Mark that we need to refresh data
       window.sessionStorage.setItem('forceRefresh', 'true');
       
       // Clear any cached query data to ensure fresh results
@@ -36,13 +43,6 @@ const SearchResultsPage = () => {
         window.sessionStorage.removeItem(key);
       });
     }
-
-    // Log valid search state
-    console.log('📍 Processing search:', {
-      type: searchState.searchType,
-      term: searchState.searchTerm,
-      timestamp: searchState.timestamp
-    });
   }, [searchState, navigate, toast]);
 
   // Only render SearchView if we have valid search state

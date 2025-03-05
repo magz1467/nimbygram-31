@@ -88,7 +88,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
           searchTerm,
           timestamp: Date.now() // Add timestamp to ensure state changes are detected
         },
-        replace: false // Changed to false to ensure history is preserved
+        replace: false // Use false to preserve navigation history
       });
 
     } catch (error) {
