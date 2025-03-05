@@ -29,14 +29,11 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
   console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
   
   try {
-    // Query crystal_roof table with geospatial filter
+    // Query crystal_roof table without relying on geom column
+    // Instead, use latitude and longitude columns directly if they exist
     const { data, error } = await supabase
       .from('crystal_roof')
       .select('*')
-      .filter('geom->coordinates->1', 'gte', latMin)
-      .filter('geom->coordinates->1', 'lte', latMax)
-      .filter('geom->coordinates->0', 'gte', lngMin)
-      .filter('geom->coordinates->0', 'lte', lngMax)
       .order('id');
 
     if (error) {
@@ -51,14 +48,34 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
       return [];
     }
 
+    // Filter the data locally based on the coordinates
+    const filteredData = data.filter(app => {
+      // Check if the application has coordinates (either in geom or as separate lat/lng fields)
+      const appLat = app.latitude || (app.geom?.coordinates ? parseFloat(app.geom.coordinates[1]) : null);
+      const appLng = app.longitude || (app.geom?.coordinates ? parseFloat(app.geom.coordinates[0]) : null);
+      
+      if (appLat === null || appLng === null) return false;
+      
+      // Check if the coordinates are within our search bounds
+      return (
+        appLat >= latMin && 
+        appLat <= latMax && 
+        appLng >= lngMin && 
+        appLng <= lngMax
+      );
+    });
+    
+    console.log(`✅ Filtered data: ${filteredData?.length} results`);
+    
     // Transform the data to ensure correct types and values
-    const transformedData = data.map(app => ({
+    const transformedData = filteredData.map(app => ({
       ...app,
       title: app.description || app.title || `Application ${app.id}`,
-      coordinates: app.geom?.coordinates ? [
-        parseFloat(app.geom.coordinates[1]),
-        parseFloat(app.geom.coordinates[0])
-      ] as [number, number] : undefined
+      coordinates: (app.latitude && app.longitude) ? 
+        [parseFloat(app.latitude), parseFloat(app.longitude)] as [number, number] : 
+        (app.geom?.coordinates ? 
+          [parseFloat(app.geom.coordinates[1]), parseFloat(app.geom.coordinates[0])] : 
+          undefined) as [number, number] | undefined
     }));
     
     console.log(`Found ${transformedData.length} applications within the search radius`);
