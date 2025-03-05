@@ -95,7 +95,6 @@ export const ResultsContainer = ({
               applications={applications}
               coordinates={coordinates}
               selectedId={selectedId}
-              setSelectedId={setSelectedId}
               onMarkerClick={handleMarkerClick}
             />
           </div>
