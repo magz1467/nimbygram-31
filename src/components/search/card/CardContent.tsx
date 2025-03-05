@@ -1,11 +1,14 @@
 
 import { formatStorybook } from "@/utils/storybook-formatter";
+import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
 
 interface CardContentProps {
   storybook: string | null;
+  onSeeOnMap: () => void;
 }
 
-export const CardContent = ({ storybook }: CardContentProps) => {
+export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
   const formattedStorybook = formatStorybook(storybook);
   if (!formattedStorybook?.content) return null;
 
@@ -32,7 +35,18 @@ export const CardContent = ({ storybook }: CardContentProps) => {
     <div className="space-y-6">
       <div className="prose prose-sm max-w-none">
         <div className="bg-primary/5 rounded-lg p-4">
-          <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-primary font-semibold">What's the Deal</h3>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onSeeOnMap}
+              className="text-primary flex items-center gap-1.5"
+            >
+              <MapPin className="w-4 h-4" />
+              See on map
+            </Button>
+          </div>
           <div className="text-gray-700">
             {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
           </div>
@@ -72,4 +86,3 @@ export const CardContent = ({ storybook }: CardContentProps) => {
     </div>
   );
 };
-

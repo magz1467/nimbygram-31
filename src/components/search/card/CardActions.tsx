@@ -152,59 +152,53 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   };
 
   return (
-    <div className="grid grid-cols-4 gap-2">
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className={`flex flex-col items-center gap-1 h-auto py-2 ${
-          voteStatus === 'hot' ? 'text-primary' : ''
-        }`}
-        onClick={() => handleVote('hot')}
-      >
-        <ThumbsUp className="h-5 w-5" />
-        <span className="text-xs">Hot</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className={`flex flex-col items-center gap-1 h-auto py-2 ${
-          voteStatus === 'not' ? 'text-primary' : ''
-        }`}
-        onClick={() => handleVote('not')}
-      >
-        <ThumbsDown className="h-5 w-5" />
-        <span className="text-xs">Not</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className={`flex flex-col items-center gap-1 h-auto py-2`}
-        onClick={handleSupport}
-      >
-        <div className="relative">
-          <Heart className="h-5 w-5" />
-          {supportCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              {supportCount}
-            </span>
-          )}
-        </div>
-        <span className="text-xs">Support</span>
-      </Button>
-      <div className="flex flex-col gap-1">
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
         <Button 
           variant="ghost" 
-          size="sm" 
-          className="h-8"
-          onClick={onShare}
+          size="sm"
+          className={`flex flex-col items-center gap-1 h-auto py-2 rounded-md ${
+            voteStatus === 'hot' ? 'text-primary bg-primary/10' : ''
+          } hover:bg-[#F2FCE2] hover:text-primary transition-colors`}
+          onClick={() => handleVote('hot')}
         >
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
+          <ThumbsUp className="h-5 w-5" />
+          <span className="text-xs">Hot</span>
         </Button>
         <Button 
           variant="ghost" 
           size="sm"
-          className="h-8"
+          className={`flex flex-col items-center gap-1 h-auto py-2 ${
+            voteStatus === 'not' ? 'text-primary' : ''
+          }`}
+          onClick={() => handleVote('not')}
+        >
+          <ThumbsDown className="h-5 w-5" />
+          <span className="text-xs">Not</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="flex flex-col items-center gap-1 h-auto py-2"
+          onClick={handleSupport}
+        >
+          <div className="relative">
+            <Heart className={`h-5 w-5 ${supportCount > 0 ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
+            {supportCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                {supportCount}
+              </span>
+            )}
+          </div>
+          <span className="text-xs">Support</span>
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="justify-start h-8 w-full"
           onClick={onShowComments}
         >
           <div className="relative">
@@ -215,10 +209,19 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
               </span>
             )}
           </div>
-          Comments
+          Comments {commentsCount > 0 ? `(${commentsCount})` : ''}
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="justify-start h-8"
+          onClick={onShare}
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          Share
         </Button>
       </div>
     </div>
   );
 };
-

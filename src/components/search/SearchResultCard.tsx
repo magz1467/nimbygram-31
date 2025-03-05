@@ -5,7 +5,6 @@ import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
 import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
-import { CardFooter } from "./card/CardFooter";
 
 interface SearchResultCardProps {
   application: Application;
@@ -67,9 +66,9 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       </div>
 
       <div className="px-8 py-4">
-        <CardContent storybook={application.storybook} />
-        <CardFooter 
-          onSeeOnMap={() => onSeeOnMap?.(application.id)} 
+        <CardContent 
+          storybook={application.storybook} 
+          onSeeOnMap={() => onSeeOnMap?.(application.id)}
         />
       </div>
     </article>
