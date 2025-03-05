@@ -1,3 +1,4 @@
+
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -56,7 +57,7 @@ export const CommentButton = ({
         <div className="relative flex items-center">
           <MessageCircle className="h-4 w-4 mr-2" />
           {commentsCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
               {commentsCount}
             </span>
           )}

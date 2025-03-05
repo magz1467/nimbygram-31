@@ -27,6 +27,13 @@ export const InlineCommentForm = ({
     
     setIsSubmitting(true);
     try {
+      // Get user's profile data to ensure username is saved with comment
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+        
       const { data: newComment, error } = await supabase
         .from('Comments')
         .insert({
@@ -37,7 +44,7 @@ export const InlineCommentForm = ({
           upvotes: 0,
           downvotes: 0
         })
-        .select('*')
+        .select('*, profiles:profiles(username)')
         .single();
 
       if (error) throw error;

@@ -32,6 +32,13 @@ export const CommentForm = ({ applicationId, setComments }: CommentFormProps) =>
         return;
       }
 
+      // Get user profile data if available
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', session.user.id)
+        .single();
+
       const { data: newComment, error } = await supabase
         .from('Comments')
         .insert({

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Comment } from '@/types/planning';
 import { CommentItem } from './CommentItem';
@@ -37,13 +38,17 @@ export const CommentList = ({ applicationId, showExisting = true }: CommentListP
   return (
     <div className="space-y-4">
       <CommentForm applicationId={applicationId} setComments={setComments} />
-      {showExisting && topLevelComments?.map((comment) => (
-        <CommentItem 
-          key={comment.id} 
-          comment={comment}
-          currentUserId={currentUserId || ''}
-        />
-      ))}
+      {showExisting && topLevelComments.length > 0 ? (
+        topLevelComments.map((comment) => (
+          <CommentItem 
+            key={comment.id} 
+            comment={comment}
+            currentUserId={currentUserId || ''}
+          />
+        ))
+      ) : showExisting && (
+        <p className="text-sm text-muted-foreground italic">No comments yet. Be the first to share your thoughts!</p>
+      )}
     </div>
   );
 };

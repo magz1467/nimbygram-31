@@ -19,6 +19,7 @@ export const useComments = (applicationId: number) => {
           setCurrentUserId(session.session.user.id);
         }
 
+        // Include profiles join to get username
         const { data, error } = await supabase
           .from('Comments')
           .select('*, profiles:profiles(username)')
@@ -59,8 +60,22 @@ export const useComments = (applicationId: number) => {
         schema: 'public',
         table: 'Comments',
         filter: `application_id=eq.${applicationId}`
-      }, (payload) => {
+      }, async (payload) => {
         const newComment = payload.new as Comment;
+        
+        // Fetch the user's profile data to include with the comment
+        if (newComment.user_id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', newComment.user_id)
+            .single();
+            
+          if (profileData) {
+            // @ts-ignore - Add profiles data to comment
+            newComment.profiles = { username: profileData.username };
+          }
+        }
         
         // Only add to our list if it's a top-level comment
         if (!newComment.parent_id) {
