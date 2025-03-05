@@ -74,7 +74,7 @@ export const transformApplicationData = (
     applicant: typeof app.application_details === 'object' ? 
       (app.application_details as any)?.applicant || '' : '',
     submissionDate: app.valid_date || '',
-    submittedDate: app.received_date || app.valid_date || null,
+    submittedDate: app.received_date || app.valid_date || null, // Ensure submittedDate is set
     decisionDue: app.decision_target_date || '',
     type: app.application_type || '',
     ward: app.ward || '',
@@ -96,7 +96,7 @@ export const transformApplicationData = (
     engaging_title: app.engaging_title || null,
     storybook: app.storybook || null,
     storybook_header: app.storybook_header || null,
-    received_date: app.received_date || null
+    received_date: app.received_date || null // Ensure received_date is set
   };
 
   console.log('✅ Transformed application:', {

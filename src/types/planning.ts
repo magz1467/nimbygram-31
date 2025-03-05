@@ -1,3 +1,4 @@
+
 export interface Application {
   id: number;
   title?: string;
@@ -8,6 +9,7 @@ export interface Application {
   description?: string;
   applicant?: string;
   submissionDate?: string;
+  submittedDate?: string; // Added this field
   decisionDue?: string;
   type?: string;
   ward?: string;
@@ -57,23 +59,5 @@ export interface Application {
   decision?: string;
   storybook?: string;
   storybook_header?: string;
-}
-
-export interface Comment {
-  id: number;
-  created_at: string;
-  comment: string;
-  user_id?: string;
-  application_id?: number;
-  parent_id?: number;
-  upvotes?: number;
-  downvotes?: number;
-  user?: {
-    username?: string;
-  };
-  profiles?: {
-    username?: string;
-  };
-  user_email?: string;
-  replies?: Comment[];
+  received_date?: string | null; // Added this field
 }
