@@ -72,6 +72,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       
       // Call onSearch callback for postcode searches if provided
       if (onSearch && searchType === 'postcode') {
+        console.log('📍 Calling onSearch callback with postcode:', searchTerm);
         onSearch(searchTerm);
       }
 
@@ -82,13 +83,14 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       });
 
       // Navigate to search results with state
+      // Use replace: false to preserve navigation history
       navigate('/search-results', {
         state: {
           searchType,
           searchTerm,
           timestamp: Date.now() // Add timestamp to ensure state changes are detected
         },
-        replace: false // Use false to preserve navigation history
+        replace: false
       });
 
     } catch (error) {

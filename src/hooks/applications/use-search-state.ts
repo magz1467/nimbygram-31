@@ -96,14 +96,16 @@ export const useSearchState = (initialPostcode = '') => {
 
   // Handle coordinates error with toast
   useEffect(() => {
-    if (coordsError && isSearching) {
+    if (coordsError) {
       console.error('Error fetching coordinates:', coordsError);
-      toast({
-        title: "Postcode Error",
-        description: "Could not find coordinates for this postcode. Please try another postcode.",
-        variant: "destructive",
-      });
-      setIsSearching(false);
+      if (isSearching) {
+        toast({
+          title: "Postcode Error",
+          description: "Could not find coordinates for this postcode. Please try another postcode.",
+          variant: "destructive",
+        });
+        setIsSearching(false);
+      }
     }
   }, [coordsError, toast, isSearching]);
 
@@ -116,7 +118,7 @@ export const useSearchState = (initialPostcode = '') => {
   } = useQuery({
     queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
-    enabled: !!coordinates && !coordsError,
+    enabled: !!coordinates && !coordsError, // Only run query if we have coordinates and no error
     staleTime: 0, // Always fetch fresh data
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,

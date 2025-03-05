@@ -27,26 +27,32 @@ export const useCoordinates = (postcode: string | undefined) => {
         const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(formattedPostcode)}`);
         
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error('❌ useCoordinates: API error response:', errorData);
-          throw new Error(errorData.error || `Postcode API returned ${response.status}: ${response.statusText}`);
+          throw new Error(`Postcode API returned ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
         console.log('📍 useCoordinates: API response:', data);
         
         if (isMounted && data.status === 200 && data.result) {
-          const newCoordinates: [number, number] = [data.result.latitude, data.result.longitude];
-          console.log('✅ useCoordinates: Setting coordinates:', newCoordinates);
-          setCoordinates(newCoordinates);
+          // Check explicitly for latitude and longitude
+          if (typeof data.result.latitude === 'number' && typeof data.result.longitude === 'number') {
+            const newCoordinates: [number, number] = [data.result.latitude, data.result.longitude];
+            console.log('✅ useCoordinates: Setting coordinates:', newCoordinates);
+            setCoordinates(newCoordinates);
+          } else {
+            throw new Error("Invalid coordinates in postcode API response");
+          }
         } else {
-          console.error('❌ useCoordinates: Invalid response', data);
-          setError(new Error("Invalid response from postcode API"));
+          throw new Error("Invalid response from postcode API");
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("❌ useCoordinates: Error fetching coordinates:", errorMessage);
-        setError(error instanceof Error ? error : new Error(String(error)));
+        if (isMounted) {
+          setError(error instanceof Error ? error : new Error(String(error)));
+          // Important: Reset coordinates when there's an error
+          setCoordinates(null);
+        }
       } finally {
         if (isMounted) {
           console.log('🏁 useCoordinates: Finished loading');
