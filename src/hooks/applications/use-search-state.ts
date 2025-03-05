@@ -29,8 +29,10 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
   const { data, error } = await supabase
     .from('crystal_roof')
     .select('*')
-    .or(`geom->coordinates->1.gte.${latMin},geom->coordinates->1.lte.${latMax}`)
-    .or(`geom->coordinates->0.gte.${lngMin},geom->coordinates->0.lte.${lngMax}`)
+    .filter('geom->coordinates->1', 'gte', latMin)
+    .filter('geom->coordinates->1', 'lte', latMax)
+    .filter('geom->coordinates->0', 'gte', lngMin)
+    .filter('geom->coordinates->0', 'lte', lngMax)
     .order('id');
 
   if (error) {
@@ -47,6 +49,8 @@ const fetchApplications = async (coordinates: [number, number] | null) => {
       parseFloat(app.geom.coordinates[0])
     ] as [number, number] : undefined
   })) || [];
+  
+  console.log(`Found ${transformedData.length} applications within the search radius`);
   
   // Sort by distance from search coordinates
   return transformedData.sort((a, b) => {
@@ -69,12 +73,13 @@ export const useSearchState = (initialPostcode = '') => {
 
   const { 
     data: applications = [], 
-    isLoading: isLoadingApps
+    isLoading: isLoadingApps,
+    refetch
   } = useQuery({
     queryKey: ['applications', coordinates ? coordinates.join(',') : null],
     queryFn: () => fetchApplications(coordinates),
     enabled: !!coordinates,
-    staleTime: Infinity,
+    staleTime: 0, // Always fetch fresh data
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -108,7 +113,12 @@ export const useSearchState = (initialPostcode = '') => {
     setSearchStartTime(Date.now());
     // Reset any previous search points to ensure fresh search
     setSearchPoint(null);
-  }, [toast]);
+    
+    // Force refetch when postcode changes
+    if (coordinates) {
+      refetch();
+    }
+  }, [toast, coordinates, refetch]);
 
   return {
     postcode,

@@ -58,6 +58,15 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       // Clear any existing search state from session storage
       sessionStorage.removeItem('lastSearchLocation');
       
+      // Clear query cache
+      const cacheKeys = Object.keys(sessionStorage).filter(key => 
+        key.startsWith('tanstack-query-')
+      );
+      
+      cacheKeys.forEach(key => {
+        sessionStorage.removeItem(key);
+      });
+      
       // Call onSearch callback for postcode searches if provided
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);

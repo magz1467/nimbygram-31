@@ -62,8 +62,10 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           const queryResult = await supabase
             .from('crystal_roof')
             .select('*')
-            .or(`geom->coordinates->1.gte.${latMin},geom->coordinates->1.lte.${latMax}`)
-            .or(`geom->coordinates->0.gte.${lngMin},geom->coordinates->0.lte.${lngMax}`);
+            .filter('geom->coordinates->1', 'gte', latMin)
+            .filter('geom->coordinates->1', 'lte', latMax)
+            .filter('geom->coordinates->0', 'gte', lngMin)
+            .filter('geom->coordinates->0', 'lte', lngMax);
             
           properties = queryResult.data;
           error = queryResult.error;
