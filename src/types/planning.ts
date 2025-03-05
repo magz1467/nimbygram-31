@@ -16,6 +16,8 @@ export interface Application {
   officer?: string;
   consultationEnd?: string;
   image?: string;
+  streetview_url?: string | null; // Added this field explicitly
+  image_map_url?: string | null;
   coordinates?: [number, number];
   ai_title?: string;
   postcode?: string;
@@ -35,8 +37,6 @@ export interface Application {
       };
     };
   };
-  image_map_url?: string | null;
-  streetview_url?: string | null;
   last_date_consultation_comments?: string | null;
   valid_date?: string | null;
   centroid?: any;

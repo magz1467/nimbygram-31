@@ -1,5 +1,6 @@
+
 import { Application } from "@/types/planning";
-import Image from "@/components/ui/image";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,13 +27,23 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // First try the streetview image
+    // Priority order: streetview_url > image > image_map_url > category image > fallback
+    if (application.streetview_url) {
+      setImageSource(application.streetview_url);
+      return;
+    }
+    
     if (application.image) {
       setImageSource(application.image);
       return;
     }
+    
+    if (application.image_map_url) {
+      setImageSource(application.image_map_url);
+      return;
+    }
 
-    // Then try to determine category from title if class_3 is not set
+    // Then try to determine category from class_3 or title/description
     let detectedCategory = application.class_3;
     if (!detectedCategory && application.description) {
       const titleLower = application.description.toLowerCase();
@@ -57,33 +68,17 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
 
     // Finally use miscellaneous category image as fallback
     setImageSource(CATEGORY_IMAGES['Miscellaneous']);
-  }, [application.id, application.image, application.image_map_url, application.class_3, application.description]);
-
-  const handleImageError = (error: any) => {
-    console.error('ApplicationImage - Image loading failed:', {
-      error,
-      applicationId: application.id,
-      attemptedUrl: imageSource
-    });
-    
-    setImageSource(CATEGORY_IMAGES['Miscellaneous']);
-    
-    toast({
-      title: "Image Load Error",
-      description: "Using fallback image due to loading error",
-      variant: "destructive",
-    });
-  };
+  }, [application]);
 
   return (
     <div className="w-full aspect-video relative overflow-hidden rounded-lg bg-gray-100">
       {imageSource && (
-        <Image
+        <ImageWithFallback
           src={imageSource}
           alt={application.description || 'Planning application image'}
           className="object-cover w-full h-full"
           loading="eager"
-          onError={handleImageError}
+          fallbackSrc={CATEGORY_IMAGES['Miscellaneous']}
         />
       )}
     </div>

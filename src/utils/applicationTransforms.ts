@@ -15,7 +15,9 @@ export const transformApplicationData = (
     latitude: app.latitude,
     longitude: app.longitude,
     received_date: app.received_date,
-    submittedDate: app.submittedDate
+    submittedDate: app.submittedDate,
+    streetview_url: app.streetview_url,
+    image: app.image
   });
   
   // Extract coordinates from geometry - more flexible approach
@@ -110,6 +112,19 @@ export const transformApplicationData = (
     address = app.address;
   }
 
+  // Process image URLs - ensure we have valid URLs
+  const processedImage = app.image && app.image !== 'undefined' && app.image !== 'null' 
+    ? app.image 
+    : imageUrl;
+  
+  const processedStreetviewUrl = app.streetview_url && app.streetview_url !== 'undefined' && app.streetview_url !== 'null'
+    ? app.streetview_url
+    : null;
+    
+  const processedImageMapUrl = app.image_map_url && app.image_map_url !== 'undefined' && app.image_map_url !== 'null'
+    ? app.image_map_url
+    : null;
+
   const application: Application = {
     id: app.id,
     title: app.description || app.title || `Application ${app.id}`,
@@ -128,13 +143,14 @@ export const transformApplicationData = (
     officer: typeof app.application_details === 'object' ? 
       (app.application_details as any)?.officer || '' : '',
     consultationEnd: app.last_date_consultation_comments || '',
-    image: app.streetview_url || imageUrl,
+    image: processedImage,
+    streetview_url: processedStreetviewUrl,
+    image_map_url: processedImageMapUrl,
     coordinates,
     ai_title: app.ai_title,
     postcode: app.postcode || '',
     impact_score: app.impact_score || null,
     impact_score_details: app.impact_score_details || null,
-    image_map_url: app.image_map_url || null,
     last_date_consultation_comments: app.last_date_consultation_comments || null,
     valid_date: app.valid_date || null,
     centroid: app.centroid || null,
@@ -151,6 +167,9 @@ export const transformApplicationData = (
     coordinates: application.coordinates,
     title: application.title,
     address: application.address,
+    image: application.image,
+    streetview_url: application.streetview_url,
+    image_map_url: application.image_map_url,
     submittedDate: application.submittedDate,
     received_date: application.received_date
   });

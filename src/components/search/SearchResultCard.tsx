@@ -7,6 +7,7 @@ import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
 import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
+import { getImageUrl } from "@/utils/imageUtils";
 
 interface SearchResultCardProps {
   application: Application;
@@ -20,6 +21,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
     id: application.id,
     title: application.title,
     streetview_url: application.streetview_url,
+    image: application.image,
     type: typeof application.streetview_url,
     submittedDate: application.submittedDate || application.received_date
   });
@@ -44,6 +46,9 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       : null
     : null;
 
+  // Determine the best image URL to use
+  const imageUrl = application.streetview_url || application.image || application.image_map_url;
+
   return (
     <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
       <CardHeader 
@@ -53,7 +58,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       />
 
       <CardImage 
-        imageUrl={application.streetview_url} 
+        imageUrl={imageUrl} 
         title={application.title || ''} 
       />
 
