@@ -3,6 +3,7 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface SupportButtonProps {
   applicationId: number;
@@ -18,11 +19,13 @@ export const SupportButton = ({
   checkAuth 
 }: SupportButtonProps) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSupport = async () => {
     if (!checkAuth(() => {})) return;
 
     try {
+      setIsSubmitting(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -59,6 +62,8 @@ export const SupportButton = ({
         description: "Failed to update support status. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -66,6 +71,7 @@ export const SupportButton = ({
     <Button 
       variant="ghost" 
       size="sm"
+      disabled={isSubmitting}
       className="flex flex-col items-center gap-1 h-auto py-2 hover:[&_svg]:text-[#ea384c] hover:[&_svg]:fill-[#ea384c]"
       onClick={() => checkAuth(() => handleSupport())}
     >

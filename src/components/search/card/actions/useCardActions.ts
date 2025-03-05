@@ -11,6 +11,7 @@ export const useCardActions = (applicationId: number) => {
   const [supportCount, setSupportCount] = useState(0);
   const [isSupportedByUser, setIsSupportedByUser] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const getSession = async () => {
@@ -34,10 +35,15 @@ export const useCardActions = (applicationId: number) => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    setIsLoading(true);
     
     // Fetch user's vote status
     const getVoteStatus = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
       const { data } = await supabase
         .from('application_votes')
         .select('vote_type')
@@ -50,6 +56,8 @@ export const useCardActions = (applicationId: number) => {
 
     // Fetch user's support status
     const getSupportStatus = async () => {
+      if (!user) return;
+      
       const { data } = await supabase
         .from('application_support')
         .select('id')
@@ -58,6 +66,7 @@ export const useCardActions = (applicationId: number) => {
         .maybeSingle();
 
       setIsSupportedByUser(!!data);
+      setIsLoading(false);
     };
 
     getVoteStatus();
@@ -113,11 +122,27 @@ export const useCardActions = (applicationId: number) => {
       })
       .subscribe();
 
+    // Set up realtime subscription for votes
+    const votesSubscription = supabase
+      .channel('votes-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'application_votes',
+        filter: user ? `application_id=eq.${applicationId} AND user_id=eq.${user.id}` : `application_id=eq.${applicationId}`
+      }, (payload) => {
+        if (user && payload.new && payload.new.user_id === user.id) {
+          setVoteStatus(payload.new.vote_type);
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(commentsSubscription);
       supabase.removeChannel(supportSubscription);
+      supabase.removeChannel(votesSubscription);
     };
-  }, [applicationId]);
+  }, [applicationId, user]);
 
   const checkAuth = (callback: () => void) => {
     if (!user) {
@@ -136,6 +161,7 @@ export const useCardActions = (applicationId: number) => {
     isSupportedByUser,
     showAuthDialog,
     setShowAuthDialog,
+    isLoading,
     checkAuth
   };
 };

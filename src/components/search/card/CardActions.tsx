@@ -1,11 +1,11 @@
 
-import { useState } from "react";
 import { useCardActions } from "./actions/useCardActions";
 import { VoteButtons } from "./actions/VoteButtons";
 import { SupportButton } from "./actions/SupportButton";
 import { CommentButton } from "./actions/CommentButton";
 import { ShareButton } from "./actions/ShareButton";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CardActionsProps {
   applicationId: number;
@@ -22,8 +22,18 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
     isSupportedByUser,
     showAuthDialog,
     setShowAuthDialog,
+    isLoading,
     checkAuth
   } = useCardActions(applicationId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

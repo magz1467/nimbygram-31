@@ -3,6 +3,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface VoteButtonsProps {
   applicationId: number;
@@ -12,11 +13,13 @@ interface VoteButtonsProps {
 
 export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButtonsProps) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleVote = async (type: 'hot' | 'not') => {
     if (!checkAuth(() => {})) return;
 
     try {
+      setIsSubmitting(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -56,6 +59,8 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
         description: "Failed to save your vote. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,6 +69,7 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
       <Button 
         variant="ghost" 
         size="sm"
+        disabled={isSubmitting}
         className={`flex flex-col items-center gap-1 h-auto py-2 rounded-md ${
           voteStatus === 'hot' ? 'text-primary bg-primary/10' : ''
         } hover:bg-[#F2FCE2] hover:text-primary transition-colors`}
@@ -75,6 +81,7 @@ export const VoteButtons = ({ applicationId, voteStatus, checkAuth }: VoteButton
       <Button 
         variant="ghost" 
         size="sm"
+        disabled={isSubmitting}
         className={`flex flex-col items-center gap-1 h-auto py-2 ${
           voteStatus === 'not' ? 'text-primary bg-primary/10' : ''
         }`}
