@@ -96,10 +96,24 @@ export const transformApplicationData = (
     }
   }
 
+  // Construct a more robust address from available fields
+  let address = 'Address unavailable';
+  if (app.street_name || app.site_name || app.locality || app.postcode) {
+    address = [
+      app.site_name, 
+      app.street_name, 
+      app.locality, 
+      app.postcode
+    ].filter(Boolean).join(', ');
+  } else if (app.address) {
+    // Use direct address field if available
+    address = app.address;
+  }
+
   const application: Application = {
     id: app.id,
     title: app.description || app.title || `Application ${app.id}`,
-    address: `${app.site_name || ''} ${app.street_name || ''} ${app.locality || ''} ${app.postcode || ''}`.trim() || 'Address unavailable',
+    address: address,
     status: app.status || 'Status unavailable',
     distance: formattedDistance,
     reference: app.lpa_app_no || '',
@@ -136,6 +150,7 @@ export const transformApplicationData = (
     id: application.id,
     coordinates: application.coordinates,
     title: application.title,
+    address: application.address,
     submittedDate: application.submittedDate,
     received_date: application.received_date
   });
