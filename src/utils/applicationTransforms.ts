@@ -75,7 +75,8 @@ export const transformApplicationData = (
   if (!coordinates || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
     console.warn('⚠️ Invalid coordinates for application:', app.id);
     // Use center as fallback instead of returning null
-    coordinates = [...center];
+    // Make sure we create a new array, not just reference center
+    coordinates = [center[0], center[1]];
   }
 
   // Calculate distance if we have coordinates
