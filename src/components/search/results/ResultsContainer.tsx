@@ -3,8 +3,6 @@ import { Application } from "@/types/planning";
 import { SearchResultsList } from "../SearchResultsList";
 import { MapView } from "@/components/applications/dashboard/components/MapView";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Map, List } from "lucide-react";
 
 interface ResultsContainerProps {
   displayApplications: Application[];
@@ -62,32 +60,6 @@ export const ResultsContainer = ({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {(!isLoading && applications?.length > 0 && coordinates) && (
-        <div className="flex justify-end mb-4">
-          <div className="flex gap-2 bg-white rounded-md p-1 shadow-sm border">
-            <Button
-              variant={!showMap ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setShowMap(false)}
-              className="flex items-center gap-2"
-            >
-              <List className="h-4 w-4" />
-              List
-            </Button>
-            <Button
-              variant={showMap ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setShowMap(true)}
-              className="flex items-center gap-2"
-              disabled={!coordinates || applications.length === 0}
-            >
-              <Map className="h-4 w-4" />
-              Map
-            </Button>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-6">
         {shouldShowMap && coordinates ? (
           <div className="h-[600px]">

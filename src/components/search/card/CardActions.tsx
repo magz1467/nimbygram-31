@@ -1,10 +1,10 @@
-
 import { Heart, MessageCircle, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CardActionsProps {
   applicationId: number;
@@ -20,6 +20,9 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   const [supportCount, setSupportCount] = useState(0);
   const [commentsExpanded, setCommentsExpanded] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showInlineCommentForm, setShowInlineCommentForm] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -150,8 +153,60 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   };
 
   const handleCommentsClick = () => {
-    setCommentsExpanded(!commentsExpanded);
-    onShowComments();
+    if (commentsCount === 0) {
+      // If there are no comments, check if user is authenticated
+      if (!user) {
+        setShowAuthDialog(true);
+        return;
+      }
+      
+      // Show inline comment form for first comment
+      setShowInlineCommentForm(!showInlineCommentForm);
+    } else {
+      // Otherwise toggle comment visibility
+      setCommentsExpanded(!commentsExpanded);
+      onShowComments();
+    }
+  };
+
+  const submitComment = async () => {
+    if (!commentText.trim() || !user) return;
+    
+    setIsSubmittingComment(true);
+    try {
+      const { data: newComment, error } = await supabase
+        .from('Comments')
+        .insert({
+          comment: commentText.trim(),
+          application_id: applicationId,
+          user_id: user.id,
+          user_email: user.email,
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      setCommentText('');
+      setShowInlineCommentForm(false);
+      setCommentsCount(prev => prev + 1);
+      setCommentsExpanded(true);
+      onShowComments();
+      
+      toast({
+        title: "Comment posted",
+        description: "Your comment has been posted successfully",
+      });
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to post comment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const getCommentButtonText = () => {
@@ -221,6 +276,33 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
             <span>{getCommentButtonText()}</span>
           </div>
         </Button>
+
+        {showInlineCommentForm && (
+          <div className="mt-2 space-y-2">
+            <Textarea
+              placeholder="Write your comment here..."
+              className="min-h-[80px] text-sm"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowInlineCommentForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={submitComment}
+                disabled={!commentText.trim() || isSubmittingComment}
+              >
+                {isSubmittingComment ? "Posting..." : "Post Comment"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Button 
           variant="ghost" 
