@@ -2,7 +2,7 @@ import { Heart, MessageCircle, Share2, ThumbsDown, ThumbsUp } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -18,7 +18,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
   const [voteStatus, setVoteStatus] = useState<'hot' | 'not' | null>(null);
   const [commentsCount, setCommentsCount] = useState(0);
   const [supportCount, setSupportCount] = useState(0);
-  const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [isSupportedByUser, setIsSupportedByUser] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -30,9 +30,26 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
       setUser(session?.user || null);
     };
 
+    getSession();
+
+    // Set up auth state change listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      // Clean up the listener when component unmounts
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    // Fetch user's vote status
     const getVoteStatus = async () => {
-      if (!user) return;
-      
       const { data } = await supabase
         .from('application_votes')
         .select('vote_type')
@@ -43,6 +60,24 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
       setVoteStatus(data?.vote_type || null);
     };
 
+    // Fetch user's support status
+    const getSupportStatus = async () => {
+      const { data } = await supabase
+        .from('application_support')
+        .select('id')
+        .eq('application_id', applicationId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setIsSupportedByUser(!!data);
+    };
+
+    getVoteStatus();
+    getSupportStatus();
+  }, [applicationId, user]);
+
+  useEffect(() => {
+    // Fetch comments count
     const getCommentsCount = async () => {
       const { count } = await supabase
         .from('Comments')
@@ -52,6 +87,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
       setCommentsCount(count || 0);
     };
 
+    // Fetch support count
     const getSupportCount = async () => {
       const { count } = await supabase
         .from('application_support')
@@ -61,11 +97,39 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
       setSupportCount(count || 0);
     };
 
-    getSession();
-    getVoteStatus();
     getCommentsCount();
     getSupportCount();
-  }, [applicationId, user]);
+
+    // Set up realtime subscriptions
+    const commentsSubscription = supabase
+      .channel('Comments-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'Comments',
+        filter: `application_id=eq.${applicationId}`
+      }, () => {
+        getCommentsCount();
+      })
+      .subscribe();
+
+    const supportSubscription = supabase
+      .channel('support-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'application_support',
+        filter: `application_id=eq.${applicationId}`
+      }, () => {
+        getSupportCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(commentsSubscription);
+      supabase.removeChannel(supportSubscription);
+    };
+  }, [applicationId]);
 
   const checkAuth = (callback: () => void) => {
     if (!user) {
@@ -81,13 +145,19 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
 
     try {
       if (voteStatus === type) {
+        // Removing vote
         await supabase
           .from('application_votes')
           .delete()
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
         setVoteStatus(null);
+        toast({
+          title: "Vote removed",
+          description: `You no longer voted on this application`,
+        });
       } else {
+        // Adding or changing vote
         await supabase
           .from('application_votes')
           .upsert({
@@ -98,6 +168,10 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
             onConflict: 'application_id,user_id'
           });
         setVoteStatus(type);
+        toast({
+          title: "Vote recorded",
+          description: `You've marked this application as ${type}`,
+        });
       }
     } catch (error) {
       console.error('Error voting:', error);
@@ -113,35 +187,32 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
     if (!checkAuth(() => {})) return;
 
     try {
-      const { data: existingSupport } = await supabase
-        .from('application_support')
-        .select('id')
-        .eq('application_id', applicationId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingSupport) {
+      if (isSupportedByUser) {
+        // Remove support
         await supabase
           .from('application_support')
           .delete()
-          .eq('id', existingSupport.id);
-        setSupportCount(prev => prev - 1);
+          .eq('application_id', applicationId)
+          .eq('user_id', user.id);
+        setIsSupportedByUser(false);
+        toast({
+          title: "Support removed",
+          description: "You've removed your support for this application",
+        });
       } else {
+        // Add support
         await supabase
           .from('application_support')
           .insert({
             application_id: applicationId,
             user_id: user.id
           });
-        setSupportCount(prev => prev + 1);
+        setIsSupportedByUser(true);
+        toast({
+          title: "Support added",
+          description: "You're now supporting this application",
+        });
       }
-
-      toast({
-        title: existingSupport ? "Support removed" : "Support added",
-        description: existingSupport 
-          ? "You've removed your support for this application" 
-          : "You're now supporting this application",
-      });
     } catch (error) {
       console.error('Error toggling support:', error);
       toast({
@@ -164,7 +235,6 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
       setShowInlineCommentForm(!showInlineCommentForm);
     } else {
       // Otherwise toggle comment visibility
-      setCommentsExpanded(!commentsExpanded);
       onShowComments();
     }
   };
@@ -181,6 +251,8 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           application_id: applicationId,
           user_id: user.id,
           user_email: user.email,
+          upvotes: 0,
+          downvotes: 0
         })
         .select('*')
         .single();
@@ -189,9 +261,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
 
       setCommentText('');
       setShowInlineCommentForm(false);
-      setCommentsCount(prev => prev + 1);
-      setCommentsExpanded(true);
-      onShowComments();
+      onShowComments(); // Show all comments after submitting
       
       toast({
         title: "Comment posted",
@@ -248,7 +318,7 @@ export const CardActions = ({ applicationId, onShowComments, onShare }: CardActi
           onClick={() => checkAuth(() => handleSupport())}
         >
           <div className="relative">
-            <Heart className={`h-5 w-5 ${supportCount > 0 ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
+            <Heart className={`h-5 w-5 ${isSupportedByUser ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
             {supportCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                 {supportCount}

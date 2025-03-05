@@ -1,3 +1,4 @@
+
 import { Comment } from "@/types/planning";
 import { Card } from "@/components/ui/card";
 import { CommentHeader } from "./CommentHeader";
@@ -8,7 +9,7 @@ import { CommentReplyForm } from "./CommentReplyForm";
 import { CommentReplies } from "./CommentReplies";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommentItemProps {
   comment: Comment;
@@ -30,6 +31,7 @@ export const CommentItem = ({
   const [replyContent, setReplyContent] = useState('');
   const [replies, setReplies] = useState<Comment[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVoteStatus = async () => {
@@ -64,6 +66,28 @@ export const CommentItem = ({
 
     fetchVoteStatus();
     fetchReplies();
+
+    // Set up realtime subscription for replies
+    const subscription = supabase
+      .channel(`comment-replies-${comment.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'Comments',
+        filter: `parent_id=eq.${comment.id}`
+      }, (payload) => {
+        // Add the new reply to the list
+        const newReply = payload.new as Comment;
+        setReplies(prev => [...prev, newReply]);
+        
+        // Auto-expand replies when a new one is added
+        setIsExpanded(true);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [comment.id, currentUserId]);
 
   const handleVoteChange = async (type: 'up' | 'down') => {
@@ -107,12 +131,19 @@ export const CommentItem = ({
       await supabase
         .from('Comments')
         .update({
-          upvotes: upvotes,
-          downvotes: downvotes
+          upvotes: type === 'up' ? upvotes : comment.upvotes,
+          downvotes: type === 'down' ? downvotes : comment.downvotes
         })
         .eq('id', comment.id);
     } catch (error) {
       console.error('Error updating vote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update vote. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Revert UI changes on error
       setVoteStatus(voteStatus);
       setUpvotes(comment.upvotes || 0);
       setDownvotes(comment.downvotes || 0);
@@ -129,14 +160,15 @@ export const CommentItem = ({
           comment: replyContent.trim(),
           application_id: comment.application_id,
           user_id: currentUserId,
-          parent_id: comment.id
+          parent_id: comment.id,
+          upvotes: 0,
+          downvotes: 0
         })
         .select('*, profiles:profiles(username)')
         .single();
 
       if (error) throw error;
 
-      setReplies(prev => [...prev, newComment]);
       setReplyContent('');
       setIsReplying(false);
       setIsExpanded(true);
@@ -196,7 +228,7 @@ export const CommentItem = ({
       <CommentReplies
         replies={replies}
         currentUserId={currentUserId}
-        level={level}
+        level={level + 1}
         isExpanded={isExpanded}
         onReplyAdded={onReplyAdded}
       />

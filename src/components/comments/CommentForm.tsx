@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,12 +32,6 @@ export const CommentForm = ({ applicationId, setComments }: CommentFormProps) =>
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', session.user.id)
-        .single();
-
       const { data: newComment, error } = await supabase
         .from('Comments')
         .insert({
@@ -44,17 +39,21 @@ export const CommentForm = ({ applicationId, setComments }: CommentFormProps) =>
           application_id: applicationId,
           user_id: session.user.id,
           user_email: session.user.email,
+          upvotes: 0,
+          downvotes: 0,
+          parent_id: null // Explicitly set to null for top-level comments
         })
         .select('*, profiles:profiles(username)')
         .single();
 
       if (error) throw error;
 
-      // Get current comments and add new comment
+      // Get updated comments
       const { data: currentComments } = await supabase
         .from('Comments')
         .select('*, profiles:profiles(username)')
         .eq('application_id', applicationId)
+        .is('parent_id', null)
         .order('created_at', { ascending: false });
 
       setComments(currentComments as Comment[]);
