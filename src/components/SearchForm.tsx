@@ -55,20 +55,22 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       // Log search first
       await logSearch(searchTerm, searchType, activeTab);
       
+      // Clear any existing search state from session storage
+      sessionStorage.removeItem('lastSearchLocation');
+      
       // Call onSearch callback for postcode searches if provided
       if (onSearch && searchType === 'postcode') {
         onSearch(searchTerm);
       }
 
       // Navigate to search results with state
-      // Using replace to prevent history build-up
       navigate('/search-results', {
         state: {
           searchType,
           searchTerm,
           timestamp: Date.now() // Add timestamp to ensure state changes are detected
         },
-        replace: true
+        replace: true // Use replace to prevent back button issues
       });
 
     } catch (error) {

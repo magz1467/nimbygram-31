@@ -65,7 +65,7 @@ export const useSearchState = (initialPostcode = '') => {
       setIsSearching(true);
       setSearchStartTime(Date.now());
     }
-  }, []);
+  }, [location.state, postcode]);  // Added location.state dependency
 
   const handlePostcodeSelect = useCallback((newPostcode: string) => {
     if (!newPostcode) {
@@ -77,13 +77,13 @@ export const useSearchState = (initialPostcode = '') => {
       return;
     }
     
-    if (newPostcode !== postcode) {
-      console.log('🔍 Starting new postcode search:', newPostcode);
-      setIsSearching(true);
-      setPostcode(newPostcode);
-      setSearchStartTime(Date.now());
-    }
-  }, [postcode, toast]);
+    console.log('🔍 Starting new postcode search:', newPostcode);
+    setIsSearching(true);
+    setPostcode(newPostcode);
+    setSearchStartTime(Date.now());
+    // Reset any previous search points to ensure fresh search
+    setSearchPoint(null);
+  }, [toast]);
 
   return {
     postcode,

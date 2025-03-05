@@ -13,6 +13,11 @@ const SearchResultsPage = () => {
       term: searchState.searchTerm,
       timestamp: searchState.timestamp
     });
+    
+    // Force clear any cached search data
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('forceRefresh', 'true');
+    }
   }
 
   return <SearchView />;

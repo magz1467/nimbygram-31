@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -12,11 +11,17 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
   useEffect(() => {
     // Force page reload if coming from cache on mobile
     if (isMobile && window.performance) {
-      if (performance.navigation.type === 0 && 
-          document.referrer === '' && 
-          sessionStorage.getItem('initialLoadDone') !== 'true') {
+      const forceRefresh = sessionStorage.getItem('forceRefresh') === 'true';
+      const isFirstLoad = (
+        performance.navigation.type === 0 && 
+        document.referrer === '' && 
+        sessionStorage.getItem('initialLoadDone') !== 'true'
+      );
+      
+      if (isFirstLoad || forceRefresh) {
         // Set flag to prevent infinite reload
         sessionStorage.setItem('initialLoadDone', 'true');
+        sessionStorage.removeItem('forceRefresh');
         
         // Add timestamp to force cache bust
         const cacheBustUrl = new URL(window.location.href);
@@ -41,6 +46,7 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
     }
     
     return () => {
+      // Only remove initialLoadDone, keep other storage flags
       sessionStorage.removeItem('initialLoadDone');
     };
   }, [isMobile]);
