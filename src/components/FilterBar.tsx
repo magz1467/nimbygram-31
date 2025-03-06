@@ -55,8 +55,8 @@ export const FilterBar = ({
   }, [onSortChange]);
 
   return (
-    <div className="flex flex-col bg-white border-b">
-      <div className="flex items-center justify-between p-1.5">
+    <div className="flex flex-col bg-white border-b w-full">
+      <div className="flex items-center justify-between p-1.5 w-full">
         <FilterControls 
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}

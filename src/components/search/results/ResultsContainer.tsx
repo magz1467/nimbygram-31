@@ -5,6 +5,7 @@ import { MapView } from "@/components/applications/dashboard/components/MapView"
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsContainerProps {
   displayApplications: Application[];
@@ -32,6 +33,7 @@ export const ResultsContainer = ({
   searchTerm
 }: ResultsContainerProps) => {
   const [shouldShowMap, setShouldShowMap] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Log map visibility state for debugging
@@ -41,7 +43,8 @@ export const ResultsContainer = ({
       coordinates,
       selectedId,
       applications: applications?.length || 0,
-      isLoading
+      isLoading,
+      isMobile
     });
     
     // Determine if we can show the map
@@ -58,12 +61,12 @@ export const ResultsContainer = ({
       shouldShowMap: shouldShow,
       conditions
     });
-  }, [showMap, coordinates, applications, selectedId, isLoading]);
+  }, [showMap, coordinates, applications, selectedId, isLoading, isMobile]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className={`grid ${shouldShowMap ? 'grid-cols-2' : 'grid-cols-1'} gap-6 relative`}>
-        <div className={shouldShowMap ? 'col-span-1' : 'col-span-1'}>
+    <div className={`mx-auto px-2 py-4 ${isMobile ? 'max-w-full' : 'container px-4 py-8'}`}>
+      <div className={`grid ${shouldShowMap && !isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-4 relative`}>
+        <div className={shouldShowMap && !isMobile ? 'col-span-1' : 'col-span-1'}>
           <SearchResultsList 
             applications={displayApplications} 
             isLoading={isLoading}
@@ -73,25 +76,51 @@ export const ResultsContainer = ({
         </div>
         
         {shouldShowMap && coordinates && (
-          <div className="col-span-1 relative h-[calc(100vh-200px)] rounded-lg border border-gray-200 overflow-hidden">
-            <div className="absolute top-2 right-2 z-10">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="rounded-full h-8 w-8 p-0 flex items-center justify-center bg-white/80 backdrop-blur-sm shadow-md"
-                onClick={() => setShowMap(false)}
-                aria-label="Close map"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <MapView
-              applications={applications}
-              selectedId={selectedId}
-              coordinates={coordinates}
-              onMarkerClick={handleMarkerClick}
-            />
-          </div>
+          <>
+            {isMobile ? (
+              <div className="fixed inset-0 bg-white z-50 overflow-hidden">
+                <div className="absolute top-4 right-4 z-10">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full h-10 w-10 p-0 flex items-center justify-center bg-white shadow-md"
+                    onClick={() => setShowMap(false)}
+                    aria-label="Close map"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="h-full">
+                  <MapView
+                    applications={applications}
+                    selectedId={selectedId}
+                    coordinates={coordinates}
+                    onMarkerClick={handleMarkerClick}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="col-span-1 relative h-[calc(100vh-250px)] rounded-lg border border-gray-200 overflow-hidden">
+                <div className="absolute top-2 right-2 z-10">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full h-8 w-8 p-0 flex items-center justify-center bg-white/80 backdrop-blur-sm shadow-md"
+                    onClick={() => setShowMap(false)}
+                    aria-label="Close map"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <MapView
+                  applications={applications}
+                  selectedId={selectedId}
+                  coordinates={coordinates}
+                  onMarkerClick={handleMarkerClick}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

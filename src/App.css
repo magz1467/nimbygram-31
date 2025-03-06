@@ -1,3 +1,4 @@
+
 #root {
   margin: 0 auto;
   text-align: center;
@@ -43,9 +44,29 @@
 /* Add responsive padding */
 @media (max-width: 768px) {
   #root {
-    padding: 1rem;
+    padding: 0;
   }
   .card {
     padding: 1em;
+  }
+  
+  /* Improve filter scrolling on mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smaller text on mobile */
+  .text-xs {
+    font-size: 0.7rem;
+  }
+  
+  /* Reduce button padding on mobile */
+  .btn-mobile {
+    padding: 0.25rem 0.5rem;
   }
 }

@@ -6,6 +6,7 @@ import { ResultsContainer } from "./ResultsContainer";
 import { NoResultsView } from "./NoResultsView";
 import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -17,6 +18,7 @@ interface SearchViewProps {
 
 export const SearchView = ({ initialSearch }: SearchViewProps) => {
   console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
+  const isMobile = useIsMobile();
 
   const {
     postcode,
@@ -71,9 +73,9 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
         applications={applications}
       />
       <div className="w-full border-t">
-        <div className="container mx-auto px-4">
+        <div className={`mx-auto px-2 ${isMobile ? 'max-w-full' : 'container px-4'}`}>
           <div className="flex flex-col bg-white">
-            <div className="flex items-center justify-between p-1.5">
+            <div className="flex items-center justify-between p-1.5 overflow-hidden">
               <FilterBarSection
                 coordinates={coordinates}
                 hasSearched={hasSearched}
