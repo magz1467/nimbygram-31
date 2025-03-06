@@ -62,34 +62,35 @@ export const ResultsContainer = ({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 gap-6 relative">
-        <SearchResultsList 
-          applications={displayApplications} 
-          isLoading={isLoading}
-          onSeeOnMap={handleMarkerClick}
-          searchTerm={searchTerm}
-        />
+      <div className={`grid ${shouldShowMap ? 'grid-cols-2' : 'grid-cols-1'} gap-6 relative`}>
+        <div className={shouldShowMap ? 'col-span-1' : 'col-span-1'}>
+          <SearchResultsList 
+            applications={displayApplications} 
+            isLoading={isLoading}
+            onSeeOnMap={handleMarkerClick}
+            searchTerm={searchTerm}
+          />
+        </div>
         
         {shouldShowMap && coordinates && (
-          <div className="fixed top-0 right-0 h-full w-1/2 z-50 bg-white shadow-lg border-l border-gray-200 overflow-hidden">
-            <div className="absolute top-4 left-4 z-10">
+          <div className="col-span-1 relative h-[calc(100vh-200px)] rounded-lg border border-gray-200 overflow-hidden">
+            <div className="absolute top-2 right-2 z-10">
               <Button
                 variant="secondary"
                 size="sm"
-                className="rounded-full h-8 w-8 p-0 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+                className="rounded-full h-8 w-8 p-0 flex items-center justify-center bg-white/80 backdrop-blur-sm shadow-md"
                 onClick={() => setShowMap(false)}
+                aria-label="Close map"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="h-full">
-              <MapView
-                applications={applications}
-                selectedId={selectedId}
-                coordinates={coordinates}
-                onMarkerClick={handleMarkerClick}
-              />
-            </div>
+            <MapView
+              applications={applications}
+              selectedId={selectedId}
+              coordinates={coordinates}
+              onMarkerClick={handleMarkerClick}
+            />
           </div>
         )}
       </div>
