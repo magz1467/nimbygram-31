@@ -7,6 +7,7 @@ import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { calculateDistance } from "@/utils/distance";
 import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { useMapApplications } from "@/hooks/use-map-applications";
+import { SortType } from "@/types/application-types";
 
 const MapViewPage = () => {
   console.log('🔄 MapView component mounting');

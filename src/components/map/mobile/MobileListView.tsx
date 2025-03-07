@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { Button } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Bell, MapPin, X } from "lucide-react";
 import { useState } from "react";
 import { ImageResolver } from "./components/ImageResolver";
