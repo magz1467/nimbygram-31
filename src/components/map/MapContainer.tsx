@@ -38,89 +38,49 @@ export const MapContainer = memo(({
   useEffect(() => {
     if (mapRef.current && coordinates) {
       const map = mapRef.current;
-      const currentCenter = map.getCenter();
-      const targetCoords = coordinates;
+      map.setView(coordinates, map.getZoom() || 14, { animate: true });
       
-      // Only update view if coordinates have actually changed
-      if (currentCenter.lat !== targetCoords[0] || currentCenter.lng !== targetCoords[1]) {
-        console.log('🗺️ Updating map view to:', coordinates);
-        map.setView(coordinates, map.getZoom() || 14, { animate: true });
-        map.invalidateSize();
-      }
+      // Force the map to invalidate its size multiple times
+      const invalidateTimes = [0, 100, 300, 500, 1000];
+      invalidateTimes.forEach(delay => {
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.invalidateSize(true);
+            console.log(`🗺️ Invalidated map size after ${delay}ms`);
+          }
+        }, delay);
+      });
     }
   }, [coordinates]);
 
-  // Handle map move events
+  // Handle first mount of the map
   useEffect(() => {
-    if (!mapRef.current || !onMapMove) return;
-    
-    const map = mapRef.current;
-    onMapMove(map);
-    
-    return () => {
-      // Cleanup if needed
-      if (map) {
-        map.off();
+    const checkAndInvalidateSize = () => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize(true);
+        console.log('🗺️ Map initial size invalidation');
       }
     };
-  }, [onMapMove]);
-
-  // Force map to invalidate size when it becomes visible
-  useEffect(() => {
-    const checkVisibility = () => {
-      if (mapRef.current && containerRef.current) {
-        // Check if the container is visible
-        const isVisible = containerRef.current.offsetParent !== null;
-        if (isVisible) {
-          console.log('🗺️ Map container is now visible, invalidating size');
-          setTimeout(() => {
-            mapRef.current?.invalidateSize();
-          }, 100);
-        }
-      }
-    };
-
-    // Check visibility immediately and then every 100ms for 1 second
-    checkVisibility();
-    const intervalId = setInterval(checkVisibility, 100);
     
-    setTimeout(() => {
-      clearInterval(intervalId);
-    }, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  // Additional effect to ensure map is fully initialized
-  useEffect(() => {
-    // Force invalidate size multiple times to ensure proper rendering
-    const invalidationTimes = [50, 150, 300, 500, 1000];
-    
-    const invalidations = invalidationTimes.map(time => 
-      setTimeout(() => {
-        if (mapRef.current) {
-          console.log(`🗺️ Forced map invalidation at ${time}ms`);
-          mapRef.current.invalidateSize(true);
-        }
-      }, time)
+    // Check multiple times to ensure the map is fully initialized
+    const timers = [100, 300, 500, 1000, 2000].map(delay => 
+      setTimeout(checkAndInvalidateSize, delay)
     );
     
     return () => {
-      invalidations.forEach(clearTimeout);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
   return (
-    <div className="w-full h-full relative bg-white z-[1000]" ref={containerRef}>
+    <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
         center={coordinates}
         zoom={14}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", zIndex: 1000 }}
-        className="z-[1000]"
+        style={{ height: "100%", width: "100%" }}
+        className="z-10"
         whenReady={() => {
           console.log('🗺️ Map is ready');
           mapRef.current?.invalidateSize(true);
@@ -130,7 +90,6 @@ export const MapContainer = memo(({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           maxZoom={19}
-          className="z-0"
         />
         <SearchLocationPin position={coordinates} />
         <ApplicationMarkers

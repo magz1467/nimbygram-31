@@ -1,9 +1,9 @@
 
 import { Application } from "@/types/planning";
-import { MapViewLayout } from "@/components/map/MapViewLayout";
+import { MapContent } from "@/components/map/MapContent";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, X } from "lucide-react";
-import { useEffect } from "react";
+import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface MobileMapViewProps {
   applications: Application[];
@@ -12,6 +12,7 @@ interface MobileMapViewProps {
   handleMarkerClick: (id: number) => void;
   handleCloseMap: () => void;
   isLoading: boolean;
+  postcode: string;
 }
 
 export const MobileMapView = ({
@@ -21,20 +22,20 @@ export const MobileMapView = ({
   handleMarkerClick,
   handleCloseMap,
   isLoading,
+  postcode,
 }: MobileMapViewProps) => {
+  const overlayRef = useRef<HTMLDivElement>(null);
   
-  // When mobile map view mounts, make sure body doesn't scroll and ensure visibility
+  // When mobile map view mounts, prevent body scrolling
   useEffect(() => {
+    console.log('📱 Mobile map overlay mounted');
     document.body.style.overflow = 'hidden';
     
     // Force redraw of the map
     const timer = setTimeout(() => {
-      const mapElement = document.querySelector('.mobile-map-container');
-      if (mapElement) {
+      if (overlayRef.current) {
         console.log('📱 Forcing map container redraw');
-        // Force a repaint to ensure map is visible
-        mapElement.classList.add('force-redraw');
-        setTimeout(() => mapElement.classList.remove('force-redraw'), 10);
+        window.dispatchEvent(new Event('resize'));
       }
     }, 100);
     
@@ -46,23 +47,10 @@ export const MobileMapView = ({
 
   return (
     <div 
-      className="mobile-map-container fixed inset-0 w-full h-full overflow-hidden shadow rounded-lg z-[2000]"
-      style={{ 
-        height: 'calc(100vh - 120px)',
-        top: '120px' 
-      }}
+      className="fixed inset-0 bg-white z-[9999]"
+      ref={overlayRef}
     >
-      <div className="absolute top-2 left-2 right-2 z-[2100] flex justify-between">
-        <Button 
-          onClick={handleCloseMap}
-          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow-md"
-          size="icon"
-          variant="outline"
-          aria-label="Back to results"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        
+      <div className="absolute top-4 right-4 z-[10000]">
         <Button 
           onClick={handleCloseMap}
           className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow-md"
@@ -74,20 +62,16 @@ export const MobileMapView = ({
         </Button>
       </div>
       
-      <div className="absolute inset-0 z-[1990]">
-        <MapViewLayout 
+      <div className="w-full h-full">
+        <MapContent 
           applications={applications}
           selectedId={selectedId}
-          postcode=""
           coordinates={coordinates}
-          isLoading={isLoading}
-          activeFilters={{}}
-          activeSort={null}
-          onPostcodeSelect={() => {}}
-          onFilterChange={() => {}}
-          onSortChange={() => {}}
+          isMobile={true}
+          isMapView={true}
           onMarkerClick={handleMarkerClick}
-          onSelectApplication={handleMarkerClick}
+          isLoading={isLoading}
+          postcode={postcode}
         />
       </div>
     </div>

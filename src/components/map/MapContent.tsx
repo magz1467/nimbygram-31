@@ -39,36 +39,22 @@ export const MapContent = ({
     if (mapContainerRef.current) {
       console.log('🗺️ Triggering map container resize');
       
-      // Force resize event to ensure map renders correctly
-      const resizeEvent = new Event('resize');
-      window.dispatchEvent(resizeEvent);
+      // Force resize events to ensure map renders correctly
+      const resizeEvents = [0, 100, 300, 500].map(delay => 
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+          console.log(`🗺️ Dispatched resize event after ${delay}ms`);
+        }, delay)
+      );
       
-      // Force a repaint of the map container
-      const forceRepaint = () => {
-        if (mapContainerRef.current) {
-          const display = mapContainerRef.current.style.display;
-          mapContainerRef.current.style.display = 'none';
-          // Force reflow
-          void mapContainerRef.current.offsetHeight;
-          mapContainerRef.current.style.display = display;
-        }
+      return () => {
+        resizeEvents.forEach(clearTimeout);
       };
-      
-      // Delay to ensure DOM has updated
-      setTimeout(forceRepaint, 100);
-      
-      // Also force the Leaflet map to redraw itself
-      if (mapContainerRef.current.querySelector('.leaflet-container')) {
-        const leafletMap = mapContainerRef.current.querySelector('.leaflet-container') as HTMLElement;
-        if (leafletMap) {
-          leafletMap.style.zIndex = '1500';
-        }
-      }
     }
   }, [coordinates, selectedId, isMobile]);
 
   return (
-    <div className="relative w-full h-full" ref={mapContainerRef} style={{ zIndex: 1500 }}>
+    <div className="relative w-full h-full" ref={mapContainerRef}>
       <MapContainer
         applications={applications}
         selectedId={selectedId}
