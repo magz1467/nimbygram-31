@@ -1,12 +1,9 @@
 
-import { Header } from "@/components/Header";
-import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
-import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
-import { ResultsContainer } from "./ResultsContainer";
-import { NoResultsView } from "./NoResultsView";
-import { FilterBarSection } from "./FilterBarSection";
-import { useSearchResults } from "@/hooks/applications/use-search-results";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useSearchResults } from '@/hooks/applications/use-search-results';
+import { useEffect } from 'react';
+import { useTitle } from '@/hooks/use-title';
+import { ResultsContainer } from './ResultsContainer';
+import { FilterBarSection } from './FilterBarSection';
 
 interface SearchViewProps {
   initialSearch?: {
@@ -17,14 +14,11 @@ interface SearchViewProps {
 }
 
 export const SearchView = ({ initialSearch }: SearchViewProps) => {
-  console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
-  const isMobile = useIsMobile();
-
   const {
     postcode,
     coordinates,
-    applications,
     displayApplications,
+    applications,
     isLoading,
     hasSearched,
     showMap,
@@ -41,70 +35,54 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     refetch
   } = useSearchResults({ initialSearch });
 
-  console.log('🌍 SearchView received coordinates:', coordinates);
-  console.log('📊 SearchView received applications:', applications?.length);
+  // Set page title
+  useTitle(`Planning Applications near ${postcode || 'your area'}`);
 
-  // Handle marker click to show side map and select application
-  const handleMapMarkerClick = (id: number) => {
-    console.log('🖱️ Map marker clicked:', id);
-    setShowMap(true);
-    handleMarkerClick(id);
-    setSelectedId(id);
-  };
-
-  // Retry search function
-  const handleRetry = () => {
-    if (refetch) {
-      refetch();
-    }
-  };
-
-  // Show no results view if appropriate
-  if (!isLoading && !displayApplications?.length && !coordinates) {
-    return <NoResultsView onPostcodeSelect={handlePostcodeSelect} />;
-  }
+  // Log search state for debugging
+  useEffect(() => {
+    console.log('Search view state:', {
+      postcode,
+      hasCoordinates: Boolean(coordinates),
+      applicationCount: applications?.length,
+      isLoading,
+      hasSearched,
+      showMap,
+      selectedId,
+      activeFilters,
+      activeSort
+    });
+  }, [postcode, coordinates, applications, isLoading, hasSearched, showMap, selectedId, activeFilters, activeSort]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {isLoading && <LoadingOverlay />}
-      <Header />
-      <SearchSection
-        onPostcodeSelect={handlePostcodeSelect}
-        isMapView={false}
-        applications={applications}
-      />
-      <div className="w-full border-t">
-        <div className={`mx-auto px-2 ${isMobile ? 'max-w-full' : 'container px-4'}`}>
-          <div className="flex flex-col bg-white">
-            <div className="flex items-center justify-between p-1.5 overflow-hidden">
-              <FilterBarSection
-                coordinates={coordinates}
-                hasSearched={hasSearched}
-                isLoading={isLoading}
-                applications={applications}
-                activeFilters={activeFilters}
-                activeSort={activeSort}
-                onFilterChange={handleFilterChange}
-                onSortChange={handleSortChange}
-                statusCounts={statusCounts}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <ResultsContainer
-        displayApplications={displayApplications}
-        applications={applications}
-        coordinates={coordinates}
+    <div className="flex flex-col min-h-[calc(100vh-64px)]">
+      <FilterBarSection
         showMap={showMap}
         setShowMap={setShowMap}
-        selectedId={selectedId}
-        setSelectedId={setSelectedId}
-        handleMarkerClick={handleMapMarkerClick}
-        isLoading={isLoading}
-        searchTerm={initialSearch?.searchTerm}
-        onRetry={handleRetry}
+        onFilterChange={handleFilterChange}
+        onSortChange={handleSortChange}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
+        applications={applications}
+        statusCounts={statusCounts}
       />
+
+      <div className="flex flex-col flex-1 bg-gray-50">
+        <ResultsContainer
+          displayApplications={displayApplications}
+          applications={applications}
+          coordinates={coordinates}
+          showMap={showMap}
+          setShowMap={setShowMap}
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          handleMarkerClick={handleMarkerClick}
+          isLoading={isLoading}
+          searchTerm={postcode}
+          onRetry={refetch}
+          activeSort={activeSort}
+          activeFilters={activeFilters}
+        />
+      </div>
     </div>
   );
 };
