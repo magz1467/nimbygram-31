@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Timer } from "lucide-react";
 import { getStatusColor, getStatusText } from "@/utils/statusColors";
@@ -13,7 +14,6 @@ interface ApplicationBadgesProps {
 export const ApplicationBadges = ({
   status,
   lastDateConsultationComments,
-  impactScore,
   validDate
 }: ApplicationBadgesProps) => {
   const badges = [];
@@ -48,25 +48,7 @@ export const ApplicationBadges = ({
     );
   }
 
-  // Impact score badge
-  if (impactScore !== null && impactScore !== undefined) {
-    let impactColor = "bg-green-100 text-green-800";
-    let impactText = "Low Impact";
-    
-    if (impactScore >= 70) {
-      impactColor = "bg-red-100 text-red-800";
-      impactText = "High Impact";
-    } else if (impactScore >= 30) {
-      impactColor = "bg-orange-100 text-orange-800";
-      impactText = "Medium Impact";
-    }
-
-    badges.push(
-      <Badge key="impact" variant="secondary" className={`text-xs ${impactColor}`}>
-        {impactText} ({impactScore})
-      </Badge>
-    );
-  }
+  // Impact score badge has been removed
 
   return (
     <div className="flex flex-wrap items-center gap-2">

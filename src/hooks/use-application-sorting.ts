@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";

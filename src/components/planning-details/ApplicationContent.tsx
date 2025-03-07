@@ -26,8 +26,7 @@ export const ApplicationContent = ({
   onFeedback,
   userId
 }: ApplicationContentProps) => {
-  const showImpactScore = application.final_impact_score !== null;
-
+  // We're removing the impact score section completely
   return (
     <div className="space-y-6">
       <ApplicationImage application={application} />
@@ -43,12 +42,6 @@ export const ApplicationContent = ({
       <ApplicationDescription application={application} />
       
       <ApplicationDetails application={application} />
-      
-      {showImpactScore && (
-        <ImpactScoreDetails 
-          application={application}
-        />
-      )}
       
       <ApplicationTimeline application={application} />
       
