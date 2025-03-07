@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin } from "lucide-react";
 
 interface MobileApplicationCardsProps {
   applications: Application[];
@@ -38,7 +38,7 @@ export const MobileApplicationCards = ({
 
   return (
     <div className="mobile-application-cards">
-      <Card className="border-0 shadow-none">
+      <Card className="border-t border-gray-200 shadow-lg rounded-t-xl">
         <div className="p-4 flex flex-col">
           <div className="flex justify-center mb-2">
             <Button 
@@ -54,22 +54,81 @@ export const MobileApplicationCards = ({
             </Button>
           </div>
           
-          <h3 className="text-lg font-medium line-clamp-2">
-            {selectedApp.title || "Planning Application"}
-          </h3>
+          {/* Location with distance */}
+          <div className="flex items-start gap-2 mb-3">
+            <MapPin className="h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{selectedApp.address}</span>
+              {selectedApp.distance && (
+                <span className="text-xs text-gray-500">{selectedApp.distance} from search location</span>
+              )}
+            </div>
+          </div>
           
-          <p className="text-sm text-gray-500 mt-1">
-            {selectedApp.address}
-          </p>
+          {/* What's the Deal section */}
+          <div className="bg-gray-50 p-3 rounded-lg mb-3 border border-gray-100">
+            <h3 className="text-lg font-semibold mb-1">
+              <span className="text-[#9b87f5]">Nimbywatch</span> Analysis:
+            </h3>
+            <p className="text-base font-medium">What's the Deal:</p>
+            <p className="text-sm text-gray-700 mt-1 mb-2">
+              {selectedApp.storybook?.content?.split('The Details:')[0]?.trim() || 
+                selectedApp.description?.substring(0, 120) || 
+                "A planning application has been submitted for this location."}
+            </p>
+          </div>
           
           {expanded && (
-            <div className="mt-4">
-              <p className="text-sm">
-                {selectedApp.description?.substring(0, 150) || "No description available"}
-                {selectedApp.description && selectedApp.description.length > 150 ? "..." : ""}
-              </p>
+            <div className="mt-1 space-y-3">
+              {/* The Details section */}
+              {selectedApp.storybook?.content?.includes('The Details:') && (
+                <div>
+                  <p className="text-base font-medium">The Details:</p>
+                  <div className="text-sm text-gray-700 mt-1 pl-2 border-l-2 border-gray-200 space-y-1">
+                    {selectedApp.storybook.content
+                      .split('The Details:')[1]
+                      ?.split('Considerations:')[0]
+                      ?.trim()
+                      .split('•')
+                      .filter(Boolean)
+                      .map((detail, i) => (
+                        <p key={i} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{detail.trim()}</span>
+                        </p>
+                      ))}
+                  </div>
+                </div>
+              )}
               
-              <div className="mt-4 flex gap-3">
+              {/* Considerations section */}
+              {selectedApp.storybook?.content?.includes('Considerations:') && (
+                <div>
+                  <p className="text-base font-medium">Considerations:</p>
+                  <div className="text-sm text-gray-700 mt-1 pl-2 border-l-2 border-gray-200 space-y-1">
+                    {selectedApp.storybook.content
+                      .split('Considerations:')[1]
+                      ?.trim()
+                      .split('•')
+                      .filter(Boolean)
+                      .map((consideration, i) => (
+                        <p key={i} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{consideration.trim()}</span>
+                        </p>
+                      ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* If no storybook content is structured with our keywords */}
+              {!selectedApp.storybook?.content?.includes('The Details:') && (
+                <div className="text-sm text-gray-700">
+                  {selectedApp.description || "No detailed description available for this application."}
+                </div>
+              )}
+              
+              <div className="mt-4 flex flex-wrap gap-3">
                 <div className="text-sm">
                   <span className="font-medium">Status:</span>{" "}
                   <span className={`inline-block px-2 py-1 rounded-full text-xs ${
@@ -79,7 +138,7 @@ export const MobileApplicationCards = ({
                         ? 'bg-red-100 text-red-800'
                         : 'bg-orange-100 text-orange-800'
                   }`}>
-                    {selectedApp.status || "Unknown"}
+                    {selectedApp.status || "Under Review"}
                   </span>
                 </div>
               </div>
@@ -96,12 +155,12 @@ export const MobileApplicationCards = ({
               {expanded ? (
                 <>
                   <ChevronUp className="h-4 w-4 mr-1" />
-                  Less details
+                  Show less
                 </>
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4 mr-1" />
-                  More details
+                  Show more
                 </>
               )}
             </Button>
