@@ -94,6 +94,21 @@ export const ResultsContainer = ({
     setSelectedId(null);
   };
 
+  // Ensure map is always visible when showMap is true
+  useEffect(() => {
+    if (showMap && hasCoordinates && hasApplications) {
+      console.log("🌍 Ensuring map is visible");
+      // Make sure the map container is rendered
+      const mapContainer = document.querySelector('.mobile-map-container, .desktop-map-container');
+      if (!mapContainer) {
+        console.log("⚠️ Map container not found, forcing re-render");
+        // Force a re-render by toggling showMap
+        setShowMap(false);
+        setTimeout(() => setShowMap(true), 50);
+      }
+    }
+  }, [showMap, hasCoordinates, hasApplications, setShowMap]);
+
   return (
     <ContainerLayout shouldShowMap={shouldShowMap} isMobile={isMobile}>
       {/* On mobile, if map is shown, display it first */}
@@ -108,9 +123,9 @@ export const ResultsContainer = ({
         />
       )}
       
-      {/* Application list */}
+      {/* Application list - Only show when map is not visible on mobile */}
       <div className={shouldShowMap && !isMobile ? "col-span-1" : ""}>
-        {!shouldShowMap && (
+        {(!shouldShowMap || !isMobile) && (
           <ResultsListView 
             applications={displayApplications}
             isLoading={isLoading}

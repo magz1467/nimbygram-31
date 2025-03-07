@@ -2,6 +2,7 @@
 import { formatStorybook } from "@/utils/storybook-formatter";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CardContentProps {
   storybook: string | null;
@@ -10,6 +11,8 @@ interface CardContentProps {
 
 export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
   const formattedStorybook = formatStorybook(storybook);
+  const isMobile = useIsMobile();
+  
   if (!formattedStorybook?.content) return null;
 
   const parseHtmlContent = (content: string) => {
@@ -35,28 +38,56 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
     <div className="space-y-6">
       <div className="prose prose-sm max-w-none">
         <div className="bg-primary/5 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-primary font-semibold">What's the Deal</h3>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('💡 See on map button clicked');
-                onSeeOnMap();
-              }}
-              className="text-primary flex items-center gap-1.5"
-            >
-              <MapPin className="w-4 h-4" />
-              See on map
-            </Button>
-          </div>
-          <div className="text-gray-700">
-            {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
-          </div>
+          {isMobile ? (
+            <>
+              <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+              <div className="text-gray-700">
+                {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-primary font-semibold">What's the Deal</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('💡 See on map button clicked');
+                    onSeeOnMap();
+                  }}
+                  className="text-primary flex items-center gap-1.5"
+                >
+                  <MapPin className="w-4 h-4" />
+                  See on map
+                </Button>
+              </div>
+              <div className="text-gray-700">
+                {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Mobile-only map button as a separate row */}
+      {isMobile && (
+        <Button 
+          variant="outline" 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('💡 Mobile See on map button clicked');
+            onSeeOnMap();
+          }}
+          className="w-full text-primary flex items-center justify-center gap-1.5"
+        >
+          <MapPin className="w-4 h-4" />
+          See on map
+        </Button>
+      )}
 
       <div className="space-y-4">
         <h3 className="font-semibold text-gray-900">Key Details</h3>

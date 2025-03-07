@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, X } from "lucide-react";
+import { useEffect } from "react";
 
 interface MobileMapViewProps {
   applications: Application[];
@@ -21,6 +22,16 @@ export const MobileMapView = ({
   handleCloseMap,
   isLoading,
 }: MobileMapViewProps) => {
+  
+  // When mobile map view mounts, make sure body doesn't scroll
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   return (
     <div 
       className="mobile-map-container relative w-full overflow-hidden shadow rounded-lg"

@@ -18,7 +18,7 @@ export const ContainerLayout = ({
     if (shouldShowMap) {
       if (isMobile) {
         // On mobile, full-width layout for map
-        setContainerClass("w-full px-0 pt-0 pb-4");
+        setContainerClass("w-full px-0 pt-0 pb-4 min-h-[calc(100vh-120px)]");
         
         // Prevent body scrolling when map is visible
         document.body.style.overflow = 'hidden';
