@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useState } from "react";
@@ -6,15 +7,16 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterBar } from "../FilterBar";
 import { MapListToggle } from "./mobile/MapListToggle";
 import { PostcodeSearch } from "../PostcodeSearch";
+import { SortType } from "@/types/application-types";
 
 interface MapHeaderProps {
   onFilterChange?: (filterType: string, value: string) => void;
-  onSortChange?: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange?: (sortType: SortType) => void;
   activeFilters?: {
     status?: string;
     type?: string;
   };
-  activeSort?: 'closingSoon' | 'newest' | null;
+  activeSort?: SortType;
   isMapView?: boolean;
   onToggleView?: () => void;
 }

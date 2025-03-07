@@ -1,6 +1,8 @@
+
 import { Application } from "@/types/planning";
 import { DesktopSidebar } from "@/components/map/DesktopSidebar";
 import { MobileListContainer } from "@/components/map/mobile/MobileListContainer";
+import { SortType } from "@/types/application-types";
 
 interface SidebarSectionProps {
   isMobile: boolean;
@@ -13,7 +15,7 @@ interface SidebarSectionProps {
     status?: string;
     type?: string;
   };
-  activeSort: 'closingSoon' | 'newest' | null;
+  activeSort: SortType;
   statusCounts?: {
     'Under Review': number;
     'Approved': number;
@@ -21,7 +23,7 @@ interface SidebarSectionProps {
     'Other': number;
   };
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange: (sortType: SortType) => void;
   onSelectApplication: (id: number | null) => void;
   onClose: () => void;
 }

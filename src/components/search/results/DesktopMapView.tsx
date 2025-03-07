@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { SortType } from "@/types/application-types";
 
 interface DesktopMapViewProps {
   applications: Application[];
@@ -11,6 +12,11 @@ interface DesktopMapViewProps {
   handleMarkerClick: (id: number) => void;
   handleCloseMap: () => void;
   isLoading: boolean;
+  activeSort?: SortType;
+  activeFilters?: {
+    status?: string;
+    type?: string;
+  };
 }
 
 export const DesktopMapView = ({
@@ -20,6 +26,8 @@ export const DesktopMapView = ({
   handleMarkerClick,
   handleCloseMap,
   isLoading,
+  activeSort = null,
+  activeFilters = {}
 }: DesktopMapViewProps) => {
   return (
     <div 
@@ -44,8 +52,8 @@ export const DesktopMapView = ({
         postcode=""
         coordinates={coordinates}
         isLoading={isLoading}
-        activeFilters={{}}
-        activeSort={null}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
         onPostcodeSelect={() => {}}
         onFilterChange={() => {}}
         onSortChange={() => {}}
