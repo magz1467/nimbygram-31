@@ -26,17 +26,30 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
 
   try {
-    // First try the RPC function with a timeout
+    // First try the RPC function with a Promise timeout instead of the built-in timeout
     try {
       console.log('Attempting to use RPC function');
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
+      const rpcPromise = supabase.rpc(
         'properties_within_distance',
         {
           ref_lat: lat,
           ref_lon: lng,
           radius_meters: radius * 1000 // Convert km to meters
         }
-      ).timeout(8000); // 8 second timeout
+      );
+      
+      // Create a timeout promise that rejects after 8 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('RPC request timed out')), 8000);
+      });
+      
+      // Race the RPC promise against the timeout
+      const { data: rpcData, error: rpcError } = await Promise.race([
+        rpcPromise,
+        timeoutPromise.then(() => {
+          throw new Error('RPC timeout');
+        })
+      ]) as any;
       
       if (!rpcError && rpcData && rpcData.length > 0) {
         console.log(`✅ RPC data from supabase: ${rpcData?.length || 0} results`);
