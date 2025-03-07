@@ -12,6 +12,7 @@ interface MobileMapControlsProps {
   onToggleView?: () => void;
   onSortChange?: (sortType: SortType) => void;
   activeSort?: SortType;
+  hasCoordinates?: boolean;
 }
 
 export const MobileMapControls = ({
@@ -21,6 +22,7 @@ export const MobileMapControls = ({
   onToggleView,
   onSortChange,
   activeSort,
+  hasCoordinates = false,
 }: MobileMapControlsProps) => {
   return (
     <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 px-4 z-10">
@@ -40,6 +42,7 @@ export const MobileMapControls = ({
         <SortDropdown
           activeSort={activeSort}
           onSortChange={onSortChange}
+          showDistanceSort={hasCoordinates}
         >
           <Button
             variant="default"

@@ -12,9 +12,15 @@ interface SortDropdownProps {
   children: React.ReactNode;
   activeSort: SortType;
   onSortChange: (sortType: SortType) => void;
+  showDistanceSort?: boolean;
 }
 
-export const SortDropdown = ({ children, activeSort, onSortChange }: SortDropdownProps) => {
+export const SortDropdown = ({ 
+  children, 
+  activeSort, 
+  onSortChange, 
+  showDistanceSort = false 
+}: SortDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,6 +41,15 @@ export const SortDropdown = ({ children, activeSort, onSortChange }: SortDropdow
           Closing Soon
           {activeSort === 'closingSoon' && <span>✓</span>}
         </DropdownMenuItem>
+        {showDistanceSort && (
+          <DropdownMenuItem
+            className="justify-between"
+            onClick={() => onSortChange('distance')}
+          >
+            Distance
+            {activeSort === 'distance' && <span>✓</span>}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

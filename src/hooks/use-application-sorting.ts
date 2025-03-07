@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
 import { SortType } from "@/types/application-types";
@@ -57,6 +58,26 @@ const sortByNewest = (applications: Application[]) => {
   });
 };
 
+const sortByDistance = (applications: Application[]) => {
+  // Distance is already calculated and added to the applications in useFilteredApplications
+  // We simply need to sort by the distance property
+  return [...applications].sort((a, b) => {
+    // If application has no distance property, put it at the end
+    if (!a.distance) return 1;
+    if (!b.distance) return -1;
+    
+    // Parse the distance value from strings like "1.2 mi"
+    const distanceA = parseFloat(a.distance.split(' ')[0]);
+    const distanceB = parseFloat(b.distance.split(' ')[0]);
+    
+    if (isNaN(distanceA)) return 1;
+    if (isNaN(distanceB)) return -1;
+    
+    // Sort by distance ascending (closest first)
+    return distanceA - distanceB;
+  });
+};
+
 export const useApplicationSorting = ({ type, applications }: SortConfig) => {
   if (!applications?.length) return [];
   
@@ -70,6 +91,9 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
       break;
     case 'newest':
       sorted = sortByNewest(applications);
+      break;
+    case 'distance':
+      sorted = sortByDistance(applications);
       break;
     default:
       sorted = applications;

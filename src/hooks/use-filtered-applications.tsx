@@ -27,21 +27,11 @@ export const useFilteredApplications = (
     // First apply filters
     const filteredApplications = useApplicationFiltering(applications, activeFilters);
 
-    // Then calculate distances and sort by distance if we have search coordinates
-    let sortedApplications = [...filteredApplications];
+    // If there are search coordinates, add distance to each application
+    let applicationsWithDistance = [...filteredApplications];
     
     if (searchCoordinates) {
-      sortedApplications.sort((a, b) => {
-        if (!a.coordinates || !b.coordinates) return 0;
-        
-        const distanceA = calculateDistance(searchCoordinates, a.coordinates);
-        const distanceB = calculateDistance(searchCoordinates, b.coordinates);
-        
-        return distanceA - distanceB;
-      });
-
-      // Add distance string to each application
-      sortedApplications = sortedApplications.map(app => {
+      applicationsWithDistance = applicationsWithDistance.map(app => {
         if (!app.coordinates) return app;
         
         const distanceInKm = calculateDistance(searchCoordinates, app.coordinates);
@@ -53,13 +43,20 @@ export const useFilteredApplications = (
       });
     }
 
-    // Then apply any other sorting if specified
+    // Then apply sorting based on the active sort type
+    // If activeSort is 'distance', it will use the distance property added above
     const finalSortedApplications = activeSort ? 
       useApplicationSorting({
         type: activeSort,
-        applications: sortedApplications
+        applications: applicationsWithDistance
       }) : 
-      sortedApplications;
+      // If no sort specified but we have coordinates, default to distance sort
+      (searchCoordinates ? 
+        useApplicationSorting({
+          type: 'distance',
+          applications: applicationsWithDistance
+        }) : 
+        applicationsWithDistance);
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
     return finalSortedApplications;
