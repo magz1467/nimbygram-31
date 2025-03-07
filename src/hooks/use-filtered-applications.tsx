@@ -2,7 +2,8 @@
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { useApplicationFiltering } from './use-application-filtering';
-import { useApplicationSorting, SortType } from './use-application-sorting';
+import { useApplicationSorting } from './use-application-sorting';
+import { SortType } from "@/types/application-types";
 import { calculateDistance } from "@/utils/distance";
 
 interface ActiveFilters {

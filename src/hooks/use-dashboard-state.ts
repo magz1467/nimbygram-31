@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useApplicationsData } from "@/components/applications/dashboard/hooks/useApplicationsData";
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
-import { SortType } from "./use-application-sorting";
+import { SortType } from "@/types/application-types";
 import { useURLState } from "./use-url-state";
 import { useSelectionState } from "./use-selection-state";
 import { useFilterState } from "./use-filter-state";
