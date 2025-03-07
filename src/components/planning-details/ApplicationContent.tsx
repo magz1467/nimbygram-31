@@ -6,7 +6,7 @@ import { ApplicationImage } from "./ApplicationImage";
 import { ApplicationTimeline } from "./ApplicationTimeline";
 import { ApplicationComments } from "./ApplicationComments";
 import { ApplicationDetails } from "./ApplicationDetails";
-import { ImpactScoreDetails } from "./impact-score/ImpactScoreDetails";
+import ImpactScoreDetails from "./impact-score/ImpactScoreDetails";
 
 interface ApplicationContentProps {
   application: Application;

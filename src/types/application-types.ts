@@ -1,33 +1,23 @@
 
-export type FilterType = {
-  status?: string;
-  type?: string;
-  [key: string]: string | undefined;
-};
-
-export type StatusType = 'Under Review' | 'Approved' | 'Declined' | 'Other';
-
+// Add these types to your existing file
 export type SortType = 'closingSoon' | 'newest' | 'impact' | 'distance' | null;
 
-export type StatusCounts = {
-  'Under Review': number;
-  'Approved': number;
-  'Declined': number;
-  'Other': number;
-};
-
-// Add MapState and MapAction types that were missing
+// Add these types if they are missing (import errors indicate they are missing)
 export interface MapState {
-  selectedId: number | null;
   applications: any[];
+  selectedId: number | null;
+  showSidebar: boolean;
   isMapView: boolean;
-  coordinates: [number, number];
+  coordinates: [number, number] | null;
+  postcode: string;
+  activeFilters: {
+    status?: string;
+    type?: string;
+  };
   activeSort: SortType;
 }
 
-export type MapAction =
-  | { type: 'SELECT_APPLICATION'; payload: number | null }
-  | { type: 'SET_APPLICATIONS'; payload: any[] }
-  | { type: 'TOGGLE_VIEW' }
-  | { type: 'SET_COORDINATES'; payload: [number, number] }
-  | { type: 'SET_SORT'; payload: SortType };
+export interface MapAction {
+  type: 'SELECT_APPLICATION' | 'TOGGLE_SIDEBAR' | 'SET_MAP_VIEW' | 'SET_COORDINATES' | 'SET_POSTCODE' | 'SET_FILTER' | 'SET_SORT';
+  payload: any;
+}

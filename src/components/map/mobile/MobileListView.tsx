@@ -30,7 +30,7 @@ export const MobileListView = ({
 
   return (
     <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
-      {showAlerts && (
+      {showAlerts && !hideFilterBar && (
         <div className="p-4 bg-white border-b relative">
           <Button 
             variant="ghost" 
@@ -75,19 +75,13 @@ export const MobileListView = ({
                     title={storybook?.header || app.title || ''}
                     applicationId={app.id}
                     coordinates={app.coordinates}
-                    class_3={app.category}
+                    class_3={app.category || app.class_3}
                   />
                 </div>
                 <div className="p-4">
-                  {storybook?.header ? (
-                    <h3 className="font-semibold text-primary text-lg mb-2">
-                      {storybook.header}
-                    </h3>
-                  ) : (
-                    <h3 className="font-semibold text-primary">
-                      {app.title || 'Planning Application'}
-                    </h3>
-                  )}
+                  <h3 className="font-semibold text-primary text-lg mb-2">
+                    {storybook?.header || app.title || 'Planning Application'}
+                  </h3>
                   {storybook?.content && (
                     <div 
                       className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"

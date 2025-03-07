@@ -35,14 +35,6 @@ export const ImageResolver = ({
   class_3,
   className = ''
 }: ImageResolverProps) => {
-  console.log('🖼️ ImageResolver rendering for:', {
-    applicationId,
-    hasImageMapUrl: !!imageMapUrl,
-    hasImage: !!image,
-    class_3,
-    coordinates
-  });
-
   // Determine the best image to show
   let imageSource = imageMapUrl || image;
   
@@ -58,7 +50,7 @@ export const ImageResolver = ({
     <div className="relative w-full h-full">
       <ImageWithFallback
         src={imageSource}
-        alt={title}
+        alt={title || 'Planning application image'}
         className={`w-full h-full object-cover ${className}`}
         fallbackSrc={CATEGORY_IMAGES['Miscellaneous']}
       />
