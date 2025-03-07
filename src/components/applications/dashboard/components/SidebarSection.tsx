@@ -1,6 +1,9 @@
 import { Application } from "@/types/planning";
+import { SortType } from "@/types/application-types";
 import { DesktopSidebar } from "@/components/map/DesktopSidebar";
-import { MobileListContainer } from "@/components/map/mobile/MobileListContainer";
+import { MobileMapControls } from "@/components/map/mobile/MobileMapControls";
+import { MobileListDetailsView } from "@/components/map/mobile/MobileListDetailsView";
+import { MobileApplicationCards } from "@/components/map/mobile/MobileApplicationCards";
 
 interface SidebarSectionProps {
   isMobile: boolean;
@@ -13,15 +16,9 @@ interface SidebarSectionProps {
     status?: string;
     type?: string;
   };
-  activeSort: 'closingSoon' | 'newest' | null;
-  statusCounts?: {
-    'Under Review': number;
-    'Approved': number;
-    'Declined': number;
-    'Other': number;
-  };
+  activeSort: SortType;
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange: (sortType: SortType) => void;
   onSelectApplication: (id: number | null) => void;
   onClose: () => void;
 }
@@ -35,46 +32,53 @@ export const SidebarSection = ({
   coordinates,
   activeFilters,
   activeSort,
-  statusCounts,
   onFilterChange,
   onSortChange,
   onSelectApplication,
   onClose,
 }: SidebarSectionProps) => {
-  if (!coordinates) return null;
-
-  if (!isMobile) {
-    return (
-      <div className="w-[50%] h-full overflow-hidden border-r border-gray-200 bg-white">
-        <DesktopSidebar
+  if (isMobile) {
+    return isMapView ? (
+      <div className="flex flex-col h-full">
+        <MobileMapControls
+          selectedId={selectedId}
           applications={applications}
-          selectedApplication={selectedId}
-          postcode={postcode}
-          activeFilters={activeFilters}
-          activeSort={activeSort}
-          onFilterChange={onFilterChange}
-          onSortChange={onSortChange}
           onSelectApplication={onSelectApplication}
-          onClose={onClose}
-          statusCounts={statusCounts}
+        />
+        <MobileApplicationCards
+          applications={applications}
+          selectedId={selectedId}
+          onSelectApplication={onSelectApplication}
         />
       </div>
-    );
-  }
-
-  if (!isMapView) {
-    return (
-      <MobileListContainer
+    ) : (
+      <MobileListDetailsView
         applications={applications}
-        selectedApplication={selectedId}
+        selectedId={selectedId}
         postcode={postcode}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
+        onFilterChange={onFilterChange}
+        onSortChange={onSortChange}
         onSelectApplication={onSelectApplication}
-        onShowEmailDialog={() => {}}
-        hideFilterBar={true}
         onClose={onClose}
       />
     );
   }
 
-  return null;
+  return (
+    <div className="w-96 flex-shrink-0 border-r overflow-hidden">
+      <DesktopSidebar
+        applications={applications}
+        selectedApplication={selectedId}
+        postcode={postcode}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
+        onFilterChange={onFilterChange}
+        onSortChange={onSortChange}
+        onSelectApplication={onSelectApplication}
+        onClose={onClose}
+      />
+    </div>
+  );
 };
