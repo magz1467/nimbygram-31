@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { SearchResultsList } from "@/components/search/SearchResultsList";
-import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { Application } from "@/types/planning";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, X } from "lucide-react";
+
+import { ContainerLayout } from "./ContainerLayout";
+import { ResultsListView } from "./ResultsListView";
+import { MobileMapView } from "./MobileMapView";
+import { DesktopMapView } from "./DesktopMapView";
 
 interface ResultsContainerProps {
   displayApplications: Application[];
@@ -37,7 +38,6 @@ export const ResultsContainer = ({
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [containerClass, setContainerClass] = useState("container mx-auto px-4 py-8");
   
   const hasCoordinates = Boolean(coordinates);
   const hasApplications = applications.length > 0;
@@ -55,30 +55,6 @@ export const ResultsContainer = ({
     isMobile,
     shouldShowMap
   });
-  
-  useEffect(() => {
-    if (shouldShowMap) {
-      if (isMobile) {
-        // On mobile, full-width layout for map
-        setContainerClass("w-full px-0 pt-0 pb-4");
-        
-        // Prevent body scrolling when map is visible
-        document.body.style.overflow = 'hidden';
-      } else {
-        // On desktop, grid layout for side-by-side display
-        setContainerClass("grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-8");
-      }
-    } else {
-      // Default container for regular view
-      setContainerClass("container mx-auto px-4 py-8");
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      // Clean up when component unmounts
-      document.body.style.overflow = '';
-    };
-  }, [shouldShowMap, isMobile]);
   
   // Helper function to handle "See on Map" clicks
   const handleSeeOnMap = (id: number) => {
@@ -118,62 +94,24 @@ export const ResultsContainer = ({
     setSelectedId(null);
   };
 
-  // Map container style for mobile
-  const mapContainerStyle = isMobile && shouldShowMap
-    ? { height: 'calc(100vh - 120px)', width: '100%' }
-    : { height: '700px' };
-
   return (
-    <div className={containerClass}>
+    <ContainerLayout shouldShowMap={shouldShowMap} isMobile={isMobile}>
       {/* On mobile, if map is shown, display it first */}
       {isMobile && shouldShowMap && coordinates && (
-        <div 
-          className="mobile-map-container relative w-full overflow-hidden shadow rounded-lg"
-          style={mapContainerStyle}
-        >
-          <div className="absolute top-2 left-2 right-2 z-50 flex justify-between">
-            <Button 
-              onClick={handleCloseMap}
-              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
-              size="icon"
-              variant="outline"
-              aria-label="Back to results"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            
-            <Button 
-              onClick={handleCloseMap}
-              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
-              size="icon"
-              variant="outline"
-              aria-label="Close map"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          <MapViewLayout 
-            applications={applications}
-            selectedId={selectedId}
-            postcode=""
-            coordinates={coordinates}
-            isLoading={isLoading}
-            activeFilters={{}}
-            activeSort={null}
-            onPostcodeSelect={() => {}}
-            onFilterChange={() => {}}
-            onSortChange={() => {}}
-            onMarkerClick={handleMarkerClick}
-            onSelectApplication={setSelectedId}
-          />
-        </div>
+        <MobileMapView 
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          handleCloseMap={handleCloseMap}
+          isLoading={isLoading}
+        />
       )}
       
       {/* Application list */}
       <div className={shouldShowMap && !isMobile ? "col-span-1" : ""}>
         {!shouldShowMap && (
-          <SearchResultsList 
+          <ResultsListView 
             applications={displayApplications}
             isLoading={isLoading}
             onSeeOnMap={handleSeeOnMap}
@@ -185,35 +123,15 @@ export const ResultsContainer = ({
       
       {/* Desktop map layout */}
       {!isMobile && shouldShowMap && coordinates && (
-        <div className="col-span-1 relative rounded-lg overflow-hidden border shadow" style={mapContainerStyle}>
-          <div className="absolute top-2 right-2 z-50 flex space-x-2">
-            <Button 
-              onClick={handleCloseMap}
-              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
-              size="icon"
-              variant="outline"
-              aria-label="Close map"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          <MapViewLayout 
-            applications={applications}
-            selectedId={selectedId}
-            postcode=""
-            coordinates={coordinates}
-            isLoading={isLoading}
-            activeFilters={{}}
-            activeSort={null}
-            onPostcodeSelect={() => {}}
-            onFilterChange={() => {}}
-            onSortChange={() => {}}
-            onMarkerClick={handleMarkerClick}
-            onSelectApplication={setSelectedId}
-          />
-        </div>
+        <DesktopMapView
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          handleCloseMap={handleCloseMap}
+          isLoading={isLoading}
+        />
       )}
-    </div>
+    </ContainerLayout>
   );
 };
