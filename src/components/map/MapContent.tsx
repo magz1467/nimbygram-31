@@ -1,3 +1,4 @@
+
 import { MobileApplicationCards } from "./mobile/MobileApplicationCards";
 import { MapContainer } from "./MapContainer";
 import { Application } from "@/types/planning";
@@ -23,6 +24,13 @@ export const MapContent = ({
   isLoading,
   postcode,
 }: MapContentProps) => {
+  console.log('🗺️ MapContent rendering:', {
+    isMobile, 
+    hasSelectedId: !!selectedId,
+    applicationCount: applications.length,
+    coordinates
+  });
+
   return (
     <div className="relative w-full h-full">
       <MapContainer
@@ -31,7 +39,9 @@ export const MapContent = ({
         coordinates={coordinates}
         onMarkerClick={onMarkerClick}
       />
-      {isMobile && (
+      
+      {/* Mobile mini card - only show when an application is selected */}
+      {isMobile && selectedId && (
         <MobileApplicationCards
           applications={applications}
           selectedId={selectedId}

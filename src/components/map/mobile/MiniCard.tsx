@@ -2,7 +2,8 @@
 import { Application } from "@/types/planning";
 import { MapPin } from "lucide-react";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
-import { ImageResolver } from "./components/ImageResolver";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { getImageUrl } from "@/utils/imageUtils";
 import { formatStorybook } from "@/utils/storybook-formatter";
 import { useEffect } from "react";
 
@@ -20,12 +21,16 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
     formattedStorybook: {
       hasHeader: !!storybook?.header,
       hasContent: !!storybook?.content
-    }
+    },
+    imageUrl: application.streetview_url || application.image || application.image_map_url
   });
+
+  // Get the best available image
+  const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   useEffect(() => {
     console.log('🔍 MiniCard mounted with styles:', {
-      container: document.querySelector('.fixed.bottom-2')?.className,
+      container: document.querySelector('.fixed.bottom-0')?.className,
       image: document.querySelector('.aspect-video')?.className
     });
     return () => {
@@ -35,12 +40,14 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white border-t rounded-t-lg shadow-lg z-[1000] max-h-[90vh] overflow-y-auto"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t rounded-t-lg shadow-lg z-[1000] max-h-[75vh] overflow-y-auto"
       onClick={(e) => {
         console.log('🖱️ MiniCard container clicked');
         onClick();
       }}
     >
+      <div className="drag-handle w-12 h-1 bg-gray-300 rounded-full mx-auto my-2" />
+      
       <div className="flex flex-col p-4 cursor-pointer touch-pan-y">
         {/* Title Section */}
         <div className="font-semibold text-primary mb-3 text-lg">
@@ -48,15 +55,12 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
         </div>
 
         {/* Main Image - Now larger and more prominent */}
-        <div className="w-full aspect-video mb-4 rounded-lg overflow-hidden bg-gray-100 -mx-4">
-          <ImageResolver
-            imageMapUrl={application.image_map_url}
-            image={application.image}
-            title={storybook?.header || application.title || ''}
-            applicationId={application.id}
-            coordinates={application.coordinates}
-            class_3={application.category}
+        <div className="w-full aspect-video mb-4 rounded-lg overflow-hidden bg-gray-100">
+          <ImageWithFallback
+            src={imageUrl}
+            alt={storybook?.header || application.title || ''}
             className="w-full h-full object-cover"
+            fallbackSrc="/placeholder.svg"
           />
         </div>
 

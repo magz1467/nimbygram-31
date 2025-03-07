@@ -59,13 +59,25 @@ export const ResultsContainer = ({
   useEffect(() => {
     if (shouldShowMap) {
       if (isMobile) {
-        setContainerClass("w-full px-0 py-4");
+        // On mobile, full-width layout for map
+        setContainerClass("w-full px-0 pt-0 pb-4");
+        
+        // Prevent body scrolling when map is visible
+        document.body.style.overflow = 'hidden';
       } else {
+        // On desktop, grid layout for side-by-side display
         setContainerClass("grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-8");
       }
     } else {
+      // Default container for regular view
       setContainerClass("container mx-auto px-4 py-8");
+      document.body.style.overflow = '';
     }
+    
+    return () => {
+      // Clean up when component unmounts
+      document.body.style.overflow = '';
+    };
   }, [shouldShowMap, isMobile]);
   
   // Helper function to handle "See on Map" clicks
@@ -88,8 +100,7 @@ export const ResultsContainer = ({
     if (isMobile) {
       // On mobile, scroll to make sure map is visible
       setTimeout(() => {
-        const mapElement = document.querySelector('.mobile-map-container');
-        mapElement?.scrollIntoView({ behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     }
   };
@@ -109,7 +120,7 @@ export const ResultsContainer = ({
 
   // Map container style for mobile
   const mapContainerStyle = isMobile && shouldShowMap
-    ? { height: 'calc(100vh - 180px)', width: '100%' }
+    ? { height: 'calc(100vh - 120px)', width: '100%' }
     : { height: '700px' };
 
   return (
@@ -117,7 +128,7 @@ export const ResultsContainer = ({
       {/* On mobile, if map is shown, display it first */}
       {isMobile && shouldShowMap && coordinates && (
         <div 
-          className="mobile-map-container relative w-full overflow-hidden border shadow rounded-lg mb-6"
+          className="mobile-map-container relative w-full overflow-hidden shadow rounded-lg"
           style={mapContainerStyle}
         >
           <div className="absolute top-2 left-2 right-2 z-50 flex justify-between">

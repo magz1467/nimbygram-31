@@ -115,4 +115,24 @@
     width: 100%;
     height: 100%;
   }
+  
+  /* Styling for the minicard drag handle */
+  .drag-handle {
+    margin: 8px auto;
+    border-radius: 999px;
+    background-color: #D1D5DB;
+  }
+  
+  /* Make sure application cards are visible even with map */
+  .fixed.bottom-0 {
+    z-index: 1500;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ensure cards aren't cut off at bottom */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
 }

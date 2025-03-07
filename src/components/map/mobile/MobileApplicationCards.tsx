@@ -2,7 +2,6 @@
 import { Application } from "@/types/planning";
 import { useRef, useEffect, useState } from "react";
 import { MiniCard } from "./MiniCard";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface MobileApplicationCardsProps {
   applications: Application[];
@@ -29,10 +28,17 @@ export const MobileApplicationCards = ({
 
   useEffect(() => {
     console.log('💫 MobileApplicationCards mounted/updated');
+    
+    // Prevent body scrolling when minicard is visible
+    if (selectedApplication) {
+      document.body.style.overflow = 'hidden';
+    }
+    
     return () => {
       console.log('👋 MobileApplicationCards unmounting');
+      document.body.style.overflow = '';
     };
-  }, [selectedId]);
+  }, [selectedId, selectedApplication]);
 
   if (!selectedApplication) {
     console.log('⚠️ No selected application found');
@@ -49,4 +55,3 @@ export const MobileApplicationCards = ({
     />
   );
 };
-
