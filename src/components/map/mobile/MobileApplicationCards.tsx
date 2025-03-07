@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin } from "lucide-react";
 
 interface MobileApplicationCardsProps {
   applications: Application[];
@@ -61,6 +61,14 @@ export const MobileApplicationCards = ({
           <p className="text-sm text-gray-500 mt-1">
             {selectedApp.address}
           </p>
+          
+          {/* Display distance if available */}
+          {selectedApp.distance && (
+            <p className="text-xs text-gray-500 mt-1 flex items-center">
+              <MapPin className="h-3 w-3 mr-1 text-primary" />
+              {selectedApp.distance} from search location
+            </p>
+          )}
           
           {expanded && (
             <div className="mt-4">

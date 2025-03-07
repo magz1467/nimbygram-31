@@ -5,6 +5,7 @@ import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { SortType } from "@/types/application-types";
 import { AlertSection } from "./AlertSection";
 import { formatStorybook } from "@/utils/storybook-formatter";
+import { MapPin } from "lucide-react";
 
 interface ApplicationListViewProps {
   applications: Application[];
@@ -93,7 +94,10 @@ export const ApplicationListView = ({
                     />
                     {app.distance && (
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-gray-500">{app.distance}</span>
+                        <span className="text-xs text-gray-500 flex items-center">
+                          <MapPin className="h-3 w-3 mr-1 text-primary" />
+                          {app.distance}
+                        </span>
                       </div>
                     )}
                   </div>

@@ -1,7 +1,7 @@
 
 import { Application } from "@/types/planning";
-import { Button } from "@/components/ui/button";
-import { Bell, X } from "lucide-react";
+import { Button } from "@/components/ui/card";
+import { Bell, MapPin, X } from "lucide-react";
 import { useState } from "react";
 import { ImageResolver } from "./components/ImageResolver";
 import { StatusBadge } from "./components/StatusBadge";
@@ -98,7 +98,12 @@ export const MobileListView = ({
                   )}
                   <div className="flex justify-between items-center mt-4">
                     <StatusBadge status={app.status} />
-                    {app.distance && <span className="text-xs text-gray-500">{app.distance}</span>}
+                    {app.distance && (
+                      <div className="flex items-center text-xs text-gray-500">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {app.distance}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
