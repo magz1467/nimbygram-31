@@ -98,10 +98,10 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
       if (activeSort === 'newest') {
         return new Date(b.submissionDate || '').getTime() - new Date(a.submissionDate || '').getTime();
       }
-      if (activeSort === 'closingSoon' && coordinates) {
-        const dateA = new Date(a.last_date_consultation_comments || '').getTime();
-        const dateB = new Date(b.last_date_consultation_comments || '').getTime();
-        return dateA - dateB;
+      if (activeSort === 'distance' && coordinates) {
+        const distanceA = parseFloat(a.distance?.split(' ')[0] || '0');
+        const distanceB = parseFloat(b.distance?.split(' ')[0] || '0');
+        return distanceA - distanceB;
       }
       return 0;
     });

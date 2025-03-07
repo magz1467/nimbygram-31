@@ -1,8 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Timer } from "lucide-react";
 import { getStatusColor, getStatusText } from "@/utils/statusColors";
-import { isWithinNextSevenDays } from "@/utils/dateUtils";
 
 interface ApplicationBadgesProps {
   status: string;
@@ -13,7 +11,6 @@ interface ApplicationBadgesProps {
 
 export const ApplicationBadges = ({
   status,
-  lastDateConsultationComments,
   validDate
 }: ApplicationBadgesProps) => {
   const badges = [];
@@ -37,18 +34,6 @@ export const ApplicationBadges = ({
       );
     }
   }
-
-  // Closing soon badge
-  if (lastDateConsultationComments && isWithinNextSevenDays(lastDateConsultationComments)) {
-    badges.push(
-      <span key="closing" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">
-        <Timer className="w-3 h-3" />
-        Closing soon
-      </span>
-    );
-  }
-
-  // Impact score badge has been removed
 
   return (
     <div className="flex flex-wrap items-center gap-2">

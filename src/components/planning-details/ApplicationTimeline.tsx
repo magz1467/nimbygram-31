@@ -2,7 +2,6 @@
 import { Application } from "@/types/planning";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Clock, AlertCircle } from "lucide-react";
-import { isWithinNextSevenDays } from "@/utils/dateUtils";
 import { format, isValid, parse } from "date-fns";
 
 interface ApplicationTimelineProps {

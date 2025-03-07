@@ -32,7 +32,6 @@ export const FilterControls = ({
   statusCounts
 }: FilterControlsProps) => {
   const sortButtonText = (() => {
-    if (activeSort === 'closingSoon') return 'Closing Soon';
     if (activeSort === 'newest') return 'Newest';
     if (activeSort === 'impact') return 'Highest Impact';
     if (activeSort === 'distance') return 'Distance';
