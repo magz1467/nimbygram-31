@@ -46,13 +46,16 @@ export const MobileMapView = ({
 
   return (
     <div 
-      className="mobile-map-container relative w-full h-full overflow-hidden shadow rounded-lg z-50"
-      style={{ height: 'calc(100vh - 120px)' }}
+      className="mobile-map-container fixed inset-0 w-full h-full overflow-hidden shadow rounded-lg z-[2000]"
+      style={{ 
+        height: 'calc(100vh - 120px)',
+        top: '120px' 
+      }}
     >
-      <div className="absolute top-2 left-2 right-2 z-50 flex justify-between">
+      <div className="absolute top-2 left-2 right-2 z-[2100] flex justify-between">
         <Button 
           onClick={handleCloseMap}
-          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
+          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow-md"
           size="icon"
           variant="outline"
           aria-label="Back to results"
@@ -62,7 +65,7 @@ export const MobileMapView = ({
         
         <Button 
           onClick={handleCloseMap}
-          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
+          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow-md"
           size="icon"
           variant="outline"
           aria-label="Close map"
@@ -71,20 +74,22 @@ export const MobileMapView = ({
         </Button>
       </div>
       
-      <MapViewLayout 
-        applications={applications}
-        selectedId={selectedId}
-        postcode=""
-        coordinates={coordinates}
-        isLoading={isLoading}
-        activeFilters={{}}
-        activeSort={null}
-        onPostcodeSelect={() => {}}
-        onFilterChange={() => {}}
-        onSortChange={() => {}}
-        onMarkerClick={handleMarkerClick}
-        onSelectApplication={handleMarkerClick}
-      />
+      <div className="absolute inset-0 z-[1990]">
+        <MapViewLayout 
+          applications={applications}
+          selectedId={selectedId}
+          postcode=""
+          coordinates={coordinates}
+          isLoading={isLoading}
+          activeFilters={{}}
+          activeSort={null}
+          onPostcodeSelect={() => {}}
+          onFilterChange={() => {}}
+          onSortChange={() => {}}
+          onMarkerClick={handleMarkerClick}
+          onSelectApplication={handleMarkerClick}
+        />
+      </div>
     </div>
   );
 };

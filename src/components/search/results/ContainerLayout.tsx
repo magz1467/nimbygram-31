@@ -17,8 +17,8 @@ export const ContainerLayout = ({
   useEffect(() => {
     if (shouldShowMap) {
       if (isMobile) {
-        // On mobile, full-width layout for map
-        setContainerClass("w-full h-full px-0 pt-0 pb-4");
+        // On mobile, full-width layout for map with fixed position
+        setContainerClass("w-full h-full px-0 pt-0 pb-4 relative");
         
         // Prevent body scrolling when map is visible
         document.body.style.overflow = 'hidden';
@@ -39,7 +39,15 @@ export const ContainerLayout = ({
   }, [shouldShowMap, isMobile]);
 
   return (
-    <div className={containerClass} style={isMobile && shouldShowMap ? {height: 'calc(100vh - 120px)'} : {}}>
+    <div 
+      className={containerClass} 
+      style={isMobile && shouldShowMap ? {
+        height: 'calc(100vh - 120px)', 
+        minHeight: '500px',
+        position: 'relative',
+        zIndex: 1000
+      } : {}}
+    >
       {children}
     </div>
   );

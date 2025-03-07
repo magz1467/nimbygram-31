@@ -75,13 +75,15 @@ export const ResultsContainer = ({
     setShowMap(true);
     setSelectedId(id);
     handleMarkerClick(id);
+    
+    // Force the map to be mounted and visible
     setMapMounted(true);
     
     if (isMobile) {
       // On mobile, scroll to make sure map is visible
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      }, 50);
     }
   };
   
@@ -97,7 +99,7 @@ export const ResultsContainer = ({
     setShowMap(false);
     setSelectedId(null);
     
-    // Reset map mounted state
+    // Reset map mounted state after a delay
     setTimeout(() => {
       setMapMounted(false);
     }, 100);
@@ -109,20 +111,38 @@ export const ResultsContainer = ({
       console.log("🌍 Ensuring map is visible");
       setMapMounted(true);
       
-      // Make sure the map container is rendered
-      const mapContainer = document.querySelector('.mobile-map-container, .desktop-map-container');
-      if (!mapContainer) {
-        console.log("⚠️ Map container not found, forcing re-render");
-        // Force a re-render by toggling showMap
-        setShowMap(false);
-        setTimeout(() => setShowMap(true), 50);
+      // Force the body to not scroll when map is shown on mobile
+      if (isMobile) {
+        document.body.style.overflow = 'hidden';
       }
+      
+      // Add a small delay before checking map visibility
+      setTimeout(() => {
+        // Make sure the map container is rendered
+        const mapContainer = document.querySelector('.mobile-map-container, .desktop-map-container');
+        if (!mapContainer) {
+          console.log("⚠️ Map container not found, forcing re-render");
+          // Force a re-render by toggling showMap
+          setShowMap(false);
+          setTimeout(() => setShowMap(true), 50);
+        }
+      }, 100);
+    } else {
+      // Reset body overflow when map is hidden
+      document.body.style.overflow = '';
     }
-  }, [showMap, hasCoordinates, hasApplications, setShowMap]);
+    
+    return () => {
+      // Clean up
+      document.body.style.overflow = '';
+    };
+  }, [showMap, hasCoordinates, hasApplications, setShowMap, isMobile]);
 
   // Effect to handle mobile view for map
   useEffect(() => {
     if (isMobile && shouldShowMap) {
+      console.log("📱 Setting up mobile map view");
+      
       // Ensure body doesn't scroll when map is visible on mobile
       document.body.style.overflow = 'hidden';
       

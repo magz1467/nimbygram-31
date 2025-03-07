@@ -56,11 +56,19 @@ export const MapContent = ({
       
       // Delay to ensure DOM has updated
       setTimeout(forceRepaint, 100);
+      
+      // Also force the Leaflet map to redraw itself
+      if (mapContainerRef.current.querySelector('.leaflet-container')) {
+        const leafletMap = mapContainerRef.current.querySelector('.leaflet-container') as HTMLElement;
+        if (leafletMap) {
+          leafletMap.style.zIndex = '1500';
+        }
+      }
     }
   }, [coordinates, selectedId, isMobile]);
 
   return (
-    <div className="relative w-full h-full" ref={mapContainerRef}>
+    <div className="relative w-full h-full" ref={mapContainerRef} style={{ zIndex: 1500 }}>
       <MapContainer
         applications={applications}
         selectedId={selectedId}

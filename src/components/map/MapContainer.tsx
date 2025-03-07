@@ -93,18 +93,37 @@ export const MapContainer = memo(({
     };
   }, []);
 
+  // Additional effect to ensure map is fully initialized
+  useEffect(() => {
+    // Force invalidate size multiple times to ensure proper rendering
+    const invalidationTimes = [50, 150, 300, 500, 1000];
+    
+    const invalidations = invalidationTimes.map(time => 
+      setTimeout(() => {
+        if (mapRef.current) {
+          console.log(`🗺️ Forced map invalidation at ${time}ms`);
+          mapRef.current.invalidateSize(true);
+        }
+      }, time)
+    );
+    
+    return () => {
+      invalidations.forEach(clearTimeout);
+    };
+  }, []);
+
   return (
-    <div className="w-full h-full relative bg-white" ref={containerRef}>
+    <div className="w-full h-full relative bg-white z-[1000]" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
         center={coordinates}
         zoom={14}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%" }}
-        className="z-0"
+        style={{ height: "100%", width: "100%", zIndex: 1000 }}
+        className="z-[1000]"
         whenReady={() => {
           console.log('🗺️ Map is ready');
-          mapRef.current?.invalidateSize();
+          mapRef.current?.invalidateSize(true);
         }}
       >
         <TileLayer 
