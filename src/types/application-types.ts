@@ -1,6 +1,6 @@
 
 // Add these types to your existing file
-export type SortType = 'newest' | 'impact' | 'distance' | null;
+export type SortType = 'newest' | 'impact' | 'distance' | 'closingSoon' | null;
 
 // Add these types that are needed for the components
 export interface FilterType {

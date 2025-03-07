@@ -18,6 +18,8 @@ interface FilterBarSectionProps {
   onFilterChange: (filterType: string, value: string) => void;
   onSortChange: (sortType: SortType) => void;
   statusCounts: StatusCounts;
+  showMap?: boolean;
+  setShowMap?: (show: boolean) => void;
 }
 
 export const FilterBarSection = ({
@@ -29,7 +31,9 @@ export const FilterBarSection = ({
   activeSort,
   onFilterChange,
   onSortChange,
-  statusCounts
+  statusCounts,
+  showMap,
+  setShowMap
 }: FilterBarSectionProps) => {
   const isMobile = useIsMobile();
   
@@ -44,7 +48,8 @@ export const FilterBarSection = ({
           activeSort={activeSort}
           applications={applications}
           statusCounts={statusCounts}
-          isMapView={false}
+          isMapView={showMap}
+          onToggleView={setShowMap ? () => setShowMap(!showMap) : undefined}
         />
       </div>
     );

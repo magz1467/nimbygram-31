@@ -1,38 +1,95 @@
 
-import { Application } from '@/types/planning';
-import { SortType } from '@/types/application-types';
+import { Application } from "@/types/planning";
+import { SortType } from "@/types/application-types";
 
-export const useSortApplications = (applications: Application[], sortType: SortType) => {
-  if (!applications) return [];
+interface SortConfig {
+  type: SortType;
+  applications: Application[];
+}
+
+const sortByNewest = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    const dateA = a.valid_date ? new Date(a.valid_date) : null;
+    const dateB = b.valid_date ? new Date(b.valid_date) : null;
+
+    // Invalid dates go to the end
+    if (!dateA || isNaN(dateA.getTime())) return 1;
+    if (!dateB || isNaN(dateB.getTime())) return -1;
+
+    // Sort by date descending (newest first)
+    return dateB.getTime() - dateA.getTime();
+  });
+};
+
+const sortByClosingSoon = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    const dateA = a.expiry_date ? new Date(a.expiry_date) : null;
+    const dateB = b.expiry_date ? new Date(b.expiry_date) : null;
+
+    // Invalid dates go to the end
+    if (!dateA || isNaN(dateA.getTime())) return 1;
+    if (!dateB || isNaN(dateB.getTime())) return -1;
+
+    // Sort by date ascending (soonest first)
+    return dateA.getTime() - dateB.getTime();
+  });
+};
+
+const sortByImpactScore = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    // Handle null values - push them to the bottom
+    if (a.final_impact_score === null && b.final_impact_score === null) return 0;
+    if (a.final_impact_score === null) return 1;
+    if (b.final_impact_score === null) return -1;
+    
+    // Convert to numbers and sort by impact score descending (highest first)
+    const scoreA = Number(a.final_impact_score);
+    const scoreB = Number(b.final_impact_score);
+    
+    return scoreB - scoreA;
+  });
+};
+
+const sortByDistance = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    // If either application doesn't have a distance, put it at the end
+    if (!a.distance && !b.distance) return 0;
+    if (!a.distance) return 1;
+    if (!b.distance) return -1;
+    
+    // Extract numerical distance value for comparison
+    const distanceA = parseFloat(a.distance.split(' ')[0]) || 0;
+    const distanceB = parseFloat(b.distance.split(' ')[0]) || 0;
+    
+    // Sort by ascending distance (closest first)
+    return distanceA - distanceB;
+  });
+};
+
+export const useApplicationSorting = ({ type, applications }: SortConfig) => {
+  if (!applications?.length) return [];
   
-  switch (sortType) {
+  console.log('Sorting applications with type:', type);
+  console.log('Number of applications before sort:', applications.length);
+
+  let sorted;
+  switch (type) {
     case 'newest':
-      return [...applications].sort((a, b) => {
-        const dateA = a.valid_date ? new Date(a.valid_date).getTime() : 0;
-        const dateB = b.valid_date ? new Date(b.valid_date).getTime() : 0;
-        return dateB - dateA; // newest first
-      });
-      
+      sorted = sortByNewest(applications);
+      break;
     case 'impact':
-      return [...applications].sort((a, b) => {
-        const impactA = a.final_impact_score ?? 0;
-        const impactB = b.final_impact_score ?? 0;
-        return impactB - impactA; // highest impact first
-      });
-      
+      sorted = sortByImpactScore(applications);
+      break;
     case 'distance':
-      return [...applications].sort((a, b) => {
-        if (!a.distance && !b.distance) return 0;
-        if (!a.distance) return 1;
-        if (!b.distance) return -1;
-        
-        const distanceA = parseFloat(a.distance.split(' ')[0]);
-        const distanceB = parseFloat(b.distance.split(' ')[0]);
-        
-        return distanceA - distanceB; // closest first
-      });
-      
+      sorted = sortByDistance(applications);
+      break;
+    case 'closingSoon':
+      sorted = sortByClosingSoon(applications);
+      break;
     default:
-      return applications;
+      sorted = applications;
   }
+
+  console.log('Number of applications after sort:', sorted.length);
+  return sorted;
 };

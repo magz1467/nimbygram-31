@@ -3,6 +3,7 @@ import { MobileApplicationCards } from "./mobile/MobileApplicationCards";
 import { MapContainer } from "./MapContainer";
 import { Application } from "@/types/planning";
 import { useEffect, useRef } from "react";
+import { SortType } from "@/types/application-types";
 
 interface MapContentProps {
   applications: Application[];
@@ -13,6 +14,11 @@ interface MapContentProps {
   onMarkerClick: (id: number) => void;
   isLoading: boolean;
   postcode: string;
+  activeSort?: SortType;
+  activeFilters?: {
+    status?: string;
+    type?: string;
+  };
 }
 
 export const MapContent = ({
@@ -24,6 +30,8 @@ export const MapContent = ({
   onMarkerClick,
   isLoading,
   postcode,
+  activeSort,
+  activeFilters,
 }: MapContentProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
@@ -31,7 +39,9 @@ export const MapContent = ({
     isMobile, 
     hasSelectedId: !!selectedId,
     applicationCount: applications.length,
-    coordinates
+    coordinates,
+    activeSort,
+    activeFilters
   });
 
   // Force map to render correctly
