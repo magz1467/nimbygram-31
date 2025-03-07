@@ -1,7 +1,8 @@
+
 import { Application } from "@/types/planning";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
 
-export type SortType = 'closingSoon' | 'newest' | 'impact' | null;
+export type SortType = 'closingSoon' | 'newest' | 'impact' | 'distance' | null;
 
 interface SortConfig {
   type: SortType;
@@ -73,6 +74,22 @@ const sortByImpactScore = (applications: Application[]) => {
   });
 };
 
+const sortByDistance = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    // If either application doesn't have a distance, put it at the end
+    if (!a.distance && !b.distance) return 0;
+    if (!a.distance) return 1;
+    if (!b.distance) return -1;
+    
+    // Extract numerical distance value for comparison
+    const distanceA = parseFloat(a.distance.split(' ')[0]) || 0;
+    const distanceB = parseFloat(b.distance.split(' ')[0]) || 0;
+    
+    // Sort by ascending distance (closest first)
+    return distanceA - distanceB;
+  });
+};
+
 export const useApplicationSorting = ({ type, applications }: SortConfig) => {
   if (!applications?.length) return [];
   
@@ -89,6 +106,9 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
       break;
     case 'impact':
       sorted = sortByImpactScore(applications);
+      break;
+    case 'distance':
+      sorted = sortByDistance(applications);
       break;
     default:
       sorted = applications;

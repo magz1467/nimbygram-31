@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "./SearchResultCard";
 import { Skeleton } from "@/components/ui/skeleton";

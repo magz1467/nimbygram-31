@@ -1,13 +1,13 @@
 
-import { Application } from "./planning";
-
-export type SortType = 'closingSoon' | 'newest' | null;
-
 export type FilterType = {
   status?: string;
   type?: string;
-  classification?: string;
+  [key: string]: string | undefined;
 };
+
+export type StatusType = 'Under Review' | 'Approved' | 'Declined' | 'Other';
+
+export type SortType = 'closingSoon' | 'newest' | 'impact' | 'distance' | null;
 
 export type StatusCounts = {
   'Under Review': number;
@@ -15,20 +15,3 @@ export type StatusCounts = {
   'Declined': number;
   'Other': number;
 };
-
-export type MapState = {
-  selectedId: number | null;
-  applications: Application[];
-  isMapView: boolean;
-  coordinates: [number, number];
-  activeSort: SortType;
-  activeFilters: FilterType;
-};
-
-export type MapAction =
-  | { type: 'SELECT_APPLICATION'; payload: number | null }
-  | { type: 'SET_APPLICATIONS'; payload: Application[] }
-  | { type: 'TOGGLE_VIEW' }
-  | { type: 'SET_COORDINATES'; payload: [number, number] }
-  | { type: 'SET_SORT'; payload: SortType }
-  | { type: 'SET_FILTERS'; payload: FilterType };

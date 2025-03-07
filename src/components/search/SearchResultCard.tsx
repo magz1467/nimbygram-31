@@ -1,13 +1,10 @@
 
 import { Application } from "@/types/planning";
-import { useState } from "react";
-import { CardHeader } from "./card/CardHeader";
-import { CardImage } from "./card/CardImage";
-import { CardActions } from "./card/CardActions";
-import { CardContent } from "./card/CardContent";
-import { CommentList } from "@/components/comments/CommentList";
-import { format } from "date-fns";
-import { getImageUrl } from "@/utils/imageUtils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MapPin, ExternalLink } from "lucide-react";
+import { formatStorybook } from "@/utils/storybook-formatter";
+import { ApplicationBadges } from "../applications/ApplicationBadges";
 
 interface SearchResultCardProps {
   application: Application;
@@ -15,88 +12,82 @@ interface SearchResultCardProps {
 }
 
 export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
-  const [showComments, setShowComments] = useState(false);
-
-  console.log('SearchResultCard - Application:', {
-    id: application.id,
-    title: application.title,
-    streetview_url: application.streetview_url,
-    image: application.image,
-    type: typeof application.streetview_url,
-    submittedDate: application.submittedDate || application.received_date
-  });
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch (err) {
-      console.error("Couldn't copy link:", err);
-    }
-  };
-
-  const handleToggleComments = () => {
-    setShowComments(prev => !prev);
-  };
-
-  // Format the submitted date
-  const formattedSubmittedDate = application.submittedDate || application.received_date
-    ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
-      ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
-      : null
-    : null;
-
-  // Determine the best image URL to use and run it through the getImageUrl helper
-  const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
-
-  // Handle see on map button click
+  const { id, title, description, address, postcode, status, last_date_consultation_comments, storybook, distance } = application;
+  
+  const formattedStorybook = formatStorybook(storybook);
+  
   const handleSeeOnMap = () => {
-    if (onSeeOnMap && application.id) {
-      console.log('📍 See on map clicked for application:', application.id);
-      onSeeOnMap(application.id);
+    if (onSeeOnMap) {
+      onSeeOnMap(id);
     }
   };
-
+  
   return (
-    <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
-      <CardHeader 
-        title={application.title || ''} 
-        address={application.address} 
-        storybook={application.storybook} 
-      />
-
-      <CardImage 
-        imageUrl={imageUrl} 
-        title={application.title || ''} 
-      />
-
-      <div className="border-y border-gray-100 py-3 px-4">
-        <CardActions
-          applicationId={application.id}
-          onShowComments={handleToggleComments}
-          onShare={handleShare}
-        />
-      </div>
-
-      <div className="px-8 py-4">
-        {formattedSubmittedDate && (
-          <div className="text-sm text-gray-500 mb-3">
-            <span className="font-medium">Submitted date:</span> {formattedSubmittedDate}
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-semibold text-primary">
+                {formattedStorybook?.header || title || 'Planning Application'}
+              </h3>
+              
+              <div className="mt-2 flex flex-wrap gap-2">
+                <ApplicationBadges
+                  status={status}
+                  lastDateConsultationComments={last_date_consultation_comments}
+                />
+              </div>
+              
+              {/* Address and distance */}
+              <div className="mt-4 text-sm text-gray-600">
+                <p className="flex items-start gap-1.5">
+                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span className="flex flex-col">
+                    <span className="line-clamp-1">{address}</span>
+                    {distance && <span className="text-xs text-gray-500 mt-0.5">({distance} from search location)</span>}
+                  </span>
+                </p>
+              </div>
+            </div>
+            
+            {formattedStorybook?.content ? (
+              <div 
+                className="prose prose-sm max-w-none text-gray-700"
+                dangerouslySetInnerHTML={{ 
+                  __html: formattedStorybook.content 
+                }} 
+              />
+            ) : (
+              <p className="text-gray-700">
+                {description || 'No description available for this planning application.'}
+              </p>
+            )}
+            
+            <div className="flex flex-wrap gap-2 pt-2">
+              {application.coordinates && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSeeOnMap}
+                  className="flex items-center gap-1.5"
+                >
+                  <MapPin className="h-4 w-4" />
+                  See on Map
+                </Button>
+              )}
+              
+              <a 
+                href={`/application/${id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+                View Details
+              </a>
+            </div>
           </div>
-        )}
-        
-        <CardContent 
-          storybook={application.storybook} 
-          onSeeOnMap={handleSeeOnMap}
-        />
-
-        {showComments && (
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-medium mb-2">Comments</h3>
-            <CommentList applicationId={application.id} />
-          </div>
-        )}
-      </div>
-    </article>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

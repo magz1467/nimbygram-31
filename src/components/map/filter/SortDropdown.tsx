@@ -23,6 +23,13 @@ export const SortDropdown = ({ children, activeSort, onSortChange }: SortDropdow
       <DropdownMenuContent align="start" className="w-[200px]">
         <DropdownMenuItem
           className="justify-between"
+          onClick={() => onSortChange('distance')}
+        >
+          Distance
+          {activeSort === 'distance' && <span>✓</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="justify-between"
           onClick={() => onSortChange('newest')}
         >
           Newest

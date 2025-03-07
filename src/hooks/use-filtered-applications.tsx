@@ -26,21 +26,11 @@ export const useFilteredApplications = (
     // First apply filters
     const filteredApplications = useApplicationFiltering(applications, activeFilters);
 
-    // Then calculate distances and sort by distance if we have search coordinates
-    let sortedApplications = [...filteredApplications];
+    // Calculate distances and add distance string to each application if we have search coordinates
+    let appsWithDistance = [...filteredApplications];
     
     if (searchCoordinates) {
-      sortedApplications.sort((a, b) => {
-        if (!a.coordinates || !b.coordinates) return 0;
-        
-        const distanceA = calculateDistance(searchCoordinates, a.coordinates);
-        const distanceB = calculateDistance(searchCoordinates, b.coordinates);
-        
-        return distanceA - distanceB;
-      });
-
-      // Add distance string to each application
-      sortedApplications = sortedApplications.map(app => {
+      appsWithDistance = appsWithDistance.map(app => {
         if (!app.coordinates) return app;
         
         const distanceInKm = calculateDistance(searchCoordinates, app.coordinates);
@@ -52,13 +42,16 @@ export const useFilteredApplications = (
       });
     }
 
-    // Then apply any other sorting if specified
-    const finalSortedApplications = activeSort ? 
+    // Determine which sort to use (default to distance when coordinates available)
+    const effectiveSort = activeSort || (searchCoordinates ? 'distance' : null);
+    
+    // Apply sorting
+    const finalSortedApplications = effectiveSort ? 
       useApplicationSorting({
-        type: activeSort,
-        applications: sortedApplications
+        type: effectiveSort,
+        applications: appsWithDistance
       }) : 
-      sortedApplications;
+      appsWithDistance;
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
     return finalSortedApplications;
