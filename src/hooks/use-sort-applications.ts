@@ -1,11 +1,48 @@
 
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
+import { isWithinNextSevenDays } from "@/utils/dateUtils";
 
 interface SortConfig {
   type: SortType;
   applications: Application[];
 }
+
+const sortByClosingDate = (applications: Application[]) => {
+  return [...applications].sort((a, b) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const dateA = a.last_date_consultation_comments ? new Date(a.last_date_consultation_comments) : null;
+    const dateB = b.last_date_consultation_comments ? new Date(b.last_date_consultation_comments) : null;
+
+    // Invalid dates go to the end
+    if (!dateA || isNaN(dateA.getTime())) return 1;
+    if (!dateB || isNaN(dateB.getTime())) return -1;
+
+    const isClosingSoonA = isWithinNextSevenDays(a.last_date_consultation_comments);
+    const isClosingSoonB = isWithinNextSevenDays(b.last_date_consultation_comments);
+
+    // Prioritize "Under Review" status
+    const isUnderReviewA = a.status?.toLowerCase().includes('under consideration');
+    const isUnderReviewB = b.status?.toLowerCase().includes('under consideration');
+
+    if (isUnderReviewA && !isUnderReviewB) return -1;
+    if (!isUnderReviewA && isUnderReviewB) return 1;
+
+    // Then prioritize closing soon
+    if (isClosingSoonA && !isClosingSoonB) return -1;
+    if (!isClosingSoonA && isClosingSoonB) return 1;
+
+    // If both are closing soon, sort by closest date
+    if (isClosingSoonA && isClosingSoonB) {
+      return dateA.getTime() - dateB.getTime();
+    }
+
+    // For non-closing soon, sort by date descending
+    return dateB.getTime() - dateA.getTime();
+  });
+};
 
 const sortByNewest = (applications: Application[]) => {
   return [...applications].sort((a, b) => {
@@ -21,51 +58,6 @@ const sortByNewest = (applications: Application[]) => {
   });
 };
 
-const sortByClosingSoon = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    const dateA = a.expiry_date ? new Date(a.expiry_date) : null;
-    const dateB = b.expiry_date ? new Date(b.expiry_date) : null;
-
-    // Invalid dates go to the end
-    if (!dateA || isNaN(dateA.getTime())) return 1;
-    if (!dateB || isNaN(dateB.getTime())) return -1;
-
-    // Sort by date ascending (soonest first)
-    return dateA.getTime() - dateB.getTime();
-  });
-};
-
-const sortByImpactScore = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    // Handle null values - push them to the bottom
-    if (a.final_impact_score === null && b.final_impact_score === null) return 0;
-    if (a.final_impact_score === null) return 1;
-    if (b.final_impact_score === null) return -1;
-    
-    // Convert to numbers and sort by impact score descending (highest first)
-    const scoreA = Number(a.final_impact_score);
-    const scoreB = Number(b.final_impact_score);
-    
-    return scoreB - scoreA;
-  });
-};
-
-const sortByDistance = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    // If either application doesn't have a distance, put it at the end
-    if (!a.distance && !b.distance) return 0;
-    if (!a.distance) return 1;
-    if (!b.distance) return -1;
-    
-    // Extract numerical distance value for comparison
-    const distanceA = parseFloat(a.distance.split(' ')[0]) || 0;
-    const distanceB = parseFloat(b.distance.split(' ')[0]) || 0;
-    
-    // Sort by ascending distance (closest first)
-    return distanceA - distanceB;
-  });
-};
-
 export const useApplicationSorting = ({ type, applications }: SortConfig) => {
   if (!applications?.length) return [];
   
@@ -74,17 +66,11 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
 
   let sorted;
   switch (type) {
+    case 'closingSoon':
+      sorted = sortByClosingDate(applications);
+      break;
     case 'newest':
       sorted = sortByNewest(applications);
-      break;
-    case 'impact':
-      sorted = sortByImpactScore(applications);
-      break;
-    case 'distance':
-      sorted = sortByDistance(applications);
-      break;
-    case 'closingSoon':
-      sorted = sortByClosingSoon(applications);
       break;
     default:
       sorted = applications;

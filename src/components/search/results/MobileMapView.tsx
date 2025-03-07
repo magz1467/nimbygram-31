@@ -4,7 +4,6 @@ import { MapContent } from "@/components/map/MapContent";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { SortType } from "@/types/application-types";
 
 interface MobileMapViewProps {
   applications: Application[];
@@ -14,11 +13,6 @@ interface MobileMapViewProps {
   handleCloseMap: () => void;
   isLoading: boolean;
   postcode: string;
-  activeSort?: SortType | null;
-  activeFilters?: {
-    status?: string;
-    type?: string;
-  };
 }
 
 export const MobileMapView = ({
@@ -29,8 +23,6 @@ export const MobileMapView = ({
   handleCloseMap,
   isLoading,
   postcode,
-  activeSort = null,
-  activeFilters = {}
 }: MobileMapViewProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   
@@ -80,8 +72,6 @@ export const MobileMapView = ({
           onMarkerClick={handleMarkerClick}
           isLoading={isLoading}
           postcode={postcode}
-          activeSort={activeSort}
-          activeFilters={activeFilters}
         />
       </div>
     </div>

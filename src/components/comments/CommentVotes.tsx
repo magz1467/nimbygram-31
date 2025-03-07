@@ -4,7 +4,6 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
-import { supabase } from "@/integrations/supabase/client";
 
 interface CommentVotesProps {
   commentId: number;
@@ -25,29 +24,13 @@ export const CommentVotes = ({
 }: CommentVotesProps) => {
   const { toast } = useToast();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleVote = async (type: 'up' | 'down') => {
+  const handleVote = (type: 'up' | 'down') => {
     if (!currentUserId) {
       setShowAuthDialog(true);
       return;
     }
-    
-    if (isSubmitting) return;
-    
-    try {
-      setIsSubmitting(true);
-      onVoteChange(type);
-    } catch (error) {
-      console.error('Error voting on comment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save your vote. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onVoteChange(type);
   };
 
   return (
@@ -57,7 +40,6 @@ export const CommentVotes = ({
           <Button 
             variant="ghost" 
             size="sm"
-            disabled={isSubmitting}
             className={`hover:bg-primary/10 ${voteStatus === 'up' ? 'text-primary' : ''}`}
             onClick={() => handleVote('up')}
           >
@@ -69,7 +51,6 @@ export const CommentVotes = ({
           <Button 
             variant="ghost" 
             size="sm"
-            disabled={isSubmitting}
             className={`hover:bg-primary/10 ${voteStatus === 'down' ? 'text-primary' : ''}`}
             onClick={() => handleVote('down')}
           >

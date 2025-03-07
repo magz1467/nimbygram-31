@@ -5,7 +5,6 @@ import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ApplicationFeedbackProps {
   feedback: 'yimby' | 'nimby' | null;
@@ -14,22 +13,17 @@ interface ApplicationFeedbackProps {
     yimbyCount: number;
     nimbyCount: number;
   };
-  applicationId: number; // Added applicationId
-  userId?: string; // Added userId
 }
 
 export const ApplicationFeedback = ({ 
   feedback, 
   onFeedback,
-  feedbackStats,
-  applicationId,
-  userId
+  feedbackStats 
 }: ApplicationFeedbackProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [localFeedback, setLocalFeedback] = useState(feedback);
   const [localStats, setLocalStats] = useState(feedbackStats);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -37,19 +31,7 @@ export const ApplicationFeedback = ({
     setLocalStats(feedbackStats);
   }, [feedback, feedbackStats]);
 
-  const handleFeedbackClick = async (type: 'yimby' | 'nimby') => {
-    if (!userId) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to vote on applications",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
+  const handleFeedbackClick = (type: 'yimby' | 'nimby') => {
     // Previous state
     const prevFeedback = localFeedback;
     const prevStats = { ...localStats };
@@ -100,48 +82,10 @@ export const ApplicationFeedback = ({
       setLocalFeedback(type);
     }
     
+    // Call the parent handler to update the database
     try {
-      // Save to database
-      if (isRemovingFeedback) {
-        // Delete existing feedback
-        const { error } = await supabase
-          .from('application_feedback')
-          .delete()
-          .eq('application_id', applicationId)
-          .eq('user_id', userId);
-          
-        if (error) throw error;
-      } else {
-        // Insert or update feedback
-        const { error } = await supabase
-          .from('application_feedback')
-          .upsert({
-            application_id: applicationId,
-            user_id: userId,
-            feedback_type: type
-          }, {
-            onConflict: 'application_id,user_id'
-          });
-          
-        if (error) throw error;
-        
-        // Update application stats
-        await supabase
-          .from('applications')
-          .update({
-            feedback_stats: {
-              yimby: type === 'yimby' ? localStats.yimbyCount : (prevFeedback === 'yimby' ? localStats.yimbyCount - 1 : localStats.yimbyCount),
-              nimby: type === 'nimby' ? localStats.nimbyCount : (prevFeedback === 'nimby' ? localStats.nimbyCount - 1 : localStats.nimbyCount),
-            }
-          })
-          .eq('id', applicationId);
-      }
-      
-      // Call the parent handler to update the UI
       onFeedback(type);
-      
     } catch (error) {
-      console.error('Error saving feedback:', error);
       // Revert on error
       setLocalFeedback(prevFeedback);
       setLocalStats(prevStats);
@@ -151,8 +95,6 @@ export const ApplicationFeedback = ({
         description: "Failed to save your feedback. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -164,7 +106,6 @@ export const ApplicationFeedback = ({
           <Button
             variant={localFeedback === 'yimby' ? "default" : "outline"}
             onClick={() => handleFeedbackClick('yimby')}
-            disabled={isSubmitting}
             className={`flex items-center gap-2 flex-1 hover:scale-105 transition-transform ${
               localFeedback === 'yimby' ? 'bg-primary hover:bg-primary-dark' : 'hover:bg-primary/10'
             }`}
@@ -181,7 +122,6 @@ export const ApplicationFeedback = ({
           <Button
             variant={localFeedback === 'nimby' ? "outline" : "outline"}
             onClick={() => handleFeedbackClick('nimby')}
-            disabled={isSubmitting}
             className={`flex items-center gap-2 flex-1 hover:scale-105 transition-transform ${
               localFeedback === 'nimby' ? 'bg-[#ea384c]/10' : ''
             }`}
@@ -207,7 +147,6 @@ export const ApplicationFeedback = ({
         <Button
           variant={localFeedback === 'yimby' ? "default" : "outline"}
           onClick={() => handleFeedbackClick('yimby')}
-          disabled={isSubmitting}
           className={`flex-1 flex items-center gap-3 justify-start h-auto p-3 hover:scale-105 transition-transform ${
             localFeedback === 'yimby' ? 'bg-primary hover:bg-primary-dark' : 'hover:bg-primary/10'
           }`}
@@ -229,7 +168,6 @@ export const ApplicationFeedback = ({
         <Button
           variant={localFeedback === 'nimby' ? "outline" : "outline"}
           onClick={() => handleFeedbackClick('nimby')}
-          disabled={isSubmitting}
           className={`flex-1 flex items-center gap-3 justify-start h-auto p-3 hover:scale-105 transition-transform ${
             localFeedback === 'nimby' ? 'bg-[#ea384c]/10' : ''
           }`}

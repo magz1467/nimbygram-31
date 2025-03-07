@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -28,36 +27,8 @@ export const PlanningApplicationDetails = ({
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [feedback, setFeedback] = useState<'yimby' | 'nimby' | null>(null);
   const [currentApplication, setCurrentApplication] = useState(application);
-  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const { toast } = useToast();
   const { savedApplications, toggleSavedApplication } = useSavedApplications();
-
-  // Fetch current user and application feedback
-  useEffect(() => {
-    const fetchUserAndFeedback = async () => {
-      // Get current user
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setCurrentUser(session.user);
-        
-        // If we have an application and user, fetch feedback
-        if (application?.id && session.user.id) {
-          const { data: feedbackData } = await supabase
-            .from('application_feedback')
-            .select('feedback_type')
-            .eq('application_id', application.id)
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-            
-          if (feedbackData) {
-            setFeedback(feedbackData.feedback_type as 'yimby' | 'nimby');
-          }
-        }
-      }
-    };
-    
-    fetchUserAndFeedback();
-  }, [application]);
 
   useEffect(() => {
     console.log('PlanningApplicationDetails - Application Data:', {
@@ -80,10 +51,9 @@ export const PlanningApplicationDetails = ({
 
   const isSaved = savedApplications.includes(currentApplication.id);
 
-  // Get feedback stats from application or provide defaults
   const feedbackStats = {
-    yimbyCount: currentApplication?.feedback_stats?.yimby || (feedback === 'yimby' ? 13 : 12),
-    nimbyCount: currentApplication?.feedback_stats?.nimby || (feedback === 'nimby' ? 4 : 3)
+    yimbyCount: feedback === 'yimby' ? 13 : 12,
+    nimbyCount: feedback === 'nimby' ? 4 : 3
   };
 
   const handleSave = async () => {
@@ -126,37 +96,17 @@ export const PlanningApplicationDetails = ({
     setShowFeedbackDialog(false);
   };
 
-  const handleFeedback = async (type: 'yimby' | 'nimby') => {
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
+  const handleFeedback = (type: 'yimby' | 'nimby') => {
+    setFeedback(prev => prev === type ? null : type);
     
-    if (!session) {
-      setShowAuthDialog(true);
-      return;
-    }
-    
-    try {
-      // Toggle feedback state (remove if clicking same option)
-      const newFeedback = feedback === type ? null : type;
-      setFeedback(newFeedback);
-      
-      // Toast message based on action
-      toast({
-        title: feedback === type ? "Feedback removed" : "Thank you for your feedback",
-        description: feedback === type 
-          ? "Your feedback has been removed"
-          : type === 'yimby' 
-            ? "Thanks for supporting new development!" 
-            : "We understand your concerns",
-      });
-    } catch (error) {
-      console.error('Error handling feedback:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save your feedback. Please try again.",
-        variant: "destructive"
-      });
-    }
+    toast({
+      title: type === feedback ? "Feedback removed" : "Thank you for your feedback",
+      description: type === feedback 
+        ? "Your feedback has been removed"
+        : type === 'yimby' 
+          ? "Thanks for supporting new development!" 
+          : "We understand your concerns",
+    });
   };
 
   return (
@@ -183,7 +133,6 @@ export const PlanningApplicationDetails = ({
         feedback={feedback}
         feedbackStats={feedbackStats}
         onFeedback={handleFeedback}
-        userId={currentUser?.id}
       />
 
       <Card className="p-4">

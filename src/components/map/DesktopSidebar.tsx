@@ -1,11 +1,9 @@
-
 import { Application } from "@/types/planning";
 import { EmailDialog } from "@/components/EmailDialog";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ApplicationListView } from "./sidebar/ApplicationListView";
 import { ApplicationDetailView } from "./sidebar/ApplicationDetailView";
-import { SortType, StatusCounts } from "@/types/application-types";
 
 interface DesktopSidebarProps {
   applications: Application[];
@@ -15,12 +13,17 @@ interface DesktopSidebarProps {
     status?: string;
     type?: string;
   };
-  activeSort: SortType;
+  activeSort: 'closingSoon' | 'newest' | null;
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: SortType) => void;
+  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
   onSelectApplication: (id: number | null) => void;
   onClose: () => void;
-  statusCounts?: StatusCounts;
+  statusCounts?: {
+    'Under Review': number;
+    'Approved': number;
+    'Declined': number;
+    'Other': number;
+  };
 }
 
 export const DesktopSidebar = ({

@@ -1,11 +1,15 @@
-
 import { Application } from "@/types/planning";
-import { ApplicationFeedback } from "./ApplicationFeedback";
-import { ApplicationDescription } from "./ApplicationDescription";
-import { ApplicationImage } from "./ApplicationImage";
 import { ApplicationTimeline } from "./ApplicationTimeline";
+import { CollapsibleApplicationDetails } from "./CollapsibleApplicationDetails";
+import { ApplicationDescription } from "./ApplicationDescription";
 import { ApplicationComments } from "./ApplicationComments";
-import { ApplicationDetails } from "./ApplicationDetails";
+import { ExpectedImpactAreas } from "./ExpectedImpactAreas";
+import { ApplicationDocuments } from "./ApplicationDocuments";
+import { CreatePetition } from "./CreatePetition";
+import { ApplicationFeedback } from "./ApplicationFeedback";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ApplicationImage } from "./ApplicationImage";
 
 interface ApplicationContentProps {
   application: Application;
@@ -15,35 +19,41 @@ interface ApplicationContentProps {
     nimbyCount: number;
   };
   onFeedback: (type: 'yimby' | 'nimby') => void;
-  userId?: string;
 }
 
-export const ApplicationContent = ({ 
-  application, 
-  feedback, 
-  feedbackStats, 
+export const ApplicationContent = ({
+  application,
+  feedback,
+  feedbackStats,
   onFeedback,
-  userId
 }: ApplicationContentProps) => {
   return (
-    <div className="space-y-6">
-      <ApplicationImage application={application} />
-      
-      <ApplicationFeedback 
-        feedback={feedback} 
-        onFeedback={onFeedback} 
-        feedbackStats={feedbackStats}
-        applicationId={application.id}
-        userId={userId}
-      />
-      
+    <>
+      <Card className="overflow-hidden">
+        <ApplicationImage application={application} />
+        <ApplicationTimeline application={application} />
+        <Separator className="my-4" />
+        <CollapsibleApplicationDetails application={application} />
+      </Card>
+
+      {application.impact_score_details?.impacted_services && (
+        <ExpectedImpactAreas 
+          application={application}
+          impactedServices={application.impact_score_details.impacted_services}
+        />
+      )}
+
       <ApplicationDescription application={application} />
       
-      <ApplicationDetails application={application} />
-      
-      <ApplicationTimeline application={application} />
-      
+      <ApplicationFeedback 
+        feedback={feedback}
+        onFeedback={onFeedback}
+        feedbackStats={feedbackStats}
+      />
+
       <ApplicationComments applicationId={application.id} />
-    </div>
+      <CreatePetition applicationId={application.id} />
+      <ApplicationDocuments />
+    </>
   );
-}
+};

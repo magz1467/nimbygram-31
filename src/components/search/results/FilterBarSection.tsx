@@ -1,6 +1,6 @@
 
 import { FilterBar } from "@/components/FilterBar";
-import { StatusCounts, SortType } from "@/types/application-types";
+import { StatusCounts } from "@/types/application-types";
 import { Application } from "@/types/planning";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -14,12 +14,10 @@ interface FilterBarSectionProps {
     type?: string;
     classification?: string;
   };
-  activeSort: SortType;
+  activeSort: 'closingSoon' | 'newest' | null;
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: SortType) => void;
+  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
   statusCounts: StatusCounts;
-  showMap?: boolean;
-  setShowMap?: (show: boolean) => void;
 }
 
 export const FilterBarSection = ({
@@ -31,9 +29,7 @@ export const FilterBarSection = ({
   activeSort,
   onFilterChange,
   onSortChange,
-  statusCounts,
-  showMap,
-  setShowMap
+  statusCounts
 }: FilterBarSectionProps) => {
   const isMobile = useIsMobile();
   
@@ -48,8 +44,7 @@ export const FilterBarSection = ({
           activeSort={activeSort}
           applications={applications}
           statusCounts={statusCounts}
-          isMapView={showMap}
-          onToggleView={setShowMap ? () => setShowMap(!showMap) : undefined}
+          isMapView={false}
         />
       </div>
     );

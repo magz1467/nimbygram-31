@@ -1,38 +1,34 @@
 
-// Add these types to your existing file
-export type SortType = 'newest' | 'impact' | 'distance' | 'closingSoon' | null;
+import { Application } from "./planning";
 
-// Add these types that are needed for the components
-export interface FilterType {
+export type SortType = 'closingSoon' | 'newest' | null;
+
+export type FilterType = {
   status?: string;
   type?: string;
   classification?: string;
-  [key: string]: string | undefined;
-}
+};
 
-export interface StatusCounts {
+export type StatusCounts = {
   'Under Review': number;
   'Approved': number;
   'Declined': number;
   'Other': number;
-}
+};
 
-// Add these types if they are missing (import errors indicate they are missing)
-export interface MapState {
-  applications: any[];
+export type MapState = {
   selectedId: number | null;
-  showSidebar: boolean;
+  applications: Application[];
   isMapView: boolean;
-  coordinates: [number, number] | null;
-  postcode: string;
-  activeFilters: {
-    status?: string;
-    type?: string;
-  };
+  coordinates: [number, number];
   activeSort: SortType;
-}
+  activeFilters: FilterType;
+};
 
-export interface MapAction {
-  type: 'SELECT_APPLICATION' | 'TOGGLE_SIDEBAR' | 'SET_MAP_VIEW' | 'SET_COORDINATES' | 'SET_POSTCODE' | 'SET_FILTER' | 'SET_SORT';
-  payload: any;
-}
+export type MapAction =
+  | { type: 'SELECT_APPLICATION'; payload: number | null }
+  | { type: 'SET_APPLICATIONS'; payload: Application[] }
+  | { type: 'TOGGLE_VIEW' }
+  | { type: 'SET_COORDINATES'; payload: [number, number] }
+  | { type: 'SET_SORT'; payload: SortType }
+  | { type: 'SET_FILTERS'; payload: FilterType };

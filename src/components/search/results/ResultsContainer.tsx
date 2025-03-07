@@ -8,7 +8,6 @@ import { ContainerLayout } from "./ContainerLayout";
 import { ResultsListView } from "./ResultsListView";
 import { MobileMapView } from "./MobileMapView";
 import { DesktopMapView } from "./DesktopMapView";
-import { SortType } from "@/types/application-types";
 
 interface ResultsContainerProps {
   displayApplications: Application[];
@@ -22,11 +21,6 @@ interface ResultsContainerProps {
   isLoading: boolean;
   searchTerm?: string;
   onRetry?: () => void;
-  activeSort?: SortType;
-  activeFilters?: {
-    status?: string;
-    type?: string;
-  };
 }
 
 export const ResultsContainer = ({
@@ -40,9 +34,7 @@ export const ResultsContainer = ({
   handleMarkerClick,
   isLoading,
   searchTerm,
-  onRetry,
-  activeSort = null,
-  activeFilters = {}
+  onRetry
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -59,8 +51,7 @@ export const ResultsContainer = ({
     applications: applications.length,
     isLoading,
     isMobile,
-    shouldShowMap,
-    activeSort
+    shouldShowMap
   });
   
   // Helper function to handle "See on Map" clicks
@@ -116,8 +107,6 @@ export const ResultsContainer = ({
           handleCloseMap={handleCloseMap}
           isLoading={isLoading}
           postcode={searchTerm || ""}
-          activeSort={activeSort}
-          activeFilters={activeFilters}
         />
       )}
       
@@ -130,8 +119,6 @@ export const ResultsContainer = ({
           handleMarkerClick={handleMarkerClick}
           handleCloseMap={handleCloseMap}
           isLoading={isLoading}
-          activeSort={activeSort}
-          activeFilters={activeFilters}
         />
       )}
     </ContainerLayout>

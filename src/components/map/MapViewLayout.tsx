@@ -7,7 +7,6 @@ import { MapContent } from "@/components/map/MapContent";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Application } from "@/types/planning";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
-import { SortType } from "@/types/application-types";
 
 interface MapViewLayoutProps {
   applications: Application[];
@@ -19,10 +18,10 @@ interface MapViewLayoutProps {
     status?: string;
     type?: string;
   };
-  activeSort: SortType;
+  activeSort: 'closingSoon' | 'newest' | null;
   onPostcodeSelect: (postcode: string) => void;
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: SortType) => void;
+  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
   onMarkerClick: (id: number) => void;
   onSelectApplication: (id: number | null) => void;
 }

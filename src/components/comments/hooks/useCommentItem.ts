@@ -72,14 +72,7 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
   }, [comment.id, currentUserId]);
 
   const handleVoteChange = async (type: 'up' | 'down') => {
-    if (!currentUserId) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to vote on comments",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!currentUserId) return;
 
     const isRemovingVote = type === voteStatus;
     
@@ -99,15 +92,13 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
 
     try {
       if (isRemovingVote) {
-        const { error } = await supabase
+        await supabase
           .from('comment_votes')
           .delete()
           .eq('comment_id', comment.id)
           .eq('user_id', currentUserId);
-          
-        if (error) throw error;
       } else {
-        const { error } = await supabase
+        await supabase
           .from('comment_votes')
           .upsert({
             comment_id: comment.id,
@@ -116,19 +107,15 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
           }, {
             onConflict: 'comment_id,user_id'
           });
-          
-        if (error) throw error;
       }
 
-      const { error: updateError } = await supabase
+      await supabase
         .from('Comments')
         .update({
-          upvotes: type === 'up' ? upvotes : (voteStatus === 'up' ? upvotes - 1 : upvotes),
-          downvotes: type === 'down' ? downvotes : (voteStatus === 'down' ? downvotes - 1 : downvotes)
+          upvotes: type === 'up' ? upvotes : comment.upvotes,
+          downvotes: type === 'down' ? downvotes : comment.downvotes
         })
         .eq('id', comment.id);
-        
-      if (updateError) throw updateError;
     } catch (error) {
       console.error('Error updating vote:', error);
       toast({
