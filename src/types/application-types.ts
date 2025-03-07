@@ -2,6 +2,21 @@
 // Add these types to your existing file
 export type SortType = 'closingSoon' | 'newest' | 'impact' | 'distance' | null;
 
+// Add these types that are needed for the components
+export interface FilterType {
+  status?: string;
+  type?: string;
+  classification?: string;
+  [key: string]: string | undefined;
+}
+
+export interface StatusCounts {
+  'Under Review': number;
+  'Approved': number;
+  'Declined': number;
+  'Other': number;
+}
+
 // Add these types if they are missing (import errors indicate they are missing)
 export interface MapState {
   applications: any[];

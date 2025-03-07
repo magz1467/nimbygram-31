@@ -1,3 +1,4 @@
+
 export interface ImpactScoreData {
   Environmental?: {
     [key: string]: number;

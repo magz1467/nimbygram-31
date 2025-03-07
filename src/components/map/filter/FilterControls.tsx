@@ -35,6 +35,7 @@ export const FilterControls = ({
     if (activeSort === 'closingSoon') return 'Closing Soon';
     if (activeSort === 'newest') return 'Newest';
     if (activeSort === 'impact') return 'Highest Impact';
+    if (activeSort === 'distance') return 'Distance';
     return 'Sort';
   })();
 
