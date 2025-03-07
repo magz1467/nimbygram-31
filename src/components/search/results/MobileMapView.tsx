@@ -14,7 +14,7 @@ interface MobileMapViewProps {
   handleCloseMap: () => void;
   isLoading: boolean;
   postcode: string;
-  activeSort?: SortType;
+  activeSort?: SortType | null;
   activeFilters?: {
     status?: string;
     type?: string;

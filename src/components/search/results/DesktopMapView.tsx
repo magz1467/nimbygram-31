@@ -12,7 +12,7 @@ interface DesktopMapViewProps {
   handleMarkerClick: (id: number) => void;
   handleCloseMap: () => void;
   isLoading: boolean;
-  activeSort?: SortType;
+  activeSort?: SortType | null;
   activeFilters?: {
     status?: string;
     type?: string;
