@@ -5,6 +5,8 @@ import { MapViewLayout } from "@/components/map/MapViewLayout";
 import { Application } from "@/types/planning";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, X } from "lucide-react";
 
 interface ResultsContainerProps {
   displayApplications: Application[];
@@ -99,6 +101,12 @@ export const ResultsContainer = ({
     }
   };
 
+  // Handler to close the map and return to results list
+  const handleCloseMap = () => {
+    setShowMap(false);
+    setSelectedId(null);
+  };
+
   // Map container style for mobile
   const mapContainerStyle = isMobile && shouldShowMap
     ? { height: 'calc(100vh - 180px)', width: '100%' }
@@ -112,13 +120,28 @@ export const ResultsContainer = ({
           className="mobile-map-container relative w-full overflow-hidden border shadow rounded-lg mb-6"
           style={mapContainerStyle}
         >
-          <button 
-            onClick={() => setShowMap(false)}
-            className="absolute top-2 right-2 z-50 bg-white p-2 rounded-full shadow hover:bg-gray-100"
-            aria-label="Close map"
-          >
-            ✕
-          </button>
+          <div className="absolute top-2 left-2 right-2 z-50 flex justify-between">
+            <Button 
+              onClick={handleCloseMap}
+              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
+              size="icon"
+              variant="outline"
+              aria-label="Back to results"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            <Button 
+              onClick={handleCloseMap}
+              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
+              size="icon"
+              variant="outline"
+              aria-label="Close map"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
           <MapViewLayout 
             applications={applications}
             selectedId={selectedId}
@@ -138,25 +161,32 @@ export const ResultsContainer = ({
       
       {/* Application list */}
       <div className={shouldShowMap && !isMobile ? "col-span-1" : ""}>
-        <SearchResultsList 
-          applications={displayApplications}
-          isLoading={isLoading}
-          onSeeOnMap={handleSeeOnMap}
-          searchTerm={searchTerm}
-          onRetry={handleRetry}
-        />
+        {!shouldShowMap && (
+          <SearchResultsList 
+            applications={displayApplications}
+            isLoading={isLoading}
+            onSeeOnMap={handleSeeOnMap}
+            searchTerm={searchTerm}
+            onRetry={handleRetry}
+          />
+        )}
       </div>
       
       {/* Desktop map layout */}
       {!isMobile && shouldShowMap && coordinates && (
         <div className="col-span-1 relative rounded-lg overflow-hidden border shadow" style={mapContainerStyle}>
-          <button 
-            onClick={() => setShowMap(false)}
-            className="absolute top-2 right-2 z-50 bg-white p-2 rounded-full shadow hover:bg-gray-100"
-            aria-label="Close map"
-          >
-            ✕
-          </button>
+          <div className="absolute top-2 right-2 z-50 flex space-x-2">
+            <Button 
+              onClick={handleCloseMap}
+              className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
+              size="icon"
+              variant="outline"
+              aria-label="Close map"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
           <MapViewLayout 
             applications={applications}
             selectedId={selectedId}

@@ -14,7 +14,7 @@ export const CardImage = ({ imageUrl, title }: CardImageProps) => {
       <ImageWithFallback
         src={imageUrl}
         alt={title}
-        className="w-full h-full object-cover rounded-lg"
+        className="w-full h-full object-cover"
       />
     </div>
   );

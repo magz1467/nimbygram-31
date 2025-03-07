@@ -7,6 +7,7 @@ import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
 import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
+import { getImageUrl } from "@/utils/imageUtils";
 
 interface SearchResultCardProps {
   application: Application;
@@ -45,8 +46,8 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
       : null
     : null;
 
-  // Determine the best image URL to use
-  const imageUrl = application.streetview_url || application.image || application.image_map_url;
+  // Determine the best image URL to use and run it through the getImageUrl helper
+  const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   // Handle see on map button click
   const handleSeeOnMap = () => {
