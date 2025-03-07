@@ -40,7 +40,12 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={onSeeOnMap}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('💡 See on map button clicked');
+                onSeeOnMap();
+              }}
               className="text-primary flex items-center gap-1.5"
             >
               <MapPin className="w-4 h-4" />

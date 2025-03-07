@@ -51,6 +51,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
   // Handle see on map button click
   const handleSeeOnMap = () => {
     if (onSeeOnMap && application.id) {
+      console.log('📍 See on map clicked for application:', application.id);
       onSeeOnMap(application.id);
     }
   };

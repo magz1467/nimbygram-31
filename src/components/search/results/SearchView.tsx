@@ -44,16 +44,9 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
   console.log('🌍 SearchView received coordinates:', coordinates);
   console.log('📊 SearchView received applications:', applications?.length);
 
-  console.log('🔄 SearchView render:', {
-    hasSearched,
-    hasCoordinates: !!coordinates,
-    applicationsCount: applications?.length || 0,
-    isLoading,
-    displayApplicationsCount: displayApplications?.length || 0
-  });
-
   // Handle marker click to show side map and select application
   const handleMapMarkerClick = (id: number) => {
+    console.log('🖱️ Map marker clicked:', id);
     setShowMap(true);
     handleMarkerClick(id);
     setSelectedId(id);
