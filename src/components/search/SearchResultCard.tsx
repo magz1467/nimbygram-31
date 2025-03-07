@@ -2,9 +2,10 @@
 import { Application } from "@/types/planning";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, ExternalLink } from "lucide-react";
+import { MapPin, ExternalLink, Calendar } from "lucide-react";
 import { formatStorybook } from "@/utils/storybook-formatter";
 import { ApplicationBadges } from "../applications/ApplicationBadges";
+import { format } from "date-fns";
 
 interface SearchResultCardProps {
   application: Application;
@@ -12,9 +13,13 @@ interface SearchResultCardProps {
 }
 
 export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
-  const { id, title, description, address, postcode, status, last_date_consultation_comments, storybook, distance } = application;
+  const { id, title, description, address, postcode, status, last_date_consultation_comments, storybook, distance, received_date, received } = application;
   
   const formattedStorybook = formatStorybook(storybook);
+  
+  // Format the received date
+  const displayDate = received_date || received;
+  const formattedDate = displayDate ? format(new Date(displayDate), 'dd MMM yyyy') : null;
   
   const handleSeeOnMap = () => {
     if (onSeeOnMap) {
@@ -39,8 +44,8 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
                 />
               </div>
               
-              {/* Address and distance */}
-              <div className="mt-4 text-sm text-gray-600">
+              {/* Address, distance, and received date */}
+              <div className="mt-4 text-sm text-gray-600 space-y-2">
                 <p className="flex items-start gap-1.5">
                   <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <span className="flex flex-col">
@@ -48,6 +53,13 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
                     {distance && <span className="text-xs text-gray-500 mt-0.5">({distance} from search location)</span>}
                   </span>
                 </p>
+                
+                {formattedDate && (
+                  <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Received: {formattedDate}</span>
+                  </p>
+                )}
               </div>
             </div>
             

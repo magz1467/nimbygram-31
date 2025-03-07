@@ -5,6 +5,8 @@ import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { SortType } from "@/types/application-types";
 import { AlertSection } from "./AlertSection";
 import { formatStorybook } from "@/utils/storybook-formatter";
+import { Calendar } from "lucide-react";
+import { format } from "date-fns";
 
 interface ApplicationListViewProps {
   applications: Application[];
@@ -50,6 +52,10 @@ export const ApplicationListView = ({
         {applications.map((app) => {
           const storybook = formatStorybook(app.storybook);
           
+          // Format the received date
+          const displayDate = app.received_date || app.received;
+          const formattedDate = displayDate ? format(new Date(displayDate), 'dd MMM yyyy') : null;
+          
           return (
             <div
               key={app.id}
@@ -91,11 +97,17 @@ export const ApplicationListView = ({
                       lastDateConsultationComments={app.last_date_consultation_comments}
                       impactScore={app.final_impact_score}
                     />
-                    {app.distance && (
-                      <div className="flex items-center justify-between mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {app.distance && (
                         <span className="text-xs text-gray-500">{app.distance}</span>
-                      </div>
-                    )}
+                      )}
+                      {formattedDate && (
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          {formattedDate}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
