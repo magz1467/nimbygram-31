@@ -40,7 +40,7 @@ export const MapContent = ({
       console.log('🗺️ Triggering map container resize');
       
       // Force resize events to ensure map renders correctly
-      const resizeEvents = [0, 100, 300, 500].map(delay => 
+      const resizeEvents = [0, 100, 300, 500, 1000].map(delay => 
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
           console.log(`🗺️ Dispatched resize event after ${delay}ms`);

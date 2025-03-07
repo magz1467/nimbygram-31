@@ -12,8 +12,9 @@ interface ApplicationMarkersProps {
   selectedId: number | null;
 }
 
+// Helper function to determine marker color based on application status
 const getStatusColor = (status: string): string => {
-  const statusLower = status.toLowerCase();
+  const statusLower = status?.toLowerCase() || '';
   if (statusLower.includes('approved')) {
     return '#16a34a'; // green
   } else if (statusLower.includes('refused') || statusLower.includes('declined') || statusLower.includes('withdrawn')) {
@@ -23,10 +24,10 @@ const getStatusColor = (status: string): string => {
   }
 };
 
-const createIcon = (color: string, isSelected: boolean) => {
-  const size = isSelected ? 40 : 24;
-  const shadowSize = size * 1.4;
-
+// Create marker icon with appropriate color and size
+const createMarkerIcon = (color: string, isSelected: boolean) => {
+  const size = isSelected ? 40 : 24; // Larger size for selected marker
+  
   return L.divIcon({
     className: 'custom-pin',
     html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -52,6 +53,7 @@ export const ApplicationMarkers = ({
   const markers = useMemo(() => {
     return applications
       .filter(app => {
+        // Filter out applications without valid coordinates
         if (!app.coordinates) {
           console.log(`⚠️ Missing coordinates for application ${app.id}`);
           return false;
@@ -79,8 +81,8 @@ export const ApplicationMarkers = ({
                 onMarkerClick(app.id);
               }
             }}
-            icon={createIcon(color, isSelected)}
-            zIndexOffset={isSelected ? 1000 : 0}
+            icon={createMarkerIcon(color, isSelected)}
+            zIndexOffset={isSelected ? 1000 : 0} // Make selected marker appear on top
           />
         );
       });

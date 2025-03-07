@@ -71,7 +71,13 @@
   z-index: 1300;
 }
 
-/* Apply fade in animation to map overlay */
+/* Custom pin styles */
+.custom-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Map overlay animation */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -93,4 +99,12 @@
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure mobile map view has correct z-index */
+.mobile-map-overlay {
+  z-index: 9999;
+  position: fixed;
+  inset: 0;
+  background: white;
 }

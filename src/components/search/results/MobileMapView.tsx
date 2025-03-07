@@ -47,7 +47,7 @@ export const MobileMapView = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-white z-[9999]"
+      className="mobile-map-overlay"
       ref={overlayRef}
     >
       <div className="absolute top-4 right-4 z-[10000]">
