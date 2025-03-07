@@ -62,7 +62,7 @@ export const MapContent = ({
         onMarkerClick={onMarkerClick}
       />
       
-      {/* Mobile mini card - only show when an application is selected */}
+      {/* Mobile mini card - always show when an application is selected and on mobile */}
       {isMobile && selectedId && (
         <MobileApplicationCards
           applications={applications}

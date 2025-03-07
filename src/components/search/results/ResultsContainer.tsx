@@ -67,7 +67,7 @@ export const ResultsContainer = ({
       return;
     }
     
-    // Set map as visible and select the application
+    // Set map as visible, select the application, and trigger the marker click
     setShowMap(true);
     setSelectedId(id);
     handleMarkerClick(id);
