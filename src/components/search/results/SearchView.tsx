@@ -8,6 +8,7 @@ import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
+import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -25,7 +26,6 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     postcode,
     coordinates,
     applications,
-    displayApplications,
     isLoading,
     hasSearched,
     showMap,
@@ -45,6 +45,14 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
   console.log('🌍 SearchView received coordinates:', coordinates);
   console.log('📊 SearchView received applications:', applications?.length);
 
+  // Use the filtered applications hook with coordinates
+  const displayApplications = useFilteredApplications(
+    applications || [],
+    activeFilters,
+    activeSort,
+    coordinates
+  );
+
   // Handle marker click to show side map and select application
   const handleMapMarkerClick = (id: number) => {
     console.log('🖱️ Map marker clicked:', id);
@@ -61,7 +69,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
   };
 
   // Show no results view if appropriate
-  if (!isLoading && !displayApplications?.length && !coordinates) {
+  if (!isLoading && !applications?.length && !coordinates) {
     return <NoResultsView onPostcodeSelect={handlePostcodeSelect} />;
   }
 

@@ -26,52 +26,13 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
 
   try {
-    // First try the RPC function with a Promise timeout instead of the built-in timeout
-    try {
-      console.log('Attempting to use RPC function');
-      const rpcPromise = supabase.rpc(
-        'properties_within_distance',
-        {
-          ref_lat: lat,
-          ref_lon: lng,
-          radius_meters: radius * 1000 // Convert km to meters
-        }
-      );
-      
-      // Create a timeout promise that rejects after 8 seconds
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('RPC request timed out')), 8000);
-      });
-      
-      // Race the RPC promise against the timeout
-      const { data: rpcData, error: rpcError } = await Promise.race([
-        rpcPromise,
-        timeoutPromise.then(() => {
-          throw new Error('RPC timeout');
-        })
-      ]) as any;
-      
-      if (!rpcError && rpcData && rpcData.length > 0) {
-        console.log(`✅ RPC data from supabase: ${rpcData?.length || 0} results`);
-        const transformedApplications = rpcData.map(app => 
-          transformApplicationData(app, coordinates)
-        ).filter((app): app is Application => app !== null);
-        
-        console.log(`✅ Total transformed applications from RPC: ${transformedApplications.length}`);
-        return transformedApplications;
-      }
-      
-      // If RPC fails or returns no data, log and continue to fallback
-      console.log('RPC method returned no data or error, falling back to query', rpcError);
-    } catch (rpcFetchError) {
-      console.log('Error with RPC method, falling back to query:', rpcFetchError);
-    }
-  
-    // Fallback: Query the crystal_roof table directly
+    // Skip RPC method and go straight to the direct query which seems more reliable
+    console.log('Using direct query method for better reliability');
+    
+    // Query the crystal_roof table directly
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')
-      .order('id');
+      .select('*');
 
     if (error) {
       console.error('Error fetching applications:', error);
@@ -85,8 +46,39 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       return [];
     }
 
+    // Filter for applications within our radius after we get all data
+    const filteredData = data.filter(app => {
+      try {
+        // Extract coordinates from the application
+        let appLat, appLng;
+        
+        if (app.geom?.coordinates) {
+          appLng = parseFloat(app.geom.coordinates[0]);
+          appLat = parseFloat(app.geom.coordinates[1]);
+        } else if (app.geometry?.coordinates) {
+          appLng = parseFloat(app.geometry.coordinates[0]);
+          appLat = parseFloat(app.geometry.coordinates[1]);
+        } else {
+          return false; // Skip if no coordinates
+        }
+        
+        // Check if within bounds
+        return (
+          appLat >= latMin && 
+          appLat <= latMax && 
+          appLng >= lngMin && 
+          appLng <= lngMax
+        );
+      } catch (err) {
+        console.log(`Error filtering application ${app.id}:`, err);
+        return false;
+      }
+    });
+    
+    console.log(`✅ Filtered to ${filteredData.length} applications within radius`);
+
     // Transform the application data using our improved transformer
-    const transformedApplications = data.map(app => 
+    const transformedApplications = filteredData.map(app => 
       transformApplicationData(app, coordinates)
     ).filter((app): app is Application => app !== null);
     

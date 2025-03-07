@@ -24,6 +24,10 @@ export const useFilteredApplications = (
     console.log('useFilteredApplications - Active sort:', activeSort);
     console.log('useFilteredApplications - Search coordinates:', searchCoordinates);
     
+    if (!applications || applications.length === 0) {
+      return [];
+    }
+    
     // First apply filters
     const filteredApplications = useApplicationFiltering(applications, activeFilters);
 
