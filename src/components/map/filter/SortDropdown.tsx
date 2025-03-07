@@ -42,6 +42,13 @@ export const SortDropdown = ({ children, activeSort, onSortChange }: SortDropdow
           Closing Soon
           {activeSort === 'closingSoon' && <span>✓</span>}
         </DropdownMenuItem>
+        <DropdownMenuItem
+          className="justify-between"
+          onClick={() => onSortChange('impact')}
+        >
+          Impact
+          {activeSort === 'impact' && <span>✓</span>}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

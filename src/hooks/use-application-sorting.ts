@@ -1,8 +1,7 @@
 
 import { Application } from "@/types/planning";
+import { SortType } from "@/types/application-types";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
-
-export type SortType = 'closingSoon' | 'newest' | 'impact' | 'distance' | null;
 
 interface SortConfig {
   type: SortType;
