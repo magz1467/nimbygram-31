@@ -25,6 +25,7 @@ export const MapContainer = memo(({
   onMapMove,
 }: MapContainerProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   console.log('🗺️ MapContainer render:', {
     coordinates,
@@ -64,8 +65,36 @@ export const MapContainer = memo(({
     };
   }, [onMapMove]);
 
+  // Force map to invalidate size when it becomes visible
+  useEffect(() => {
+    const checkVisibility = () => {
+      if (mapRef.current && containerRef.current) {
+        // Check if the container is visible
+        const isVisible = containerRef.current.offsetParent !== null;
+        if (isVisible) {
+          console.log('🗺️ Map container is now visible, invalidating size');
+          setTimeout(() => {
+            mapRef.current?.invalidateSize();
+          }, 100);
+        }
+      }
+    };
+
+    // Check visibility immediately and then every 100ms for 1 second
+    checkVisibility();
+    const intervalId = setInterval(checkVisibility, 100);
+    
+    setTimeout(() => {
+      clearInterval(intervalId);
+    }, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
   return (
-    <div className="w-full h-full relative bg-white">
+    <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
         center={coordinates}
@@ -73,6 +102,10 @@ export const MapContainer = memo(({
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
         className="z-0"
+        whenReady={() => {
+          console.log('🗺️ Map is ready');
+          mapRef.current?.invalidateSize();
+        }}
       >
         <TileLayer 
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'

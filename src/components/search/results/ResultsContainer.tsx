@@ -41,6 +41,7 @@ export const ResultsContainer = ({
   
   const hasCoordinates = Boolean(coordinates);
   const hasApplications = applications.length > 0;
+  const [mapMounted, setMapMounted] = useState(false);
 
   // Determine if we should show the map
   const shouldShowMap = showMap && hasCoordinates && hasApplications;
@@ -53,7 +54,8 @@ export const ResultsContainer = ({
     applications: applications.length,
     isLoading,
     isMobile,
-    shouldShowMap
+    shouldShowMap,
+    mapMounted
   });
   
   // Helper function to handle "See on Map" clicks
@@ -69,9 +71,11 @@ export const ResultsContainer = ({
       return;
     }
     
+    // Set map as visible and select the application
     setShowMap(true);
     setSelectedId(id);
     handleMarkerClick(id);
+    setMapMounted(true);
     
     if (isMobile) {
       // On mobile, scroll to make sure map is visible
@@ -92,12 +96,19 @@ export const ResultsContainer = ({
   const handleCloseMap = () => {
     setShowMap(false);
     setSelectedId(null);
+    
+    // Reset map mounted state
+    setTimeout(() => {
+      setMapMounted(false);
+    }, 100);
   };
 
   // Ensure map is always visible when showMap is true
   useEffect(() => {
     if (showMap && hasCoordinates && hasApplications) {
       console.log("🌍 Ensuring map is visible");
+      setMapMounted(true);
+      
       // Make sure the map container is rendered
       const mapContainer = document.querySelector('.mobile-map-container, .desktop-map-container');
       if (!mapContainer) {
@@ -109,10 +120,25 @@ export const ResultsContainer = ({
     }
   }, [showMap, hasCoordinates, hasApplications, setShowMap]);
 
+  // Effect to handle mobile view for map
+  useEffect(() => {
+    if (isMobile && shouldShowMap) {
+      // Ensure body doesn't scroll when map is visible on mobile
+      document.body.style.overflow = 'hidden';
+      
+      // Force the window to scroll to top to ensure map is in view
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, shouldShowMap]);
+
   return (
     <ContainerLayout shouldShowMap={shouldShowMap} isMobile={isMobile}>
       {/* On mobile, if map is shown, display it first */}
-      {isMobile && shouldShowMap && coordinates && (
+      {isMobile && shouldShowMap && coordinates && mapMounted && (
         <MobileMapView 
           applications={applications}
           selectedId={selectedId}

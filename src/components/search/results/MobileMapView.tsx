@@ -23,19 +23,31 @@ export const MobileMapView = ({
   isLoading,
 }: MobileMapViewProps) => {
   
-  // When mobile map view mounts, make sure body doesn't scroll
+  // When mobile map view mounts, make sure body doesn't scroll and ensure visibility
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     
+    // Force redraw of the map
+    const timer = setTimeout(() => {
+      const mapElement = document.querySelector('.mobile-map-container');
+      if (mapElement) {
+        console.log('📱 Forcing map container redraw');
+        // Force a repaint to ensure map is visible
+        mapElement.classList.add('force-redraw');
+        setTimeout(() => mapElement.classList.remove('force-redraw'), 10);
+      }
+    }, 100);
+    
     return () => {
       document.body.style.overflow = '';
+      clearTimeout(timer);
     };
   }, []);
 
   return (
     <div 
-      className="mobile-map-container relative w-full overflow-hidden shadow rounded-lg"
-      style={{ height: 'calc(100vh - 120px)', width: '100%' }}
+      className="mobile-map-container relative w-full h-full overflow-hidden shadow rounded-lg z-50"
+      style={{ height: 'calc(100vh - 120px)' }}
     >
       <div className="absolute top-2 left-2 right-2 z-50 flex justify-between">
         <Button 
