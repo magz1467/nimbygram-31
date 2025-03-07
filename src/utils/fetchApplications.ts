@@ -12,9 +12,9 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   
   console.log('🔍 Fetching applications for coordinates:', coordinates);
   
-  // Set a more generous radius to find more results (30km instead of 20km)
+  // Set a more generous radius to find more results (35km instead of 30km)
   const [lat, lng] = coordinates;
-  const radius = 30; // km - increased from 20km
+  const radius = 35; // km - increased from 30km
   const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
   const lngDiff = radius / (111.32 * Math.cos(lat * Math.PI / 180));
   
@@ -24,9 +24,37 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   const lngMax = lng + lngDiff;
   
   console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
-  
+
   try {
-    // Query the crystal_roof table without any initial filtering - we'll filter in-memory
+    // First try the RPC function with a timeout
+    try {
+      console.log('Attempting to use RPC function');
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        'properties_within_distance',
+        {
+          ref_lat: lat,
+          ref_lon: lng,
+          radius_meters: radius * 1000 // Convert km to meters
+        }
+      ).timeout(8000); // 8 second timeout
+      
+      if (!rpcError && rpcData && rpcData.length > 0) {
+        console.log(`✅ RPC data from supabase: ${rpcData?.length || 0} results`);
+        const transformedApplications = rpcData.map(app => 
+          transformApplicationData(app, coordinates)
+        ).filter((app): app is Application => app !== null);
+        
+        console.log(`✅ Total transformed applications from RPC: ${transformedApplications.length}`);
+        return transformedApplications;
+      }
+      
+      // If RPC fails or returns no data, log and continue to fallback
+      console.log('RPC method returned no data or error, falling back to query', rpcError);
+    } catch (rpcFetchError) {
+      console.log('Error with RPC method, falling back to query:', rpcFetchError);
+    }
+  
+    // Fallback: Query the crystal_roof table directly
     const { data, error } = await supabase
       .from('crystal_roof')
       .select('*')
@@ -60,6 +88,8 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     });
   } catch (err) {
     console.error('❌ Error in fetchApplications:', err);
-    throw err;
+    // Return empty array instead of throwing
+    console.log('Returning empty array due to error');
+    return [];
   }
 };

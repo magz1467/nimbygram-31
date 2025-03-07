@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, AlertTriangle } from "lucide-react";
+import { ChevronDown, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface SearchResultsListProps {
@@ -13,13 +13,15 @@ interface SearchResultsListProps {
   isLoading: boolean;
   onSeeOnMap?: (id: number) => void;
   searchTerm?: string;
+  onRetry?: () => void;
 }
 
 export const SearchResultsList = ({ 
   applications, 
   isLoading, 
   onSeeOnMap,
-  searchTerm
+  searchTerm,
+  onRetry
 }: SearchResultsListProps) => {
   const [displayCount, setDisplayCount] = useState(10);
   const [loadProgress, setLoadProgress] = useState(33);
@@ -49,19 +51,8 @@ export const SearchResultsList = ({
     if (!isLoading && applications.length === 0 && searchTerm) {
       // Log this for tracking purposes
       console.warn(`Zero results found for "${searchTerm}"`);
-      
-      // Show a toast message after 1 second to avoid flickering if data is just loading slowly
-      const timer = setTimeout(() => {
-        toast({
-          title: "No applications found",
-          description: "We couldn't find any planning applications for this location. We've logged this to improve our coverage.",
-          variant: "default",
-        });
-      }, 1000);
-      
-      return () => clearTimeout(timer);
     }
-  }, [isLoading, applications.length, searchTerm, toast]);
+  }, [isLoading, applications.length, searchTerm]);
 
   const handleSeeMore = () => {
     setDisplayCount(prevCount => prevCount + 10);
@@ -93,9 +84,20 @@ export const SearchResultsList = ({
           <AlertTriangle className="text-amber-500 mr-2 h-5 w-5" />
           <p className="text-gray-700">No planning applications found in this area.</p>
         </div>
-        <p className="text-sm text-gray-500">
-          We've noted this and will work to improve coverage for this location.
+        <p className="text-sm text-gray-500 px-4 max-w-md mx-auto">
+          There may be issues with our database connection or no applications exist in this specific location.
         </p>
+        {onRetry && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRetry}
+            className="mt-4 flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try Again
+          </Button>
+        )}
       </div>
     );
   }

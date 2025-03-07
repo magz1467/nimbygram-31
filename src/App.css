@@ -69,4 +69,14 @@
   .btn-mobile {
     padding: 0.25rem 0.5rem;
   }
+
+  /* Override any selector errors */
+  .invalid-selector {
+    display: none !important;
+  }
+
+  /* Ensure filter items don't shrink too much */
+  .filter-item {
+    flex-shrink: 0;
+  }
 }

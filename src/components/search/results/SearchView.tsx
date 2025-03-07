@@ -37,7 +37,8 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     handleFilterChange,
     handleSortChange,
     handlePostcodeSelect,
-    statusCounts
+    statusCounts,
+    refetch
   } = useSearchResults({ initialSearch });
 
   console.log('🌍 SearchView received coordinates:', coordinates);
@@ -56,6 +57,13 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     setShowMap(true);
     handleMarkerClick(id);
     setSelectedId(id);
+  };
+
+  // Retry search function
+  const handleRetry = () => {
+    if (refetch) {
+      refetch();
+    }
   };
 
   // Show no results view if appropriate
@@ -102,6 +110,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
         handleMarkerClick={handleMapMarkerClick}
         isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
+        onRetry={handleRetry}
       />
     </div>
   );

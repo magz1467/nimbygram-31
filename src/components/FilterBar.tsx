@@ -56,7 +56,7 @@ export const FilterBar = ({
 
   return (
     <div className="flex flex-col bg-white border-b w-full">
-      <div className="flex items-center justify-between p-1.5 w-full">
+      <div className={`flex items-center justify-between p-1.5 w-full ${isMobile ? 'overflow-x-auto scrollbar-hide' : ''}`}>
         <FilterControls 
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}

@@ -33,6 +33,7 @@ export const FilterBarSection = ({
 }: FilterBarSectionProps) => {
   const isMobile = useIsMobile();
   
+  // Always show the filter bar if we have coordinates, even with no applications
   if (coordinates) {
     return (
       <div className="w-full overflow-hidden">

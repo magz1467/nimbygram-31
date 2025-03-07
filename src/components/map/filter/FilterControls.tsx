@@ -43,7 +43,7 @@ export const FilterControls = ({
 
   return (
     <div className="flex flex-col w-full gap-2">
-      <div className="flex items-center gap-1.5 flex-nowrap">
+      <div className={`flex items-center gap-1 flex-nowrap ${reallyIsMobile ? 'pb-1 overflow-x-auto scrollbar-hide' : 'gap-1.5'}`}>
         <ErrorBoundary>
           <StatusFilter
             onFilterChange={onFilterChange}
@@ -59,10 +59,10 @@ export const FilterControls = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1.5 whitespace-nowrap"
+              className="flex items-center gap-1 whitespace-nowrap min-w-[80px]"
               onClick={onToggleView}
             >
-              <List className="h-4 w-4" />
+              <List className="h-3.5 w-3.5" />
               Feed
             </Button>
           ) : (
@@ -73,7 +73,7 @@ export const FilterControls = ({
               <Button
                 variant="outline"
                 size={reallyIsMobile ? "sm" : "default"}
-                className="flex items-center gap-1.5 whitespace-nowrap"
+                className={`flex items-center whitespace-nowrap ${reallyIsMobile ? 'text-xs gap-1 px-2 py-1' : 'gap-1.5'}`}
               >
                 {sortButtonText}
               </Button>
@@ -82,7 +82,7 @@ export const FilterControls = ({
         </ErrorBoundary>
       </div>
 
-      <div className="w-full overflow-hidden">
+      <div className={`w-full ${reallyIsMobile ? 'overflow-x-auto scrollbar-hide -mx-1 px-1' : 'overflow-hidden'}`}>
         <ClassificationFilters 
           onFilterChange={onFilterChange}
           activeFilter={activeFilters.classification}

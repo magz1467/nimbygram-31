@@ -25,6 +25,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
     isLoadingApps,
     applications = [],
     handlePostcodeSelect,
+    refetch
   } = useSearchState(initialPostcodeValue);
 
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
@@ -135,6 +136,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
     handleFilterChange,
     handleSortChange,
     handlePostcodeSelect,
-    statusCounts
+    statusCounts,
+    refetch
   };
 };
