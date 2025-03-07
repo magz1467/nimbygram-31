@@ -1,4 +1,6 @@
+
 import { Application } from "./planning";
+import { SortType } from "./application-types";
 
 export interface MapState {
   selectedId: number | null;
@@ -7,8 +9,6 @@ export interface MapState {
   coordinates: [number, number];
   activeSort: SortType;
 }
-
-export type SortType = 'closingSoon' | 'newest' | 'impact' | null;
 
 export type MapAction =
   | { type: 'SELECT_APPLICATION'; payload: number | null }

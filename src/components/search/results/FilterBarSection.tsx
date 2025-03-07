@@ -1,6 +1,6 @@
 
 import { FilterBar } from "@/components/FilterBar";
-import { StatusCounts } from "@/types/application-types";
+import { StatusCounts, SortType } from "@/types/application-types";
 import { Application } from "@/types/planning";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -14,9 +14,9 @@ interface FilterBarSectionProps {
     type?: string;
     classification?: string;
   };
-  activeSort: 'closingSoon' | 'newest' | null;
+  activeSort: SortType;
   onFilterChange: (filterType: string, value: string) => void;
-  onSortChange: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange: (sortType: SortType) => void;
   statusCounts: StatusCounts;
 }
 

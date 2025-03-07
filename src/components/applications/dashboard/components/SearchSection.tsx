@@ -1,16 +1,18 @@
+
 import { FilterBar } from "@/components/FilterBar";
 import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SortType } from "@/types/application-types";
 
 interface SearchSectionProps {
   onPostcodeSelect: (postcode: string) => void;
   onFilterChange?: (filterType: string, value: string) => void;
-  onSortChange?: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange?: (sortType: SortType) => void;
   activeFilters?: {
     status?: string;
     type?: string;
   };
-  activeSort?: 'closingSoon' | 'newest' | null;
+  activeSort?: SortType;
   isMapView: boolean;
   onToggleView?: () => void;
   applications?: any[];

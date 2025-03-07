@@ -15,3 +15,19 @@ export type StatusCounts = {
   'Declined': number;
   'Other': number;
 };
+
+// Add MapState and MapAction types that were missing
+export interface MapState {
+  selectedId: number | null;
+  applications: any[];
+  isMapView: boolean;
+  coordinates: [number, number];
+  activeSort: SortType;
+}
+
+export type MapAction =
+  | { type: 'SELECT_APPLICATION'; payload: number | null }
+  | { type: 'SET_APPLICATIONS'; payload: any[] }
+  | { type: 'TOGGLE_VIEW' }
+  | { type: 'SET_COORDINATES'; payload: [number, number] }
+  | { type: 'SET_SORT'; payload: SortType };
