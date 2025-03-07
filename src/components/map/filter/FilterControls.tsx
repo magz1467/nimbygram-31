@@ -1,4 +1,3 @@
-
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatusFilter } from "./StatusFilter"; 
 import { SortDropdown } from "./SortDropdown"; 
@@ -34,7 +33,6 @@ export const FilterControls = ({
   const sortButtonText = (() => {
     if (activeSort === 'closingSoon') return 'Closing Soon';
     if (activeSort === 'newest') return 'Newest';
-    if (activeSort === 'impact') return 'Highest Impact';
     return 'Sort';
   })();
 

@@ -9,14 +9,14 @@ interface MobileApplicationCardsProps {
   applications: Application[];
   selectedId: number | null;
   onSelectApplication: (id: number) => void;
-  postcode: string;
+  postcode?: string; // Make postcode optional
 }
 
 export const MobileApplicationCards = ({
   applications,
   selectedId,
   onSelectApplication,
-  postcode,
+  postcode = "", // Default value
 }: MobileApplicationCardsProps) => {
   const [expanded, setExpanded] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
