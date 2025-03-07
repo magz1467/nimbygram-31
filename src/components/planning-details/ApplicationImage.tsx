@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getBestApplicationImage } from "@/utils/imageUtils";
 
 interface ApplicationImageProps {
   application: Application;
@@ -27,47 +28,9 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Priority order: streetview_url > image > image_map_url > category image > fallback
-    if (application.streetview_url) {
-      setImageSource(application.streetview_url);
-      return;
-    }
-    
-    if (application.image) {
-      setImageSource(application.image);
-      return;
-    }
-    
-    if (application.image_map_url) {
-      setImageSource(application.image_map_url);
-      return;
-    }
-
-    // Then try to determine category from class_3 or title/description
-    let detectedCategory = application.class_3;
-    if (!detectedCategory && application.description) {
-      const titleLower = application.description.toLowerCase();
-      if (titleLower.includes('demolition')) {
-        detectedCategory = 'Demolition';
-      } else if (titleLower.includes('extension')) {
-        detectedCategory = 'Extension';
-      } else if (titleLower.includes('new build')) {
-        detectedCategory = 'New Build';
-      } else if (titleLower.includes('change of use')) {
-        detectedCategory = 'Change of Use';
-      } else if (titleLower.includes('listed building')) {
-        detectedCategory = 'Listed Building';
-      }
-    }
-    
-    // Use category image if available
-    if (detectedCategory && CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]) {
-      setImageSource(CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]);
-      return;
-    }
-
-    // Finally use miscellaneous category image as fallback
-    setImageSource(CATEGORY_IMAGES['Miscellaneous']);
+    // Use the helper function to get the best image
+    const bestImage = getBestApplicationImage(application, CATEGORY_IMAGES);
+    setImageSource(bestImage);
   }, [application]);
 
   return (

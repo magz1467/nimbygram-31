@@ -6,7 +6,6 @@ import { ApplicationImage } from "./ApplicationImage";
 import { ApplicationTimeline } from "./ApplicationTimeline";
 import { ApplicationComments } from "./ApplicationComments";
 import { ApplicationDetails } from "./ApplicationDetails";
-import ImpactScoreDetails from "./impact-score/ImpactScoreDetails";
 
 interface ApplicationContentProps {
   application: Application;
@@ -26,7 +25,6 @@ export const ApplicationContent = ({
   onFeedback,
   userId
 }: ApplicationContentProps) => {
-  // We're removing the impact score section completely
   return (
     <div className="space-y-6">
       <ApplicationImage application={application} />

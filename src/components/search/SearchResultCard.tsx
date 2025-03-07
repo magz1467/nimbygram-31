@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { formatStorybook } from "@/utils/storybook-formatter";
 import { ApplicationBadges } from "../applications/ApplicationBadges";
 import { format } from "date-fns";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { getBestApplicationImage } from "@/utils/imageUtils";
 
 interface SearchResultCardProps {
   application: Application;
@@ -42,17 +42,8 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
     }
   };
 
-  // Determine image to display
-  let imageSource = image_map_url || image;
-  const appCategory = category || class_3;
-  
-  // If no direct image is available, try to use category image
-  if (!imageSource && appCategory && CATEGORY_IMAGES[appCategory as keyof typeof CATEGORY_IMAGES]) {
-    imageSource = CATEGORY_IMAGES[appCategory as keyof typeof CATEGORY_IMAGES];
-  } else if (!imageSource) {
-    // Default to miscellaneous if no category is matched
-    imageSource = CATEGORY_IMAGES['Miscellaneous'];
-  }
+  // Get the best image for this application
+  const imageSource = getBestApplicationImage(application, CATEGORY_IMAGES);
   
   return (
     <Card className="overflow-hidden">
@@ -64,6 +55,7 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
             alt={formattedStorybook?.header || title || 'Planning Application'}
             className="w-full h-full object-cover"
             fallbackSrc={CATEGORY_IMAGES['Miscellaneous']}
+            loading="eager"
           />
         </div>
         

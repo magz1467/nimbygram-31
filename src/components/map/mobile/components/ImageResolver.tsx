@@ -1,6 +1,6 @@
 
 import { ImageWithFallback } from '@/components/ui/image-with-fallback';
-import { FALLBACK_IMAGE } from '@/utils/imageUtils';
+import { FALLBACK_IMAGE, getImageUrl } from '@/utils/imageUtils';
 
 interface ImageResolverProps {
   imageMapUrl?: string;
@@ -46,10 +46,13 @@ export const ImageResolver = ({
     imageSource = CATEGORY_IMAGES['Miscellaneous'];
   }
 
+  // Process the URL through our utility function
+  const processedImageSource = getImageUrl(imageSource);
+
   return (
     <div className="relative w-full h-full">
       <ImageWithFallback
-        src={imageSource}
+        src={processedImageSource}
         alt={title || 'Planning application image'}
         className={`w-full h-full object-cover ${className}`}
         fallbackSrc={CATEGORY_IMAGES['Miscellaneous']}
