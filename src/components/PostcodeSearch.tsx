@@ -24,7 +24,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
   const inputRef = useRef<HTMLInputElement>(null);
   const commandRef = useRef<HTMLDivElement>(null);
   
-  const { data: suggestions = [], isLoading, isFetching } = useAddressSuggestions(search);
+  const { data: suggestions = [], isLoading, isFetching, error } = useAddressSuggestions(search);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,6 +59,17 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
   // Determine if we should show the loading state
   const isSearching = isLoading || isFetching;
 
+  // Determine the empty state message based on error status
+  const getEmptyStateMessage = () => {
+    if (error) {
+      return "Unable to load suggestions. Please enter a postcode manually.";
+    }
+    if (search.length < 2) {
+      return "Enter at least 2 characters to search";
+    }
+    return "No results found. Try a postcode, street name or area.";
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div className="relative w-full">
@@ -78,6 +89,11 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
           }}
           className="w-full pl-4 pr-10 py-2"
           onFocus={() => search.length >= 2 && setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearchClick();
+            }
+          }}
           aria-label="Search for a postcode or location"
         />
         <Button 
@@ -99,7 +115,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
               {isSearching ? (
                 <CommandEmpty>Loading suggestions...</CommandEmpty>
               ) : suggestions.length === 0 ? (
-                <CommandEmpty>No results found. Try a postcode, street name or area.</CommandEmpty>
+                <CommandEmpty>{getEmptyStateMessage()}</CommandEmpty>
               ) : (
                 <CommandGroup>
                   {suggestions.map((suggestion, index) => {
