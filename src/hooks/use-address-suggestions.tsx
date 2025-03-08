@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { PostcodeSuggestion } from '../types/address-suggestions';
-import { fetchAddressSuggestions } from '../services/address/address-search';
+import { fetchAddressSuggestionsByPlacesAPI } from '../services/address/google-places-service';
 
 export const useAddressSuggestions = (search: string) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -22,7 +22,7 @@ export const useAddressSuggestions = (search: string) => {
     queryKey: ['address-suggestions', debouncedSearch],
     queryFn: async (): Promise<PostcodeSuggestion[]> => {
       try {
-        return await fetchAddressSuggestions(debouncedSearch);
+        return await fetchAddressSuggestionsByPlacesAPI(debouncedSearch);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
         toast({

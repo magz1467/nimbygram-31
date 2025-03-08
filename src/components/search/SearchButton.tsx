@@ -1,20 +1,28 @@
 
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface SearchButtonProps {
   isSubmitting: boolean;
+  onClick: () => void;
 }
 
-export const SearchButton = ({ isSubmitting }: SearchButtonProps) => {
+export const SearchButton = ({ isSubmitting, onClick }: SearchButtonProps) => {
   return (
-    <Button 
-      type="submit" 
-      className="w-full bg-secondary hover:bg-secondary/90 text-white py-6 text-lg font-semibold rounded-xl shadow-sm"
+    <Button
+      type="button"
+      className="w-full"
       disabled={isSubmitting}
+      onClick={onClick}
     >
-      <Search className="w-5 h-5 mr-2" />
-      {isSubmitting ? 'Loading...' : 'Show my feed'}
+      {isSubmitting ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Searching...
+        </>
+      ) : (
+        "Search"
+      )}
     </Button>
   );
 };

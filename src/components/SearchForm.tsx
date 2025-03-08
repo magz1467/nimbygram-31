@@ -17,9 +17,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async () => {
     const searchTerm = postcode.trim();
     
     if (!searchTerm || isSubmitting) {
@@ -89,7 +87,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <div className="mb-4">
         <PostcodeSearch
           onSelect={(value) => {
@@ -100,7 +98,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
           className="flex-1"
         />
       </div>
-      <SearchButton isSubmitting={isSubmitting} />
-    </form>
+      <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+    </div>
   );
 };

@@ -8,7 +8,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -53,8 +52,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     await onSelect(postcode);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchClick = () => {
     if (search.trim()) {
       onSelect(search.trim());
     }
@@ -65,7 +63,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
 
   return (
     <div className={`relative ${className}`}>
-      <form onSubmit={handleSubmit} className="relative w-full">
+      <div className="relative w-full">
         <Input
           ref={inputRef}
           type="text"
@@ -85,15 +83,16 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
           aria-label="Search for a postcode or location"
         />
         <Button 
-          type="submit"
+          type="button"
           size="icon" 
           variant="ghost" 
           className="absolute right-1 top-1/2 -translate-y-1/2"
           aria-label="Search"
+          onClick={handleSearchClick}
         >
           <Search className="h-4 w-4" />
         </Button>
-      </form>
+      </div>
 
       {open && search.length >= 2 && (
         <div className="absolute z-[9999] w-full mt-1">
