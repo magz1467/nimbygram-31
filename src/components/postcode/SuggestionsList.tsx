@@ -31,6 +31,15 @@ export const SuggestionsList = ({
     return null;
   }
 
+  // For debugging
+  console.log("SuggestionsList rendering with:", { 
+    isOpen, 
+    searchLength: search?.length,
+    suggestionsCount: suggestions?.length || 0,
+    isLoading,
+    isFetching
+  });
+
   // Guard against undefined suggestions
   const hasSuggestions = suggestions && suggestions.length > 0;
   
@@ -59,13 +68,13 @@ export const SuggestionsList = ({
           ) : (
             suggestions.map((suggestion) => (
               <CommandPrimitive.CommandItem
-                key={suggestion.postcode}
-                value={suggestion.address}
-                onSelect={() => onSelect(suggestion.postcode || suggestion.address)}
+                key={suggestion.postcode || suggestion.id || Math.random().toString()}
+                value={suggestion.address || suggestion.postcode}
+                onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
                 className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
               >
                 <span className="font-medium">{suggestion.postcode}</span>
-                <span className="text-xs text-gray-500">{suggestion.address}</span>
+                <span className="text-xs text-gray-500">{suggestion.address || suggestion.admin_district}</span>
               </CommandPrimitive.CommandItem>
             ))
           )}

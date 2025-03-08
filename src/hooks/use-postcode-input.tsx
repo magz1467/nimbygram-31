@@ -34,13 +34,28 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const { data: suggestions = [], isLoading, isFetching, error } = useQuery({
+  const { 
+    data: suggestions = [], 
+    isLoading, 
+    isFetching, 
+    error 
+  } = useQuery({
     queryKey: ["postcode-suggestions", debouncedSearch],
     queryFn: () => fetchAddressSuggestions(debouncedSearch),
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
+    // Add retry configuration to handle temporary API failures
+    retry: 2,
+    retryDelay: 1000,
   });
+
+  useEffect(() => {
+    // Log suggestions for debugging
+    if (suggestions && suggestions.length > 0) {
+      console.log('📋 Suggestions available:', suggestions.length);
+    }
+  }, [suggestions]);
 
   const handleSelect = useCallback(async (value: string) => {
     setSearch(value);
