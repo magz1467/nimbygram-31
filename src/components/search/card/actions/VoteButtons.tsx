@@ -34,8 +34,10 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
     try {
       setIsSubmitting(true);
       
-      // Optimistic UI update
+      // Store previous state to allow reversion if needed
       const previousVoteStatus = localVoteStatus;
+      const previousHotCount = localHotCount;
+      const previousNotCount = localNotCount;
       const isRemovingVote = localVoteStatus === type;
       
       // Update local state immediately for responsive UI
@@ -67,8 +69,31 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
       if (!user) {
         // Revert changes if user is not authenticated
         setLocalVoteStatus(previousVoteStatus);
-        setLocalHotCount(hotCount);
-        setLocalNotCount(notCount);
+        setLocalHotCount(previousHotCount);
+        setLocalNotCount(previousNotCount);
+        return;
+      }
+
+      // Check if the application_votes table exists
+      const { error: tableCheckError } = await supabase
+        .from('application_votes')
+        .select('count')
+        .limit(1);
+      
+      if (tableCheckError && tableCheckError.code === '42P01') {
+        // Table doesn't exist error
+        setLocalVoteStatus(previousVoteStatus);
+        setLocalHotCount(previousHotCount);
+        setLocalNotCount(previousNotCount);
+        
+        toast({
+          title: "Database setup required",
+          description: "The application_votes table does not exist in the database. Please contact the administrator.",
+          variant: "destructive",
+          duration: 5000
+        });
+        
+        console.error('Error: application_votes table does not exist', tableCheckError);
         return;
       }
 
@@ -80,7 +105,10 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error removing vote:', error);
+          throw error;
+        }
         
         toast({
           title: "Vote removed",
@@ -98,7 +126,10 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
             onConflict: 'application_id,user_id'
           });
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error saving vote:', error);
+          throw error;
+        }
         
         toast({
           title: "Vote recorded",
@@ -114,7 +145,7 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
       
       toast({
         title: "Error",
-        description: "Failed to save your vote. Please try again.",
+        description: "Failed to save your vote. The application_votes table may not exist in the database.",
         variant: "destructive"
       });
     } finally {
