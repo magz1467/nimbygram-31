@@ -147,13 +147,12 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     
     // Convert results to our suggestion format
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
-      // Make sure to use the actual name from the API response
+      // Get the actual place name and add necessary location info
       const name = place.name_1 || '';
       const county = place.county_unitary || '';
       const region = place.region || '';
-      const localType = place.local_type || '';
       
-      // Format address properly in a JustPark-like style
+      // Format address properly in a human-readable style
       let formattedAddress = name;
       if (county) formattedAddress += `, ${county}`;
       formattedAddress += `, UK`;

@@ -9,7 +9,7 @@ interface ResultsListViewProps {
   isLoading: boolean;
   onSeeOnMap: (id: number) => void;
   searchTerm?: string;
-  displayTerm?: string; // Add displayTerm as an optional prop
+  displayTerm?: string; 
   onRetry?: () => void;
   selectedId?: number | null;
   coordinates?: [number, number] | null;
@@ -24,7 +24,7 @@ export const ResultsListView = ({
   isLoading, 
   onSeeOnMap,
   searchTerm,
-  displayTerm, // Use displayTerm if provided
+  displayTerm, 
   onRetry,
   selectedId,
   coordinates,
@@ -36,7 +36,7 @@ export const ResultsListView = ({
   // Use the visible applications or all applications array, whichever is available
   const appArray = allApplications?.length ? allApplications : applications;
   // Use displayTerm if available, otherwise use searchTerm
-  const displayLocation = displayTerm || searchTerm;
+  const displayLocation = displayTerm || searchTerm || postcode;
 
   // If loading, show skeleton cards
   if (isLoading) {
@@ -61,7 +61,7 @@ export const ResultsListView = ({
         </h3>
         <p className="text-gray-500 mb-6">
           {error 
-            ? "We encountered an error while searching. Please try another location or search term."
+            ? `We encountered an error while searching. ${error.message || "Please try another location or search term."}`
             : `We couldn't find any planning applications for ${displayLocation}. Please try another search.`
           }
         </p>
