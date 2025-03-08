@@ -96,7 +96,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
             console.log('📮 Location selected:', value);
             setPostcode(value);
           }}
-          placeholder="Enter postcode or street name"
+          placeholder="Search by postcode or street name"
           className="flex-1"
         />
       </div>
