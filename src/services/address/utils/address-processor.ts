@@ -26,7 +26,13 @@ export const processPlacePrediction = (
     for (const component of detailedPlace.address_components) {
       const types = component.types;
       
-      if (types.includes('postal_town') || types.includes('locality')) {
+      if (types.includes('postal_code')) {
+        // If the component is a postal code and we didn't extract one already
+        if (!postcode) {
+          const extractedPostcode = component.long_name;
+          console.log('🏠 Extracted postcode from components:', extractedPostcode);
+        }
+      } else if (types.includes('postal_town') || types.includes('locality')) {
         locality = component.long_name;
       } else if (types.includes('administrative_area_level_2')) {
         county = component.long_name;
@@ -61,12 +67,22 @@ export const processPlacePrediction = (
   // Create a "clean" version of the address to display
   const streetAddress = prediction.structured_formatting.main_text || prediction.description.split(',')[0];
   
+  // Check if this looks like a postcode result
+  const isPostcodeResult = postcode && 
+                           (prediction.types.includes('postal_code') || 
+                            prediction.description.toUpperCase().includes(postcode.toUpperCase()));
+  
+  // If this is a postcode result, use the postcode as the main address display
+  const displayAddress = isPostcodeResult ? 
+    `${postcode.toUpperCase()} (${streetAddress})` : 
+    streetAddress;
+  
   return {
     // Use the place_id directly when there's no postcode
     postcode: postcode || prediction.place_id,
     
     // Public-facing data that will be displayed to the user
-    address: streetAddress,
+    address: displayAddress,
     locality: locality || '',
     county: county || '',
     district: district || '',

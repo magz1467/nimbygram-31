@@ -41,6 +41,12 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     };
   }, []);
 
+  // Handle UK postcode pattern detection
+  const isUkPostcode = (value: string) => {
+    // Simplified UK postcode regex
+    return /^[A-Z]{1,2}[0-9][0-9A-Z]?(\s*[0-9][A-Z]{2})?$/i.test(value);
+  };
+
   const handleSelect = async (postcode: string, address?: string) => {
     console.log('📮 Selected location:', postcode, address);
     const displayValue = address || postcode;
@@ -63,6 +69,10 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
       if (matchingSuggestion) {
         // Use the suggestion's postcode or place ID
         onSelect(matchingSuggestion.postcode);
+      } else if (isUkPostcode(search.trim())) {
+        // If it looks like a valid UK postcode, use it directly
+        console.log('Direct postcode search:', search.trim());
+        onSelect(search.trim().toUpperCase());
       } else {
         // Just use the raw input
         onSelect(search.trim());
@@ -80,6 +90,9 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     }
     if (search.length < 2) {
       return "Enter at least 2 characters to search";
+    }
+    if (isUkPostcode(search) && suggestions.length === 0) {
+      return `Press Enter to search for "${search.toUpperCase()}"`;
     }
     return "No results found. Try a postcode, street name or area.";
   };
@@ -162,7 +175,21 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
               {isSearching ? (
                 <CommandEmpty>Loading suggestions...</CommandEmpty>
               ) : suggestions.length === 0 ? (
-                <CommandEmpty>{getEmptyStateMessage()}</CommandEmpty>
+                <CommandEmpty>
+                  {getEmptyStateMessage()}
+                  {isUkPostcode(search) && (
+                    <div className="mt-2 text-sm text-primary">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-1"
+                        onClick={() => handleSelect(search.toUpperCase(), `${search.toUpperCase()} (Postcode)`)}
+                      >
+                        Search {search.toUpperCase()}
+                      </Button>
+                    </div>
+                  )}
+                </CommandEmpty>
               ) : (
                 <CommandGroup>
                   {suggestions.map((suggestion, index) => {
@@ -171,7 +198,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                     
                     // Check if this suggestion has a place ID instead of a real postcode
                     const isPlaceId = suggestion.isPlaceId || 
-                      (suggestion.postcode && suggestion.postcode.length > 8 && 
+                      (suggestion.postcode && suggestion.postcode.length > 15 && 
                        !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
                     
                     // Format location information

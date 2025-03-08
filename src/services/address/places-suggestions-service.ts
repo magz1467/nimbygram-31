@@ -25,6 +25,9 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       return [];
     }
     
+    // Check if it looks like a UK postcode pattern
+    const looksLikeUkPostcode = /^[A-Z]{1,2}[0-9][0-9A-Z]?(\s*[0-9][A-Z]{2})?$/i.test(searchTerm);
+    
     // Initialize the Places service
     const sessionToken = new google.maps.places.AutocompleteSessionToken();
     
@@ -33,30 +36,81 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
     
     // Get predictions from the Google Places API
     const predictions = await new Promise<google.maps.places.AutocompletePrediction[]>((resolve, reject) => {
+      // If it looks like a postcode, we need to make the search more specific
+      const options: google.maps.places.AutocompletionRequest = {
+        input: searchTerm,
+        componentRestrictions: { country: 'uk' },
+        sessionToken,
+        // For postcodes, we want to search all types of places
+        types: looksLikeUkPostcode ? [] : ['address', 'geocode'],
+      };
+      
+      // Add postcode prefix for better UK results
+      if (looksLikeUkPostcode && !searchTerm.toLowerCase().includes('uk') && !searchTerm.toLowerCase().includes('united kingdom')) {
+        options.input = `${searchTerm} UK`;
+      }
+
+      console.log('🔍 Places API request:', options);
+      
       autocompleteService.getPlacePredictions(
-        {
-          input: searchTerm,
-          componentRestrictions: { country: 'uk' },
-          sessionToken,
-          types: ['address'],
-        },
+        options,
         (predictions, status) => {
           if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
-            console.log('No predictions found or error:', status);
-            resolve([]);
+            console.log('Places API returned:', status, 'for input:', searchTerm);
+            
+            // If no results and looks like postcode, try with 'postcode' added
+            if (looksLikeUkPostcode && status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+              // Try again with a different search approach
+              autocompleteService.getPlacePredictions(
+                {
+                  input: `${searchTerm} postcode`,
+                  componentRestrictions: { country: 'uk' },
+                  sessionToken,
+                  types: [] // Allow all types for postcodes
+                },
+                (secondTryPredictions, secondStatus) => {
+                  if (secondStatus === google.maps.places.PlacesServiceStatus.OK && secondTryPredictions) {
+                    console.log('Second attempt successful:', secondTryPredictions.length, 'results');
+                    resolve(secondTryPredictions);
+                  } else {
+                    console.log('No predictions found in second attempt:', secondStatus);
+                    resolve([]);
+                  }
+                }
+              );
+            } else {
+              resolve([]);
+            }
             return;
           }
           
+          console.log('Found', predictions.length, 'predictions');
           resolve(predictions);
         }
       );
     });
     
     if (!predictions || predictions.length === 0) {
+      // For UK postcodes, if still no results, create a manual result
+      if (looksLikeUkPostcode) {
+        console.log('Creating fallback result for UK postcode');
+        
+        return [{
+          postcode: searchTerm.toUpperCase(),
+          address: `${searchTerm.toUpperCase()} (Postcode)`,
+          country: 'United Kingdom',
+          locality: '',
+          admin_district: '',
+          nhs_ha: '',
+          district: '',
+          county: '',
+          isManualPostcode: true
+        }];
+      }
       return [];
     }
     
-    console.log('Found predictions:', predictions.length);
+    console.log('Processing', predictions.length, 'predictions');
     
     // Process each prediction into a PostcodeSuggestion
     const suggestions = await Promise.all(
