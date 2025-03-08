@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchState } from '@/hooks/applications/use-search-state';
 import { useFilterSortState } from '@/hooks/applications/use-filter-sort-state';
@@ -29,7 +28,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     handlePostcodeSelect,
     refetch,
     error: searchStateError, // Extract error from search state
-  } = useSearchState(initialPostcodeValue, retryCount);
+  } = useSearchState(initialPostcodeValue); // Only pass one argument
 
   // Update our error state when search state error changes
   useEffect(() => {

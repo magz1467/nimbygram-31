@@ -10,7 +10,7 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
     downvotes,
     handleVoteChange
   } = useCommentVotes(
-    comment.id.toString(), // Convert number to string
+    Number(comment.id), // Ensure we pass a number type
     currentUserId,
     comment.upvotes || 0,
     comment.downvotes || 0
@@ -25,7 +25,7 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
     setReplyContent,
     setIsExpanded,
     handleReply
-  } = useCommentReplies(comment.id, currentUserId);
+  } = useCommentReplies(Number(comment.id), currentUserId);
 
   const handleSubmitReply = () => {
     handleReply(comment.application_id);
