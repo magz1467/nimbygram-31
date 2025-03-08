@@ -26,6 +26,7 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
           input: searchTerm,
           componentRestrictions: { country: 'uk' },
           sessionToken,
+          types: ['geocode', 'address', 'establishment'], // Ensure we get detailed address data
         },
         (predictions, status) => {
           if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
@@ -49,14 +50,23 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       const postcodeMatch = prediction.description.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i);
       const postcode = postcodeMatch ? postcodeMatch[0] : '';
       
-      // Split the description into parts to get district and country
+      // Split the description into parts to get location details
       const addressParts = prediction.structured_formatting.secondary_text?.split(', ') || [];
+      
+      // The country is typically the last part
       const country = addressParts.length > 0 ? addressParts[addressParts.length - 1] : 'United Kingdom';
       
-      // Get district or other location info if available
+      // Extract administrative areas and location data
       let admin_district = '';
+      let county = '';
+      
       if (addressParts.length > 1) {
-        // Use all parts except the last one (country) if there are multiple parts
+        // If we have multiple parts, the second-to-last might be a county or region
+        if (addressParts.length >= 3) {
+          county = addressParts[addressParts.length - 2];
+        }
+        
+        // Use all parts except the country as the admin_district
         admin_district = addressParts.slice(0, -1).join(', ');
       }
       
@@ -70,6 +80,7 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
         // Public-facing data that will be displayed to the user
         address: cleanAddress,
         country,
+        county, // Add county information
         nhs_ha: '',
         admin_district,
         

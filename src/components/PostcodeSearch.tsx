@@ -119,19 +119,20 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{suggestion.address}</span>
-                          {!isPlaceId && suggestion.postcode && !suggestion.address.includes(suggestion.postcode) && (
+                          {!isPlaceId && suggestion.postcode && !suggestion.address?.includes(suggestion.postcode) && (
                             <span className="text-sm text-gray-500">{suggestion.postcode}</span>
                           )}
-                          {suggestion.admin_district && (
-                            <span className="text-sm text-gray-500">
-                              {suggestion.admin_district}, {suggestion.country || 'UK'}
-                            </span>
-                          )}
-                          {!suggestion.admin_district && (
-                            <span className="text-sm text-gray-500">
-                              {suggestion.country || 'UK'}
-                            </span>
-                          )}
+                          
+                          {/* Display location information with improved formatting */}
+                          <span className="text-sm text-gray-500">
+                            {[
+                              suggestion.admin_district,
+                              suggestion.county,
+                              suggestion.country === 'United Kingdom' ? 'UK' : suggestion.country
+                            ]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </span>
                         </div>
                       </CommandItem>
                     );
