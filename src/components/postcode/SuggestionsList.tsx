@@ -3,7 +3,7 @@ import React from "react";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
 import { Command } from "@/components/ui/command";
 import { Loader2 } from "lucide-react";
-import * as CommandPrimitive from "@/components/ui/command";
+import { CommandList, CommandItem } from "@/components/ui/command";
 
 interface SuggestionsListProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export const SuggestionsList = ({
         ref={commandRef}
         className="absolute top-2 z-10 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md"
       >
-        <CommandPrimitive.CommandList className="max-h-60 overflow-auto p-2">
+        <CommandList className="max-h-60 overflow-auto p-2">
           {isLoading || isFetching ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -67,18 +67,18 @@ export const SuggestionsList = ({
             </div>
           ) : (
             suggestions.map((suggestion) => (
-              <CommandPrimitive.CommandItem
-                key={suggestion.postcode || suggestion.id || Math.random().toString()}
+              <CommandItem
+                key={suggestion.postcode || Math.random().toString()}
                 value={suggestion.address || suggestion.postcode}
                 onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
                 className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
               >
                 <span className="font-medium">{suggestion.postcode}</span>
                 <span className="text-xs text-gray-500">{suggestion.address || suggestion.admin_district}</span>
-              </CommandPrimitive.CommandItem>
+              </CommandItem>
             ))
           )}
-        </CommandPrimitive.CommandList>
+        </CommandList>
       </Command>
     </div>
   );

@@ -45,8 +45,7 @@ export const getPostcodeAutocomplete = async (searchTerm: string): Promise<Postc
     
     console.log('📍 Found postcode autocomplete results:', autocompleteData.result.length);
     
-    // Create lightweight suggestions from the autocomplete results without fetching details
-    // This prevents excessive API calls that might be failing
+    // Create suggestions from the autocomplete results
     const suggestions: PostcodeSuggestion[] = autocompleteData.result.map((postcode: string) => ({
       postcode: postcode,
       country: 'United Kingdom',
