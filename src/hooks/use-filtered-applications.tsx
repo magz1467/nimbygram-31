@@ -1,15 +1,16 @@
 
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
-import { useApplicationFiltering } from './use-application-filtering';
-import { useApplicationSorting } from './use-application-sorting';
 import { SortType } from "@/types/application-types";
-import { calculateDistance } from "@/utils/distance";
+import { applyAllFilters } from "@/utils/applicationFilters";
+import { addDistanceToApplications } from "@/utils/applicationDistance";
+import { useApplicationSorting } from './use-application-sorting';
 
 interface ActiveFilters {
   status?: string;
   type?: string;
   search?: string;
+  classification?: string;
 }
 
 export const useFilteredApplications = (
@@ -28,27 +29,13 @@ export const useFilteredApplications = (
       return [];
     }
     
-    // First apply filters
-    const filteredApplications = useApplicationFiltering(applications, activeFilters);
-
-    // If there are search coordinates, add distance to each application
-    let applicationsWithDistance = [...filteredApplications];
+    // Apply all filters first
+    const filteredApplications = applyAllFilters(applications, activeFilters);
     
-    if (searchCoordinates) {
-      applicationsWithDistance = applicationsWithDistance.map(app => {
-        if (!app.coordinates) return app;
-        
-        const distanceInKm = calculateDistance(searchCoordinates, app.coordinates);
-        const distanceInMiles = distanceInKm * 0.621371;
-        return {
-          ...app,
-          distance: `${distanceInMiles.toFixed(1)} mi`
-        };
-      });
-    }
-
-    // Then apply sorting based on the active sort type
-    // If activeSort is 'distance', it will use the distance property added above
+    // Add distance information if search coordinates are available
+    const applicationsWithDistance = addDistanceToApplications(filteredApplications, searchCoordinates);
+    
+    // Apply sorting based on active sort type or default to distance sort if coordinates available
     const finalSortedApplications = activeSort ? 
       useApplicationSorting({
         type: activeSort,
