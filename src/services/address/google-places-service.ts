@@ -54,13 +54,21 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       const country = addressParts.length > 0 ? addressParts[addressParts.length - 1] : 'United Kingdom';
       const admin_district = addressParts.length > 1 ? addressParts[0] : '';
       
+      // Create a "clean" version of the address to display
+      const cleanAddress = prediction.description;
+      
       return {
-        postcode: postcode || prediction.place_id, // Still use place_id internally, but don't display it
-        address: prediction.description,
+        // Store the place_id internally for use when selecting
+        postcode: postcode || prediction.place_id,
+        
+        // Public-facing data that will be displayed to the user
+        address: cleanAddress,
         country: country,
         nhs_ha: '',
         admin_district: admin_district,
-        // Don't include the place_id in any visible fields
+        
+        // Add a flag to indicate if this is a place ID rather than a real postcode
+        isPlaceId: !postcode && !!prediction.place_id
       };
     });
     

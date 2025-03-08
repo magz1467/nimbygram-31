@@ -43,9 +43,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
 
   const handleSelect = async (postcode: string, address?: string) => {
     console.log('📮 Selected location:', postcode, address);
-    const displayValue = address && address.includes(postcode) 
-      ? address 
-      : (address || postcode);
+    const displayValue = address || postcode;
     
     setSearch(displayValue);
     setOpen(false);
@@ -106,10 +104,12 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                 <CommandGroup>
                   {suggestions.map((suggestion, index) => {
                     // Create a unique key for each suggestion
-                    const key = `${suggestion.address || ''}-${index}`;
+                    const key = `suggestion-${index}`;
                     
-                    // Check if this is likely a place ID (not a real postcode)
-                    const isPlaceId = suggestion.postcode && suggestion.postcode.length > 8 && !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i);
+                    // Check if this suggestion has a place ID instead of a real postcode
+                    const isPlaceId = suggestion.isPlaceId || 
+                      (suggestion.postcode && suggestion.postcode.length > 8 && 
+                       !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
                     
                     return (
                       <CommandItem
@@ -118,22 +118,17 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                         className="cursor-pointer hover:bg-primary/10"
                       >
                         <div className="flex flex-col">
-                          {suggestion.address ? (
-                            <>
-                              <span className="font-medium">{suggestion.address}</span>
-                              {!suggestion.address.includes(suggestion.postcode) && !isPlaceId && (
-                                <span className="text-sm text-gray-500">{suggestion.postcode}</span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {!isPlaceId && (
-                                <span className="font-medium">{suggestion.postcode}</span>
-                              )}
-                              <span className="text-sm text-gray-500">
-                                {`${suggestion.admin_district || ''}, ${suggestion.country || 'UK'}`}
-                              </span>
-                            </>
+                          <span className="font-medium">{suggestion.address}</span>
+                          {!isPlaceId && suggestion.postcode && !suggestion.address.includes(suggestion.postcode) && (
+                            <span className="text-sm text-gray-500">{suggestion.postcode}</span>
+                          )}
+                          {!suggestion.address && !isPlaceId && suggestion.postcode && (
+                            <span className="font-medium">{suggestion.postcode}</span>
+                          )}
+                          {(!suggestion.address || isPlaceId) && (
+                            <span className="text-sm text-gray-500">
+                              {`${suggestion.admin_district || ''}, ${suggestion.country || 'UK'}`}
+                            </span>
                           )}
                         </div>
                       </CommandItem>

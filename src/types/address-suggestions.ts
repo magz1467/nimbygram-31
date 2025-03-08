@@ -5,6 +5,7 @@ export interface PostcodeSuggestion {
   nhs_ha: string;
   admin_district: string;
   address?: string;
+  isPlaceId?: boolean;
 }
 
 export interface AddressSuggestionOptions {
