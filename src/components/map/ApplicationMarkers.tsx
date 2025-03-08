@@ -29,7 +29,7 @@ const createMarkerIcon = (color: string, isSelected: boolean) => {
   const size = isSelected ? 48 : 24; // Larger size for selected marker
   
   return L.divIcon({
-    className: 'custom-pin',
+    className: 'custom-pin custom-marker ' + (isSelected ? 'selected-marker' : ''),
     html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="${color}"/>
     </svg>`,
@@ -37,7 +37,6 @@ const createMarkerIcon = (color: string, isSelected: boolean) => {
     iconAnchor: [size/2, size],
     popupAnchor: [0, -size/2],
     // Add higher z-index to ensure visibility
-    className: `custom-marker ${isSelected ? 'selected-marker' : ''}`,
   });
 };
 
