@@ -149,7 +149,7 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
       return {
         postcode: place.name, // Using name as the main identifier
-        address: `${place.name}, ${place.county_unitary}`,
+        address: `${place.name}, ${place.county_unitary || ''}`,
         country: 'United Kingdom',
         county: place.county_unitary || '',
         district: place.district || '',
