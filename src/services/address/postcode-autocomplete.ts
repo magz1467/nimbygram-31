@@ -1,5 +1,5 @@
 
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion } from '../../types/address-suggestions';
 
 /**
  * Get postcode autocomplete suggestions

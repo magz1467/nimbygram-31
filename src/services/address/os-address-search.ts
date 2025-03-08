@@ -1,5 +1,5 @@
 
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion } from '../../types/address-suggestions';
 import { OS_API_KEY } from './address-api-base';
 
 /**

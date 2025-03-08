@@ -1,5 +1,5 @@
 
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion } from '../../types/address-suggestions';
 
 /**
  * Search for postcodes using postcodes.io API

@@ -1,5 +1,5 @@
 
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion } from '../../types/address-suggestions';
 
 /**
  * Search for outcodes based on search term
