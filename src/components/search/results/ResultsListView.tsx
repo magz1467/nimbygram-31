@@ -54,14 +54,22 @@ export const ResultsListView = ({
 
   // If error or no applications found, show empty state
   if (error || !applications.length) {
+    const errorMessage = error ? error.message : "";
+    const isLocationError = errorMessage.includes("find coordinates") || 
+                           errorMessage.includes("location") ||
+                           errorMessage.includes("Failed to get") ||
+                           errorMessage.includes("INVALID_REQUEST");
+
     return (
       <div className="py-16 text-center max-w-md mx-auto">
         <h3 className="text-lg font-semibold mb-2">
-          {error ? "Error loading results" : "No results found"}
+          {error ? (isLocationError ? "Location Error" : "Error loading results") : "No results found"}
         </h3>
         <p className="text-gray-500 mb-6">
           {error 
-            ? `We encountered an error while searching. ${error.message || "Please try another location or search term."}`
+            ? (isLocationError 
+                ? `We couldn't find the coordinates for "${displayLocation}". Please try a more specific location or postcode.`
+                : `We encountered an error while searching. ${errorMessage || "Please try another location or search term."}`)
             : `We couldn't find any planning applications for ${displayLocation}. Please try another search.`
           }
         </p>

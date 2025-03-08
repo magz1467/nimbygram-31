@@ -84,8 +84,8 @@ export const useCoordinates = (postcode: string | undefined) => {
           const place = placesData.result[0];
           
           // Check if we have latitude and longitude
-          if (typeof place.latitude === 'number' && typeof place.longitude === 'number') {
-            const newCoordinates: [number, number] = [place.latitude, place.longitude];
+          if (place.latitude && place.longitude) {
+            const newCoordinates: [number, number] = [parseFloat(place.latitude), parseFloat(place.longitude)];
             console.log('✅ useCoordinates: Setting coordinates from Places API:', newCoordinates);
             setCoordinates(newCoordinates);
             return;

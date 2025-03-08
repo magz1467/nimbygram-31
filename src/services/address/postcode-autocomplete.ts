@@ -158,8 +158,8 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
       formattedAddress += `, UK`;
       
       return {
-        postcode: name, // The actual place name as the primary identifier
-        address: formattedAddress, // Full formatted address for selection
+        postcode: formattedAddress, // Use full address as the postcode field for search
+        address: formattedAddress, // Full formatted address for display
         country: 'United Kingdom',
         county: county,
         district: place.district_borough || '',
