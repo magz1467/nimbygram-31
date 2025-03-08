@@ -42,7 +42,7 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
     );
     
     // Get predictions from the Google Places API
-    const { predictions } = await new Promise<google.maps.places.AutocompletePrediction[]>((resolve, reject) => {
+    const predictions = await new Promise<google.maps.places.AutocompletePrediction[]>((resolve, reject) => {
       autocompleteService.getPlacePredictions(
         {
           input: searchTerm,
@@ -52,11 +52,11 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
         (predictions, status) => {
           if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
             console.log('No predictions found or error:', status);
-            resolve({ predictions: [] });
+            resolve([]);
             return;
           }
           
-          resolve({ predictions });
+          resolve(predictions);
         }
       );
     });
