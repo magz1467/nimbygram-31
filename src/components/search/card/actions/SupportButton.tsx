@@ -3,6 +3,7 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SupportButtonProps {
   applicationId: number;
@@ -18,33 +19,84 @@ export const SupportButton = ({
   checkAuth 
 }: SupportButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localSupportCount, setLocalSupportCount] = useState(supportCount);
+  const [localIsSupported, setLocalIsSupported] = useState(isSupportedByUser);
+  const { toast } = useToast();
 
   const handleSupport = async () => {
     if (!checkAuth(() => {})) return;
+    if (isSubmitting) return;
+
+    // Store previous state to revert in case of error
+    const prevIsSupported = localIsSupported;
+    const prevSupportCount = localSupportCount;
 
     try {
       setIsSubmitting(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      
+      // Optimistic UI update
+      if (localIsSupported) {
+        setLocalSupportCount(prev => Math.max(0, prev - 1));
+        setLocalIsSupported(false);
+      } else {
+        setLocalSupportCount(prev => prev + 1);
+        setLocalIsSupported(true);
+      }
 
-      if (isSupportedByUser) {
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
+      if (!user) {
+        // Reset UI if user not authenticated
+        setLocalSupportCount(supportCount);
+        setLocalIsSupported(isSupportedByUser);
+        return;
+      }
+
+      if (prevIsSupported) {
         // Remove support
-        await supabase
+        const { error } = await supabase
           .from('application_support')
           .delete()
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Support removed",
+          description: "Your support has been removed."
+        });
       } else {
         // Add support
-        await supabase
+        const { error } = await supabase
           .from('application_support')
           .insert({
             application_id: applicationId,
             user_id: user.id
           });
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Support added",
+          description: "You are now supporting this application."
+        });
       }
     } catch (error) {
       console.error('Error toggling support:', error);
+      
+      // Revert to previous state on error
+      setLocalIsSupported(prevIsSupported);
+      setLocalSupportCount(prevSupportCount);
+      
+      toast({
+        title: "Error",
+        description: "Failed to update support. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -59,9 +111,9 @@ export const SupportButton = ({
       onClick={() => checkAuth(() => handleSupport())}
     >
       <div className="relative">
-        <Heart className={`h-5 w-5 ${isSupportedByUser ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
+        <Heart className={`h-5 w-5 ${localIsSupported ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} />
         <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-          {supportCount}
+          {localSupportCount}
         </span>
       </div>
       <span className="text-xs">Support</span>

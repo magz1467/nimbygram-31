@@ -29,6 +29,7 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
 
   const handleVote = async (type: 'hot' | 'not') => {
     if (!checkAuth(() => {})) return;
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
@@ -58,8 +59,11 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
         setLocalVoteStatus(type);
       }
 
-      // Send to server
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
       if (!user) {
         // Revert changes if user is not authenticated
         setLocalVoteStatus(previousVoteStatus);

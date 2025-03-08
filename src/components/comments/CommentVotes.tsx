@@ -24,13 +24,29 @@ export const CommentVotes = ({
 }: CommentVotesProps) => {
   const { toast } = useToast();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleVote = (type: 'up' | 'down') => {
+  const handleVote = async (type: 'up' | 'down') => {
+    if (isSubmitting) return;
+    
     if (!currentUserId) {
       setShowAuthDialog(true);
       return;
     }
-    onVoteChange(type);
+    
+    try {
+      setIsSubmitting(true);
+      onVoteChange(type);
+    } catch (error) {
+      console.error('Error handling vote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your vote. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,6 +58,7 @@ export const CommentVotes = ({
             size="sm"
             className={`hover:bg-primary/10 ${voteStatus === 'up' ? 'text-primary' : ''}`}
             onClick={() => handleVote('up')}
+            disabled={isSubmitting}
           >
             <ThumbsUp className="w-4 h-4 mr-1" />
             <span>{upvotes}</span>
@@ -53,6 +70,7 @@ export const CommentVotes = ({
             size="sm"
             className={`hover:bg-primary/10 ${voteStatus === 'down' ? 'text-primary' : ''}`}
             onClick={() => handleVote('down')}
+            disabled={isSubmitting}
           >
             <ThumbsDown className="w-4 h-4 mr-1" />
             <span>{downvotes}</span>

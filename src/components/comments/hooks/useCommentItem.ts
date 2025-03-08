@@ -18,31 +18,44 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
     const fetchVoteStatus = async () => {
       if (!currentUserId) return;
 
-      const { data } = await supabase
-        .from('comment_votes')
-        .select('vote_type')
-        .eq('comment_id', comment.id)
-        .eq('user_id', currentUserId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('comment_votes')
+          .select('vote_type')
+          .eq('comment_id', comment.id)
+          .eq('user_id', currentUserId)
+          .maybeSingle();
 
-      if (data) {
-        setVoteStatus(data.vote_type as 'up' | 'down');
+        if (error) {
+          console.error('Error fetching vote status:', error);
+          return;
+        }
+
+        if (data) {
+          setVoteStatus(data.vote_type as 'up' | 'down');
+        }
+      } catch (error) {
+        console.error('Error in fetchVoteStatus:', error);
       }
     };
 
     const fetchReplies = async () => {
-      const { data: repliesData, error } = await supabase
-        .from('Comments')
-        .select('*, profiles:profiles(username)')
-        .eq('parent_id', comment.id)
-        .order('created_at', { ascending: true });
+      try {
+        const { data: repliesData, error } = await supabase
+          .from('Comments')
+          .select('*, profiles:profiles(username)')
+          .eq('parent_id', comment.id)
+          .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching replies:', error);
-        return;
+        if (error) {
+          console.error('Error fetching replies:', error);
+          return;
+        }
+
+        setReplies(repliesData || []);
+      } catch (error) {
+        console.error('Error in fetchReplies:', error);
       }
-
-      setReplies(repliesData || []);
     };
 
     fetchVoteStatus();
@@ -75,6 +88,9 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
     if (!currentUserId) return;
 
     const isRemovingVote = type === voteStatus;
+    const prevVoteStatus = voteStatus;
+    const prevUpvotes = upvotes;
+    const prevDownvotes = downvotes;
     
     // Optimistically update UI
     if (isRemovingVote) {
@@ -92,13 +108,17 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
 
     try {
       if (isRemovingVote) {
-        await supabase
+        // Delete the vote
+        const { error: deleteError } = await supabase
           .from('comment_votes')
           .delete()
           .eq('comment_id', comment.id)
           .eq('user_id', currentUserId);
+
+        if (deleteError) throw deleteError;
       } else {
-        await supabase
+        // Upsert the vote
+        const { error: upsertError } = await supabase
           .from('comment_votes')
           .upsert({
             comment_id: comment.id,
@@ -107,15 +127,23 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
           }, {
             onConflict: 'comment_id,user_id'
           });
+
+        if (upsertError) throw upsertError;
       }
 
-      await supabase
+      // Update comment vote counts
+      const newUpvotes = type === 'up' && !isRemovingVote ? upvotes : prevVoteStatus === 'up' && (isRemovingVote || type === 'down') ? upvotes - 1 : upvotes;
+      const newDownvotes = type === 'down' && !isRemovingVote ? downvotes : prevVoteStatus === 'down' && (isRemovingVote || type === 'up') ? downvotes - 1 : downvotes;
+      
+      const { error: updateError } = await supabase
         .from('Comments')
         .update({
-          upvotes: type === 'up' ? upvotes : comment.upvotes,
-          downvotes: type === 'down' ? downvotes : comment.downvotes
+          upvotes: newUpvotes,
+          downvotes: newDownvotes
         })
         .eq('id', comment.id);
+
+      if (updateError) throw updateError;
     } catch (error) {
       console.error('Error updating vote:', error);
       toast({
@@ -125,9 +153,9 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
       });
       
       // Revert UI changes on error
-      setVoteStatus(voteStatus);
-      setUpvotes(comment.upvotes || 0);
-      setDownvotes(comment.downvotes || 0);
+      setVoteStatus(prevVoteStatus);
+      setUpvotes(prevUpvotes);
+      setDownvotes(prevDownvotes);
     }
   };
 

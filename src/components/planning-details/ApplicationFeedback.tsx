@@ -24,6 +24,7 @@ export const ApplicationFeedback = ({
   const { toast } = useToast();
   const [localFeedback, setLocalFeedback] = useState(feedback);
   const [localStats, setLocalStats] = useState(feedbackStats);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -32,58 +33,62 @@ export const ApplicationFeedback = ({
   }, [feedback, feedbackStats]);
 
   const handleFeedbackClick = (type: 'yimby' | 'nimby') => {
+    if (isSubmitting) return;
+    
     // Previous state
     const prevFeedback = localFeedback;
     const prevStats = { ...localStats };
     
-    // Apply optimistic update
-    const isRemovingFeedback = localFeedback === type;
-    
-    // Update local state immediately for responsive UI
-    if (isRemovingFeedback) {
-      setLocalFeedback(null);
-      if (type === 'yimby') {
-        setLocalStats(prev => ({
-          ...prev,
-          yimbyCount: Math.max(0, prev.yimbyCount - 1)
-        }));
-      } else {
-        setLocalStats(prev => ({
-          ...prev,
-          nimbyCount: Math.max(0, prev.nimbyCount - 1)
-        }));
-      }
-    } else {
-      // Switching feedback or adding new feedback
-      if (localFeedback === 'yimby' && type === 'nimby') {
-        setLocalStats({
-          yimbyCount: Math.max(0, localStats.yimbyCount - 1),
-          nimbyCount: localStats.nimbyCount + 1
-        });
-      } else if (localFeedback === 'nimby' && type === 'yimby') {
-        setLocalStats({
-          yimbyCount: localStats.yimbyCount + 1,
-          nimbyCount: Math.max(0, localStats.nimbyCount - 1)
-        });
-      } else if (localFeedback === null) {
-        // New feedback
+    try {
+      setIsSubmitting(true);
+      
+      // Apply optimistic update
+      const isRemovingFeedback = localFeedback === type;
+      
+      // Update local state immediately for responsive UI
+      if (isRemovingFeedback) {
+        setLocalFeedback(null);
         if (type === 'yimby') {
           setLocalStats(prev => ({
             ...prev,
-            yimbyCount: prev.yimbyCount + 1
+            yimbyCount: Math.max(0, prev.yimbyCount - 1)
           }));
         } else {
           setLocalStats(prev => ({
             ...prev,
-            nimbyCount: prev.nimbyCount + 1
+            nimbyCount: Math.max(0, prev.nimbyCount - 1)
           }));
         }
+      } else {
+        // Switching feedback or adding new feedback
+        if (localFeedback === 'yimby' && type === 'nimby') {
+          setLocalStats({
+            yimbyCount: Math.max(0, localStats.yimbyCount - 1),
+            nimbyCount: localStats.nimbyCount + 1
+          });
+        } else if (localFeedback === 'nimby' && type === 'yimby') {
+          setLocalStats({
+            yimbyCount: localStats.yimbyCount + 1,
+            nimbyCount: Math.max(0, localStats.nimbyCount - 1)
+          });
+        } else if (localFeedback === null) {
+          // New feedback
+          if (type === 'yimby') {
+            setLocalStats(prev => ({
+              ...prev,
+              yimbyCount: prev.yimbyCount + 1
+            }));
+          } else {
+            setLocalStats(prev => ({
+              ...prev,
+              nimbyCount: prev.nimbyCount + 1
+            }));
+          }
+        }
+        setLocalFeedback(type);
       }
-      setLocalFeedback(type);
-    }
-    
-    // Call the parent handler to update the database
-    try {
+      
+      // Call the parent handler to update the database
       onFeedback(type);
     } catch (error) {
       // Revert on error
@@ -95,6 +100,8 @@ export const ApplicationFeedback = ({
         description: "Failed to save your feedback. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -106,6 +113,7 @@ export const ApplicationFeedback = ({
           <Button
             variant={localFeedback === 'yimby' ? "default" : "outline"}
             onClick={() => handleFeedbackClick('yimby')}
+            disabled={isSubmitting}
             className={`flex items-center gap-2 flex-1 hover:scale-105 transition-transform ${
               localFeedback === 'yimby' ? 'bg-primary hover:bg-primary-dark' : 'hover:bg-primary/10'
             }`}
@@ -122,6 +130,7 @@ export const ApplicationFeedback = ({
           <Button
             variant={localFeedback === 'nimby' ? "outline" : "outline"}
             onClick={() => handleFeedbackClick('nimby')}
+            disabled={isSubmitting}
             className={`flex items-center gap-2 flex-1 hover:scale-105 transition-transform ${
               localFeedback === 'nimby' ? 'bg-[#ea384c]/10' : ''
             }`}
@@ -147,6 +156,7 @@ export const ApplicationFeedback = ({
         <Button
           variant={localFeedback === 'yimby' ? "default" : "outline"}
           onClick={() => handleFeedbackClick('yimby')}
+          disabled={isSubmitting}
           className={`flex-1 flex items-center gap-3 justify-start h-auto p-3 hover:scale-105 transition-transform ${
             localFeedback === 'yimby' ? 'bg-primary hover:bg-primary-dark' : 'hover:bg-primary/10'
           }`}
@@ -168,6 +178,7 @@ export const ApplicationFeedback = ({
         <Button
           variant={localFeedback === 'nimby' ? "outline" : "outline"}
           onClick={() => handleFeedbackClick('nimby')}
+          disabled={isSubmitting}
           className={`flex-1 flex items-center gap-3 justify-start h-auto p-3 hover:scale-105 transition-transform ${
             localFeedback === 'nimby' ? 'bg-[#ea384c]/10' : ''
           }`}
