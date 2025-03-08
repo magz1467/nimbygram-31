@@ -17,15 +17,6 @@ interface SearchResultCardProps {
 export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
   const [showComments, setShowComments] = useState(false);
 
-  console.log('SearchResultCard - Application:', {
-    id: application.id,
-    title: application.title,
-    streetview_url: application.streetview_url,
-    image: application.image,
-    type: typeof application.streetview_url,
-    submittedDate: application.submittedDate || application.received_date
-  });
-
   const handleShare = async () => {
     const url = window.location.href;
     try {

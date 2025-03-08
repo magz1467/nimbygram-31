@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { MapViewLayout } from "@/components/map/MapViewLayout";
+import { MapContainer } from "@/components/map/MapContainer";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -38,20 +38,14 @@ export const DesktopMapView = ({
         </Button>
       </div>
       
-      <MapViewLayout 
-        applications={applications}
-        selectedId={selectedId}
-        postcode=""
-        coordinates={coordinates}
-        isLoading={isLoading}
-        activeFilters={{}}
-        activeSort={null}
-        onPostcodeSelect={() => {}}
-        onFilterChange={() => {}}
-        onSortChange={() => {}}
-        onMarkerClick={handleMarkerClick}
-        onSelectApplication={handleMarkerClick}
-      />
+      <div className="w-full h-full">
+        <MapContainer
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          onMarkerClick={handleMarkerClick}
+        />
+      </div>
     </div>
   );
 };

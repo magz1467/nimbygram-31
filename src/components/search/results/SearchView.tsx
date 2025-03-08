@@ -52,7 +52,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     coordinates
   );
 
-  // Handle marker click to show side map and select application
+  // Handle marker click to show map and select application
   const handleMapMarkerClick = (id: number) => {
     console.log('🖱️ Map marker clicked:', id);
     setShowMap(true);
