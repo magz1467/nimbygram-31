@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -22,14 +22,16 @@ interface PostcodeSearchProps {
 export const PostcodeSearch = ({ onSelect, placeholder = "Search location", className = "" }: PostcodeSearchProps) => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const commandRef = useRef<HTMLDivElement>(null);
   
   const { data: suggestions = [], isLoading } = useAddressSuggestions(search);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const commandEl = document.querySelector('.postcode-command');
-      if (commandEl && !commandEl.contains(event.target as Node)) {
+      if (commandRef.current && !commandRef.current.contains(event.target as Node) && 
+          inputRef.current && !inputRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
@@ -51,12 +53,20 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     await onSelect(postcode);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (search.trim()) {
+      onSelect(search.trim());
+    }
+  };
+
   return (
     <div className={`relative ${className}`}>
-      <div className="relative w-full">
+      <form onSubmit={handleSubmit} className="relative w-full">
         <Input
+          ref={inputRef}
           type="text"
-          placeholder={placeholder || "Enter postcode or street name"}
+          placeholder={placeholder || "Enter postcode, street name or area"}
           value={search}
           onChange={(e) => {
             const value = e.target.value;
@@ -69,44 +79,32 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
           }}
           className="w-full pl-4 pr-10 py-2"
           onFocus={() => search.length >= 2 && setOpen(true)}
-          onBlur={() => {
-            // Delay closing to allow selecting an item
-            setTimeout(() => {
-              // Only close if we're not already submitting
-              if (document.activeElement?.tagName !== 'BUTTON') {
-                setOpen(false);
-              }
-            }, 250);
-          }}
           aria-label="Search for a postcode or location"
         />
         <Button 
-          type="button"
+          type="submit"
           size="icon" 
           variant="ghost" 
           className="absolute right-1 top-1/2 -translate-y-1/2"
-          onClick={() => {
-            if (search) onSelect(search);
-          }}
           aria-label="Search"
         >
           <Search className="h-4 w-4" />
         </Button>
-      </div>
+      </form>
 
       {open && search.length >= 2 && (
         <div className="absolute z-[9999] w-full mt-1">
-          <Command className="rounded-lg border shadow-md bg-white postcode-command">
+          <Command ref={commandRef} className="rounded-lg border shadow-md bg-white postcode-command">
             <CommandList>
               {isLoading ? (
                 <CommandEmpty>Loading suggestions...</CommandEmpty>
               ) : suggestions.length === 0 ? (
-                <CommandEmpty>No results found. Try a postcode or street name.</CommandEmpty>
+                <CommandEmpty>No results found. Try a postcode, street name or area.</CommandEmpty>
               ) : (
                 <CommandGroup>
                   {suggestions.map((suggestion, index) => {
                     // Create a unique key for each suggestion
-                    const key = `${suggestion.postcode}-${suggestion.admin_district}-${index}`;
+                    const key = `${suggestion.postcode}-${suggestion.address || ''}-${index}`;
                     
                     return (
                       <CommandItem
@@ -118,7 +116,9 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                           {suggestion.address ? (
                             <>
                               <span className="font-medium">{suggestion.address}</span>
-                              <span className="text-sm text-gray-500">{suggestion.postcode}</span>
+                              {!suggestion.address.includes(suggestion.postcode) && (
+                                <span className="text-sm text-gray-500">{suggestion.postcode}</span>
+                              )}
                             </>
                           ) : (
                             <>

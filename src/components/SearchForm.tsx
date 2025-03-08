@@ -25,7 +25,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     if (!searchTerm || isSubmitting) {
       toast({
         title: "Error",
-        description: "Please enter a valid postcode or address",
+        description: "Please enter a valid postcode, street name or area",
         variant: "destructive",
       });
       return;
@@ -96,7 +96,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
             console.log('📮 Location selected:', value);
             setPostcode(value);
           }}
-          placeholder="Search by postcode or street name"
+          placeholder="Search by postcode, street name or area"
           className="flex-1"
         />
       </div>
