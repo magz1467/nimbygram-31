@@ -44,9 +44,15 @@ export const getPostcodeAutocomplete = async (searchTerm: string): Promise<Postc
     // Parse the response JSON
     const data = await response.json();
     
-    // Check if we have results
-    if (!data.result || !Array.isArray(data.result)) {
-      console.log('ℹ️ No postcode autocomplete results found');
+    // Check if we have results - API returns null for no results
+    if (!data.result) {
+      console.log('ℹ️ No postcode autocomplete results found (null result)');
+      return [];
+    }
+    
+    // Ensure result is an array (API returns null for no results)
+    if (!Array.isArray(data.result)) {
+      console.log('ℹ️ Result is not an array:', typeof data.result);
       return [];
     }
     

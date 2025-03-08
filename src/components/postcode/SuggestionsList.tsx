@@ -38,11 +38,12 @@ export const SuggestionsList = ({
     suggestionsCount: suggestions?.length || 0,
     isLoading,
     isFetching,
-    error: error ? 'Error present' : 'No error'
+    error: error ? 'Error present' : 'No error',
+    suggestions: suggestions || 'No suggestions'
   });
 
   // Check if we have valid suggestions
-  const hasSuggestions = suggestions && suggestions.length > 0;
+  const hasSuggestions = suggestions && Array.isArray(suggestions) && suggestions.length > 0;
   
   return (
     <div className="relative">

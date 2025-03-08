@@ -52,10 +52,13 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
 
   // Log suggestions for debugging
   useEffect(() => {
+    console.log('🔍 Current search term:', debouncedSearch);
+    console.log('📋 Suggestions state:', suggestions ? `${suggestions.length} items` : 'none');
+    
     if (suggestions && suggestions.length > 0) {
       console.log('📋 Suggestions available:', suggestions.length);
     }
-  }, [suggestions]);
+  }, [suggestions, debouncedSearch]);
 
   const handleSelect = useCallback(async (value: string) => {
     setSearch(value);
