@@ -8,6 +8,7 @@ import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
+import { useEffect } from "react";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -15,9 +16,11 @@ interface SearchViewProps {
     searchTerm: string;
     timestamp?: number;
   };
+  retryCount?: number;
+  onError?: () => void;
 }
 
-export const SearchView = ({ initialSearch }: SearchViewProps) => {
+export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchViewProps) => {
   console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
   const isMobile = useIsMobile();
 
@@ -26,6 +29,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     coordinates,
     applications,
     isLoading,
+    error,
     hasSearched,
     showMap,
     setShowMap,
@@ -39,10 +43,20 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     handlePostcodeSelect,
     statusCounts,
     refetch
-  } = useSearchResults({ initialSearch });
+  } = useSearchResults({ 
+    initialSearch,
+    retryCount 
+  });
 
   console.log('🌍 SearchView received coordinates:', coordinates);
   console.log('📊 SearchView received applications:', applications?.length);
+
+  // Report errors back to parent component
+  useEffect(() => {
+    if (error && onError) {
+      onError();
+    }
+  }, [error, onError]);
 
   // Use the filtered applications hook with coordinates
   const displayApplications = useFilteredApplications(
@@ -112,6 +126,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
         isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
         onRetry={handleRetry}
+        error={error}
       />
     </div>
   );

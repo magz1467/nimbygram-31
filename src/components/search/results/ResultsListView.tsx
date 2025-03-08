@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface ResultsListViewProps {
   handleMarkerClick?: (id: number) => void;
   allApplications?: Application[];
   postcode?: string;
+  error?: Error | null;
 }
 
 export const ResultsListView = ({ 
@@ -26,7 +28,8 @@ export const ResultsListView = ({
   coordinates,
   handleMarkerClick,
   allApplications,
-  postcode
+  postcode,
+  error
 }: ResultsListViewProps) => {
   // Use the visible applications or all applications array, whichever is available
   const appArray = allApplications?.length ? allApplications : applications;
@@ -45,14 +48,18 @@ export const ResultsListView = ({
     );
   }
 
-  // If no applications found, show empty state
-  if (!applications.length) {
+  // If error or no applications found, show empty state
+  if (error || !applications.length) {
     return (
       <div className="py-16 text-center max-w-md mx-auto">
-        <h3 className="text-lg font-semibold mb-2">No results found</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          {error ? "Error loading results" : "No results found"}
+        </h3>
         <p className="text-gray-500 mb-6">
-          We couldn't find any planning applications for{' '}
-          <span className="font-medium">{searchTerm}</span>. Please try another search.
+          {error 
+            ? "We encountered an error while searching. Please try again."
+            : `We couldn't find any planning applications for ${searchTerm}. Please try another search.`
+          }
         </p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" className="gap-2">

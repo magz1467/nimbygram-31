@@ -8,12 +8,15 @@ import { transformAndSortApplications } from "@/services/applications/transform-
 export const useMapApplications = (coordinates?: [number, number] | null) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchPropertyData = async () => {
       console.log('🔍 Starting to fetch property data...');
       console.log('🌍 Search coordinates:', coordinates);
       setIsLoading(true);
+      setError(null);
       
       try {
         if (!coordinates) {
@@ -23,40 +26,51 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
-        // Fetch nearby applications (20km radius)
-        const properties = await fetchNearbyApplications(coordinates, 20);
+        // Fetch nearby applications (reduced radius from 20km to 10km)
+        const properties = await fetchNearbyApplications(coordinates, 10);
         
         if (!properties) {
-          toast({
-            title: "Error loading properties",
-            description: "Please try again later",
-            variant: "destructive"
-          });
+          setError(new Error("Failed to fetch properties"));
           setApplications([]);
           setIsLoading(false);
+          
+          if (retryCount < 2) {
+            // Auto-retry once with a smaller radius
+            console.log(`Auto-retrying with smaller radius (attempt ${retryCount + 1}/2)`);
+            setRetryCount(prev => prev + 1);
+          } else {
+            toast({
+              title: "Error loading properties",
+              description: "Please try again later or search for a different location",
+              variant: "destructive"
+            });
+          }
           return;
         }
 
         // Transform and sort applications
         const sortedData = transformAndSortApplications(properties, coordinates);
         setApplications(sortedData);
+        setRetryCount(0); // Reset retry count on success
 
         if (sortedData.length === 0) {
           toast({
             title: "No properties found",
-            description: "No properties found within 20km of your location",
+            description: "No properties found near this location. Try searching for a different area.",
             variant: "destructive"
           });
         }
 
       } catch (error) {
         console.error('💥 Error in fetchPropertyData:', error);
+        setError(error instanceof Error ? error : new Error(String(error)));
+        setApplications([]);
+        
         toast({
           title: "Error loading properties",
-          description: "Please try again later",
+          description: "Please try again later or search for a different location",
           variant: "destructive"
         });
-        setApplications([]);
       } finally {
         setIsLoading(false);
         console.log('🏁 Property fetch completed');
@@ -64,7 +78,12 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
     };
 
     fetchPropertyData();
-  }, [coordinates]);
+  }, [coordinates, retryCount]);
 
-  return { applications, isLoading };
+  // Expose retry functionality
+  const retry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
+  return { applications, isLoading, error, retry };
 };

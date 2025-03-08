@@ -1,14 +1,18 @@
 
 import { SearchView } from "@/components/search/results/SearchView";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { RotateCw } from "lucide-react";
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const searchState = location.state;
+  const [retryCount, setRetryCount] = useState(0);
+  const [isError, setIsError] = useState(false);
 
   // Validate that we have search state
   useEffect(() => {
@@ -45,12 +49,57 @@ const SearchResultsPage = () => {
     }
   }, [searchState, navigate, toast]);
 
+  // Handle retry
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setIsError(false);
+    
+    toast({
+      title: "Retrying search",
+      description: "Searching again for planning applications...",
+    });
+    
+    // Force refresh by updating the timestamp in the search state
+    if (searchState) {
+      const updatedState = {
+        ...searchState,
+        timestamp: Date.now()
+      };
+      
+      // Use replace to avoid adding to history stack
+      navigate('/search-results', { 
+        state: updatedState,
+        replace: true 
+      });
+    }
+  };
+
   // Only render SearchView if we have valid search state
   if (!searchState?.searchTerm) {
     return null;
   }
 
-  return <SearchView initialSearch={searchState} />;
+  // Error state with retry button
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <h2 className="text-2xl font-bold mb-4">Search Error</h2>
+        <p className="text-gray-600 mb-6 text-center">
+          We had trouble finding planning applications for this location.
+        </p>
+        <Button onClick={handleRetry} className="flex items-center gap-2">
+          <RotateCw className="h-4 w-4" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  return <SearchView 
+    initialSearch={searchState} 
+    retryCount={retryCount}
+    onError={() => setIsError(true)}
+  />;
 };
 
 export default SearchResultsPage;
