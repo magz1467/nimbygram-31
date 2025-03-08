@@ -28,7 +28,8 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
   } = useCommentReplies(Number(comment.id), currentUserId);
 
   const handleSubmitReply = () => {
-    handleReply(comment.application_id);
+    // Convert application_id to string if handleReply expects a string
+    handleReply(String(comment.application_id));
   };
 
   return {
