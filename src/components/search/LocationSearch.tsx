@@ -12,7 +12,7 @@ interface LocationSearchProps {
 export const LocationSearch = ({ location, onLocationChange, onLocationSelect }: LocationSearchProps) => {
   const [open, setOpen] = useState(false);
   const { suggestions = [], isLoading } = useAddressSuggestions({
-    initialValue: location,
+    input: location,
   });
 
   return (
