@@ -30,45 +30,47 @@ export const LocationSearch = ({ location, onLocationChange, onLocationSelect }:
         {open && (
           <CommandList>
             {location.length >= 2 ? (
-              isLoading ? (
-                <CommandEmpty>Loading suggestions...</CommandEmpty>
-              ) : suggestions.length === 0 ? (
-                <CommandEmpty>No results found.</CommandEmpty>
-              ) : (
-                <CommandGroup heading="Locations">
-                  {suggestions.map((suggestion) => {
-                    if (!suggestion?.address && !suggestion?.postcode) return null;
-                    
-                    const address = suggestion.address || suggestion.postcode;
-                    const key = `${suggestion.postcode}-${suggestion.admin_district}-${Date.now()}`;
-                    
-                    return (
-                      <CommandItem
-                        key={key}
-                        value={address}
-                        onSelect={(value) => {
-                          if (value) {
-                            onLocationSelect(value);
-                            setOpen(false);
-                          }
-                        }}
-                        className="cursor-pointer hover:bg-primary/10"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{address}</span>
-                          {(suggestion.admin_district || suggestion.country) && (
-                            <span className="text-sm text-gray-500">
-                              {[suggestion.admin_district, suggestion.country]
-                                .filter(Boolean)
-                                .join(', ')}
-                            </span>
-                          )}
-                        </div>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              )
+              <>
+                {isLoading ? (
+                  <CommandEmpty>Loading suggestions...</CommandEmpty>
+                ) : suggestions && suggestions.length === 0 ? (
+                  <CommandEmpty>No results found.</CommandEmpty>
+                ) : (
+                  <CommandGroup heading="Locations">
+                    {(suggestions || []).map((suggestion) => {
+                      if (!suggestion?.address && !suggestion?.postcode) return null;
+                      
+                      const address = suggestion.address || suggestion.postcode;
+                      const key = `${suggestion.postcode}-${suggestion.admin_district}-${Date.now()}`;
+                      
+                      return (
+                        <CommandItem
+                          key={key}
+                          value={address}
+                          onSelect={(value) => {
+                            if (value) {
+                              onLocationSelect(value);
+                              setOpen(false);
+                            }
+                          }}
+                          className="cursor-pointer hover:bg-primary/10"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{address}</span>
+                            {(suggestion.admin_district || suggestion.country) && (
+                              <span className="text-sm text-gray-500">
+                                {[suggestion.admin_district, suggestion.country]
+                                  .filter(Boolean)
+                                  .join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                )}
+              </>
             ) : null}
           </CommandList>
         )}
