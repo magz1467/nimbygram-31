@@ -4,9 +4,11 @@ import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export const SupportTableSetup = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [tableExists, setTableExists] = useState(false);
   const { toast } = useToast();
 
   const checkTableExists = async () => {
@@ -18,8 +20,10 @@ export const SupportTableSetup = () => {
       
       if (error && error.code === '42P01') {
         // Table doesn't exist
+        setTableExists(false);
         return false;
       }
+      setTableExists(true);
       return true;
     } catch (error) {
       console.error('Error checking if table exists:', error);
@@ -27,13 +31,18 @@ export const SupportTableSetup = () => {
     }
   };
 
+  // Check if table exists on component mount
+  useState(() => {
+    checkTableExists();
+  });
+
   const createSupportTable = async () => {
     setIsLoading(true);
     
     try {
-      const tableExists = await checkTableExists();
+      const exists = await checkTableExists();
       
-      if (tableExists) {
+      if (exists) {
         toast({
           title: "Table exists",
           description: "The application_support table already exists in the database."
@@ -96,6 +105,8 @@ export const SupportTableSetup = () => {
         description: "The application_support table has been created successfully."
       });
       
+      setTableExists(true);
+      
       // Refresh the page to apply changes
       setTimeout(() => {
         window.location.reload();
@@ -114,18 +125,38 @@ export const SupportTableSetup = () => {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-bold mb-4">Application Support Table Setup</h2>
+    <Card className={`p-6 ${!tableExists ? 'border-red-500' : 'border-green-500'}`}>
+      <div className="flex items-start justify-between mb-4">
+        <h2 className="text-xl font-bold">Application Support Table Setup</h2>
+        {tableExists ? (
+          <CheckCircle2 className="h-6 w-6 text-green-500" />
+        ) : (
+          <AlertCircle className="h-6 w-6 text-red-500" />
+        )}
+      </div>
+      
       <p className="mb-4">
-        This utility creates the required database table for the application support system.
-        Use this if you're seeing errors related to the "application_support" table not existing.
+        {tableExists 
+          ? "✅ The application_support table is set up correctly."
+          : "⚠️ The application support system requires database setup. Without this, the Support feature will not work."}
       </p>
+      
+      {!tableExists && (
+        <div className="bg-amber-50 p-3 rounded-md mb-4 border border-amber-200">
+          <p className="text-amber-800 text-sm">
+            The error message "Database setup required" appears because this table doesn't exist yet.
+            Click the button below to create it.
+          </p>
+        </div>
+      )}
+      
       <Button 
         onClick={createSupportTable} 
-        disabled={isLoading}
+        disabled={isLoading || tableExists}
         className="w-full"
+        variant={tableExists ? "outline" : "default"}
       >
-        {isLoading ? "Creating Table..." : "Create Application Support Table"}
+        {isLoading ? "Creating Table..." : tableExists ? "Table Already Created" : "Create Application Support Table"}
       </Button>
     </Card>
   );
