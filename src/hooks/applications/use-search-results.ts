@@ -13,10 +13,12 @@ interface SearchResultsOptions {
     searchTerm: string;
     timestamp?: number;
   };
+  retryCount?: number; // Add retryCount to the options type
 }
 
-export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResultsOptions = {}) => {
+export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 0 }: SearchResultsOptions = {}) => {
   const initialPostcodeValue = initialSearch?.searchType === 'postcode' ? initialSearch.searchTerm : initialPostcode || '';
+  const [error, setError] = useState<Error | null>(null); // Add error state
 
   const {
     postcode,
@@ -25,8 +27,16 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
     isLoadingApps,
     applications = [],
     handlePostcodeSelect,
-    refetch
-  } = useSearchState(initialPostcodeValue);
+    refetch,
+    error: searchStateError, // Extract error from search state
+  } = useSearchState(initialPostcodeValue, retryCount);
+
+  // Update our error state when search state error changes
+  useEffect(() => {
+    if (searchStateError) {
+      setError(searchStateError);
+    }
+  }, [searchStateError]);
 
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
   const [showMap, setShowMap] = useState(false);
@@ -145,6 +155,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
     handleSortChange,
     handlePostcodeSelect,
     statusCounts,
-    refetch
+    refetch,
+    error // Return the error state
   };
 };

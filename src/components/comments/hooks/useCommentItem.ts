@@ -10,7 +10,7 @@ export const useCommentItem = (comment: Comment, currentUserId?: string) => {
     downvotes,
     handleVoteChange
   } = useCommentVotes(
-    comment.id,
+    comment.id.toString(), // Convert number to string
     currentUserId,
     comment.upvotes || 0,
     comment.downvotes || 0

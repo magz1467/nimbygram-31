@@ -29,7 +29,6 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
     coordinates,
     applications,
     isLoading,
-    error,
     hasSearched,
     showMap,
     setShowMap,
@@ -42,10 +41,11 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
     handleSortChange,
     handlePostcodeSelect,
     statusCounts,
-    refetch
+    refetch,
+    error // Ensure error is included in the return value from useSearchResults
   } = useSearchResults({ 
     initialSearch,
-    retryCount 
+    retryCount // This needs to be added to the SearchResultsOptions type
   });
 
   console.log('🌍 SearchView received coordinates:', coordinates);

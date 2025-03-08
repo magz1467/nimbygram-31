@@ -37,7 +37,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       .from('crystal_roof')
       .select('*')
       .limit(50) // Limit the number of results to avoid processing too much data
-      .abortSignal() // Add abort signal for better timeout handling
+      .abortSignal(new AbortController().signal) // Fix: Pass an abort signal
 
     // Race the promises
     const data = await Promise.race([

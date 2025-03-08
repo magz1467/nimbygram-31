@@ -21,6 +21,7 @@ interface ResultsContainerProps {
   isLoading: boolean;
   searchTerm?: string;
   onRetry?: () => void;
+  error?: Error | null; // Add error prop
 }
 
 export const ResultsContainer = ({
@@ -34,7 +35,8 @@ export const ResultsContainer = ({
   handleMarkerClick,
   isLoading,
   searchTerm,
-  onRetry
+  onRetry,
+  error
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -100,6 +102,7 @@ export const ResultsContainer = ({
         handleMarkerClick={handleMarkerClick}
         allApplications={applications}
         postcode={searchTerm}
+        error={error}
       />
       
       {/* Mobile map overlay */}
