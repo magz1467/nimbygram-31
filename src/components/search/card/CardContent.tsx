@@ -3,15 +3,36 @@ import { formatStorybook } from "@/utils/storybook-formatter";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { DesktopMapDialog } from "@/components/search/results/DesktopMapDialog";
+import { Application } from "@/types/planning";
 
 interface CardContentProps {
   storybook: string | null;
   onSeeOnMap: () => void;
+  applicationId?: number;
+  applications?: Application[];
+  selectedId?: number | null;
+  coordinates?: [number, number] | null;
+  handleMarkerClick?: (id: number) => void;
+  isLoading?: boolean;
+  postcode?: string;
 }
 
-export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
+export const CardContent = ({ 
+  storybook, 
+  onSeeOnMap,
+  applicationId,
+  applications = [],
+  selectedId = null,
+  coordinates = null,
+  handleMarkerClick = () => {},
+  isLoading = false,
+  postcode = ""
+}: CardContentProps) => {
   const formattedStorybook = formatStorybook(storybook);
   const isMobile = useIsMobile();
+  const [showMapDialog, setShowMapDialog] = useState(false);
   
   if (!formattedStorybook?.content) return null;
 
@@ -38,7 +59,20 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('💡 See on map button clicked');
-    onSeeOnMap();
+    
+    if (isMobile) {
+      // On mobile, use the existing handler
+      onSeeOnMap();
+    } else {
+      // On desktop, open the map dialog
+      if (coordinates && applicationId) {
+        setShowMapDialog(true);
+        // Ensure this application is selected
+        if (handleMarkerClick) {
+          handleMarkerClick(applicationId);
+        }
+      }
+    }
   };
 
   return (
@@ -115,6 +149,20 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
               ))}
           </div>
         </div>
+      )}
+
+      {/* Map Dialog for Desktop */}
+      {!isMobile && applicationId && coordinates && (
+        <DesktopMapDialog
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          isOpen={showMapDialog}
+          onClose={() => setShowMapDialog(false)}
+          isLoading={isLoading}
+          postcode={postcode}
+        />
       )}
     </div>
   );

@@ -12,9 +12,24 @@ import { getImageUrl } from "@/utils/imageUtils";
 interface SearchResultCardProps {
   application: Application;
   onSeeOnMap?: (id: number) => void;
+  applications?: Application[];
+  selectedId?: number | null;
+  coordinates?: [number, number] | null;
+  handleMarkerClick?: (id: number) => void;
+  isLoading?: boolean;
+  postcode?: string;
 }
 
-export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
+export const SearchResultCard = ({ 
+  application, 
+  onSeeOnMap,
+  applications = [],
+  selectedId = null,
+  coordinates = null,
+  handleMarkerClick,
+  isLoading = false,
+  postcode = ""
+}: SearchResultCardProps) => {
   const [showComments, setShowComments] = useState(false);
 
   const handleShare = async () => {
@@ -79,6 +94,13 @@ export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardPr
         <CardContent 
           storybook={application.storybook} 
           onSeeOnMap={handleSeeOnMap}
+          applicationId={application.id}
+          applications={applications}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          isLoading={isLoading}
+          postcode={postcode}
         />
 
         {showComments && (

@@ -95,6 +95,11 @@ export const ResultsContainer = ({
         onSeeOnMap={handleSeeOnMap}
         searchTerm={searchTerm}
         onRetry={handleRetry}
+        selectedId={selectedId}
+        coordinates={coordinates}
+        handleMarkerClick={handleMarkerClick}
+        allApplications={applications}
+        postcode={searchTerm}
       />
       
       {/* Mobile map overlay */}
