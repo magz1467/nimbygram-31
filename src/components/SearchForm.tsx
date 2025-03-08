@@ -51,7 +51,14 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         sessionStorage.removeItem(key);
       });
       
-      // Call onSearch callback for postcode searches if provided
+      // Extract a readable name from the search term
+      // If it's a Place ID (starts with ChIJ), use just the first part of the term
+      // or the whole term if it doesn't contain a comma
+      const displayTerm = searchTerm.startsWith('ChIJ') && searchTerm.includes(',')
+        ? searchTerm.split(',')[0].trim()
+        : searchTerm;
+      
+      // Call onSearch callback if provided
       if (onSearch) {
         console.log('📍 Calling onSearch callback with location:', searchTerm);
         onSearch(searchTerm);
@@ -60,16 +67,17 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       console.log('🧭 Navigating to search results with state:', {
         searchType: 'postcode',
         searchTerm,
+        displayTerm,
         timestamp: Date.now()
       });
 
       // Navigate to search results with state
-      // Use replace: false to preserve navigation history
       navigate('/search-results', {
         state: {
           searchType: 'postcode',
           searchTerm,
-          timestamp: Date.now() // Add timestamp to ensure state changes are detected
+          displayTerm, // Add a more readable display term
+          timestamp: Date.now()
         },
         replace: false
       });

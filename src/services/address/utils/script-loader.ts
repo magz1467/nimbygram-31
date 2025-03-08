@@ -1,68 +1,38 @@
 
-// Flag to track if the API has been loaded successfully
-let googleMapsLoaded = false;
-let loadAttempted = false;
+const GOOGLE_MAPS_API_KEY = 'AIzaSyD8z9V13my1XNP-_xIgYQ6jmvSY75ehYbI'; // This is a public key, can be exposed in client-side code
 
 /**
- * Loads the Google Maps script with the provided API key
- * @param apiKey The Google Maps API key
- * @returns Promise that resolves to true if the script loaded successfully, false otherwise
+ * Loads the Google Maps JavaScript API script with Places library
+ * @returns Promise that resolves when the script is loaded
  */
-export const loadGoogleMapsScript = (apiKey: string): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // If script is already loaded, resolve immediately
+export const loadGoogleMapsScript = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
     if (window.google && window.google.maps && window.google.maps.places) {
-      googleMapsLoaded = true;
-      resolve(true);
+      console.log('Google Maps already loaded, resolving immediately');
+      resolve();
       return;
     }
-    
-    // If we've already tried to load and failed, don't try again
-    if (loadAttempted && !googleMapsLoaded) {
-      resolve(false);
-      return;
-    }
-    
-    loadAttempted = true;
+
+    console.log('Loading Google Maps script...');
     
     // Create script element
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
     
-    // Set a timeout to handle cases where the script takes too long to load
-    const timeoutId = setTimeout(() => {
-      console.error('Google Maps script load timed out');
-      resolve(false);
-    }, 10000); // 10 second timeout
-    
+    // Set up event handlers
     script.onload = () => {
-      clearTimeout(timeoutId);
-      googleMapsLoaded = true;
-      resolve(true);
+      console.log('Google Maps script loaded successfully');
+      resolve();
     };
     
     script.onerror = (error) => {
-      clearTimeout(timeoutId);
-      console.error('Failed to load Google Maps script:', error);
-      resolve(false);
+      console.error('Error loading Google Maps script:', error);
+      reject(new Error('Failed to load Google Maps script'));
     };
     
+    // Add script to document
     document.head.appendChild(script);
   });
-};
-
-/**
- * Resets the load attempted flag - useful for testing
- */
-export const resetLoadAttempted = () => {
-  loadAttempted = false;
-};
-
-/**
- * Checks if Google Maps API is loaded
- */
-export const isGoogleMapsLoaded = (): boolean => {
-  return googleMapsLoaded;
 };

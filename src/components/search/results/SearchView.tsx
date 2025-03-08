@@ -14,6 +14,7 @@ interface SearchViewProps {
   initialSearch?: {
     searchType: 'postcode' | 'location';
     searchTerm: string;
+    displayTerm?: string; // Add displayTerm property
     timestamp?: number;
   };
   retryCount?: number;
@@ -42,10 +43,10 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
     handlePostcodeSelect,
     statusCounts,
     refetch,
-    error // Ensure error is included in the return value from useSearchResults
+    error
   } = useSearchResults({ 
     initialSearch,
-    retryCount // This needs to be added to the SearchResultsOptions type
+    retryCount
   });
 
   console.log('🌍 SearchView received coordinates:', coordinates);
@@ -125,6 +126,7 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
         handleMarkerClick={handleMapMarkerClick}
         isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
+        displayTerm={initialSearch?.displayTerm} // Pass the displayTerm
         onRetry={handleRetry}
         error={error}
       />

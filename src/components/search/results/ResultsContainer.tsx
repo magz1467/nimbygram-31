@@ -20,8 +20,9 @@ interface ResultsContainerProps {
   handleMarkerClick: (id: number) => void;
   isLoading: boolean;
   searchTerm?: string;
+  displayTerm?: string; // Add displayTerm property
   onRetry?: () => void;
-  error?: Error | null; // Add error prop
+  error?: Error | null;
 }
 
 export const ResultsContainer = ({
@@ -35,6 +36,7 @@ export const ResultsContainer = ({
   handleMarkerClick,
   isLoading,
   searchTerm,
+  displayTerm,
   onRetry,
   error
 }: ResultsContainerProps) => {
@@ -96,6 +98,7 @@ export const ResultsContainer = ({
         isLoading={isLoading}
         onSeeOnMap={handleSeeOnMap}
         searchTerm={searchTerm}
+        displayTerm={displayTerm} // Pass the displayTerm
         onRetry={handleRetry}
         selectedId={selectedId}
         coordinates={coordinates}

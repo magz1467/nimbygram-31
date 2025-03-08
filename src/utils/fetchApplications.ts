@@ -37,7 +37,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       .from('crystal_roof')
       .select('*')
       .limit(50) // Limit the number of results to avoid processing too much data
-      .abortSignal(new AbortController().signal) // Fix: Pass an abort signal
+      .abortSignal(new AbortController().signal); // Pass an abort signal
 
     // Race the promises
     const data = await Promise.race([
@@ -72,12 +72,19 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
         }
         
         // Check if within bounds
-        return (
+        const inBounds = (
           appLat >= latMin && 
           appLat <= latMax && 
           appLng >= lngMin && 
           appLng <= lngMax
         );
+        
+        if (!inBounds) {
+          // Log skipped applications that are outside our bounds
+          console.log(`Skipping application ${app.id} - outside search radius`);
+        }
+        
+        return inBounds;
       } catch (err) {
         console.log(`Error filtering application ${app.id}:`, err);
         return false;
