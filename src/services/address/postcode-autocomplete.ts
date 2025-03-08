@@ -147,18 +147,19 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     
     // Convert results to our suggestion format with JustPark-like formatting
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
-      const name = place.name || 'Unknown Location';
+      // Fix the issue - use the actual place name instead of 'Unknown Location'
+      const name = place.name || '';
       const county = place.county_unitary || '';
       const region = place.region || '';
       
-      // Format address in the style: "Chesham, UK" or "Chesham, Buckinghamshire, UK"
+      // Format address in the style: "Aylesbury, UK" or "Aylesbury, Buckinghamshire, UK"
       let formattedAddress = name;
       if (county) formattedAddress += `, ${county}`;
       formattedAddress += `, UK`;
       
       return {
-        postcode: name, // Use the name as the postcode field
-        address: formattedAddress,
+        postcode: name, // Use the name as the postcode field for display
+        address: formattedAddress, // Full formatted address for selection
         country: 'United Kingdom',
         county: county,
         district: place.district || '',

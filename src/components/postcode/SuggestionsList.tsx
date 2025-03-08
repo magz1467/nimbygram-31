@@ -90,9 +90,7 @@ export const SuggestionsList = ({
                 <MapPin className="h-4 w-4 min-w-4 mr-2 text-gray-500" />
                 <div className="flex flex-col items-start">
                   <div className="font-medium text-left">
-                    {suggestion.isLocationName 
-                      ? suggestion.postcode 
-                      : suggestion.postcode}
+                    {suggestion.postcode}
                   </div>
                   <div className="text-xs text-gray-500 text-left">
                     {formatLocationDetails(suggestion)}
