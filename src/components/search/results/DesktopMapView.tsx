@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { MapContainer } from "@/components/map/MapContainer";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface DesktopMapViewProps {
   applications: Application[];
@@ -21,10 +22,32 @@ export const DesktopMapView = ({
   handleCloseMap,
   isLoading,
 }: DesktopMapViewProps) => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  // Force map to render correctly when it becomes visible
+  useEffect(() => {
+    if (mapContainerRef.current) {
+      console.log('🗺️ Desktop map mounted - forcing resize');
+      
+      // Allow the component to mount before triggering resize events
+      const resizeEvents = [50, 200, 500, 1000].map(delay => 
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+          console.log(`🗺️ Dispatched resize event after ${delay}ms`);
+        }, delay)
+      );
+      
+      return () => {
+        resizeEvents.forEach(clearTimeout);
+      };
+    }
+  }, []);
+  
   return (
     <div 
       className="col-span-1 relative rounded-lg overflow-hidden border shadow" 
       style={{ height: '700px' }}
+      ref={mapContainerRef}
     >
       <div className="absolute top-2 right-2 z-50 flex space-x-2">
         <Button 
