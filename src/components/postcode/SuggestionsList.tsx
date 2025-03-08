@@ -2,7 +2,7 @@
 import React from "react";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
 import { Command } from "@/components/ui/command";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { CommandList, CommandItem } from "@/components/ui/command";
 
 interface SuggestionsListProps {
@@ -86,8 +86,13 @@ export const SuggestionsList = ({
               onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
               className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
             >
-              <span className="font-medium">{suggestion.postcode}</span>
-              <span className="text-xs text-gray-500">
+              <div className="flex items-center">
+                <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                <span className="font-medium">
+                  {suggestion.isLocationName ? suggestion.postcode : suggestion.postcode}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500 ml-5">
                 {formatLocationDetails(suggestion)}
               </span>
             </CommandItem>

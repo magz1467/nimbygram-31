@@ -15,10 +15,18 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
   }
 
   try {
-    // Get postcode autocomplete results
-    const suggestions = await getPostcodeAutocomplete(searchTerm);
-    console.log('📋 Fetched address suggestions count:', suggestions.length);
-    return suggestions;
+    // First try to get postcode autocomplete results
+    const postcodeSuggestions = await getPostcodeAutocomplete(searchTerm);
+    
+    // If no postcode matches are found, try searching for location names
+    if (postcodeSuggestions.length === 0) {
+      const locationSuggestions = await searchLocationsByName(searchTerm);
+      console.log('📋 Fetched location suggestions count:', locationSuggestions.length);
+      return locationSuggestions;
+    }
+    
+    console.log('📋 Fetched address suggestions count:', postcodeSuggestions.length);
+    return postcodeSuggestions;
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
     return [];
@@ -108,5 +116,53 @@ const fetchPostcodeDetails = async (postcode: string) => {
   } catch (error) {
     console.error(`Error fetching details for ${postcode}:`, error);
     return null;
+  }
+};
+
+/**
+ * Search for locations by name using the postcodes.io API
+ */
+const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
+  try {
+    console.log('🔍 Searching for locations by name:', searchTerm);
+    
+    // Use the "query" endpoint for searching places by name
+    const url = `https://api.postcodes.io/places?q=${encodeURIComponent(searchTerm)}&limit=10`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.log('❌ Location search failed with status:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // Check if we have results
+    if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {
+      console.log('ℹ️ No location results found for:', searchTerm);
+      return [];
+    }
+    
+    console.log('📍 Found location results:', data.result.length);
+    
+    // Convert results to our suggestion format
+    const suggestions: PostcodeSuggestion[] = data.result.map(place => {
+      return {
+        postcode: place.name, // Using name as the main identifier
+        address: `${place.name}, ${place.county_unitary}`,
+        country: 'United Kingdom',
+        county: place.county_unitary || '',
+        district: place.district || '',
+        locality: place.region || '',
+        admin_district: place.admin_district || '',
+        nhs_ha: '',
+        isLocationName: true
+      };
+    });
+    
+    return suggestions;
+  } catch (error) {
+    console.error('Error searching for locations by name:', error);
+    return [];
   }
 };

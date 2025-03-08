@@ -10,6 +10,7 @@ export interface PostcodeSuggestion {
   address?: string;
   isPlaceId?: boolean;
   isManualPostcode?: boolean;
+  isLocationName?: boolean;
 }
 
 export interface AddressSuggestionOptions {
