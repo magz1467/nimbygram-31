@@ -35,6 +35,9 @@ const createMarkerIcon = (color: string, isSelected: boolean) => {
     </svg>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size],
+    popupAnchor: [0, -size/2],
+    // Add higher z-index to ensure visibility
+    className: `custom-marker ${isSelected ? 'selected-marker' : ''}`,
   });
 };
 
@@ -51,6 +54,8 @@ export const ApplicationMarkers = ({
   });
 
   const markers = useMemo(() => {
+    console.log('🔍 Creating markers for applications:', applications.length);
+    
     return applications
       .filter(app => {
         // Filter out applications without valid coordinates
@@ -70,6 +75,12 @@ export const ApplicationMarkers = ({
       .map(app => {
         const color = getStatusColor(app.status || 'pending');
         const isSelected = app.id === selectedId;
+        
+        console.log(`📍 Creating marker for app ${app.id}:`, { 
+          coords: app.coordinates,
+          isSelected,
+          color
+        });
 
         return (
           <Marker
@@ -88,5 +99,6 @@ export const ApplicationMarkers = ({
       });
   }, [applications, selectedId, onMarkerClick]);
 
+  console.log(`🎯 Rendering ${markers.length} markers`);
   return <>{markers}</>;
 };

@@ -72,6 +72,41 @@ export const MapContainer = memo(({
     };
   }, []);
 
+  // Add styles for marker visibility
+  useEffect(() => {
+    // Add CSS to ensure markers are visible on mobile
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      .leaflet-marker-icon {
+        z-index: 1000 !important;
+      }
+      .custom-marker {
+        z-index: 1000 !important;
+        pointer-events: auto !important;
+      }
+      .selected-marker {
+        z-index: 1001 !important;
+      }
+      .leaflet-pane {
+        z-index: 400 !important;
+      }
+      .leaflet-marker-pane {
+        z-index: 600 !important;
+      }
+      .leaflet-popup-pane {
+        z-index: 700 !important;
+      }
+      .custom-pin {
+        filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.3));
+      }
+    `;
+    document.head.appendChild(styleEl);
+    
+    return () => {
+      document.head.removeChild(styleEl);
+    };
+  }, []);
+
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer

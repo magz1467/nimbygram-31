@@ -2,7 +2,7 @@
 import { MobileApplicationCards } from "./mobile/MobileApplicationCards";
 import { MapContainer } from "./MapContainer";
 import { Application } from "@/types/planning";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MapContentProps {
   applications: Application[];
@@ -26,6 +26,7 @@ export const MapContent = ({
   postcode,
 }: MapContentProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [forceRender, setForceRender] = useState(0);
   
   console.log('🗺️ MapContent rendering:', {
     isMobile, 
@@ -53,9 +54,33 @@ export const MapContent = ({
     }
   }, [coordinates, selectedId, isMobile]);
 
+  // Listen for external requests to refresh the map
+  useEffect(() => {
+    const handleRefreshMarkers = () => {
+      console.log('🔄 Forcing map markers refresh');
+      setForceRender(prev => prev + 1);
+    };
+
+    window.addEventListener('refresh-map-markers', handleRefreshMarkers);
+    
+    return () => {
+      window.removeEventListener('refresh-map-markers', handleRefreshMarkers);
+    };
+  }, []);
+
+  // Force re-render when mobile or selected ID changes
+  useEffect(() => {
+    if (isMobile) {
+      console.log('📱 Mobile view detected, forcing marker refresh');
+      setForceRender(prev => prev + 1);
+    }
+  }, [isMobile, selectedId]);
+
   return (
     <div className="relative w-full h-full" ref={mapContainerRef}>
+      {/* Force render with key to ensure full component refresh when needed */}
       <MapContainer
+        key={`map-${forceRender}-${isMobile ? 'mobile' : 'desktop'}-${selectedId || 'none'}`}
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}

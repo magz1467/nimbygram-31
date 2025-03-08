@@ -39,11 +39,21 @@ export const MobileMapView = ({
       }
     }, 100);
     
+    // Force a refresh of the map component to ensure markers are rendered
+    const refreshTimer = setTimeout(() => {
+      console.log('📱 Refreshing map to ensure markers are visible');
+      const event = new CustomEvent('refresh-map-markers', {
+        detail: { applications, selectedId }
+      });
+      window.dispatchEvent(event);
+    }, 500);
+    
     return () => {
       document.body.style.overflow = '';
       clearTimeout(timer);
+      clearTimeout(refreshTimer);
     };
-  }, []);
+  }, [applications, selectedId]);
 
   return (
     <div 
