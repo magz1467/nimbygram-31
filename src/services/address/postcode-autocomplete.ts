@@ -145,15 +145,19 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     
     console.log('📍 Found location results:', data.result.length);
     
-    // Convert results to our suggestion format
+    // Convert results to our suggestion format with proper names
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
+      const name = place.name || 'Unknown Location';
+      const county = place.county_unitary || '';
+      const region = place.region || '';
+      
       return {
-        postcode: place.name, // Using name as the main identifier
-        address: `${place.name}, ${place.county_unitary || ''}`,
+        postcode: name, // Use the name as the postcode field
+        address: county ? `${name}, ${county}` : name,
         country: 'United Kingdom',
-        county: place.county_unitary || '',
+        county: county,
         district: place.district || '',
-        locality: place.region || '',
+        locality: region,
         admin_district: place.admin_district || '',
         nhs_ha: '',
         isLocationName: true

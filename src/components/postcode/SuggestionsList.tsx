@@ -81,9 +81,9 @@ export const SuggestionsList = ({
         ) : (
           suggestions.map((suggestion) => (
             <CommandItem
-              key={suggestion.postcode || Math.random().toString()}
+              key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
               value={suggestion.address || suggestion.postcode}
-              onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
+              onSelect={() => onSelect(suggestion.address || suggestion.postcode || '')}
               className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
             >
               <div className="flex items-center">
