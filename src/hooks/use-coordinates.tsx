@@ -23,8 +23,10 @@ export const useCoordinates = (postcode: string | undefined) => {
       console.log('🔍 useCoordinates: Fetching coordinates for:', postcode);
       
       try {
-        // Check if this is likely a Google Place ID (starts with "ChIJ" and is longer than regular postcodes)
-        const isGooglePlaceId = postcode.startsWith('ChIJ') || (postcode.length > 15 && !postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
+        // Check if this is likely a Google Place ID (starts with "ChIJ", "Eh", or is longer than regular postcodes)
+        const isGooglePlaceId = postcode.startsWith('ChIJ') || 
+                               postcode.startsWith('Eh') || 
+                               (postcode.length > 15 && !postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
         
         if (isGooglePlaceId) {
           console.log('🌍 Detected Google Place ID, using Maps API to get coordinates');
@@ -59,6 +61,7 @@ export const useCoordinates = (postcode: string | undefined) => {
 
       return new Promise<void>((resolve, reject) => {
         try {
+          console.log('🔍 Getting place details for:', placeId);
           const placesService = new google.maps.places.PlacesService(document.createElement('div'));
           
           placesService.getDetails(
@@ -67,6 +70,8 @@ export const useCoordinates = (postcode: string | undefined) => {
               fields: ['geometry']
             },
             (place, status) => {
+              console.log('📍 Place API status:', status);
+              
               if (status !== google.maps.places.PlacesServiceStatus.OK || !place || !place.geometry || !place.geometry.location) {
                 reject(new Error(`Failed to get location for place ID: ${status}`));
                 return;

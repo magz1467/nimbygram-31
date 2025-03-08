@@ -54,6 +54,8 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       return [];
     }
     
+    console.log('Found predictions:', predictions.length);
+    
     // Convert Google Places predictions to PostcodeSuggestion format
     const suggestions = await Promise.all(predictions.map(async (prediction): Promise<PostcodeSuggestion> => {
       // Extract postcode from description if available (UK postcodes follow a pattern)
@@ -136,7 +138,7 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       const streetAddress = prediction.structured_formatting.main_text || prediction.description.split(',')[0];
       
       return {
-        // Store the place_id internally for use when selecting
+        // Use the place_id directly when there's no postcode
         postcode: postcode || prediction.place_id,
         
         // Public-facing data that will be displayed to the user

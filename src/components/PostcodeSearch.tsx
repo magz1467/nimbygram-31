@@ -47,12 +47,26 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     
     setSearch(displayValue);
     setOpen(false);
+    
+    // Always pass the full postcode/place ID
     await onSelect(postcode);
   };
 
   const handleSearchClick = () => {
     if (search.trim()) {
-      onSelect(search.trim());
+      // Check if this might be a Google Place ID from our suggestions
+      const matchingSuggestion = suggestions.find(s => 
+        s.address === search.trim() || 
+        s.postcode === search.trim()
+      );
+      
+      if (matchingSuggestion) {
+        // Use the suggestion's postcode or place ID
+        onSelect(matchingSuggestion.postcode);
+      } else {
+        // Just use the raw input
+        onSelect(search.trim());
+      }
     }
   };
 
