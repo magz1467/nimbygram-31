@@ -23,15 +23,15 @@ export const useCoordinates = (postcode: string | undefined) => {
       console.log('🔍 useCoordinates: Fetching coordinates for:', postcode);
       
       try {
-        // Check if this is likely a Google Place ID
+        // First determine what type of location string we have
         const isGooglePlaceId = postcode.startsWith('ChIJ') || 
                                postcode.startsWith('Eh') || 
                                (postcode.length > 15 && !postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
         
-        // Check if this is a location name (town/city) rather than a postcode
         // Location names typically contain commas and "UK" at the end (e.g., "Wendover, Buckinghamshire, UK")
         const isLocationName = postcode.includes(',') && postcode.includes('UK');
         
+        // Choose the right method based on what we're dealing with
         if (isGooglePlaceId) {
           console.log('🌍 Detected Google Place ID, using Maps API to get coordinates');
           await fetchCoordinatesFromPlaceId(postcode);
@@ -68,9 +68,14 @@ export const useCoordinates = (postcode: string | undefined) => {
 
     // Function to fetch coordinates for a location name using the places API
     const fetchCoordinatesByLocationName = async (placeName: string) => {
-      // First try the Places API to get coordinates directly by name
+      // Try multiple approaches to find coordinates for the location name
+      console.log('⚡ Attempting to find coordinates for location:', placeName);
+      
+      let foundCoordinates = false;
+      
+      // Approach 1: Try using the Places API directly
       try {
-        console.log('🌍 Searching for place by name:', placeName);
+        console.log('🌍 Searching for place by name using Places API:', placeName);
         const placesResponse = await fetch(`https://api.postcodes.io/places?q=${encodeURIComponent(placeName)}&limit=1`);
         
         if (!placesResponse.ok) {
@@ -88,71 +93,73 @@ export const useCoordinates = (postcode: string | undefined) => {
             const newCoordinates: [number, number] = [parseFloat(place.latitude), parseFloat(place.longitude)];
             console.log('✅ useCoordinates: Setting coordinates from Places API:', newCoordinates);
             setCoordinates(newCoordinates);
+            foundCoordinates = true;
             return;
           }
         }
-        
-        // If we couldn't find it with the places API, try using the geocoding API
-        throw new Error("Location not found in Places API");
       } catch (error) {
         console.error('Failed with Places API, trying alternative method:', error);
+      }
+      
+      if (foundCoordinates) return;
+      
+      // Approach 2: Try using Google Maps geocoding as a fallback
+      try {
+        await ensureGoogleMapsLoaded();
         
-        // Try using Google Maps geocoding as a fallback
-        try {
-          if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
-            await loadGoogleMapsScript();
-          }
-          
-          const geocoder = new google.maps.Geocoder();
-          const result = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-            geocoder.geocode({ address: `${placeName}, UK` }, (results, status) => {
-              if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
-                resolve(results);
-              } else {
-                reject(new Error(`Geocoding failed: ${status}`));
-              }
-            });
+        const geocoder = new google.maps.Geocoder();
+        const result = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+          geocoder.geocode({ address: `${placeName}, UK` }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+              resolve(results);
+            } else {
+              reject(new Error(`Geocoding failed: ${status}`));
+            }
           });
-          
-          if (result.length > 0) {
-            const location = result[0].geometry.location;
-            const lat = location.lat();
-            const lng = location.lng();
-            console.log('📍 Got coordinates from Google Geocoder:', [lat, lng]);
-            setCoordinates([lat, lng]);
+        });
+        
+        if (result.length > 0) {
+          const location = result[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+          console.log('📍 Got coordinates from Google Geocoder:', [lat, lng]);
+          setCoordinates([lat, lng]);
+          foundCoordinates = true;
+          return;
+        }
+      } catch (geocodeError) {
+        console.error('Geocoding failed:', geocodeError);
+      }
+      
+      if (foundCoordinates) return;
+      
+      // Approach 3: Last resort - try searching for a nearby postcode
+      try {
+        console.log('🔍 Trying to find a postcode near:', placeName);
+        const response = await fetch(`https://api.postcodes.io/postcodes?q=${encodeURIComponent(placeName)}&limit=1`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.result && data.result.length > 0) {
+            const postcode = data.result[0];
+            const newCoordinates: [number, number] = [postcode.latitude, postcode.longitude];
+            console.log('✅ useCoordinates: Found nearby postcode coordinates:', newCoordinates);
+            setCoordinates(newCoordinates);
+            foundCoordinates = true;
             return;
           }
-        } catch (geocodeError) {
-          console.error('Geocoding also failed:', geocodeError);
         }
-        
-        // Last resort: try searching for a nearby postcode
-        try {
-          const response = await fetch(`https://api.postcodes.io/postcodes?q=${encodeURIComponent(placeName)}&limit=1`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.result && data.result.length > 0) {
-              const postcode = data.result[0];
-              const newCoordinates: [number, number] = [postcode.latitude, postcode.longitude];
-              console.log('✅ useCoordinates: Found nearby postcode coordinates:', newCoordinates);
-              setCoordinates(newCoordinates);
-              return;
-            }
-          }
-        } catch (postcodeError) {
-          console.error('Postcode search also failed:', postcodeError);
-        }
-        
+      } catch (postcodeError) {
+        console.error('Postcode search failed:', postcodeError);
+      }
+      
+      // If we've tried everything and still don't have coordinates
+      if (!foundCoordinates) {
         throw new Error(`Could not find coordinates for location: ${placeName}`);
       }
     };
 
     const fetchCoordinatesFromPlaceId = async (placeId: string) => {
-      // Use the Google Maps API that's already loaded
-      if (!window.google || !window.google.maps || !window.google.maps.places) {
-        // Load the Google Maps API if not already loaded
-        await loadGoogleMapsScript();
-      }
+      await ensureGoogleMapsLoaded();
 
       return new Promise<void>((resolve, reject) => {
         try {
@@ -215,8 +222,8 @@ export const useCoordinates = (postcode: string | undefined) => {
       }
     };
 
-    // Helper function to load Google Maps script
-    const loadGoogleMapsScript = (): Promise<void> => {
+    // Helper function to ensure Google Maps script is loaded
+    const ensureGoogleMapsLoaded = async (): Promise<void> => {
       return new Promise((resolve, reject) => {
         // If script is already loaded, resolve immediately
         if (window.google && window.google.maps && window.google.maps.places) {
