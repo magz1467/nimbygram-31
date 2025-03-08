@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthState } from "@/hooks/use-auth-state";
 import { useVoteState } from "@/hooks/use-vote-state";
 import { useSupportState } from "@/hooks/use-support-state";
@@ -15,7 +15,7 @@ export const useCardActions = (applicationId: number) => {
   const commentsCount = useCommentsCount(applicationId);
 
   // Update loading state based on vote loading
-  useState(() => {
+  useEffect(() => {
     if (!voteLoading) {
       setIsLoading(false);
     }
