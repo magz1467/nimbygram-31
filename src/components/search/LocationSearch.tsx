@@ -11,7 +11,9 @@ interface LocationSearchProps {
 
 export const LocationSearch = ({ location, onLocationChange, onLocationSelect }: LocationSearchProps) => {
   const [open, setOpen] = useState(false);
-  const { data: suggestions = [], isLoading } = useAddressSuggestions(location);
+  const { suggestions = [], isLoading } = useAddressSuggestions({
+    initialValue: location,
+  });
 
   return (
     <div className="relative w-full">
