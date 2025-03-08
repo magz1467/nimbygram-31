@@ -84,17 +84,21 @@ export const SuggestionsList = ({
               key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
               value={suggestion.address || suggestion.postcode}
               onSelect={() => onSelect(suggestion.address || suggestion.postcode || '')}
-              className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
+              className="flex cursor-pointer flex-col items-start p-2 text-sm hover:bg-gray-100"
             >
-              <div className="flex items-center">
-                <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                <span className="font-medium">
-                  {suggestion.isLocationName ? suggestion.postcode : suggestion.postcode}
-                </span>
+              <div className="flex w-full items-center">
+                <MapPin className="h-4 w-4 min-w-4 mr-2 text-gray-500" />
+                <div className="flex flex-col items-start">
+                  <div className="font-medium text-left">
+                    {suggestion.isLocationName 
+                      ? suggestion.postcode 
+                      : suggestion.postcode}
+                  </div>
+                  <div className="text-xs text-gray-500 text-left">
+                    {formatLocationDetails(suggestion)}
+                  </div>
+                </div>
               </div>
-              <span className="text-xs text-gray-500 ml-5">
-                {formatLocationDetails(suggestion)}
-              </span>
             </CommandItem>
           ))
         )}

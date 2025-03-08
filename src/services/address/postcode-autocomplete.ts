@@ -145,15 +145,20 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     
     console.log('📍 Found location results:', data.result.length);
     
-    // Convert results to our suggestion format with proper names
+    // Convert results to our suggestion format with JustPark-like formatting
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
       const name = place.name || 'Unknown Location';
       const county = place.county_unitary || '';
       const region = place.region || '';
       
+      // Format address in the style: "Chesham, UK" or "Chesham, Buckinghamshire, UK"
+      let formattedAddress = name;
+      if (county) formattedAddress += `, ${county}`;
+      formattedAddress += `, UK`;
+      
       return {
         postcode: name, // Use the name as the postcode field
-        address: county ? `${name}, ${county}` : name,
+        address: formattedAddress,
         country: 'United Kingdom',
         county: county,
         district: place.district || '',
