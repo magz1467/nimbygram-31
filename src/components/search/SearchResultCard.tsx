@@ -1,93 +1,63 @@
 
 import { Application } from "@/types/planning";
-import { useState } from "react";
-import { CardHeader } from "./card/CardHeader";
-import { CardImage } from "./card/CardImage";
-import { CardActions } from "./card/CardActions";
-import { CardContent } from "./card/CardContent";
-import { CommentList } from "@/components/comments/CommentList";
-import { format } from "date-fns";
-import { getImageUrl } from "@/utils/imageUtils";
+import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
 
 interface SearchResultCardProps {
   application: Application;
   onSeeOnMap?: (id: number) => void;
 }
 
-export const SearchResultCard = ({ application, onSeeOnMap }: SearchResultCardProps) => {
-  const [showComments, setShowComments] = useState(false);
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch (err) {
-      console.error("Couldn't copy link:", err);
-    }
-  };
-
-  const handleToggleComments = () => {
-    setShowComments(prev => !prev);
-  };
-
-  // Format the submitted date
-  const formattedSubmittedDate = application.submittedDate || application.received_date
-    ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
-      ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
-      : null
-    : null;
-
-  // Determine the best image URL to use and run it through the getImageUrl helper
-  const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
-
-  // Handle see on map button click
-  const handleSeeOnMap = () => {
-    if (onSeeOnMap && application.id) {
-      console.log('📍 See on map clicked for application:', application.id);
+export const SearchResultCard = ({ 
+  application,
+  onSeeOnMap
+}: SearchResultCardProps) => {
+  // Handler for See on Map button
+  const handleSeeOnMap = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default to avoid page scrolling
+    
+    if (onSeeOnMap) {
       onSeeOnMap(application.id);
     }
   };
 
   return (
-    <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
-      <CardHeader 
-        title={application.title || ''} 
-        address={application.address} 
-        storybook={application.storybook} 
-      />
-
-      <CardImage 
-        imageUrl={imageUrl} 
-        title={application.title || ''} 
-      />
-
-      <div className="border-y border-gray-100 py-3 px-4">
-        <CardActions
-          applicationId={application.id}
-          onShowComments={handleToggleComments}
-          onShare={handleShare}
-        />
-      </div>
-
-      <div className="px-8 py-4">
-        {formattedSubmittedDate && (
-          <div className="text-sm text-gray-500 mb-3">
-            <span className="font-medium">Submitted date:</span> {formattedSubmittedDate}
-          </div>
-        )}
+    <div className="rounded-lg bg-white shadow-sm border p-4" id={`application-${application.id}`}>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-lg">{application.title}</h3>
+          {onSeeOnMap && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleSeeOnMap}
+            >
+              <MapPin className="h-4 w-4" />
+              <span>See on Map</span>
+            </Button>
+          )}
+        </div>
         
-        <CardContent 
-          storybook={application.storybook} 
-          onSeeOnMap={handleSeeOnMap}
-        />
-
-        {showComments && (
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-medium mb-2">Comments</h3>
-            <CommentList applicationId={application.id} />
-          </div>
-        )}
+        <div className="aspect-video bg-gray-100 rounded-md overflow-hidden relative">
+          {application.streetview_url ? (
+            <img 
+              src={application.streetview_url} 
+              alt={application.title} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+              <span className="text-gray-500">No image available</span>
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <p className="text-gray-600 mb-2">{application.address}</p>
+          <p className="text-sm text-gray-500">{application.description}</p>
+        </div>
       </div>
-    </article>
+    </div>
   );
 };
