@@ -122,12 +122,14 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                           {!isPlaceId && suggestion.postcode && !suggestion.address.includes(suggestion.postcode) && (
                             <span className="text-sm text-gray-500">{suggestion.postcode}</span>
                           )}
-                          {!suggestion.address && !isPlaceId && suggestion.postcode && (
-                            <span className="font-medium">{suggestion.postcode}</span>
-                          )}
-                          {(!suggestion.address || isPlaceId) && (
+                          {suggestion.admin_district && (
                             <span className="text-sm text-gray-500">
-                              {`${suggestion.admin_district || ''}, ${suggestion.country || 'UK'}`}
+                              {suggestion.admin_district}, {suggestion.country || 'UK'}
+                            </span>
+                          )}
+                          {!suggestion.admin_district && (
+                            <span className="text-sm text-gray-500">
+                              {suggestion.country || 'UK'}
                             </span>
                           )}
                         </div>

@@ -52,10 +52,16 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       // Split the description into parts to get district and country
       const addressParts = prediction.structured_formatting.secondary_text?.split(', ') || [];
       const country = addressParts.length > 0 ? addressParts[addressParts.length - 1] : 'United Kingdom';
-      const admin_district = addressParts.length > 1 ? addressParts[0] : '';
+      
+      // Get district or other location info if available
+      let admin_district = '';
+      if (addressParts.length > 1) {
+        // Use all parts except the last one (country) if there are multiple parts
+        admin_district = addressParts.slice(0, -1).join(', ');
+      }
       
       // Create a "clean" version of the address to display
-      const cleanAddress = prediction.description;
+      const cleanAddress = prediction.structured_formatting.main_text || prediction.description;
       
       return {
         // Store the place_id internally for use when selecting
@@ -63,9 +69,9 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
         
         // Public-facing data that will be displayed to the user
         address: cleanAddress,
-        country: country,
+        country,
         nhs_ha: '',
-        admin_district: admin_district,
+        admin_district,
         
         // Add a flag to indicate if this is a place ID rather than a real postcode
         isPlaceId: !postcode && !!prediction.place_id
