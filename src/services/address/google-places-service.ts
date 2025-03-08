@@ -1,6 +1,5 @@
 
-// This file maintains backward compatibility with the original API
+// Re-export from places-suggestions-service
 import { fetchAddressSuggestionsByPlacesAPI } from './places-suggestions-service';
 
-// Re-export the same function that was exported before
 export { fetchAddressSuggestionsByPlacesAPI };

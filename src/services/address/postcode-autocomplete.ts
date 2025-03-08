@@ -79,3 +79,4 @@ export const getPostcodeAutocomplete = async (searchTerm: string): Promise<Postc
   const results = await Promise.all(detailsPromises);
   return results.filter((result): result is PostcodeSuggestion => result !== null);
 };
+

@@ -1,3 +1,4 @@
+
 import { loadGoogleMapsScript } from './utils/script-loader';
 import { fetchPlaceDetails } from './utils/places-details-fetcher';
 import { PostcodeSuggestion } from '../../types/address-suggestions';
@@ -11,20 +12,16 @@ interface GooglePlacesSuggestion {
   };
 }
 
-// Interface for our standardized suggestions
-export interface PlacesSuggestion {
+interface PlacesSuggestion {
+  id: string;
   description: string;
   placeId: string;
   mainText?: string;
   secondaryText?: string;
-  isPlaceId?: boolean;
-  postcode: string;
-  address?: string;
 }
 
 /**
  * Fetches place suggestions from Google Places API
- * Renamed to match the expected import name in other files
  * @param searchTerm - The search term to get suggestions for
  * @returns Promise with place suggestions
  */
@@ -85,21 +82,10 @@ export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Pr
 };
 
 /**
- * Fetch a place's details using its place ID
- * This is a wrapper around the fetchPlaceDetails function
- * @param placeId The Google Place ID
- * @returns The place details or null if not found
+ * Fetches place suggestions from Google Places API
+ * @param searchTerm - The search term to get suggestions for
+ * @returns Promise with place suggestions
  */
-export const getPlaceDetails = async (placeId: string) => {
-  try {
-    return await fetchPlaceDetails(placeId);
-  } catch (error) {
-    console.error('Error in getPlaceDetails:', error);
-    return null;
-  }
-};
-
-// Keep existing functions as they are
 export const fetchPlacesSuggestions = async (searchTerm: string): Promise<PlacesSuggestion[]> => {
   if (!searchTerm || searchTerm.length < 2) {
     return [];
@@ -132,13 +118,11 @@ export const fetchPlacesSuggestions = async (searchTerm: string): Promise<Places
             
             // Map to our standardized format
             const suggestions = predictions.map(prediction => ({
+              id: prediction.place_id,
               description: prediction.description,
               placeId: prediction.place_id,
               mainText: prediction.structured_formatting?.main_text,
-              secondaryText: prediction.structured_formatting?.secondary_text,
-              isPlaceId: true,
-              postcode: prediction.place_id, // Store place_id in postcode field for consistency with other suggestion sources
-              address: prediction.description
+              secondaryText: prediction.structured_formatting?.secondary_text
             }));
             
             resolve(suggestions);
@@ -155,12 +139,29 @@ export const fetchPlacesSuggestions = async (searchTerm: string): Promise<Places
   }
 };
 
+/**
+ * Fetch a place's details using its place ID
+ * This is a wrapper around the fetchPlaceDetails function
+ * @param placeId The Google Place ID
+ * @returns The place details or null if not found
+ */
+export const getPlaceDetails = async (placeId: string) => {
+  try {
+    return await fetchPlaceDetails(placeId);
+  } catch (error) {
+    console.error('Error in getPlaceDetails:', error);
+    return null;
+  }
+};
+
 export const fetchCombinedSuggestions = async (searchTerm: string): Promise<PlacesSuggestion[]> => {
   try {
     // Fetch suggestions from Google Places
     const placesSuggestions = await fetchPlacesSuggestions(searchTerm);
     
-    // Return combined suggestions
+    // In the future, this function could also fetch from other sources
+    // and combine the results
+    
     return placesSuggestions;
   } catch (error) {
     console.error('Error fetching combined suggestions:', error);

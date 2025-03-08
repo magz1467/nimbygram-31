@@ -1,79 +1,83 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { PostcodeSuggestion } from '../types/address-suggestions';
-import { fetchAddressSuggestionsByPlacesAPI } from '../services/address/places-suggestions-service';
+import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { fetchAddressSuggestions } from '@/services/address/postcode-autocomplete';
+import { fetchAddressSuggestionsByPlacesAPI } from '@/services/address/google-places-service';
+import { useDebounce } from './use-debounce';
 
-export const useAddressSuggestions = (search: string) => {
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+interface UseAddressSuggestionsProps {
+  initialValue?: string;
+  minLength?: number;
+  debounceMs?: number;
+}
+
+export function useAddressSuggestions({
+  initialValue = '',
+  minLength = 2,
+  debounceMs = 300
+}: UseAddressSuggestionsProps = {}) {
+  const [input, setInput] = useState(initialValue);
+  const debouncedInput = useDebounce(input, debounceMs);
+  const [suggestions, setSuggestions] = useState<PostcodeSuggestion[]>([]);
   const { toast } = useToast();
-  
-  // Debounce the search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-  
-  // For UK postcodes, make sure we directly use properly formatted input
-  const isUkPostcode = (value: string) => {
-    return /^[A-Z]{1,2}[0-9][0-9A-Z]?(\s*[0-9][A-Z]{2})?$/i.test(value);
-  };
 
-  // Use React Query to fetch and cache suggestions
-  return useQuery({
-    queryKey: ['address-suggestions', debouncedSearch],
-    queryFn: async (): Promise<PostcodeSuggestion[]> => {
-      try {
-        console.log('🔍 Fetching suggestions for:', debouncedSearch);
-        const suggestions = await fetchAddressSuggestionsByPlacesAPI(debouncedSearch);
-        
-        // If we get no suggestions but it looks like a UK postcode,
-        // create a direct suggestion
-        if (suggestions.length === 0 && isUkPostcode(debouncedSearch)) {
-          console.log('Creating direct UK postcode suggestion for:', debouncedSearch);
-          return [{
-            postcode: debouncedSearch.toUpperCase(),
-            address: `${debouncedSearch.toUpperCase()} (Postcode)`,
-            country: 'United Kingdom',
-            locality: '',
-            admin_district: '',
-            nhs_ha: '',
-            district: '',
-            county: ''
-          }];
-        }
-        
-        return suggestions;
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-        
-        // If it looks like a UK postcode, provide a fallback
-        if (isUkPostcode(debouncedSearch)) {
-          console.log('Creating fallback UK postcode after error for:', debouncedSearch);
-          return [{
-            postcode: debouncedSearch.toUpperCase(),
-            address: `${debouncedSearch.toUpperCase()} (Postcode)`,
-            country: 'United Kingdom',
-            locality: '',
-            admin_district: '',
-            nhs_ha: '', 
-            district: '',
-            county: ''
-          }];
-        }
-        
-        // Only show toast for non-postcode errors
-        toast({
-          title: "Error",
-          description: "Unable to fetch location suggestions. Please try again.",
-          variant: "destructive"
-        });
-        return [];
-      }
-    },
-    enabled: debouncedSearch.length >= 2,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  // Use query for postcode suggestions
+  const postcodeQuery = useQuery({
+    queryKey: ['postcode-suggestions', debouncedInput],
+    queryFn: () => fetchAddressSuggestions(debouncedInput),
+    enabled: debouncedInput.length >= minLength,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    retry: 1
   });
-};
+
+  // Use query for Google Places suggestions
+  const placesQuery = useQuery({
+    queryKey: ['places-suggestions', debouncedInput],
+    queryFn: () => fetchAddressSuggestionsByPlacesAPI(debouncedInput),
+    enabled: debouncedInput.length >= minLength,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    retry: 1
+  });
+
+  // Combine suggestions from both sources
+  useEffect(() => {
+    const postcodeResults = postcodeQuery.data || [];
+    const placesResults = placesQuery.data || [];
+    
+    // Combine and deduplicate results
+    const combinedResults = [...postcodeResults];
+    
+    // Add places results that don't duplicate postcodes
+    placesResults.forEach(placeResult => {
+      if (!combinedResults.some(pr => pr.postcode === placeResult.postcode)) {
+        combinedResults.push(placeResult);
+      }
+    });
+    
+    setSuggestions(combinedResults);
+  }, [postcodeQuery.data, placesQuery.data]);
+
+  // Show error toast if both queries fail
+  useEffect(() => {
+    if (postcodeQuery.isError && placesQuery.isError && debouncedInput.length >= minLength) {
+      toast({
+        title: "Error loading suggestions",
+        description: "Could not load address suggestions. Please try typing a valid UK postcode.",
+        variant: "destructive"
+      });
+    }
+  }, [postcodeQuery.isError, placesQuery.isError, toast, debouncedInput, minLength]);
+
+  return {
+    input,
+    setInput,
+    suggestions: suggestions || [],
+    isLoading: postcodeQuery.isLoading || placesQuery.isLoading,
+    isError: postcodeQuery.isError && placesQuery.isError,
+    isSuccess: postcodeQuery.isSuccess || placesQuery.isSuccess
+  };
+}
