@@ -26,19 +26,12 @@ const getStatusColor = (status: string): string => {
 
 // Create marker icon with appropriate color and size
 const createMarkerIcon = (color: string, isSelected: boolean) => {
-  // Make selected markers significantly larger on desktop
   const size = isSelected ? 48 : 24; // Larger size for selected marker
-  const strokeWidth = isSelected ? 2 : 1; // Thicker stroke for selected marker
-  const strokeColor = isSelected ? "#000000" : "#444444"; // Darker stroke for selected marker
   
   return L.divIcon({
     className: 'custom-pin',
     html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" 
-        fill="${color}" 
-        stroke="${strokeColor}" 
-        stroke-width="${strokeWidth}"
-      />
+      <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="${color}"/>
     </svg>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size],

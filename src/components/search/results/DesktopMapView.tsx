@@ -42,11 +42,6 @@ export const DesktopMapView = ({
       };
     }
   }, []);
-
-  // Log when selectedId changes to verify it's being passed down
-  useEffect(() => {
-    console.log('🎯 Desktop map selected application:', selectedId);
-  }, [selectedId]);
   
   return (
     <div 
