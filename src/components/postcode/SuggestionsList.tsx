@@ -49,7 +49,7 @@ export const SuggestionsList = ({
     <div className="relative">
       <Command
         ref={commandRef}
-        className="absolute top-2 z-10 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md"
+        className="absolute top-2 z-50 w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md"
       >
         <CommandList className="max-h-60 overflow-auto p-2">
           {isLoading || isFetching ? (

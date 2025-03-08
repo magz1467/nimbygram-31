@@ -62,16 +62,18 @@ export const PostcodeSearch = ({
         </Button>
       </div>
 
-      <SuggestionsList
-        isOpen={open}
-        search={search}
-        suggestions={suggestions}
-        isLoading={isLoading}
-        isFetching={isFetching}
-        error={error}
-        onSelect={handleSelect}
-        commandRef={commandRef}
-      />
+      <div className="relative w-full">
+        <SuggestionsList
+          isOpen={open}
+          search={search}
+          suggestions={suggestions}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          error={error}
+          onSelect={handleSelect}
+          commandRef={commandRef}
+        />
+      </div>
     </div>
   );
 };
