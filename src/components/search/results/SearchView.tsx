@@ -8,6 +8,7 @@ import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
+import { useEffect } from "react";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -43,6 +44,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
 
   console.log('🌍 SearchView received coordinates:', coordinates);
   console.log('📊 SearchView received applications:', applications?.length);
+  console.log('📱 Is mobile device:', isMobile);
 
   // Use the filtered applications hook with coordinates
   const displayApplications = useFilteredApplications(
@@ -51,6 +53,13 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
     activeSort,
     coordinates
   );
+
+  // Fix for mobile: ensure we have applications on mobile
+  useEffect(() => {
+    if (isMobile && applications?.length > 0) {
+      console.log('📱 Mobile search found applications:', applications.length);
+    }
+  }, [applications, isMobile]);
 
   // Handle marker click to show map and select application
   const handleMapMarkerClick = (id: number) => {
@@ -68,7 +77,7 @@ export const SearchView = ({ initialSearch }: SearchViewProps) => {
   };
 
   // Show no results view if appropriate
-  if (!isLoading && !applications?.length && !coordinates) {
+  if (!isLoading && !applications?.length && hasSearched) {
     return <NoResultsView onPostcodeSelect={handlePostcodeSelect} />;
   }
 

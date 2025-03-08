@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SearchResultsListProps {
   applications: Application[];
@@ -26,9 +27,15 @@ export const SearchResultsList = ({
   const [displayCount, setDisplayCount] = useState(10);
   const [loadProgress, setLoadProgress] = useState(33);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const displayedApplications = applications.slice(0, displayCount);
   const hasMore = displayCount < applications.length;
+
+  // Log whether we have applications, especially on mobile
+  useEffect(() => {
+    console.log(`📋 SearchResultsList has ${applications.length} applications, displaying ${displayedApplications.length}, mobile: ${isMobile}`);
+  }, [applications.length, displayedApplications.length, isMobile]);
 
   // Simulate progress for better user experience
   useEffect(() => {
