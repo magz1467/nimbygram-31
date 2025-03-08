@@ -36,8 +36,6 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
           input: searchTerm,
           componentRestrictions: { country: 'uk' },
           sessionToken,
-          // The types parameter must be a single value from this list
-          // Don't mix 'geocode' with other types as it causes the API error
           types: ['address'],
         },
         (predictions, status) => {
@@ -57,49 +55,103 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
     }
     
     // Convert Google Places predictions to PostcodeSuggestion format
-    const suggestions = predictions.map((prediction): PostcodeSuggestion => {
+    const suggestions = await Promise.all(predictions.map(async (prediction): Promise<PostcodeSuggestion> => {
       // Extract postcode from description if available (UK postcodes follow a pattern)
       const postcodeMatch = prediction.description.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i);
       const postcode = postcodeMatch ? postcodeMatch[0] : '';
       
-      // Split the description into parts to get location details
-      const addressParts = prediction.structured_formatting.secondary_text?.split(', ') || [];
+      // Get more detailed place information including administrative areas
+      let detailedPlace: any = null;
       
-      // The country is typically the last part
-      const country = addressParts.length > 0 ? addressParts[addressParts.length - 1] : 'United Kingdom';
+      // Create a dummy div to host the PlacesService (required by Google Maps API)
+      const dummyElement = document.createElement('div');
+      const placesService = new google.maps.places.PlacesService(dummyElement);
       
-      // Extract administrative areas and location data
-      let admin_district = '';
-      let county = '';
-      
-      if (addressParts.length > 1) {
-        // If we have multiple parts, the second-to-last might be a county or region
-        if (addressParts.length >= 3) {
-          county = addressParts[addressParts.length - 2];
-        }
-        
-        // Use all parts except the country as the admin_district
-        admin_district = addressParts.slice(0, -1).join(', ');
+      try {
+        detailedPlace = await new Promise((resolve) => {
+          placesService.getDetails(
+            {
+              placeId: prediction.place_id,
+              fields: ['address_components', 'formatted_address'],
+            },
+            (place, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                resolve(place);
+              } else {
+                resolve(null);
+              }
+            }
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching place details:', error);
       }
       
+      // Process address components to extract meaningful location data
+      let locality = '';
+      let district = '';
+      let county = '';
+      let country = 'United Kingdom';
+      
+      if (detailedPlace && detailedPlace.address_components) {
+        // Process the detailed address components to extract location data
+        for (const component of detailedPlace.address_components) {
+          const types = component.types;
+          
+          if (types.includes('postal_town') || types.includes('locality')) {
+            locality = component.long_name;
+          } else if (types.includes('administrative_area_level_2')) {
+            county = component.long_name;
+          } else if (types.includes('administrative_area_level_3')) {
+            district = component.long_name;
+          } else if (types.includes('country')) {
+            country = component.long_name;
+          }
+        }
+      }
+      
+      // Fall back to parsing the description if detailed info wasn't available
+      if (!detailedPlace) {
+        const addressParts = prediction.structured_formatting.secondary_text?.split(', ') || [];
+        
+        // The country is typically the last part
+        if (addressParts.length > 0) {
+          country = addressParts[addressParts.length - 1] || 'United Kingdom';
+          
+          // If we have multiple parts, the second-to-last might be a county or region
+          if (addressParts.length >= 3) {
+            county = addressParts[addressParts.length - 2];
+          }
+          
+          if (addressParts.length >= 2) {
+            locality = addressParts[0];
+          }
+        }
+      }
+      
+      // Combine district and county information for admin_district field
+      const adminDistrict = [district, county].filter(Boolean).join(', ');
+      
       // Create a "clean" version of the address to display
-      const cleanAddress = prediction.structured_formatting.main_text || prediction.description;
+      const streetAddress = prediction.structured_formatting.main_text || prediction.description.split(',')[0];
       
       return {
         // Store the place_id internally for use when selecting
         postcode: postcode || prediction.place_id,
         
         // Public-facing data that will be displayed to the user
-        address: cleanAddress,
+        address: streetAddress,
+        locality: locality || '',
+        county: county || '',
+        district: district || '',
         country,
-        county, // Add county information
+        admin_district: adminDistrict || county || '',
         nhs_ha: '',
-        admin_district,
         
         // Add a flag to indicate if this is a place ID rather than a real postcode
         isPlaceId: !postcode && !!prediction.place_id
       };
-    });
+    }));
     
     return suggestions;
   } catch (error) {

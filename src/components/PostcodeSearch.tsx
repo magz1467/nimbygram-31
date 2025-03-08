@@ -70,6 +70,39 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
     return "No results found. Try a postcode, street name or area.";
   };
 
+  // Format location information for display
+  const formatLocationInfo = (suggestion: any) => {
+    const parts = [];
+    
+    // Add locality if it exists and is not already in the address
+    if (suggestion.locality && !suggestion.address?.includes(suggestion.locality)) {
+      parts.push(suggestion.locality);
+    }
+    
+    // Add district if it exists and is not already covered
+    if (suggestion.district && 
+        !parts.includes(suggestion.district) && 
+        !suggestion.address?.includes(suggestion.district)) {
+      parts.push(suggestion.district);
+    }
+    
+    // Add county
+    if (suggestion.county && 
+        !parts.includes(suggestion.county) && 
+        !suggestion.address?.includes(suggestion.county)) {
+      parts.push(suggestion.county);
+    }
+    
+    // Add UK instead of United Kingdom for brevity
+    if (suggestion.country === 'United Kingdom') {
+      parts.push('UK');
+    } else if (suggestion.country && suggestion.country !== 'United Kingdom') {
+      parts.push(suggestion.country);
+    }
+    
+    return parts.filter(Boolean).join(', ');
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div className="relative w-full">
@@ -127,6 +160,9 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                       (suggestion.postcode && suggestion.postcode.length > 8 && 
                        !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
                     
+                    // Format location information
+                    const locationInfo = formatLocationInfo(suggestion);
+                    
                     return (
                       <CommandItem
                         key={key}
@@ -139,16 +175,10 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                             <span className="text-sm text-gray-500">{suggestion.postcode}</span>
                           )}
                           
-                          {/* Display location information with improved formatting */}
-                          <span className="text-sm text-gray-500">
-                            {[
-                              suggestion.admin_district,
-                              suggestion.county,
-                              suggestion.country === 'United Kingdom' ? 'UK' : suggestion.country
-                            ]
-                              .filter(Boolean)
-                              .join(', ')}
-                          </span>
+                          {/* Display enhanced location information */}
+                          {locationInfo && (
+                            <span className="text-sm text-gray-500">{locationInfo}</span>
+                          )}
                         </div>
                       </CommandItem>
                     );
