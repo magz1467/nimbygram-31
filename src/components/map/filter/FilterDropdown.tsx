@@ -1,3 +1,4 @@
+
 import { memo, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
@@ -61,12 +62,13 @@ export const FilterDropdown = memo(({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline" 
+          size="sm"
           className={cn(
-            "flex-1",
+            "px-3",
             hasActiveFilters && "border-primary text-primary"
           )}
         >
-          <Filter className="w-4 h-4 mr-2" />
+          <Filter className="h-4 w-4 mr-1" />
           Filter
         </Button>
       </DropdownMenuTrigger>
