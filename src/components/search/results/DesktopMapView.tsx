@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { MapContainer } from "@/components/map/MapContainer";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DesktopMapViewProps {
   applications: Application[];
@@ -23,11 +23,15 @@ export const DesktopMapView = ({
   isLoading,
 }: DesktopMapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [isMapVisible, setIsMapVisible] = useState(false);
 
   // Force map to render correctly when it becomes visible
   useEffect(() => {
     if (mapContainerRef.current) {
       console.log('🗺️ Desktop map mounted - forcing resize');
+      
+      // Show the map after a delay to ensure DOM is ready
+      setTimeout(() => setIsMapVisible(true), 100);
       
       // Allow the component to mount before triggering resize events
       const resizeEvents = [50, 200, 500, 1000].map(delay => 
@@ -43,15 +47,21 @@ export const DesktopMapView = ({
     }
   }, []);
   
+  console.log('🗺️ DesktopMapView rendering with selectedId:', selectedId);
+  
   return (
     <div 
       className="col-span-1 relative rounded-lg overflow-hidden border shadow" 
-      style={{ height: '700px' }}
+      style={{ height: '700px', display: 'block', visibility: isMapVisible ? 'visible' : 'hidden' }}
       ref={mapContainerRef}
     >
       <div className="absolute top-2 right-2 z-50 flex space-x-2">
         <Button 
-          onClick={handleCloseMap}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleCloseMap();
+          }}
           className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
           size="icon"
           variant="outline"
