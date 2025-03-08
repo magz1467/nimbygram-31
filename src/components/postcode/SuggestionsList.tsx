@@ -48,7 +48,7 @@ export const SuggestionsList = ({
   return (
     <Command
       ref={commandRef}
-      className="w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md"
+      className="w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md z-50"
     >
       <CommandList className="max-h-[300px] overflow-auto p-2">
         {isLoading || isFetching ? (

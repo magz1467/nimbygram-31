@@ -111,3 +111,33 @@
   inset: 0;
   background: white;
 }
+
+/* Ensure command dropdown displays correctly and doesn't get cut off */
+[cmdk-root] {
+  max-width: 100%;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  font-family: inherit;
+  z-index: 50;
+}
+
+/* Style the command suggestions */
+[cmdk-item] {
+  content-visibility: auto;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  transition: all 150ms ease;
+}
+
+[cmdk-item][data-selected="true"] {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure command suggestions stay on top of other content */
+.cmdk-overlay {
+  z-index: 999 !important;
+}
