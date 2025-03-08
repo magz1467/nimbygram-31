@@ -46,42 +46,40 @@ export const SuggestionsList = ({
   const hasSuggestions = suggestions && Array.isArray(suggestions) && suggestions.length > 0;
   
   return (
-    <div className="relative">
-      <Command
-        ref={commandRef}
-        className="absolute top-2 z-50 w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md"
-      >
-        <CommandList className="max-h-60 overflow-auto p-2">
-          {isLoading || isFetching ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              <span className="ml-2 text-sm text-gray-500">Searching...</span>
-            </div>
-          ) : error ? (
-            <div className="p-4 text-sm text-red-500">
-              Error searching for locations. Please try again.
-            </div>
-          ) : !hasSuggestions ? (
-            <div className="p-4 text-sm text-gray-500">
-              {search.length < 2
-                ? "Type at least 2 characters to search"
-                : "No locations found. Try a different search term."}
-            </div>
-          ) : (
-            suggestions.map((suggestion) => (
-              <CommandItem
-                key={suggestion.postcode || Math.random().toString()}
-                value={suggestion.address || suggestion.postcode}
-                onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
-                className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
-              >
-                <span className="font-medium">{suggestion.postcode}</span>
-                <span className="text-xs text-gray-500">{suggestion.address || suggestion.admin_district}</span>
-              </CommandItem>
-            ))
-          )}
-        </CommandList>
-      </Command>
-    </div>
+    <Command
+      ref={commandRef}
+      className="w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md"
+    >
+      <CommandList className="max-h-[300px] overflow-auto p-2">
+        {isLoading || isFetching ? (
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            <span className="ml-2 text-sm text-gray-500">Searching...</span>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-sm text-red-500">
+            Error searching for locations. Please try again.
+          </div>
+        ) : !hasSuggestions ? (
+          <div className="p-4 text-sm text-gray-500">
+            {search.length < 2
+              ? "Type at least 2 characters to search"
+              : "No locations found. Try a different search term."}
+          </div>
+        ) : (
+          suggestions.map((suggestion) => (
+            <CommandItem
+              key={suggestion.postcode || Math.random().toString()}
+              value={suggestion.address || suggestion.postcode}
+              onSelect={() => onSelect(suggestion.postcode || suggestion.address || '')}
+              className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
+            >
+              <span className="font-medium">{suggestion.postcode}</span>
+              <span className="text-xs text-gray-500">{suggestion.address || suggestion.admin_district}</span>
+            </CommandItem>
+          ))
+        )}
+      </CommandList>
+    </Command>
   );
 };

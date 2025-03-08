@@ -62,7 +62,8 @@ export const PostcodeSearch = ({
         </Button>
       </div>
 
-      <div className="relative w-full">
+      {/* Position the suggestions dropdown with correct z-index */}
+      <div className="absolute left-0 right-0 mt-1">
         <SuggestionsList
           isOpen={open}
           search={search}
