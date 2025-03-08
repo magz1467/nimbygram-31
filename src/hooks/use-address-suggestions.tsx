@@ -33,8 +33,31 @@ export const useAddressSuggestions = (search: string) => {
         // Try to determine if input is a postcode or address
         const isPostcodeLike = /^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(debouncedSearch.trim().toUpperCase());
         
-        // First try the postcode autocomplete if input looks like a postcode
-        if (isPostcodeLike) {
+        // Try general search first since it works for both postcodes and addresses
+        const searchUrl = `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`;
+        console.log('🔍 Trying general search:', searchUrl);
+        
+        const searchResponse = await fetch(searchUrl);
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          
+          if (searchData.result && Array.isArray(searchData.result)) {
+            const searchResults = searchData.result.map((result: any) => ({
+              ...result,
+              postcode: result.postcode,
+              address: [
+                result.admin_ward,
+                result.parish,
+                result.admin_district,
+                result.postcode
+              ].filter(Boolean).join(', ')
+            }));
+            suggestions.push(...searchResults);
+          }
+        }
+        
+        // If it looks like a postcode and we didn't get results yet, try postcode autocomplete
+        if (isPostcodeLike && suggestions.length === 0) {
           const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`;
           console.log('🔍 Fetching postcode autocomplete:', autocompleteUrl);
           
@@ -72,33 +95,8 @@ export const useAddressSuggestions = (search: string) => {
             });
 
             const results = await Promise.all(detailsPromises);
-            suggestions.push(...results.filter((result): result is PostcodeSuggestion => result !== null));
-          }
-        }
-
-        // If no results from autocomplete or input is address-like, try general search
-        if (suggestions.length === 0) {
-          // Try address search - this is a general postcode search that can match with partial addresses
-          const searchUrl = `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`;
-          console.log('🔍 Trying general search:', searchUrl);
-          
-          const searchResponse = await fetch(searchUrl);
-          if (searchResponse.ok) {
-            const searchData = await searchResponse.json();
-            
-            if (searchData.result && Array.isArray(searchData.result)) {
-              const searchResults = searchData.result.map((result: any) => ({
-                ...result,
-                postcode: result.postcode,
-                address: [
-                  result.admin_ward,
-                  result.parish,
-                  result.admin_district,
-                  result.postcode
-                ].filter(Boolean).join(', ')
-              }));
-              suggestions.push(...searchResults);
-            }
+            const validResults = results.filter((result): result is PostcodeSuggestion => result !== null);
+            suggestions.push(...validResults);
           }
         }
         

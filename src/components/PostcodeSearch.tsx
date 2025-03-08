@@ -25,9 +25,10 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
   
   const { data: suggestions = [], isLoading } = useAddressSuggestions(search);
 
-  const handleSelect = async (postcode: string) => {
-    console.log('📮 Selected postcode:', postcode);
-    setSearch(postcode);
+  const handleSelect = async (postcode: string, address?: string) => {
+    console.log('📮 Selected location:', postcode, address);
+    const displayValue = address || postcode;
+    setSearch(displayValue);
     setOpen(false);
     await onSelect(postcode);
   };
@@ -50,6 +51,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
           }}
           className="w-full pl-4 pr-10 py-2"
           onFocus={() => search.length >= 2 && setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 200)} // Delayed to allow clicking suggestions
         />
         <Button 
           type="button"
@@ -71,20 +73,29 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
               {isLoading ? (
                 <CommandEmpty>Loading suggestions...</CommandEmpty>
               ) : suggestions.length === 0 ? (
-                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandEmpty>No results found. Try a postcode or street name.</CommandEmpty>
               ) : (
                 <CommandGroup>
-                  {suggestions.map((suggestion) => (
+                  {suggestions.map((suggestion, index) => (
                     <CommandItem
-                      key={`${suggestion.postcode}-${Date.now()}`}
-                      onSelect={() => handleSelect(suggestion.postcode)}
+                      key={`${suggestion.postcode}-${index}`}
+                      onSelect={() => handleSelect(suggestion.postcode, suggestion.address)}
                       className="cursor-pointer hover:bg-primary/10"
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium">{suggestion.postcode}</span>
-                        <span className="text-sm text-gray-500">
-                          {suggestion.address || `${suggestion.admin_district}, ${suggestion.country}`}
-                        </span>
+                        {suggestion.address ? (
+                          <>
+                            <span className="font-medium">{suggestion.address}</span>
+                            <span className="text-sm text-gray-500">{suggestion.postcode}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium">{suggestion.postcode}</span>
+                            <span className="text-sm text-gray-500">
+                              {`${suggestion.admin_district}, ${suggestion.country}`}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </CommandItem>
                   ))}
