@@ -26,7 +26,9 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
           input: searchTerm,
           componentRestrictions: { country: 'uk' },
           sessionToken,
-          types: ['geocode', 'address', 'establishment'], // Ensure we get detailed address data
+          // The types parameter must be a single value from this list
+          // Don't mix 'geocode' with other types as it causes the API error
+          types: ['address'],
         },
         (predictions, status) => {
           if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
