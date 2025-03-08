@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { PostcodeSuggestion } from '../types/address-suggestions';
-import { fetchAddressSuggestionsByPlacesAPI } from '../services/address/google-places-service';
+import { fetchAddressSuggestionsByPlacesAPI } from '../services/address/places-suggestions-service';
 
 export const useAddressSuggestions = (search: string) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
