@@ -1,5 +1,5 @@
 
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion, AddressSuggestionOptions } from '@/types/address-suggestions';
 import {
   searchOSAddresses,
   searchOutcodes,

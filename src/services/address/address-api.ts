@@ -1,7 +1,16 @@
 
-// Export all search functions from their respective files
-export { searchOSAddresses } from './os-address-search';
-export { searchOutcodes } from './outcode-search';
-export { searchStreets } from './street-search';
-export { searchPostcodes } from './postcode-search';
-export { getPostcodeAutocomplete } from './postcode-autocomplete';
+import { OS_API_KEY } from './address-api-base';
+import { searchOSAddresses } from './os-address-search';
+import { searchOutcodes } from './outcode-search';
+import { searchStreets } from './street-search';
+import { searchPostcodes } from './postcode-search';
+import { getPostcodeAutocomplete } from './postcode-autocomplete';
+
+export {
+  OS_API_KEY,
+  searchOSAddresses,
+  searchOutcodes,
+  searchStreets,
+  searchPostcodes,
+  getPostcodeAutocomplete
+};
