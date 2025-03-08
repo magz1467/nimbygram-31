@@ -106,7 +106,10 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                 <CommandGroup>
                   {suggestions.map((suggestion, index) => {
                     // Create a unique key for each suggestion
-                    const key = `${suggestion.postcode}-${suggestion.address || ''}-${index}`;
+                    const key = `${suggestion.address || ''}-${index}`;
+                    
+                    // Check if this is likely a place ID (not a real postcode)
+                    const isPlaceId = suggestion.postcode && suggestion.postcode.length > 8 && !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i);
                     
                     return (
                       <CommandItem
@@ -118,13 +121,15 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
                           {suggestion.address ? (
                             <>
                               <span className="font-medium">{suggestion.address}</span>
-                              {!suggestion.address.includes(suggestion.postcode) && (
+                              {!suggestion.address.includes(suggestion.postcode) && !isPlaceId && (
                                 <span className="text-sm text-gray-500">{suggestion.postcode}</span>
                               )}
                             </>
                           ) : (
                             <>
-                              <span className="font-medium">{suggestion.postcode}</span>
+                              {!isPlaceId && (
+                                <span className="font-medium">{suggestion.postcode}</span>
+                              )}
                               <span className="text-sm text-gray-500">
                                 {`${suggestion.admin_district || ''}, ${suggestion.country || 'UK'}`}
                               </span>

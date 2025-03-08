@@ -55,11 +55,12 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
       const admin_district = addressParts.length > 1 ? addressParts[0] : '';
       
       return {
-        postcode: postcode || prediction.place_id, // Use place_id as a fallback
+        postcode: postcode || prediction.place_id, // Still use place_id internally, but don't display it
         address: prediction.description,
         country: country,
         nhs_ha: '',
-        admin_district: admin_district
+        admin_district: admin_district,
+        // Don't include the place_id in any visible fields
       };
     });
     
