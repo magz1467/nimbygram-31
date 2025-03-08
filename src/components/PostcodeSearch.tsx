@@ -25,7 +25,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
   const inputRef = useRef<HTMLInputElement>(null);
   const commandRef = useRef<HTMLDivElement>(null);
   
-  const { data: suggestions = [], isLoading } = useAddressSuggestions(search);
+  const { data: suggestions = [], isLoading, isFetching } = useAddressSuggestions(search);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,6 +59,9 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
       onSelect(search.trim());
     }
   };
+
+  // Determine if we should show the loading state
+  const isSearching = isLoading || isFetching;
 
   return (
     <div className={`relative ${className}`}>
@@ -96,7 +99,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
         <div className="absolute z-[9999] w-full mt-1">
           <Command ref={commandRef} className="rounded-lg border shadow-md bg-white postcode-command">
             <CommandList>
-              {isLoading ? (
+              {isSearching ? (
                 <CommandEmpty>Loading suggestions...</CommandEmpty>
               ) : suggestions.length === 0 ? (
                 <CommandEmpty>No results found. Try a postcode, street name or area.</CommandEmpty>

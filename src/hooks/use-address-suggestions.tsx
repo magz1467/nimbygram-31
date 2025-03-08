@@ -11,6 +11,10 @@ interface PostcodeSuggestion {
   address?: string;
 }
 
+// OS API Key has to be accessed differently in browser environment
+// This is a workaround for the "process is not defined" error
+const OS_API_KEY = 'ZTEafpzqZzMQXvUiMJFqnkEhdXrLbsLp'; // Default key, should be replaced with env var in production
+
 export const useAddressSuggestions = (search: string) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const { toast } = useToast();
@@ -40,7 +44,7 @@ export const useAddressSuggestions = (search: string) => {
         if (!isPostcodeLike && searchTerm.length >= 3) {
           try {
             // Use OS OpenNames API for address search
-            const addressUrl = `https://api.os.uk/search/names/v1/find?query=${encodeURIComponent(searchTerm)}&key=${process.env.OS_API_KEY || 'ZTEafpzqZzMQXvUiMJFqnkEhdXrLbsLp'}`;
+            const addressUrl = `https://api.os.uk/search/names/v1/find?query=${encodeURIComponent(searchTerm)}&key=${OS_API_KEY}`;
             console.log('🔍 Trying address search:', addressUrl);
             
             const addressResponse = await fetch(addressUrl);
@@ -111,6 +115,46 @@ export const useAddressSuggestions = (search: string) => {
               console.error('Error in outcode search:', error);
               // Continue with other searches even if this fails
             }
+          }
+          
+          // Also try a general address search with postcodes.io
+          try {
+            // Try a street/place name search through postcodes API
+            // This is a fallback for when the OS API might not return results
+            const streetUrl = `https://api.postcodes.io/places?q=${encodeURIComponent(searchTerm)}&limit=10`;
+            console.log('🔍 Trying street/place search:', streetUrl);
+            
+            const streetResponse = await fetch(streetUrl);
+            if (streetResponse.ok) {
+              const streetData = await streetResponse.json();
+              
+              if (streetData.result && Array.isArray(streetData.result) && streetData.result.length > 0) {
+                console.log('📍 Found street/place results:', streetData.result.length);
+                
+                // Format the search results
+                const streetResults = streetData.result.map((result: any) => {
+                  // Create address string
+                  const addressParts = [
+                    result.name || '',
+                    result.county || '',
+                    result.country || 'United Kingdom',
+                  ].filter(Boolean);
+                  
+                  return {
+                    postcode: result.postcode || addressParts[0],
+                    country: result.country || 'United Kingdom',
+                    nhs_ha: '',
+                    admin_district: result.admin_district || '',
+                    address: addressParts.join(', ')
+                  };
+                });
+                
+                suggestions.push(...streetResults);
+              }
+            }
+          } catch (error) {
+            console.error('Error in street/place search:', error);
+            // Continue even if this search fails
           }
           
           // If we still don't have results, try a partial postcode search
