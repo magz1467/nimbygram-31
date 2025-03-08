@@ -1,26 +1,8 @@
 
 import { PostcodeSuggestion } from '../../types/address-suggestions';
 
-const getGoogleMapsApiKey = async (): Promise<string> => {
-  try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-google-maps-key`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get Google Maps API key');
-    }
-
-    const data = await response.json();
-    return data.apiKey;
-  } catch (error) {
-    console.error('Error fetching Google Maps API key:', error);
-    throw error;
-  }
-};
+// Use the provided API key directly
+const GOOGLE_MAPS_API_KEY = 'AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA';
 
 export const fetchAddressSuggestionsByPlacesAPI = async (
   searchTerm: string
@@ -28,18 +10,14 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
   if (!searchTerm || searchTerm.length < 2) return [];
   
   try {
-    // Load Google Maps API script dynamically
-    const apiKey = await getGoogleMapsApiKey();
-    await loadGoogleMapsScript(apiKey);
+    // Load Google Maps API script dynamically with the provided key
+    await loadGoogleMapsScript(GOOGLE_MAPS_API_KEY);
     
     // Initialize the Places service
     const sessionToken = new google.maps.places.AutocompleteSessionToken();
     
     // Create the autocomplete service
     const autocompleteService = new google.maps.places.AutocompleteService();
-    const placesService = new google.maps.places.PlacesService(
-      document.createElement('div')
-    );
     
     // Get predictions from the Google Places API
     const predictions = await new Promise<google.maps.places.AutocompletePrediction[]>((resolve, reject) => {
@@ -111,7 +89,8 @@ const loadGoogleMapsScript = (apiKey: string): Promise<void> => {
       resolve();
     };
     
-    script.onerror = () => {
+    script.onerror = (error) => {
+      console.error('Failed to load Google Maps script:', error);
       reject(new Error('Google Maps script failed to load'));
     };
     
