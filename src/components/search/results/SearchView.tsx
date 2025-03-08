@@ -7,7 +7,6 @@ import { NoResultsView } from "./NoResultsView";
 import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SortType } from "@/types/application-types";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 
 interface SearchViewProps {

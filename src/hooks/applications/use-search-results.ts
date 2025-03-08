@@ -75,6 +75,13 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
     }
   }, [initialSearch, handlePostcodeSelect]);
 
+  // Clear map state when search changes
+  useEffect(() => {
+    // Reset map visibility when search changes
+    setShowMap(false);
+    setSelectedId(null);
+  }, [postcode, coordinates]);
+
   // Memoize filtered and sorted applications
   const filteredApplications = useMemo(() => {
     console.log('🔍 Filtering applications:', {
@@ -109,6 +116,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch }: SearchResul
 
   // Handle marker click
   const handleMarkerClick = useCallback((id: number | null) => {
+    console.log('Marker clicked for application:', id);
     setSelectedId(id);
     if (id) {
       const element = document.getElementById(`application-${id}`);
