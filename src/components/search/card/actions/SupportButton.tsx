@@ -63,7 +63,13 @@ export const SupportButton = ({
           .eq('application_id', applicationId)
           .eq('user_id', user.id);
           
-        if (error) throw error;
+        if (error) {
+          if (error.code === '42P01') {
+            // Table doesn't exist
+            throw new Error('The application_support table does not exist. Please visit the Admin page to set it up.');
+          }
+          throw error;
+        }
         
         toast({
           title: "Support removed",
@@ -78,7 +84,13 @@ export const SupportButton = ({
             user_id: user.id
           });
           
-        if (error) throw error;
+        if (error) {
+          if (error.code === '42P01') {
+            // Table doesn't exist
+            throw new Error('The application_support table does not exist. Please visit the Admin page to set it up.');
+          }
+          throw error;
+        }
         
         toast({
           title: "Support added",
@@ -92,9 +104,14 @@ export const SupportButton = ({
       setLocalIsSupported(prevIsSupported);
       setLocalSupportCount(prevSupportCount);
       
+      let errorMessage = "Failed to update support. Please try again.";
+      if (error instanceof Error && error.message.includes('application_support table does not exist')) {
+        errorMessage = "The support feature is not set up yet. Please contact an administrator.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update support. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
