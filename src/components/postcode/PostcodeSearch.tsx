@@ -40,8 +40,9 @@ export const PostcodeSearch = ({
           placeholder={placeholder || "Enter postcode, street name or area"}
           value={search}
           onChange={(e) => handleInputChange(e.target.value)}
-          className="w-full pl-4 pr-10 py-2"
+          className="w-full pl-4 pr-10 py-2 h-12" /* Increased height for better touch targets */
           onFocus={() => search.length >= 2 && open === false && handleInputChange(search)}
+          onTouchStart={() => search.length >= 2 && open === false && handleInputChange(search)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               handleSearchClick();
@@ -53,11 +54,11 @@ export const PostcodeSearch = ({
           type="button"
           size="icon" 
           variant="ghost" 
-          className="absolute right-1 top-1/2 -translate-y-1/2"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10" /* Increased size for better touch target */
           aria-label="Search"
           onClick={handleSearchClick}
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-5 w-5" /> {/* Slightly larger icon */}
         </Button>
       </div>
 

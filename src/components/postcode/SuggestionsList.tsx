@@ -131,9 +131,10 @@ export const SuggestionsList = ({
                   <CommandItem
                     key={key}
                     onSelect={() => onSelect(suggestion.postcode, suggestion.address)}
-                    className="cursor-pointer hover:bg-primary/10"
+                    className="cursor-pointer hover:bg-primary/10 py-3"
+                    data-mobile-selectable="true"
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col w-full">
                       <span className="font-medium">{suggestion.address}</span>
                       {!isPlaceId && suggestion.postcode && !suggestion.address?.includes(suggestion.postcode) && (
                         <span className="text-sm text-gray-500">{suggestion.postcode}</span>

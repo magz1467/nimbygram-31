@@ -17,16 +17,20 @@ export const usePostcodeInput = ({ onSelect, initialValue = "" }: PostcodeInputP
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (commandRef.current && !commandRef.current.contains(event.target as Node) && 
           inputRef.current && !inputRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
 
+    // Add both mouse and touch events for better mobile support
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     };
   }, []);
 

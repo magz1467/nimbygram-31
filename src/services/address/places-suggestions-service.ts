@@ -32,10 +32,14 @@ const getPlacePredictions = async (
   const options: google.maps.places.AutocompletionRequest = {
     input: searchTerm,
     componentRestrictions: { country: 'uk' },
-    sessionToken,
-    // For postcodes, we want to search all types of places
-    types: isPostcode ? [] : ['address', 'geocode'],
+    sessionToken
   };
+  
+  // Important: Don't mix 'address' and 'geocode' types - this causes the API to fail
+  // For non-postcodes, use 'geocode' only which is more generic
+  if (!isPostcode) {
+    options.types = ['geocode'];
+  }
   
   // Add postcode prefix for better UK results
   if (isPostcode && !searchTerm.toLowerCase().includes('uk') && !searchTerm.toLowerCase().includes('united kingdom')) {
@@ -59,8 +63,7 @@ const getPlacePredictions = async (
               {
                 input: `${searchTerm} postcode`,
                 componentRestrictions: { country: 'uk' },
-                sessionToken,
-                types: [] // Allow all types for postcodes
+                sessionToken
               },
               (secondTryPredictions, secondStatus) => {
                 if (secondStatus === google.maps.places.PlacesServiceStatus.OK && secondTryPredictions) {
