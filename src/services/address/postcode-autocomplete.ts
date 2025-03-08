@@ -26,7 +26,7 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
 };
 
 /**
- * Get postcode autocomplete suggestions
+ * Get postcode autocomplete suggestions with enhanced location data
  */
 export const getPostcodeAutocomplete = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
   try {
@@ -58,18 +58,55 @@ export const getPostcodeAutocomplete = async (searchTerm: string): Promise<Postc
     
     console.log('📍 Found postcode autocomplete results:', data.result.length);
     
-    // Convert API results to our suggestion format
-    const suggestions: PostcodeSuggestion[] = data.result.map((postcode: string) => ({
-      postcode,
-      country: 'United Kingdom',
-      address: postcode,
-      nhs_ha: '',
-      admin_district: ''
-    }));
+    // Get detailed information for each postcode
+    const enhancedSuggestions = await Promise.all(
+      data.result.map(async (postcode: string) => {
+        try {
+          const details = await fetchPostcodeDetails(postcode);
+          return {
+            postcode,
+            country: details?.country || 'United Kingdom',
+            county: details?.county || '',
+            district: details?.admin_district || '',
+            locality: details?.admin_ward || '',
+            nhs_ha: details?.nhs_ha || '',
+            admin_district: details?.admin_district || '',
+            address: postcode
+          };
+        } catch (error) {
+          console.error(`Error fetching details for ${postcode}:`, error);
+          return {
+            postcode,
+            country: 'United Kingdom',
+            address: postcode,
+            nhs_ha: '',
+            admin_district: ''
+          };
+        }
+      })
+    );
     
-    return suggestions;
+    return enhancedSuggestions;
   } catch (error) {
     console.error('Error in getPostcodeAutocomplete:', error);
     return [];
+  }
+};
+
+/**
+ * Fetch detailed information for a specific postcode
+ */
+const fetchPostcodeDetails = async (postcode: string) => {
+  try {
+    const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    console.error(`Error fetching details for ${postcode}:`, error);
+    return null;
   }
 };

@@ -45,6 +45,18 @@ export const SuggestionsList = ({
   // Check if we have valid suggestions
   const hasSuggestions = suggestions && Array.isArray(suggestions) && suggestions.length > 0;
   
+  // Helper function to format location details
+  const formatLocationDetails = (suggestion: PostcodeSuggestion) => {
+    const parts = [];
+    
+    if (suggestion.district) parts.push(suggestion.district);
+    if (suggestion.county) parts.push(suggestion.county);
+    if (suggestion.locality) parts.push(suggestion.locality);
+    if (parts.length === 0 && suggestion.admin_district) parts.push(suggestion.admin_district);
+    
+    return parts.join(', ');
+  };
+  
   return (
     <Command
       ref={commandRef}
@@ -75,7 +87,9 @@ export const SuggestionsList = ({
               className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
             >
               <span className="font-medium">{suggestion.postcode}</span>
-              <span className="text-xs text-gray-500">{suggestion.address || suggestion.admin_district}</span>
+              <span className="text-xs text-gray-500">
+                {formatLocationDetails(suggestion)}
+              </span>
             </CommandItem>
           ))
         )}
