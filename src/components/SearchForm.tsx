@@ -25,14 +25,14 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     if (!searchTerm || isSubmitting) {
       toast({
         title: "Error",
-        description: "Please enter a valid postcode",
+        description: "Please enter a valid postcode or address",
         variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-    console.log(`🔄 Starting search for postcode:`, searchTerm);
+    console.log(`🔄 Starting search for location:`, searchTerm);
 
     try {
       // Log search but don't wait for it to complete - this was causing issues
@@ -55,7 +55,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       
       // Call onSearch callback for postcode searches if provided
       if (onSearch) {
-        console.log('📍 Calling onSearch callback with postcode:', searchTerm);
+        console.log('📍 Calling onSearch callback with location:', searchTerm);
         onSearch(searchTerm);
       }
 
@@ -93,10 +93,10 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       <div className="mb-4">
         <PostcodeSearch
           onSelect={(value) => {
-            console.log('📮 Postcode selected:', value);
+            console.log('📮 Location selected:', value);
             setPostcode(value);
           }}
-          placeholder="Enter postcode"
+          placeholder="Enter postcode or address"
           className="flex-1"
         />
       </div>

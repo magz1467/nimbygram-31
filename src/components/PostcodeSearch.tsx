@@ -37,7 +37,7 @@ export const PostcodeSearch = ({ onSelect, placeholder = "Search location", clas
       <div className="relative w-full">
         <Input
           type="text"
-          placeholder={placeholder}
+          placeholder={placeholder || "Enter postcode or address"}
           value={search}
           onChange={(e) => {
             const value = e.target.value;

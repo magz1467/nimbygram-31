@@ -30,49 +30,55 @@ export const useAddressSuggestions = (search: string) => {
       try {
         const suggestions: PostcodeSuggestion[] = [];
         
-        // First try the postcode autocomplete
-        const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`;
-        console.log('🔍 Fetching autocomplete:', autocompleteUrl);
+        // Try to determine if input is a postcode or address
+        const isPostcodeLike = /^[A-Z]{1,2}[0-9][A-Z0-9]?/i.test(debouncedSearch.trim().toUpperCase());
         
-        const autocompleteResponse = await fetch(autocompleteUrl);
-        const autocompleteData = await autocompleteResponse.json();
-        
-        if (autocompleteData.result && Array.isArray(autocompleteData.result)) {
-          // Fetch details for each suggested postcode
-          const detailsPromises = autocompleteData.result.map(async (postcode) => {
-            try {
-              const detailsResponse = await fetch(
-                `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
-              );
-              
-              if (detailsResponse.ok) {
-                const details = await detailsResponse.json();
-                if (details.result) {
-                  return {
-                    ...details.result,
-                    postcode: details.result.postcode,
-                    address: [
-                      details.result.admin_ward,
-                      details.result.parish,
-                      details.result.admin_district,
-                      details.result.postcode
-                    ].filter(Boolean).join(', ')
-                  };
+        // First try the postcode autocomplete if input looks like a postcode
+        if (isPostcodeLike) {
+          const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(debouncedSearch)}/autocomplete`;
+          console.log('🔍 Fetching postcode autocomplete:', autocompleteUrl);
+          
+          const autocompleteResponse = await fetch(autocompleteUrl);
+          const autocompleteData = await autocompleteResponse.json();
+          
+          if (autocompleteData.result && Array.isArray(autocompleteData.result)) {
+            // Fetch details for each suggested postcode
+            const detailsPromises = autocompleteData.result.map(async (postcode) => {
+              try {
+                const detailsResponse = await fetch(
+                  `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+                );
+                
+                if (detailsResponse.ok) {
+                  const details = await detailsResponse.json();
+                  if (details.result) {
+                    return {
+                      ...details.result,
+                      postcode: details.result.postcode,
+                      address: [
+                        details.result.admin_ward,
+                        details.result.parish,
+                        details.result.admin_district,
+                        details.result.postcode
+                      ].filter(Boolean).join(', ')
+                    };
+                  }
                 }
+                return null;
+              } catch (error) {
+                console.error('Error fetching postcode details:', error);
+                return null;
               }
-              return null;
-            } catch (error) {
-              console.error('Error fetching postcode details:', error);
-              return null;
-            }
-          });
+            });
 
-          const results = await Promise.all(detailsPromises);
-          suggestions.push(...results.filter((result): result is PostcodeSuggestion => result !== null));
+            const results = await Promise.all(detailsPromises);
+            suggestions.push(...results.filter((result): result is PostcodeSuggestion => result !== null));
+          }
         }
 
-        // If no results from autocomplete, try general search
+        // If no results from autocomplete or input is address-like, try general search
         if (suggestions.length === 0) {
+          // Try address search - this is a general postcode search that can match with partial addresses
           const searchUrl = `https://api.postcodes.io/postcodes?q=${encodeURIComponent(debouncedSearch)}`;
           console.log('🔍 Trying general search:', searchUrl);
           
