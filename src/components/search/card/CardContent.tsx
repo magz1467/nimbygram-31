@@ -34,6 +34,13 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
       .filter(detail => detail.length > 0);
   };
 
+  const handleSeeOnMapClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('💡 See on map button clicked');
+    onSeeOnMap();
+  };
+
   return (
     <div className="space-y-6">
       <div className="prose prose-sm max-w-none">
@@ -52,12 +59,7 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('💡 See on map button clicked');
-                    onSeeOnMap();
-                  }}
+                  onClick={handleSeeOnMapClick}
                   className="text-primary flex items-center gap-1.5"
                 >
                   <MapPin className="w-4 h-4" />
@@ -76,12 +78,7 @@ export const CardContent = ({ storybook, onSeeOnMap }: CardContentProps) => {
       {isMobile && (
         <Button 
           variant="outline" 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('💡 Mobile See on map button clicked');
-            onSeeOnMap();
-          }}
+          onClick={handleSeeOnMapClick}
           className="w-full text-primary flex items-center justify-center gap-1.5"
         >
           <MapPin className="w-4 h-4" />
