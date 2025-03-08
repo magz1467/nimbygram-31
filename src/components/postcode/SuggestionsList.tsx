@@ -49,6 +49,14 @@ export const SuggestionsList = ({
   const formatLocationDetails = (suggestion: PostcodeSuggestion) => {
     const parts = [];
     
+    // For location names (towns, cities, etc.)
+    if (suggestion.isLocationName) {
+      if (suggestion.county) parts.push(suggestion.county);
+      if (suggestion.locality) parts.push(suggestion.locality);
+      return parts.join(', ');
+    }
+    
+    // For postcodes
     if (suggestion.district) parts.push(suggestion.district);
     if (suggestion.county) parts.push(suggestion.county);
     if (suggestion.locality) parts.push(suggestion.locality);

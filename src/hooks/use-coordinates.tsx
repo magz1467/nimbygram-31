@@ -23,14 +23,28 @@ export const useCoordinates = (postcode: string | undefined) => {
       console.log('🔍 useCoordinates: Fetching coordinates for:', postcode);
       
       try {
-        // Check if this is likely a Google Place ID (starts with "ChIJ", "Eh", or is longer than regular postcodes)
+        // Check if this is likely a Google Place ID
         const isGooglePlaceId = postcode.startsWith('ChIJ') || 
                                postcode.startsWith('Eh') || 
                                (postcode.length > 15 && !postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
         
+        // Check if this is a location name (town/city) rather than a postcode
+        // Location names typically contain commas and "UK" at the end (e.g., "Wendover, Buckinghamshire, UK")
+        const isLocationName = postcode.includes(',') && postcode.includes('UK');
+        
         if (isGooglePlaceId) {
           console.log('🌍 Detected Google Place ID, using Maps API to get coordinates');
           await fetchCoordinatesFromPlaceId(postcode);
+        } else if (isLocationName) {
+          console.log('🏙️ Detected location name, extracting place name');
+          // Extract the main location name (before the first comma)
+          const placeName = postcode.split(',')[0].trim();
+          if (placeName) {
+            console.log('🔍 Searching for location by name:', placeName);
+            await fetchCoordinatesByLocationName(placeName);
+          } else {
+            throw new Error("Invalid location name format");
+          }
         } else {
           // Regular UK postcode - use Postcodes.io
           console.log('📫 Regular postcode detected, using Postcodes.io API');
@@ -50,6 +64,34 @@ export const useCoordinates = (postcode: string | undefined) => {
           setIsLoading(false);
         }
       }
+    };
+
+    // Function to fetch coordinates for a location name using the places API
+    const fetchCoordinatesByLocationName = async (placeName: string) => {
+      // First try the Places API if it's a location name
+      const placesResponse = await fetch(`https://api.postcodes.io/places?q=${encodeURIComponent(placeName)}&limit=1`);
+      
+      if (!placesResponse.ok) {
+        throw new Error(`Places API returned ${placesResponse.status}: ${placesResponse.statusText}`);
+      }
+      
+      const placesData = await placesResponse.json();
+      console.log('📍 useCoordinates: Places API response:', placesData);
+      
+      if (placesData.status === 200 && placesData.result && placesData.result.length > 0) {
+        const place = placesData.result[0];
+        
+        // Check if we have latitude and longitude
+        if (typeof place.latitude === 'number' && typeof place.longitude === 'number') {
+          const newCoordinates: [number, number] = [place.latitude, place.longitude];
+          console.log('✅ useCoordinates: Setting coordinates from Places API:', newCoordinates);
+          setCoordinates(newCoordinates);
+          return;
+        }
+      }
+      
+      // If we couldn't find it with the places API, fall back to postcode search
+      throw new Error("Location not found in Places API");
     };
 
     const fetchCoordinatesFromPlaceId = async (placeId: string) => {

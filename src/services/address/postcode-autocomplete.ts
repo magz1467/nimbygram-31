@@ -145,26 +145,27 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     
     console.log('📍 Found location results:', data.result.length);
     
-    // Convert results to our suggestion format with JustPark-like formatting
+    // Convert results to our suggestion format
     const suggestions: PostcodeSuggestion[] = data.result.map(place => {
-      // Fix the issue - use the actual place name instead of 'Unknown Location'
-      const name = place.name || '';
+      // Make sure to use the actual name from the API response
+      const name = place.name_1 || '';
       const county = place.county_unitary || '';
       const region = place.region || '';
+      const localType = place.local_type || '';
       
-      // Format address in the style: "Aylesbury, UK" or "Aylesbury, Buckinghamshire, UK"
+      // Format address properly in a JustPark-like style
       let formattedAddress = name;
       if (county) formattedAddress += `, ${county}`;
       formattedAddress += `, UK`;
       
       return {
-        postcode: name, // Use the name as the postcode field for display
+        postcode: name, // The actual place name as the primary identifier
         address: formattedAddress, // Full formatted address for selection
         country: 'United Kingdom',
         county: county,
-        district: place.district || '',
+        district: place.district_borough || '',
         locality: region,
-        admin_district: place.admin_district || '',
+        admin_district: place.county_unitary || '',
         nhs_ha: '',
         isLocationName: true
       };
