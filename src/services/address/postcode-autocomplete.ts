@@ -15,7 +15,10 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
   }
 
   try {
-    return await getPostcodeAutocomplete(searchTerm);
+    // Get postcode autocomplete results
+    const suggestions = await getPostcodeAutocomplete(searchTerm);
+    console.log('📋 Fetched address suggestions count:', suggestions.length);
+    return suggestions;
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
     return [];
@@ -27,27 +30,31 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
  */
 export const getPostcodeAutocomplete = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
   try {
+    // Construct the API URL
     const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(searchTerm)}/autocomplete`;
     console.log('🔍 Fetching postcode autocomplete:', autocompleteUrl);
     
-    const autocompleteResponse = await fetch(autocompleteUrl);
-    if (!autocompleteResponse.ok) {
-      console.log('❌ Postcode autocomplete failed with status:', autocompleteResponse.status);
+    // Make the API request
+    const response = await fetch(autocompleteUrl);
+    if (!response.ok) {
+      console.log('❌ Postcode autocomplete failed with status:', response.status);
       return [];
     }
     
-    const autocompleteData = await autocompleteResponse.json();
+    // Parse the response JSON
+    const data = await response.json();
     
-    if (!autocompleteData.result || !Array.isArray(autocompleteData.result) || autocompleteData.result.length === 0) {
+    // Check if we have results
+    if (!data.result || !Array.isArray(data.result)) {
       console.log('ℹ️ No postcode autocomplete results found');
       return [];
     }
     
-    console.log('📍 Found postcode autocomplete results:', autocompleteData.result.length);
+    console.log('📍 Found postcode autocomplete results:', data.result.length);
     
-    // Create suggestions from the autocomplete results
-    const suggestions: PostcodeSuggestion[] = autocompleteData.result.map((postcode: string) => ({
-      postcode: postcode,
+    // Convert API results to our suggestion format
+    const suggestions: PostcodeSuggestion[] = data.result.map((postcode: string) => ({
+      postcode,
       country: 'United Kingdom',
       address: postcode,
       nhs_ha: '',

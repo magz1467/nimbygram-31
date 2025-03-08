@@ -34,6 +34,7 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch suggestions when search term changes
   const { 
     data: suggestions = [], 
     isLoading, 
@@ -49,8 +50,8 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     retryDelay: 1000,
   });
 
+  // Log suggestions for debugging
   useEffect(() => {
-    // Log suggestions for debugging
     if (suggestions && suggestions.length > 0) {
       console.log('📋 Suggestions available:', suggestions.length);
     }

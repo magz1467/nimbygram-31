@@ -37,10 +37,11 @@ export const SuggestionsList = ({
     searchLength: search?.length,
     suggestionsCount: suggestions?.length || 0,
     isLoading,
-    isFetching
+    isFetching,
+    error: error ? 'Error present' : 'No error'
   });
 
-  // Guard against undefined suggestions
+  // Check if we have valid suggestions
   const hasSuggestions = suggestions && suggestions.length > 0;
   
   return (
