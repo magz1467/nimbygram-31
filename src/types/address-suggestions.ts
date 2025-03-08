@@ -9,6 +9,7 @@ export interface PostcodeSuggestion {
   admin_district: string;
   address?: string;
   isPlaceId?: boolean;
+  isManualPostcode?: boolean;
 }
 
 export interface AddressSuggestionOptions {
