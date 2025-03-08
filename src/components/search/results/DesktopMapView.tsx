@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { MapContainer } from "@/components/map/MapContainer";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface DesktopMapViewProps {
   applications: Application[];
@@ -23,15 +23,11 @@ export const DesktopMapView = ({
   isLoading,
 }: DesktopMapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [isMapVisible, setIsMapVisible] = useState(false);
-
+  
   // Force map to render correctly when it becomes visible
   useEffect(() => {
     if (mapContainerRef.current) {
       console.log('🗺️ Desktop map mounted - forcing resize');
-      
-      // Show the map after a delay to ensure DOM is ready
-      setTimeout(() => setIsMapVisible(true), 100);
       
       // Allow the component to mount before triggering resize events
       const resizeEvents = [50, 200, 500, 1000].map(delay => 
@@ -52,7 +48,7 @@ export const DesktopMapView = ({
   return (
     <div 
       className="col-span-1 relative rounded-lg overflow-hidden border shadow" 
-      style={{ height: '700px', display: 'block', visibility: isMapVisible ? 'visible' : 'hidden' }}
+      style={{ height: '700px', display: 'block' }}
       ref={mapContainerRef}
     >
       <div className="absolute top-2 right-2 z-50 flex space-x-2">
