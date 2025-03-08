@@ -1,7 +1,7 @@
 
 import { loadGoogleMapsScript } from './script-loader';
 
-interface PlaceDetails {
+export interface PlaceDetails {
   formatted_address: string;
   geometry: {
     location: {
@@ -41,10 +41,24 @@ export const fetchPlaceDetails = async (placeId: string): Promise<PlaceDetails |
           placeId,
           fields: ['name', 'formatted_address', 'geometry', 'place_id']
         },
-        (result: PlaceDetails | null, status: string) => {
+        (result: any, status: string) => {
           if (status === google.maps.places.PlacesServiceStatus.OK && result) {
             console.log('✅ Retrieved place details:', result);
-            resolve(result);
+            
+            // Convert to our PlaceDetails interface
+            const placeDetails: PlaceDetails = {
+              formatted_address: result.formatted_address,
+              geometry: {
+                location: {
+                  lat: result.geometry.location.lat(),
+                  lng: result.geometry.location.lng()
+                }
+              },
+              name: result.name,
+              place_id: result.place_id
+            };
+            
+            resolve(placeDetails);
           } else {
             console.error('Error fetching place details:', status);
             reject(new Error(`Place details fetch failed with status: ${status}`));

@@ -1,163 +1,116 @@
 
-import { PostcodeSuggestion } from '../../types/address-suggestions';
 import { loadGoogleMapsScript } from './utils/script-loader';
-import { processPlacePrediction } from './utils/address-processor';
 import { fetchPlaceDetails } from './utils/places-details-fetcher';
-import { GOOGLE_MAPS_API_KEY } from './config/api-keys';
 
-/**
- * Checks if a string looks like a UK postcode
- * @param searchTerm The string to check
- * @returns Boolean indicating whether the string looks like a UK postcode
- */
-const isUkPostcodePattern = (searchTerm: string): boolean => {
-  return /^[A-Z]{1,2}[0-9][0-9A-Z]?(\s*[0-9][A-Z]{2})?$/i.test(searchTerm);
-};
-
-/**
- * Gets place predictions from Google Places API
- * @param searchTerm The search term
- * @param isPostcode Whether the search term looks like a postcode
- * @returns Promise that resolves to an array of place predictions
- */
-const getPlacePredictions = async (
-  searchTerm: string,
-  isPostcode: boolean
-): Promise<google.maps.places.AutocompletePrediction[]> => {
-  // Create session token for billing optimization
-  const sessionToken = new google.maps.places.AutocompleteSessionToken();
-  const autocompleteService = new google.maps.places.AutocompleteService();
-  
-  // Define options based on search type
-  const options: google.maps.places.AutocompletionRequest = {
-    input: searchTerm,
-    componentRestrictions: { country: 'uk' },
-    sessionToken
+interface GooglePlacesSuggestion {
+  description: string;
+  place_id: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text: string;
   };
-  
-  // Important: Don't mix 'address' and 'geocode' types - this causes the API to fail
-  // For non-postcodes, use 'geocode' only which is more generic
-  if (!isPostcode) {
-    options.types = ['geocode'];
-  }
-  
-  // Add postcode prefix for better UK results
-  if (isPostcode && !searchTerm.toLowerCase().includes('uk') && !searchTerm.toLowerCase().includes('united kingdom')) {
-    options.input = `${searchTerm} UK`;
+}
+
+// Interface for our standardized suggestions
+export interface PlacesSuggestion {
+  description: string;
+  placeId: string;
+  mainText?: string;
+  secondaryText?: string;
+  isPlaceId?: boolean;
+  postcode: string;
+  address?: string;
+}
+
+/**
+ * Fetches place suggestions from Google Places API
+ * @param searchTerm - The search term to get suggestions for
+ * @returns Promise with place suggestions
+ */
+export const fetchPlacesSuggestions = async (searchTerm: string): Promise<PlacesSuggestion[]> => {
+  if (!searchTerm || searchTerm.length < 2) {
+    return [];
   }
 
-  console.log('🔍 Places API request:', options);
-  
-  // Make the API request
-  return new Promise((resolve, reject) => {
-    autocompleteService.getPlacePredictions(
-      options,
-      (predictions, status) => {
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
-          console.log('Places API returned:', status, 'for input:', searchTerm);
-          
-          // If no results and looks like postcode, try with 'postcode' added
-          if (isPostcode && status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-            // Try again with a different search approach
-            autocompleteService.getPlacePredictions(
-              {
-                input: `${searchTerm} postcode`,
-                componentRestrictions: { country: 'uk' },
-                sessionToken
-              },
-              (secondTryPredictions, secondStatus) => {
-                if (secondStatus === google.maps.places.PlacesServiceStatus.OK && secondTryPredictions) {
-                  console.log('Second attempt successful:', secondTryPredictions.length, 'results');
-                  resolve(secondTryPredictions);
-                } else {
-                  console.log('No predictions found in second attempt:', secondStatus);
-                  resolve([]);
-                }
-              }
-            );
-          } else {
-            resolve([]);
-          }
-          return;
-        }
-        
-        console.log('Found', predictions.length, 'predictions');
-        resolve(predictions);
-      }
-    );
-  });
-};
-
-/**
- * Creates a manual postcode suggestion when needed
- * @param searchTerm The postcode to create a suggestion for
- * @returns A PostcodeSuggestion object
- */
-const createManualPostcodeSuggestion = (searchTerm: string): PostcodeSuggestion => {
-  return {
-    postcode: searchTerm.toUpperCase(),
-    address: `${searchTerm.toUpperCase()} (Postcode)`,
-    country: 'United Kingdom',
-    locality: '',
-    admin_district: '',
-    nhs_ha: '',
-    district: '',
-    county: '',
-    isManualPostcode: true
-  };
-};
-
-/**
- * Fetches address suggestions using the Google Places API
- * @param searchTerm The search term to find address suggestions for
- * @returns Promise that resolves to an array of PostcodeSuggestion objects
- */
-export const fetchAddressSuggestionsByPlacesAPI = async (
-  searchTerm: string
-): Promise<PostcodeSuggestion[]> => {
-  if (!searchTerm || searchTerm.length < 2) return [];
+  console.log('🔍 Fetching Google Places suggestions for:', searchTerm);
   
   try {
-    // Load Google Maps API script dynamically with the provided key
-    const isLoaded = await loadGoogleMapsScript(GOOGLE_MAPS_API_KEY);
+    // Load Google Maps Places API if not already loaded
+    await loadGoogleMapsScript();
+    const { google } = window as any;
     
-    if (!isLoaded) {
-      console.error('Google Maps API failed to load');
-      // Return an empty array instead of throwing, to prevent UI disruption
+    if (!google || !google.maps || !google.maps.places) {
+      console.error('Google Maps Places API not loaded');
       return [];
     }
     
-    // Check if it looks like a UK postcode pattern
-    const looksLikeUkPostcode = isUkPostcodePattern(searchTerm);
-    
-    // Get predictions from the Google Places API
-    const predictions = await getPlacePredictions(searchTerm, looksLikeUkPostcode);
-    
-    if (!predictions || predictions.length === 0) {
-      // For UK postcodes, if still no results, create a manual result
-      if (looksLikeUkPostcode) {
-        console.log('Creating fallback result for UK postcode');
-        return [createManualPostcodeSuggestion(searchTerm)];
-      }
-      return [];
-    }
-    
-    console.log('Processing', predictions.length, 'predictions');
-    
-    // Process each prediction into a PostcodeSuggestion
-    const suggestions = await Promise.all(
-      predictions.map(async (prediction) => {
-        // Get more detailed place information
-        const detailedPlace = await fetchPlaceDetails(prediction.place_id);
-        
-        // Process the prediction with the detailed place info
-        return processPlacePrediction(prediction, detailedPlace);
-      })
-    );
-    
-    return suggestions;
+    return new Promise((resolve, reject) => {
+      const service = new google.maps.places.AutocompleteService();
+      
+      service.getPlacePredictions(
+        {
+          input: searchTerm,
+          componentRestrictions: { country: 'gb' }, // Restrict to UK
+          types: ['geocode', 'address', 'establishment'] // Types of places to return
+        },
+        (predictions: GooglePlacesSuggestion[] | null, status: string) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            console.log('✅ Found Google Places suggestions:', predictions.length);
+            
+            // Map to our standardized format
+            const suggestions = predictions.map(prediction => ({
+              description: prediction.description,
+              placeId: prediction.place_id,
+              mainText: prediction.structured_formatting?.main_text,
+              secondaryText: prediction.structured_formatting?.secondary_text,
+              isPlaceId: true,
+              postcode: prediction.place_id, // Store place_id in postcode field for consistency with other suggestion sources
+              address: prediction.description
+            }));
+            
+            resolve(suggestions);
+          } else {
+            console.log('❌ No Google Places suggestions found:', status);
+            resolve([]);
+          }
+        }
+      );
+    });
   } catch (error) {
     console.error('Error fetching Google Places suggestions:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch a place's details using its place ID
+ * This is a wrapper around the fetchPlaceDetails function
+ * @param placeId The Google Place ID
+ * @returns The place details or null if not found
+ */
+export const getPlaceDetails = async (placeId: string) => {
+  try {
+    return await fetchPlaceDetails(placeId);
+  } catch (error) {
+    console.error('Error in getPlaceDetails:', error);
+    return null;
+  }
+};
+
+/**
+ * Fetch combined address suggestions from multiple sources
+ * @param searchTerm The search term
+ * @returns Combined suggestions from all sources
+ */
+export const fetchCombinedSuggestions = async (searchTerm: string): Promise<PlacesSuggestion[]> => {
+  try {
+    // Fetch suggestions from Google Places
+    const placesSuggestions = await fetchPlacesSuggestions(searchTerm);
+    
+    // Return combined suggestions
+    return placesSuggestions;
+  } catch (error) {
+    console.error('Error fetching combined suggestions:', error);
     return [];
   }
 };

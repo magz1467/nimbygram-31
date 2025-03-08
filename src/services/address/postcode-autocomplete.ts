@@ -2,6 +2,27 @@
 import { PostcodeSuggestion } from '../../types/address-suggestions';
 
 /**
+ * Fetch autocomplete suggestions for postcodes
+ * @param searchTerm The search term to get suggestions for
+ * @returns Promise with postcode suggestions
+ */
+export const fetchAddressSuggestions = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
+  console.log('🔍 Fetching address suggestions for:', searchTerm);
+  
+  // Skip if search term is too short
+  if (!searchTerm || searchTerm.length < 2) {
+    return [];
+  }
+
+  try {
+    return await getPostcodeAutocomplete(searchTerm);
+  } catch (error) {
+    console.error('Error fetching address suggestions:', error);
+    return [];
+  }
+};
+
+/**
  * Get postcode autocomplete suggestions
  */
 export const getPostcodeAutocomplete = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
