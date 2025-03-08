@@ -1,8 +1,10 @@
+
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchAddressSuggestions } from "@/services/address/postcode-autocomplete";
-import { fetchPlaceDetails } from "@/services/address/utils/places-details-fetcher";
+import { placeIdToReadableAddress } from "@/services/address/utils/places-details-fetcher";
+import { PostcodeSuggestion } from "@/types/address-suggestions";
 
 interface UsePostcodeInputProps {
   onSelect: (postcode: string) => void;
@@ -32,7 +34,7 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const { data: suggestions, isLoading, isFetching, error } = useQuery({
+  const { data: suggestions = [], isLoading, isFetching, error } = useQuery({
     queryKey: ["postcode-suggestions", debouncedSearch],
     queryFn: () => fetchAddressSuggestions(debouncedSearch),
     enabled: debouncedSearch.length >= 2,
@@ -49,25 +51,11 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
       console.log('🔍 Detected place ID, fetching detailed place information:', value);
       
       try {
-        // Extract the place ID if it's in the format "place_id:ChIJ..."
-        const placeId = value.includes("place_id:") 
-          ? value.split("place_id:")[1].trim() 
-          : value;
-        
-        // Fetch detailed place information
-        const placeDetails = await fetchPlaceDetails(placeId);
-        
-        if (placeDetails && placeDetails.formatted_address) {
-          console.log('✅ Retrieved place details:', placeDetails);
-          
-          // Use a more human-readable address for display but keep coordinates
-          const readablePostcode = placeDetails.formatted_address;
-          
-          // Call onSelect with the readable address
-          console.log('📍 Selecting readable address:', readablePostcode);
-          onSelect(readablePostcode);
-          return;
-        }
+        // Get a readable address from the place ID
+        const readableAddress = await placeIdToReadableAddress(value);
+        console.log('✅ Converted place ID to readable address:', readableAddress);
+        onSelect(readableAddress);
+        return;
       } catch (error) {
         console.error('Error fetching place details:', error);
       }

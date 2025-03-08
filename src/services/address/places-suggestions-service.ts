@@ -1,15 +1,15 @@
 
-import { loadGoogleMapsScript } from './utils/script-loader';
-import { PostcodeSuggestion } from '@/types/address-suggestions';
+import { PostcodeSuggestion } from "../../types/address-suggestions";
+import { loadGoogleMapsScript } from "./utils/script-loader";
 
 /**
- * Fetch address suggestions from Google Places API
+ * Fetch address suggestions using Google Places API
  * @param searchTerm The search term to get suggestions for
- * @returns Promise with place suggestions formatted as PostcodeSuggestion objects
+ * @returns Promise with address suggestions
  */
-export const fetchAddressSuggestionsByPlacesAPI = async (
-  searchTerm: string
-): Promise<PostcodeSuggestion[]> => {
+export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
+  console.log('🔍 Fetching address suggestions via Places API for:', searchTerm);
+  
   if (!searchTerm || searchTerm.length < 2) {
     return [];
   }
@@ -18,44 +18,43 @@ export const fetchAddressSuggestionsByPlacesAPI = async (
     // Load Google Maps Places API if not already loaded
     await loadGoogleMapsScript();
     const { google } = window as any;
-
+    
     if (!google || !google.maps || !google.maps.places) {
       console.error('Google Maps Places API not loaded');
       return [];
     }
-
+    
     return new Promise((resolve) => {
-      const placesService = new google.maps.places.AutocompleteService();
+      const service = new google.maps.places.AutocompleteService();
       
-      placesService.getPlacePredictions(
+      service.getPlacePredictions(
         {
           input: searchTerm,
           componentRestrictions: { country: 'uk' },
-          types: ['geocode', 'address', 'establishment']
+          types: ['geocode']
         },
-        (predictions: any[] | null, status: string) => {
-          if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
-            console.log('No place predictions found or error:', status);
+        (predictions: any, status: string) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            console.log('✅ Retrieved place predictions:', predictions.length);
+            
+            // Map to our PostcodeSuggestion format
+            const suggestions: PostcodeSuggestion[] = predictions.map((prediction: any) => ({
+              id: prediction.place_id,
+              postcode: prediction.structured_formatting.main_text,
+              address: prediction.description,
+              place_id: prediction.place_id
+            }));
+            
+            resolve(suggestions);
+          } else {
+            console.log('No places found or error:', status);
             resolve([]);
-            return;
           }
-
-          // Convert Google predictions to our PostcodeSuggestion format
-          const suggestions: PostcodeSuggestion[] = predictions.map(prediction => ({
-            postcode: prediction.place_id, // Store place_id in postcode field for later lookup
-            address: prediction.description,
-            country: 'United Kingdom',
-            admin_district: prediction.structured_formatting?.secondary_text || '',
-            nhs_ha: '',
-            isPlaceId: true // Mark this as a place ID for special handling
-          }));
-
-          resolve(suggestions);
         }
       );
     });
   } catch (error) {
-    console.error('Error fetching Places API suggestions:', error);
+    console.error('Error fetching address suggestions via Places API:', error);
     return [];
   }
 };

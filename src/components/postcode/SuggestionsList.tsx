@@ -1,23 +1,17 @@
 
-import { useRef, useEffect } from "react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
+import { Command } from "@/components/ui/command";
+import { Loader2 } from "lucide-react";
 
 interface SuggestionsListProps {
   isOpen: boolean;
   search: string;
-  suggestions: PostcodeSuggestion[];
+  suggestions: PostcodeSuggestion[] | undefined;
   isLoading: boolean;
   isFetching: boolean;
   error: Error | null;
-  onSelect: (postcode: string, address?: string) => void;
+  onSelect: (value: string) => void;
   commandRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -31,126 +25,50 @@ export const SuggestionsList = ({
   onSelect,
   commandRef,
 }: SuggestionsListProps) => {
-  // Handle UK postcode pattern detection
-  const isUkPostcode = (value: string) => {
-    // Simplified UK postcode regex
-    return /^[A-Z]{1,2}[0-9][0-9A-Z]?(\s*[0-9][A-Z]{2})?$/i.test(value);
-  };
-
-  // Determine if we should show the loading state
-  const isSearching = isLoading || isFetching;
-
-  // Determine the empty state message based on error status
-  const getEmptyStateMessage = () => {
-    if (error) {
-      return "Unable to load suggestions. Please enter a postcode manually.";
-    }
-    if (search.length < 2) {
-      return "Enter at least 2 characters to search";
-    }
-    if (isUkPostcode(search) && suggestions.length === 0) {
-      return `Press Enter to search for "${search.toUpperCase()}"`;
-    }
-    return "No results found. Try a postcode, street name or area.";
-  };
-
-  // Format location information for display
-  const formatLocationInfo = (suggestion: PostcodeSuggestion) => {
-    const parts = [];
-    
-    // Add locality if it exists and is not already in the address
-    if (suggestion.locality && !suggestion.address?.includes(suggestion.locality)) {
-      parts.push(suggestion.locality);
-    }
-    
-    // Add district if it exists and is not already covered
-    if (suggestion.district && 
-        !parts.includes(suggestion.district) && 
-        !suggestion.address?.includes(suggestion.district)) {
-      parts.push(suggestion.district);
-    }
-    
-    // Add county
-    if (suggestion.county && 
-        !parts.includes(suggestion.county) && 
-        !suggestion.address?.includes(suggestion.county)) {
-      parts.push(suggestion.county);
-    }
-    
-    // Add UK instead of United Kingdom for brevity
-    if (suggestion.country === 'United Kingdom') {
-      parts.push('UK');
-    } else if (suggestion.country && suggestion.country !== 'United Kingdom') {
-      parts.push(suggestion.country);
-    }
-    
-    return parts.filter(Boolean).join(', ');
-  };
-
-  if (!isOpen || search.length < 2) {
+  // Early return if not open
+  if (!isOpen) {
     return null;
   }
 
+  // Guard against undefined suggestions
+  const hasSuggestions = suggestions && suggestions.length > 0;
+  
   return (
-    <div className="absolute z-[9999] w-full mt-1">
-      <Command ref={commandRef} className="rounded-lg border shadow-md bg-white postcode-command">
-        <CommandList>
-          {isSearching ? (
-            <CommandEmpty>Loading suggestions...</CommandEmpty>
-          ) : suggestions.length === 0 ? (
-            <CommandEmpty>
-              {getEmptyStateMessage()}
-              {isUkPostcode(search) && (
-                <div className="mt-2 text-sm text-primary">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-1"
-                    onClick={() => onSelect(search.toUpperCase(), `${search.toUpperCase()} (Postcode)`)}
-                  >
-                    Search {search.toUpperCase()}
-                  </Button>
-                </div>
-              )}
-            </CommandEmpty>
+    <div className="relative">
+      <Command
+        ref={commandRef}
+        className="absolute top-2 z-10 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md"
+      >
+        <Command.List className="max-h-60 overflow-auto p-2">
+          {isLoading || isFetching ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              <span className="ml-2 text-sm text-gray-500">Searching...</span>
+            </div>
+          ) : error ? (
+            <div className="p-4 text-sm text-red-500">
+              Error searching for locations. Please try again.
+            </div>
+          ) : !hasSuggestions ? (
+            <div className="p-4 text-sm text-gray-500">
+              {search.length < 2
+                ? "Type at least 2 characters to search"
+                : "No locations found. Try a different search term."}
+            </div>
           ) : (
-            <CommandGroup>
-              {suggestions.map((suggestion, index) => {
-                // Create a unique key for each suggestion
-                const key = `suggestion-${index}`;
-                
-                // Check if this suggestion has a place ID instead of a real postcode
-                const isPlaceId = suggestion.isPlaceId || 
-                  (suggestion.postcode && suggestion.postcode.length > 15 && 
-                   !suggestion.postcode.match(/[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}/i));
-                
-                // Format location information
-                const locationInfo = formatLocationInfo(suggestion);
-                
-                return (
-                  <CommandItem
-                    key={key}
-                    onSelect={() => onSelect(suggestion.postcode, suggestion.address)}
-                    className="cursor-pointer hover:bg-primary/10 py-3"
-                    data-mobile-selectable="true"
-                  >
-                    <div className="flex flex-col w-full">
-                      <span className="font-medium">{suggestion.address}</span>
-                      {!isPlaceId && suggestion.postcode && !suggestion.address?.includes(suggestion.postcode) && (
-                        <span className="text-sm text-gray-500">{suggestion.postcode}</span>
-                      )}
-                      
-                      {/* Display enhanced location information */}
-                      {locationInfo && (
-                        <span className="text-sm text-gray-500">{locationInfo}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
+            suggestions.map((suggestion) => (
+              <Command.Item
+                key={suggestion.postcode || suggestion.id}
+                value={suggestion.address}
+                onSelect={() => onSelect(suggestion.postcode || suggestion.address)}
+                className="flex cursor-pointer flex-col p-2 text-sm hover:bg-gray-100"
+              >
+                <span className="font-medium">{suggestion.postcode}</span>
+                <span className="text-xs text-gray-500">{suggestion.address}</span>
+              </Command.Item>
+            ))
           )}
-        </CommandList>
+        </Command.List>
       </Command>
     </div>
   );
