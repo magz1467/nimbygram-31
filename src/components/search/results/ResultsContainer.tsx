@@ -49,7 +49,6 @@ export const ResultsContainer = ({
     coordinates,
     selectedId,
     applications: applications.length,
-    displayApplications: displayApplications.length,
     isLoading,
     isMobile,
     shouldShowMap
@@ -86,17 +85,6 @@ export const ResultsContainer = ({
     setShowMap(false);
     setSelectedId(null);
   };
-
-  // Debug log for mobile specifically
-  useEffect(() => {
-    if (isMobile) {
-      console.log("📱 Mobile results:", {
-        displayApplicationsCount: displayApplications.length,
-        applicationsCount: applications.length,
-        isLoading
-      });
-    }
-  }, [isMobile, displayApplications, applications, isLoading]);
 
   return (
     <ContainerLayout shouldShowMap={shouldShowMap} isMobile={isMobile}>

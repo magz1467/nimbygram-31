@@ -23,7 +23,7 @@ export const DesktopMapView = ({
   isLoading,
 }: DesktopMapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Force map to render correctly when it becomes visible
   useEffect(() => {
     if (mapContainerRef.current) {
@@ -43,21 +43,15 @@ export const DesktopMapView = ({
     }
   }, []);
   
-  console.log('🗺️ DesktopMapView rendering with selectedId:', selectedId);
-  
   return (
     <div 
       className="col-span-1 relative rounded-lg overflow-hidden border shadow" 
-      style={{ height: '700px', display: 'block' }}
+      style={{ height: '700px' }}
       ref={mapContainerRef}
     >
       <div className="absolute top-2 right-2 z-50 flex space-x-2">
         <Button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleCloseMap();
-          }}
+          onClick={handleCloseMap}
           className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow"
           size="icon"
           variant="outline"

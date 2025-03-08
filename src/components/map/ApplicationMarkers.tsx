@@ -26,8 +26,7 @@ const getStatusColor = (status: string): string => {
 
 // Create marker icon with appropriate color and size
 const createMarkerIcon = (color: string, isSelected: boolean) => {
-  // Make selected markers significantly larger
-  const size = isSelected ? 48 : 24;
+  const size = isSelected ? 48 : 24; // Larger size for selected marker
   
   return L.divIcon({
     className: 'custom-pin',
