@@ -63,7 +63,8 @@ export const ResultsListView = ({
       const isLocationError = errorText.includes("find coordinates") || 
                              errorText.includes("location") ||
                              errorText.includes("Failed to get") ||
-                             errorText.includes("INVALID_REQUEST");
+                             errorText.includes("INVALID_REQUEST") ||
+                             errorText.includes("Geocoder failed");
       
       errorTitle = isTimeoutError ? "Search Timeout" : 
                   isLocationError ? "Location Error" : 
@@ -72,7 +73,7 @@ export const ResultsListView = ({
       errorMessage = isTimeoutError ? 
         `The search for "${displayLocation}" timed out. This area may have too many results or the database is busy. Please try again or search a more specific location.` :
         isLocationError ? 
-        `We couldn't find the coordinates for "${displayLocation}". Please try a more specific location or postcode.` :
+        `We couldn't find the exact location for "${displayLocation}". Please try using a postcode or more specific location name.` :
         `We encountered an error while searching. ${errorText || "Please try another location or search term."}`;
     }
 

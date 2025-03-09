@@ -1,3 +1,4 @@
+
 /**
  * Utilities for detecting location types from search terms
  */
@@ -19,10 +20,13 @@ export const isGooglePlaceId = (location: string): boolean => {
  */
 export const isLocationName = (location: string): boolean => {
   // Location names typically contain spaces, commas, and often end with country codes
-  return (location.includes(' ') && 
-         (location.includes(',') || location.includes(' in '))) || 
+  // Also look for names like "Wendover" which are simple place names
+  return (location.includes(' ') || 
+         location.includes(',') || 
+         location.includes(' in ')) || 
          location.endsWith('UK') || 
          location.endsWith('England') ||
+         /^[A-Za-z]+$/.test(location) || // Single word place name like "Wendover"
          location.match(/[A-Za-z]+ [A-Za-z]+/) !== null; // Contains words with spaces
 };
 

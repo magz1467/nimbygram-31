@@ -42,17 +42,34 @@ export const useCoordinates = (postcode: string | undefined) => {
             break;
             
           case 'LOCATION_NAME':
-            console.log('🏙️ Detected location name, extracting place name');
-            // Extract the main location name (before the first comma)
-            const placeName = extractPlaceName(postcode);
-            if (placeName) {
-              console.log('🔍 Searching for location by name:', placeName);
-              const locationCoords = await fetchCoordinatesByLocationName(placeName);
+            console.log('🏙️ Detected location name:', postcode);
+            
+            // For location names, try the direct approach first - the whole string
+            try {
+              console.log('🔍 Searching for exact location name:', postcode);
+              const locationCoords = await fetchCoordinatesByLocationName(postcode);
               if (isMounted) setCoordinates(locationCoords);
-            } else {
-              throw new Error("Invalid location name format");
+              return; // Exit if successful
+            } catch (directError) {
+              console.warn('⚠️ Direct location search failed, trying extracted place name');
+              
+              // Extract the main location name (before the first comma) as backup
+              const placeName = extractPlaceName(postcode);
+              if (placeName && placeName !== postcode) {
+                console.log('🔍 Searching for extracted place name:', placeName);
+                try {
+                  const locationCoords = await fetchCoordinatesByLocationName(placeName);
+                  if (isMounted) setCoordinates(locationCoords);
+                  return; // Exit if successful with extracted name
+                } catch (extractedError) {
+                  console.error('❌ Both direct and extracted place name searches failed');
+                  // Let it fall through to the error handling
+                  throw directError; // Throw the original error for better context
+                }
+              } else {
+                throw directError; // Re-throw the original error
+              }
             }
-            break;
             
           case 'POSTCODE':
             // Regular UK postcode - use Postcodes.io

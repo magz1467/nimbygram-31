@@ -23,11 +23,15 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();
     
-    // Try to find the location without country restriction to improve results
+    // Try to find the location with UK country restriction to improve accuracy
     const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode(
         { 
           address: locationName,
+          region: 'gb', // Force UK region for better results
+          componentRestrictions: {
+            country: 'gb' // Restrict to United Kingdom
+          }
         }, 
         (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
