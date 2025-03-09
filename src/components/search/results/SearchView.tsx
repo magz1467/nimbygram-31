@@ -18,7 +18,7 @@ interface SearchViewProps {
     timestamp?: number;
   };
   retryCount?: number;
-  onError?: () => void;
+  onError?: (error: Error | null) => void; // Updated to match expected signature
 }
 
 export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchViewProps) => {
@@ -55,7 +55,7 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
   // Report errors back to parent component
   useEffect(() => {
     if (error && onError) {
-      onError();
+      onError(error);
     }
   }, [error, onError]);
 
@@ -126,7 +126,7 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
         handleMarkerClick={handleMapMarkerClick}
         isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
-        displayTerm={initialSearch?.displayTerm} // Pass the displayTerm
+        displayTerm={initialSearch?.displayTerm}
         onRetry={handleRetry}
         error={error}
       />

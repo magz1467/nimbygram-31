@@ -18,10 +18,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     const { data, error } = await supabase
       .from('crystal_roof')
       .select('*')
-      .timeout(15000); // Add explicit 15 second timeout to avoid long-running queries
+      // Remove the explicit timeout as it's not supported by the PostgrestFilterBuilder
+      // A timeout is still enforced by Supabase at the service level
 
     if (error) {
-      if (error.code === '57014') {
+      // We can still check for timeout errors by their error message
+      if (error.message?.includes('timeout') || error.message?.includes('57014')) {
         // Handle timeout error specifically
         console.error('❌ Query timeout in fetchApplications:', error);
         throw new Error('Search timed out. The area may have too many results or the database is busy.');

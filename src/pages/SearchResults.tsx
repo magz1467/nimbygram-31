@@ -79,12 +79,15 @@ const SearchResultsPage = () => {
   };
 
   // Function to handle errors from SearchView
-  const handleError = (error: Error) => {
+  const handleError = (error: Error | null) => {
+    if (!error) return; // Early return if no error is provided
+    
     console.error('Search error detected:', error);
     setIsError(true);
     
     // Extract more detailed error message if available
-    if (error.message.includes('timeout') || error.code === '57014') {
+    // Fixed: Use message property instead of code which doesn't exist on Error type
+    if (error.message?.includes('timeout') || error.message?.includes('57014')) {
       setErrorDetails('The search timed out. This area may have too many results or the database is busy.');
     } else {
       setErrorDetails(error.message || 'Unknown error occurred while searching.');
@@ -118,7 +121,7 @@ const SearchResultsPage = () => {
   return <SearchView 
     initialSearch={searchState} 
     retryCount={retryCount}
-    onError={handleError}
+    onError={handleError} // Fixed: handleError function now matches expected signature
   />;
 };
 
