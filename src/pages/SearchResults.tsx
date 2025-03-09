@@ -86,11 +86,13 @@ const SearchResultsPage = () => {
     setIsError(true);
     
     // Extract more detailed error message if available
-    // Fixed: Use message property instead of code which doesn't exist on Error type
-    if (error.message?.includes('timeout') || error.message?.includes('57014')) {
-      setErrorDetails('The search timed out. This area may have too many results or the database is busy.');
+    const errorMessage = error.message || '';
+    if (errorMessage.includes('timeout') || errorMessage.includes('57014') || errorMessage.includes('statement canceled')) {
+      setErrorDetails('The search timed out. This area may have too many results or the database is busy. Try a more specific location.');
+    } else if (errorMessage.includes('location') || errorMessage.includes('coordinates')) {
+      setErrorDetails('We couldn\'t find this location. Please try a more specific UK location name or postcode.');
     } else {
-      setErrorDetails(error.message || 'Unknown error occurred while searching.');
+      setErrorDetails(errorMessage || 'Unknown error occurred while searching.');
     }
   };
 
@@ -121,7 +123,7 @@ const SearchResultsPage = () => {
   return <SearchView 
     initialSearch={searchState} 
     retryCount={retryCount}
-    onError={handleError} // Fixed: handleError function now matches expected signature
+    onError={handleError}
   />;
 };
 

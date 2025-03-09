@@ -27,7 +27,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode(
         { 
-          address: locationName,
+          address: locationName + ', UK', // Append UK to improve accuracy for UK locations
           region: 'gb', // Force UK region for better results
           componentRestrictions: {
             country: 'gb' // Restrict to United Kingdom

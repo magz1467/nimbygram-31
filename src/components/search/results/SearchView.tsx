@@ -14,11 +14,11 @@ interface SearchViewProps {
   initialSearch?: {
     searchType: 'postcode' | 'location';
     searchTerm: string;
-    displayTerm?: string; // Add displayTerm property
+    displayTerm?: string; 
     timestamp?: number;
   };
   retryCount?: number;
-  onError?: (error: Error | null) => void; // Updated to match expected signature
+  onError?: (error: Error | null) => void;
 }
 
 export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchViewProps) => {

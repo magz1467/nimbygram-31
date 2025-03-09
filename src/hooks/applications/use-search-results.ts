@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchState } from '@/hooks/applications/use-search-state';
 import { useFilterSortState } from '@/hooks/applications/use-filter-sort-state';
@@ -10,14 +11,15 @@ interface SearchResultsOptions {
   initialSearch?: {
     searchType: 'postcode' | 'location';
     searchTerm: string;
+    displayTerm?: string;
     timestamp?: number;
   };
-  retryCount?: number; // Add retryCount to the options type
+  retryCount?: number;
 }
 
 export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 0 }: SearchResultsOptions = {}) => {
   const initialPostcodeValue = initialSearch?.searchType === 'postcode' ? initialSearch.searchTerm : initialPostcode || '';
-  const [error, setError] = useState<Error | null>(null); // Add error state
+  const [error, setError] = useState<Error | null>(null);
 
   const {
     postcode,
@@ -27,15 +29,22 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     applications = [],
     handlePostcodeSelect,
     refetch,
-    error: searchStateError, // Extract error from search state
-  } = useSearchState(initialPostcodeValue); // Only pass one argument
+    error: searchStateError,
+    coordsError
+  } = useSearchState(initialPostcodeValue);
 
-  // Update our error state when search state error changes
+  // Combine and prioritize errors
   useEffect(() => {
-    if (searchStateError) {
+    if (coordsError) {
+      console.error('Coordinates error:', coordsError);
+      setError(coordsError);
+    } else if (searchStateError) {
+      console.error('Search state error:', searchStateError);
       setError(searchStateError);
+    } else {
+      setError(null);
     }
-  }, [searchStateError]);
+  }, [searchStateError, coordsError]);
 
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
   const [showMap, setShowMap] = useState(false);
@@ -155,6 +164,6 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     handlePostcodeSelect,
     statusCounts,
     refetch,
-    error // Return the error state
+    error
   };
 };
