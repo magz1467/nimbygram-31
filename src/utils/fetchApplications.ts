@@ -17,9 +17,17 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Get all applications without filtering first
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*');
+      .select('*')
+      .timeout(15000); // Add explicit 15 second timeout to avoid long-running queries
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '57014') {
+        // Handle timeout error specifically
+        console.error('❌ Query timeout in fetchApplications:', error);
+        throw new Error('Search timed out. The area may have too many results or the database is busy.');
+      }
+      throw error;
+    }
     
     console.log(`✅ Raw data from supabase: ${data?.length || 0} results`);
 
@@ -48,12 +56,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Show toast to the user
     toast({
       title: "Search Error",
-      description: "We're having trouble loading the results. Please try again or search for a different location.",
+      description: err instanceof Error ? err.message : "We're having trouble loading the results. Please try again or search for a different location.",
       variant: "destructive",
     });
     
     // Return empty array instead of throwing
-    console.log('Returning empty array due to error');
-    return [];
+    throw err; // Throw the error to allow proper handling by the caller
   }
 };

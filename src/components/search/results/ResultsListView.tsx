@@ -54,25 +54,32 @@ export const ResultsListView = ({
 
   // If error or no applications found, show empty state
   if (error || !applications.length) {
-    const errorMessage = error ? error.message : "";
-    const isLocationError = errorMessage.includes("find coordinates") || 
-                           errorMessage.includes("location") ||
-                           errorMessage.includes("Failed to get") ||
-                           errorMessage.includes("INVALID_REQUEST");
+    let errorTitle = "No results found";
+    let errorMessage = `We couldn't find any planning applications for ${displayLocation}. Please try another search.`;
+    
+    if (error) {
+      const errorText = error.message || "";
+      const isTimeoutError = errorText.includes("timeout") || errorText.includes("57014");
+      const isLocationError = errorText.includes("find coordinates") || 
+                             errorText.includes("location") ||
+                             errorText.includes("Failed to get") ||
+                             errorText.includes("INVALID_REQUEST");
+      
+      errorTitle = isTimeoutError ? "Search Timeout" : 
+                  isLocationError ? "Location Error" : 
+                  "Error loading results";
+                  
+      errorMessage = isTimeoutError ? 
+        `The search for "${displayLocation}" timed out. This area may have too many results or the database is busy. Please try again or search a more specific location.` :
+        isLocationError ? 
+        `We couldn't find the coordinates for "${displayLocation}". Please try a more specific location or postcode.` :
+        `We encountered an error while searching. ${errorText || "Please try another location or search term."}`;
+    }
 
     return (
       <div className="py-16 text-center max-w-md mx-auto">
-        <h3 className="text-lg font-semibold mb-2">
-          {error ? (isLocationError ? "Location Error" : "Error loading results") : "No results found"}
-        </h3>
-        <p className="text-gray-500 mb-6">
-          {error 
-            ? (isLocationError 
-                ? `We couldn't find the coordinates for "${displayLocation}". Please try a more specific location or postcode.`
-                : `We encountered an error while searching. ${errorMessage || "Please try another location or search term."}`)
-            : `We couldn't find any planning applications for ${displayLocation}. Please try another search.`
-          }
-        </p>
+        <h3 className="text-lg font-semibold mb-2">{errorTitle}</h3>
+        <p className="text-gray-500 mb-6">{errorMessage}</p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" className="gap-2">
             <RotateCw className="h-4 w-4" />

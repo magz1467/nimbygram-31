@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RotateCw } from "lucide-react";
+import { Header } from "@/components/Header";
+import { NoResultsView } from "@/components/search/results/NoResultsView";
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -13,6 +15,7 @@ const SearchResultsPage = () => {
   const searchState = location.state;
   const [retryCount, setRetryCount] = useState(0);
   const [isError, setIsError] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   // Validate that we have search state
   useEffect(() => {
@@ -53,6 +56,7 @@ const SearchResultsPage = () => {
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     setIsError(false);
+    setErrorDetails(null);
     
     toast({
       title: "Retrying search",
@@ -74,6 +78,19 @@ const SearchResultsPage = () => {
     }
   };
 
+  // Function to handle errors from SearchView
+  const handleError = (error: Error) => {
+    console.error('Search error detected:', error);
+    setIsError(true);
+    
+    // Extract more detailed error message if available
+    if (error.message.includes('timeout') || error.code === '57014') {
+      setErrorDetails('The search timed out. This area may have too many results or the database is busy.');
+    } else {
+      setErrorDetails(error.message || 'Unknown error occurred while searching.');
+    }
+  };
+
   // Only render SearchView if we have valid search state
   if (!searchState?.searchTerm) {
     return null;
@@ -82,15 +99,18 @@ const SearchResultsPage = () => {
   // Error state with retry button
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h2 className="text-2xl font-bold mb-4">Search Error</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          We had trouble finding planning applications for this location.
-        </p>
-        <Button onClick={handleRetry} className="flex items-center gap-2">
-          <RotateCw className="h-4 w-4" />
-          Try Again
-        </Button>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
+          <h2 className="text-2xl font-bold mb-4">Search Error</h2>
+          <p className="text-gray-600 mb-6 text-center max-w-md">
+            {errorDetails || 'We had trouble finding planning applications for this location.'}
+          </p>
+          <Button onClick={handleRetry} className="flex items-center gap-2">
+            <RotateCw className="h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -98,7 +118,7 @@ const SearchResultsPage = () => {
   return <SearchView 
     initialSearch={searchState} 
     retryCount={retryCount}
-    onError={() => setIsError(true)}
+    onError={handleError}
   />;
 };
 
