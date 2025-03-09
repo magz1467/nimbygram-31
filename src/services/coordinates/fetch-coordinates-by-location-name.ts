@@ -24,7 +24,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     const geocoder = new google.maps.Geocoder();
     
     // Try to find the location with country restriction to improve accuracy
-    const response = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
+    const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode(
         { 
           address: locationName,
