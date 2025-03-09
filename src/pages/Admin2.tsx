@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AutomationControl } from "@/components/admin/AutomationControl";
 import { ManualProcessing } from "@/components/admin/ManualProcessing";
 import { StatusDisplay } from "@/components/admin/StatusDisplay";
-import { VotesTableSetup } from "@/components/admin/VotesTableSetup";
 import { SupportTableSetup } from "@/components/admin/SupportTableSetup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -22,13 +21,12 @@ export default function Admin2() {
         <AlertTitle>Important</AlertTitle>
         <AlertDescription>
           Before using the application, you must set up the required database tables using the tools below.
-          Click on the "Create Application Votes Table" and "Create Application Support Table" buttons to set up the tables.
+          Click on the "Create Application Support Table" button to set up the table.
         </AlertDescription>
       </Alert>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <StatusDisplay totalAITitles={0} />
-        <VotesTableSetup />
         <SupportTableSetup />
       </div>
 
@@ -39,8 +37,7 @@ export default function Admin2() {
           <TabsTrigger value="manual" className="flex-1">Manual Processing</TabsTrigger>
         </TabsList>
         <TabsContent value="setup">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <VotesTableSetup />
+          <div className="grid grid-cols-1 gap-8">
             <SupportTableSetup />
           </div>
         </TabsContent>

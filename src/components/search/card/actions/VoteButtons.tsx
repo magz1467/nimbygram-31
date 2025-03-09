@@ -21,7 +21,6 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
   const [localVoteStatus, setLocalVoteStatus] = useState<'hot' | 'not' | null>(voteStatus);
   const [localHotCount, setLocalHotCount] = useState(hotCount);
   const [localNotCount, setLocalNotCount] = useState(notCount);
-  const [tableError, setTableError] = useState(false);
   const { toast } = useToast();
 
   // Update local state when props change
@@ -31,40 +30,9 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
     setLocalNotCount(notCount);
   }, [voteStatus, hotCount, notCount]);
 
-  // Check if the application_votes table exists
-  useEffect(() => {
-    const checkVotesTable = async () => {
-      try {
-        const { error } = await supabase
-          .from('application_votes')
-          .select('count')
-          .limit(1);
-        
-        if (error && error.code === '42P01') {
-          // Table doesn't exist
-          setTableError(true);
-        } else {
-          setTableError(false);
-        }
-      } catch (error) {
-        console.error('Error checking votes table:', error);
-      }
-    };
-    
-    checkVotesTable();
-  }, []);
-
   const handleVote = async (type: 'hot' | 'not') => {
     if (!checkAuth(() => {})) return;
     if (isSubmitting) return;
-    if (tableError) {
-      toast({
-        title: "Database setup required",
-        description: "Please go to the Admin page to set up the voting system.",
-        duration: 5000,
-      });
-      return;
-    }
 
     try {
       setIsSubmitting(true);
@@ -109,35 +77,12 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
         return;
       }
 
-      // Check if the application_votes table exists
-      const { error: tableCheckError } = await supabase
-        .from('application_votes')
-        .select('count')
-        .limit(1);
-      
-      if (tableCheckError && tableCheckError.code === '42P01') {
-        // Table doesn't exist error
-        setLocalVoteStatus(previousVoteStatus);
-        setLocalHotCount(previousHotCount);
-        setLocalNotCount(previousNotCount);
-        setTableError(true);
-        
-        toast({
-          title: "Database setup required",
-          description: "Please go to the Admin page to set up the voting system.",
-          duration: 5000,
-        });
-        
-        console.error('Error: application_votes table does not exist', tableCheckError);
-        return;
-      }
-
       if (isRemovingVote) {
         // Removing vote
         const { error } = await supabase
-          .from('application_votes')
+          .from('comment_votes')
           .delete()
-          .eq('application_id', applicationId)
+          .eq('comment_id', applicationId)
           .eq('user_id', user.id);
           
         if (error) {
@@ -152,13 +97,13 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
       } else {
         // Adding or changing vote
         const { error } = await supabase
-          .from('application_votes')
+          .from('comment_votes')
           .upsert({
-            application_id: applicationId,
+            comment_id: applicationId,
             user_id: user.id,
             vote_type: type
           }, {
-            onConflict: 'application_id,user_id'
+            onConflict: 'comment_id,user_id'
           });
           
         if (error) {
@@ -180,28 +125,13 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
       
       toast({
         title: "Error",
-        description: "Failed to save your vote. The application_votes table may not exist in the database.",
+        description: "Failed to save your vote. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (tableError) {
-    return (
-      <Alert variant="destructive" className="mt-2">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Database setup required</AlertTitle>
-        <AlertDescription className="text-sm">
-          <p>The voting feature requires database setup.</p>
-          <Link to="/admin2" className="text-primary underline block mt-1">
-            Go to Admin page to set up
-          </Link>
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <div className="grid grid-cols-2 gap-2">
