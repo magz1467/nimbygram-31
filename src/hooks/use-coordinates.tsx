@@ -10,7 +10,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 // Helper function to implement timeout for promises
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) => 
