@@ -23,11 +23,18 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();
     
+    // Explicitly append UK to the location name if not already there
+    const searchLocation = locationName.toLowerCase().includes('uk') ? 
+      locationName : 
+      `${locationName}, UK`;
+    
+    console.log('🔍 Enhanced search location:', searchLocation);
+    
     // Try to find the location with UK country restriction to improve accuracy
     const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode(
         { 
-          address: locationName + ', UK', // Append UK to improve accuracy for UK locations
+          address: searchLocation, 
           region: 'gb', // Force UK region for better results
           componentRestrictions: {
             country: 'gb' // Restrict to United Kingdom
@@ -60,7 +67,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     }
     
     throw new Error("No results found for location");
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error in geocoding location name:', error);
     throw new Error(`Could not find coordinates for location: ${error.message}`);
   }

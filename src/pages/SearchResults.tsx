@@ -16,6 +16,7 @@ const SearchResultsPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [isError, setIsError] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Validate that we have search state
   useEffect(() => {
@@ -50,7 +51,32 @@ const SearchResultsPage = () => {
         window.sessionStorage.removeItem(key);
       });
     }
-  }, [searchState, navigate, toast]);
+    
+    // Set a global timeout for the search - if it takes more than 2 minutes, consider it failed
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      console.error('Search timed out after 2 minutes');
+      setIsError(true);
+      setErrorDetails('The search took too long to complete. Please try searching with a more specific location.');
+      
+      toast({
+        title: "Search Timeout",
+        description: "The search took too long. Please try a more specific location.",
+        variant: "destructive",
+      });
+    }, 120000); // 2 minutes
+    
+    setSearchTimeout(timeout);
+    
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchState, navigate, toast, searchTimeout]);
 
   // Handle retry
   const handleRetry = () => {
@@ -81,6 +107,12 @@ const SearchResultsPage = () => {
   // Function to handle errors from SearchView
   const handleError = (error: Error | null) => {
     if (!error) return; // Early return if no error is provided
+    
+    // Clear any search timeout since we've already detected an error
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      setSearchTimeout(null);
+    }
     
     console.error('Search error detected:', error);
     setIsError(true);

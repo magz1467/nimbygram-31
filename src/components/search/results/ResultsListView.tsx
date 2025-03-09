@@ -3,6 +3,8 @@ import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { Button } from "@/components/ui/button";
 import { RotateCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -37,6 +39,27 @@ export const ResultsListView = ({
   const appArray = allApplications?.length ? allApplications : applications;
   // Use displayTerm if available, otherwise use searchTerm
   const displayLocation = displayTerm || searchTerm || postcode;
+  
+  // Add state to detect long-running searches
+  const [isLongSearch, setIsLongSearch] = useState(false);
+  
+  // Set a timer to detect long-running searches
+  useEffect(() => {
+    let timer: number | null = null;
+    
+    if (isLoading) {
+      // After 10 seconds of loading, mark as a long search
+      timer = window.setTimeout(() => {
+        setIsLongSearch(true);
+      }, 10000);
+    } else {
+      setIsLongSearch(false);
+    }
+    
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [isLoading]);
 
   // If loading, show skeleton cards
   if (isLoading) {
@@ -46,8 +69,34 @@ export const ResultsListView = ({
           <div 
             key={i} 
             className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto h-[300px] animate-pulse"
-          />
+          >
+            <div className="p-6 space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-24 w-full" />
+              <div className="flex gap-2 mt-4">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </div>
+          </div>
         ))}
+        
+        {/* Show message for long-running searches */}
+        {isLongSearch && (
+          <div className="text-center mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md mx-auto">
+            <h4 className="text-amber-800 font-medium">Search taking longer than usual</h4>
+            <p className="text-amber-700 text-sm mt-1">
+              We're still looking for applications in this area. This might be a busy area with many applications.
+            </p>
+            {onRetry && (
+              <Button onClick={onRetry} variant="outline" size="sm" className="mt-3 gap-2">
+                <RotateCw className="h-3 w-3" />
+                Try again
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     );
   }

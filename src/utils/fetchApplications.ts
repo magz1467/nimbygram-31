@@ -5,6 +5,18 @@ import { Application } from "@/types/planning";
 import { transformApplicationData } from "./applicationTransforms";
 import { toast } from "@/hooks/use-toast";
 
+/**
+ * Helper function to implement timeout for promises
+ */
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    )
+  ]) as Promise<T>;
+};
+
 export const fetchApplications = async (coordinates: [number, number] | null): Promise<Application[]> => {
   if (!coordinates) {
     console.log('❌ fetchApplications: No coordinates provided');
@@ -20,19 +32,23 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       
       const [lat, lng] = coordinates;
       const radius = 10000; // 10km radius
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-applications-with-counts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          center_lat: lat,
-          center_lng: lng,
-          radius_meters: radius,
-          page_size: 100
-        })
-      });
+      const response = await withTimeout(
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-applications-with-counts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            center_lat: lat,
+            center_lng: lng,
+            radius_meters: radius,
+            page_size: 100
+          })
+        }),
+        30000, // 30 second timeout
+        "Search request timed out. This area may have too many results."
+      );
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -65,20 +81,22 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       // Continue to fallback method
     }
     
-    // Fallback to direct query
+    // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Get all applications without filtering first
-    const { data, error } = await supabase
+    // Use Promise.race to implement a timeout
+    const queryPromise = supabase
       .from('crystal_roof')
-      .select('*')
-      // This function doesn't support timeout, we'll handle it with Promise.race below
-
-    if (error) {
-      // Handle database errors
-      console.error('❌ Database error in fetchApplications:', error);
-      throw error;
-    }
+      .select('*');
+    
+    const data = await withTimeout(
+      queryPromise.then(result => {
+        if (result.error) throw result.error;
+        return result.data;
+      }),
+      40000, // 40 second timeout
+      "Database query timed out. This area may have too many results."
+    );
     
     console.log(`✅ Raw data from supabase: ${data?.length || 0} results`);
 
@@ -101,7 +119,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const distanceB = calculateDistance(coordinates, b.coordinates);
       return distanceA - distanceB;
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
     // Add specific error handling for timeout errors
