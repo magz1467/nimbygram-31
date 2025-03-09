@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 /**
  * Helper function to implement timeout for promises
  */
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) => 
@@ -89,11 +89,14 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       .from('crystal_roof')
       .select('*');
     
+    // Convert the PromiseLike<any[]> to a proper Promise<any[]>
+    const queryPromiseAsPromise: Promise<any[]> = queryPromise.then(result => {
+      if (result.error) throw result.error;
+      return result.data || [];
+    });
+    
     const data = await withTimeout(
-      queryPromise.then(result => {
-        if (result.error) throw result.error;
-        return result.data;
-      }),
+      queryPromiseAsPromise,
       40000, // 40 second timeout
       "Database query timed out. This area may have too many results."
     );
