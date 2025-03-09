@@ -28,24 +28,14 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       geocoder.geocode(
         { 
           address: locationName,
-          region: 'uk', // Bias results to UK
-          componentRestrictions: { country: 'gb' } // Restrict to Great Britain
         }, 
         (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
             console.log('✅ Geocoder found results:', results.length);
             resolve(results);
           } else {
-            // If restricted search fails, try again without restrictions
-            geocoder.geocode({ address: locationName }, (fallbackResults, fallbackStatus) => {
-              if (fallbackStatus === google.maps.GeocoderStatus.OK && fallbackResults && fallbackResults.length > 0) {
-                console.log('✅ Fallback geocoder found results:', fallbackResults.length);
-                resolve(fallbackResults);
-              } else {
-                console.error('❌ Geocoder failed:', fallbackStatus);
-                reject(new Error(`Geocoder failed: ${fallbackStatus}`));
-              }
-            });
+            console.error('❌ Geocoder failed:', status);
+            reject(new Error(`Geocoder failed: ${status}`));
           }
         }
       );

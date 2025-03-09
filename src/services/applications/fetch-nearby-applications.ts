@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/use-toast";
  */
 export const fetchNearbyApplications = async (
   coordinates: [number, number] | null,
-  radius: number = 20
+  radius: number = 40
 ): Promise<any[] | null> => {
   console.log('🔍 Starting to fetch applications near coordinates:', coordinates);
   
@@ -27,26 +27,7 @@ export const fetchNearbyApplications = async (
   let error;
   
   try {
-    const rpcResult = await supabase.rpc('properties_within_distance', {
-      ref_lat: lat,
-      ref_lon: lng,
-      radius_meters: radius * 1000 // Convert km to meters
-    });
-    
-    properties = rpcResult.data;
-    error = rpcResult.error;
-    
-    console.log('🔍 RPC query result:', { success: !error, count: properties?.length || 0 });
-  } catch (rpcError) {
-    console.warn('RPC method failed, falling back to query:', rpcError);
-    error = rpcError;
-  }
-  
-  // If RPC fails, use a regular query as fallback
-  if (error || !properties || properties.length === 0) {
-    console.log('⚠️ Falling back to regular query method');
-    
-    // Calculate bounds for a radius search (approximately 20km)
+    // Calculate bounds for a radius search
     const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
     const lngDiff = radius / (111.32 * Math.cos(lat * Math.PI / 180));
     
@@ -57,21 +38,54 @@ export const fetchNearbyApplications = async (
     
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
+    // Select all applications without filtering first
     const queryResult = await supabase
       .from('crystal_roof')
-      .select('*')
-      .filter('geom->coordinates->1', 'gte', latMin)
-      .filter('geom->coordinates->1', 'lte', latMax)
-      .filter('geom->coordinates->0', 'gte', lngMin)
-      .filter('geom->coordinates->0', 'lte', lngMax);
+      .select('*');
         
     properties = queryResult.data;
     error = queryResult.error;
     
-    console.log('🔍 Standard query result:', { 
+    console.log('🔍 Query result:', { 
       success: !error, 
       count: properties?.length || 0 
     });
+    
+    // Filter the results in JavaScript based on approximate distance
+    if (properties && properties.length > 0) {
+      properties = properties.filter(property => {
+        try {
+          // Extract coordinates - check both geom and geometry
+          let propLat, propLng;
+          
+          if (property.geom?.coordinates) {
+            propLng = parseFloat(property.geom.coordinates[0]);
+            propLat = parseFloat(property.geom.coordinates[1]);
+          } else if (property.geometry?.coordinates) {
+            propLng = parseFloat(property.geometry.coordinates[0]);
+            propLat = parseFloat(property.geometry.coordinates[1]);
+          } else {
+            return false; // Skip if no coordinates
+          }
+          
+          // Check if within extended bounds
+          return (
+            propLat >= latMin && 
+            propLat <= latMax && 
+            propLng >= lngMin && 
+            propLng <= lngMax
+          );
+        } catch (err) {
+          console.error(`Error filtering property ${property.id}:`, err);
+          return false;
+        }
+      });
+      
+      console.log(`✅ Filtered to ${properties.length} applications within radius`);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching application data:', error);
+    return null;
   }
 
   if (error) {

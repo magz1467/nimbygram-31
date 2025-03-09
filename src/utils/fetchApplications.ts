@@ -13,41 +13,14 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   
   console.log('🔍 Fetching applications for coordinates:', coordinates);
   
-  // Use a smaller radius to reduce query complexity and timeout risk
-  const [lat, lng] = coordinates;
-  const radius = 15; // km - reduced from 35km to 15km to avoid timeout
-  const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
-  const lngDiff = radius / (111.32 * Math.cos(lat * Math.PI / 180));
-  
-  const latMin = lat - latDiff;
-  const latMax = lat + latDiff;
-  const lngMin = lng - lngDiff;
-  const lngMax = lng + lngDiff;
-  
-  console.log('🔍 Searching within bounds:', { latMin, latMax, lngMin, lngMax });
-
   try {
-    // Add a timeout to the query
-    const timeoutPromise = new Promise<any[]>((_, reject) => {
-      setTimeout(() => reject(new Error('Query timeout after 10 seconds')), 10000);
-    });
-    
-    // Create the actual query promise
-    const queryPromise = supabase
+    // Get all applications without filtering first
+    const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')
-      .limit(50) // Limit the number of results to avoid processing too much data
-      .abortSignal(new AbortController().signal); // Pass an abort signal
+      .select('*');
 
-    // Race the promises
-    const data = await Promise.race([
-      queryPromise.then(res => {
-        if (res.error) throw res.error;
-        return res.data || [];
-      }),
-      timeoutPromise
-    ]);
-
+    if (error) throw error;
+    
     console.log(`✅ Raw data from supabase: ${data?.length || 0} results`);
 
     if (!data || data.length === 0) {
@@ -55,46 +28,8 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       return [];
     }
 
-    // Filter for applications within our radius after we get all data
-    const filteredData = data.filter(app => {
-      try {
-        // Extract coordinates from the application
-        let appLat, appLng;
-        
-        if (app.geom?.coordinates) {
-          appLng = parseFloat(app.geom.coordinates[0]);
-          appLat = parseFloat(app.geom.coordinates[1]);
-        } else if (app.geometry?.coordinates) {
-          appLng = parseFloat(app.geometry.coordinates[0]);
-          appLat = parseFloat(app.geometry.coordinates[1]);
-        } else {
-          return false; // Skip if no coordinates
-        }
-        
-        // Check if within bounds
-        const inBounds = (
-          appLat >= latMin && 
-          appLat <= latMax && 
-          appLng >= lngMin && 
-          appLng <= lngMax
-        );
-        
-        if (!inBounds) {
-          // Log skipped applications that are outside our bounds
-          console.log(`Skipping application ${app.id} - outside search radius`);
-        }
-        
-        return inBounds;
-      } catch (err) {
-        console.log(`Error filtering application ${app.id}:`, err);
-        return false;
-      }
-    });
-    
-    console.log(`✅ Filtered to ${filteredData.length} applications within radius`);
-
-    // Transform the application data using our improved transformer
-    const transformedApplications = filteredData.map(app => 
+    // Transform all application data
+    const transformedApplications = data.map(app => 
       transformApplicationData(app, coordinates)
     ).filter((app): app is Application => app !== null);
     
