@@ -32,12 +32,24 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       
       const [lat, lng] = coordinates;
       const radius = 10000; // 10km radius
+      
+      // Get Supabase URL from environment or use default
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.warn('⚠️ Missing Supabase URL or key, skipping edge function');
+        throw new Error('Missing Supabase configuration');
+      }
+      
+      console.log('🌐 Using Supabase URL:', supabaseUrl);
+      
       const response = await withTimeout(
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-applications-with-counts`, {
+        fetch(`${supabaseUrl}/functions/v1/get-applications-with-counts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${supabaseKey}`
           },
           body: JSON.stringify({
             center_lat: lat,
@@ -52,7 +64,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Edge function error:', errorText);
+        console.error('❌ Edge function error:', errorText, 'Status:', response.status);
         throw new Error('Edge function failed: ' + (errorText || response.statusText));
       }
       
@@ -89,10 +101,21 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       .from('crystal_roof')
       .select('*');
     
-    // Convert the PromiseLike<any[]> to a proper Promise<any[]>
-    const queryPromiseAsPromise: Promise<any[]> = queryPromise.then(result => {
-      if (result.error) throw result.error;
-      return result.data || [];
+    // Properly convert the PromiseLike to a full Promise with catch and finally methods
+    const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
+      queryPromise
+        .then(result => {
+          if (result.error) {
+            console.error('Supabase query error:', result.error);
+            reject(result.error);
+          } else {
+            resolve(result.data || []);
+          }
+        })
+        .catch(err => {
+          console.error('Unexpected query error:', err);
+          reject(err);
+        });
     });
     
     const data = await withTimeout(

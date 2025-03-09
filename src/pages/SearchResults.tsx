@@ -12,7 +12,7 @@ const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const searchState = location.state;
+  const [searchState, setSearchState] = useState(location.state);
   const [retryCount, setRetryCount] = useState(0);
   const [isError, setIsError] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -20,7 +20,12 @@ const SearchResultsPage = () => {
 
   // Validate that we have search state
   useEffect(() => {
-    if (!searchState?.searchTerm) {
+    // Update search state when location.state changes
+    if (location.state) {
+      setSearchState(location.state);
+    }
+    
+    if (!location.state?.searchTerm) {
       console.warn('No search term provided in state, redirecting to homepage');
       toast({
         title: "Search Error",
@@ -32,9 +37,9 @@ const SearchResultsPage = () => {
     }
 
     console.log('📍 Processing search:', {
-      type: searchState.searchType,
-      term: searchState.searchTerm,
-      timestamp: searchState.timestamp
+      type: location.state.searchType,
+      term: location.state.searchTerm,
+      timestamp: location.state.timestamp
     });
     
     // Ensure we don't have stale data in session storage
@@ -76,7 +81,7 @@ const SearchResultsPage = () => {
         clearTimeout(searchTimeout);
       }
     };
-  }, [searchState, navigate, toast, searchTimeout]);
+  }, [location.state, navigate, toast, searchTimeout]);
 
   // Handle retry
   const handleRetry = () => {
@@ -101,6 +106,9 @@ const SearchResultsPage = () => {
         state: updatedState,
         replace: true 
       });
+      
+      // Update local state too
+      setSearchState(updatedState);
     }
   };
 
@@ -130,7 +138,22 @@ const SearchResultsPage = () => {
 
   // Only render SearchView if we have valid search state
   if (!searchState?.searchTerm) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <NoResultsView onPostcodeSelect={(value) => {
+            navigate('/search-results', {
+              state: {
+                searchType: 'postcode',
+                searchTerm: value,
+                timestamp: Date.now()
+              }
+            });
+          }} />
+        </div>
+      </div>
+    );
   }
 
   // Error state with retry button
