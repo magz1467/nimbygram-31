@@ -96,14 +96,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Use Promise.race to implement a timeout
-    const queryPromise = supabase
-      .from('crystal_roof')
-      .select('*');
-    
-    // Properly convert the PromiseLike to a full Promise with catch and finally methods
+    // Create a Promise that wraps the Supabase query
     const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
-      queryPromise
+      supabase
+        .from('crystal_roof')
+        .select('*')
         .then(result => {
           if (result.error) {
             console.error('Supabase query error:', result.error);
@@ -112,9 +109,9 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
             resolve(result.data || []);
           }
         })
-        .catch(err => {
-          console.error('Unexpected query error:', err);
-          reject(err);
+        .catch(error => {
+          console.error('Unexpected query error:', error);
+          reject(error);
         });
     });
     
