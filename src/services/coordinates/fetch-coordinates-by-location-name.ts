@@ -23,7 +23,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();
     
-    // Try to find the location with country restriction to improve accuracy
+    // Try to find the location without country restriction to improve results
     const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode(
         { 
@@ -43,10 +43,15 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     if (response && response.length > 0) {
       const location = response[0].geometry.location;
+      // IMPORTANT: Get coordinates in correct order - lat first, then lng
       const lat = location.lat();
       const lng = location.lng();
       
-      console.log('📍 Got coordinates from Geocoding API:', [lat, lng]);
+      console.log('📍 Got coordinates from Geocoding API:', [lat, lng], 'for location:', locationName);
+      console.log('📍 Geometry location type:', response[0].geometry.location_type);
+      console.log('📍 First result formatted address:', response[0].formatted_address);
+      
+      // Return coordinates in correct [lat, lng] order for consistency with other services
       return [lat, lng];
     }
     

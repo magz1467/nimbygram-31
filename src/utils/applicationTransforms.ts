@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -26,31 +25,34 @@ export const transformApplicationData = (
   try {
     // Try multiple approaches to get coordinates
     if (app.latitude && app.longitude) {
-      // Direct latitude/longitude fields
+      // Direct latitude/longitude fields - already in [lat, lng] order
       coordinates = [
         parseFloat(app.latitude),
         parseFloat(app.longitude)
       ];
     } else if (app.geom) {
-      // Geometry object
+      // Geometry object - GeoJSON uses [lng, lat] order, so we need to swap
       if (typeof app.geom === 'object' && app.geom.type === 'Point') {
+        // GeoJSON Point objects have coordinates in [longitude, latitude] order!
         coordinates = [
-          parseFloat(app.geom.coordinates[1]),
-          parseFloat(app.geom.coordinates[0])
+          parseFloat(app.geom.coordinates[1]), // lat
+          parseFloat(app.geom.coordinates[0])  // lng
         ];
       } else if (typeof app.geom === 'object' && Array.isArray(app.geom.coordinates)) {
+        // GeoJSON coordinate arrays are in [longitude, latitude] order!
         coordinates = [
-          parseFloat(app.geom.coordinates[1]),
-          parseFloat(app.geom.coordinates[0])
+          parseFloat(app.geom.coordinates[1]), // lat
+          parseFloat(app.geom.coordinates[0])  // lng
         ];
       } else if (typeof app.geom === 'string') {
         // Handle case where geom might be a stringified object
         try {
           const geomObj = JSON.parse(app.geom);
           if (geomObj.coordinates) {
+            // GeoJSON coordinates are [longitude, latitude]
             coordinates = [
-              parseFloat(geomObj.coordinates[1]),
-              parseFloat(geomObj.coordinates[0])
+              parseFloat(geomObj.coordinates[1]), // lat
+              parseFloat(geomObj.coordinates[0])  // lng
             ];
           }
         } catch (e) {
@@ -58,11 +60,11 @@ export const transformApplicationData = (
         }
       }
     } else if (app.centroid) {
-      // Try using centroid if available
+      // Try using centroid if available - likely in [lng, lat] order too
       if (typeof app.centroid === 'object' && app.centroid.coordinates) {
         coordinates = [
-          parseFloat(app.centroid.coordinates[1]),
-          parseFloat(app.centroid.coordinates[0])
+          parseFloat(app.centroid.coordinates[1]), // lat
+          parseFloat(app.centroid.coordinates[0])  // lng
         ];
       }
     }

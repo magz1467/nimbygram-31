@@ -38,7 +38,7 @@ export const fetchNearbyApplications = async (
     
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
-    // Select all applications without filtering first
+    // Select all applications
     const queryResult = await supabase
       .from('crystal_roof')
       .select('*');
@@ -48,22 +48,30 @@ export const fetchNearbyApplications = async (
     
     console.log('🔍 Query result:', { 
       success: !error, 
-      count: properties?.length || 0 
+      count: properties?.length || 0,
+      searchCenter: [lat, lng]
     });
     
     // Filter the results in JavaScript based on approximate distance
     if (properties && properties.length > 0) {
+      console.log('Raw properties before filtering:', properties.slice(0, 3));
+      
       properties = properties.filter(property => {
         try {
           // Extract coordinates - check both geom and geometry
           let propLat, propLng;
           
           if (property.geom?.coordinates) {
+            // CRITICAL: Check coordinate order in geom - ensure [lng, lat] is converted to [lat, lng]
             propLng = parseFloat(property.geom.coordinates[0]);
             propLat = parseFloat(property.geom.coordinates[1]);
           } else if (property.geometry?.coordinates) {
             propLng = parseFloat(property.geometry.coordinates[0]);
             propLat = parseFloat(property.geometry.coordinates[1]);
+          } else if (property.latitude && property.longitude) {
+            // Use direct lat/lng properties if available
+            propLat = parseFloat(property.latitude);
+            propLng = parseFloat(property.longitude);
           } else {
             return false; // Skip if no coordinates
           }

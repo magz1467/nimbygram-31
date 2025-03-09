@@ -1,3 +1,4 @@
+
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { useLocation } from "react-router-dom";
@@ -24,6 +25,13 @@ export const ApplicationsDashboardMap = () => {
     handleSortChange,
     setIsMapView
   } = useApplicationState(searchPostcode);
+
+  // Log coordinates for debugging
+  useEffect(() => {
+    if (coordinates) {
+      console.log('🌍 Dashboard Map Component received coordinates:', coordinates);
+    }
+  }, [coordinates]);
 
   // Select first application when applications are loaded on mobile
   useEffect(() => {
