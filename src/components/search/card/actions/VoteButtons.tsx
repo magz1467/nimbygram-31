@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
 interface VoteButtonsProps {
   applicationId: number;
@@ -18,6 +21,7 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
   const [localVoteStatus, setLocalVoteStatus] = useState<'hot' | 'not' | null>(voteStatus);
   const [localHotCount, setLocalHotCount] = useState(hotCount);
   const [localNotCount, setLocalNotCount] = useState(notCount);
+  const [tableError, setTableError] = useState(false);
   const { toast } = useToast();
 
   // Update local state when props change
@@ -27,9 +31,40 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
     setLocalNotCount(notCount);
   }, [voteStatus, hotCount, notCount]);
 
+  // Check if the application_votes table exists
+  useEffect(() => {
+    const checkVotesTable = async () => {
+      try {
+        const { error } = await supabase
+          .from('application_votes')
+          .select('count')
+          .limit(1);
+        
+        if (error && error.code === '42P01') {
+          // Table doesn't exist
+          setTableError(true);
+        } else {
+          setTableError(false);
+        }
+      } catch (error) {
+        console.error('Error checking votes table:', error);
+      }
+    };
+    
+    checkVotesTable();
+  }, []);
+
   const handleVote = async (type: 'hot' | 'not') => {
     if (!checkAuth(() => {})) return;
     if (isSubmitting) return;
+    if (tableError) {
+      toast({
+        title: "Database setup required",
+        description: "Please go to the Admin page to set up the voting system.",
+        duration: 5000,
+      });
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -85,12 +120,12 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
         setLocalVoteStatus(previousVoteStatus);
         setLocalHotCount(previousHotCount);
         setLocalNotCount(previousNotCount);
+        setTableError(true);
         
         toast({
           title: "Database setup required",
-          description: "The application_votes table does not exist in the database. Please contact the administrator.",
-          variant: "destructive",
-          duration: 5000
+          description: "Please go to the Admin page to set up the voting system.",
+          duration: 5000,
         });
         
         console.error('Error: application_votes table does not exist', tableCheckError);
@@ -152,6 +187,21 @@ export const VoteButtons = ({ applicationId, voteStatus, hotCount, notCount, che
       setIsSubmitting(false);
     }
   };
+
+  if (tableError) {
+    return (
+      <Alert variant="destructive" className="mt-2">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Database setup required</AlertTitle>
+        <AlertDescription className="text-sm">
+          <p>The voting feature requires database setup.</p>
+          <Link to="/admin2" className="text-primary underline block mt-1">
+            Go to Admin page to set up
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 gap-2">
