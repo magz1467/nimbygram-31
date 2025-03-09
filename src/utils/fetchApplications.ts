@@ -34,7 +34,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const radius = 10000; // 10km radius
       
       // Get Supabase URL from environment or use default
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.supabaseUrl;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
