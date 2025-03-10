@@ -14,16 +14,16 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   
   try {
     // First, try to fetch from the edge function which has better timeout handling
+    let edgeResults: Application[] | null = null;
     try {
       console.log('Attempting to fetch from edge function...');
-      const edgeResults = await fetchApplicationsFromEdge(coordinates);
+      edgeResults = await fetchApplicationsFromEdge(coordinates);
       
       if (edgeResults && edgeResults.length > 0) {
         console.log(`✅ Successfully retrieved ${edgeResults.length} applications from edge function`);
-        return edgeResults;
+      } else {
+        console.log('Edge function returned no applications, falling back to direct query');
       }
-      
-      console.log('Edge function returned no applications, falling back to direct query');
     } catch (edgeFunctionError) {
       console.warn('⚠️ Edge function failed, falling back to direct query:', edgeFunctionError);
     }
@@ -32,7 +32,34 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     console.log('Starting direct database query with pagination...');
     const dbResults = await fetchApplicationsFromDatabase(coordinates);
     console.log(`✅ Successfully retrieved ${dbResults.length} applications from direct database query`);
-    return dbResults;
+    
+    // If we successfully got results from both sources, merge and deduplicate them
+    if (edgeResults && edgeResults.length > 0 && dbResults.length > 0) {
+      console.log('Merging results from edge function and direct query');
+      
+      // Create a Set of IDs from the edge results for fast lookup
+      const edgeIds = new Set(edgeResults.map(app => app.id));
+      
+      // Add unique applications from dbResults 
+      const uniqueDbResults = dbResults.filter(app => !edgeIds.has(app.id));
+      console.log(`Found ${uniqueDbResults.length} unique applications from direct query`);
+      
+      // Combine the results
+      const combinedResults = [...edgeResults, ...uniqueDbResults];
+      console.log(`Total combined results: ${combinedResults.length}`);
+      
+      // Re-sort the combined results by distance
+      const sortedCombined = combinedResults.sort((a, b) => {
+        const distA = parseFloat(a.distance.split(' ')[0]) || 0;
+        const distB = parseFloat(b.distance.split(' ')[0]) || 0;
+        return distA - distB;
+      });
+      
+      return sortedCombined;
+    }
+    
+    // If one method worked, return those results
+    return edgeResults && edgeResults.length > 0 ? edgeResults : dbResults;
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);

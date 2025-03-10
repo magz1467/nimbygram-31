@@ -92,11 +92,11 @@ export const sortApplicationsByDistance = (
   });
   
   // Log the first few results for debugging
-  console.log("\nSorted applications (first 5):");
-  sortedApps.slice(0, 5).forEach((app, index) => {
+  console.log("\nSorted applications (first 10):");
+  sortedApps.slice(0, 10).forEach((app, index) => {
     // Safely access _distanceValue which we just added
     const dist = (app as any)._distanceValue;
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}, Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
   });
   
   // Return sorted applications without the temporary _distanceValue property

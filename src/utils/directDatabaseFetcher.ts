@@ -6,7 +6,7 @@ import { calculateDistance, sortApplicationsByDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
 
 const MAX_RETRY_ATTEMPTS = 2;
-const MAX_RESULTS = 5000; // Increased for better coverage
+const MAX_RESULTS = 15000; // Dramatically increased for better coverage
 
 /**
  * Fetches applications directly from the database using pagination with retry logic
@@ -17,21 +17,23 @@ export const fetchApplicationsFromDatabase = async (
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates:', coordinates);
   
-  const pageSize = 200; // Increased for better coverage
+  const pageSize = 500; // Increased for better coverage
   let currentPage = 0;
   let hasMore = true;
   let allResults: any[] = [];
   let retryCount = 0;
   let lastError: Error | null = null;
 
-  // Calculate rough area bounds for more targeted querying
+  // Calculate very large area bounds for comprehensive querying
   const [lat, lng] = coordinates;
-  const latRange = 1.0; // Roughly 111km
-  const lngRange = 1.5; // Wider longitude range to account for distortion
+  const latRange = 2.0; // Doubled from previous (roughly 222km)
+  const lngRange = 3.0; // Doubled from previous
   const minLat = lat - latRange;
   const maxLat = lat + latRange;
   const minLng = lng - lngRange;
   const maxLng = lng + lngRange;
+
+  console.log('Using extended bounding box:', { latMin: minLat, latMax: maxLat, lngMin: minLng, lngMax: maxLng });
 
   while (hasMore) {
     try {
@@ -59,7 +61,7 @@ export const fetchApplicationsFromDatabase = async (
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error(`Query timeout for page ${currentPage}`));
-        }, 20000); // 20 second timeout per page
+        }, 30000); // 30 second timeout per page
       });
       
       // Race the query against the timeout
@@ -142,11 +144,11 @@ export const fetchApplicationsFromDatabase = async (
   const sortedApplications = sortApplicationsByDistance(transformedApplications, coordinates);
   
   // Log sorted results for debugging
-  console.log(`Top 5 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
-  sortedApplications.slice(0, 5).forEach((app, idx) => {
+  console.log(`Top 10 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
+  sortedApplications.slice(0, 10).forEach((app, idx) => {
     if (app.coordinates) {
       const dist = calculateDistance(coordinates, app.coordinates);
-      console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${dist.toFixed(2)}km`);
+      console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${dist.toFixed(2)}km, Address: ${app.address}`);
     }
   });
   

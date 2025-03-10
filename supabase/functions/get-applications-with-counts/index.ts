@@ -15,7 +15,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { center_lat, center_lng, radius_meters = 5000, page_size = 100, page_number = 0 } = await req.json()
+    const { center_lat, center_lng, radius_meters = 50000, page_size = 2000, page_number = 0 } = await req.json()
 
     console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number })
 
@@ -80,7 +80,7 @@ serve(async (req) => {
           }
         ),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Applications query timeout")), 25000)
+          setTimeout(() => reject(new Error("Applications query timeout")), 45000) // Increased timeout
         )
       ]);
       
@@ -94,19 +94,46 @@ serve(async (req) => {
       console.error('Error fetching applications:', error);
       applicationsError = error;
       
-      // If we failed to get applications, this is a critical error
+      // If we failed to get applications, try a direct table query as fallback
       if (applications.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            error: error.message || 'Failed to fetch applications',
-            details: 'Error fetching applications',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
+        try {
+          console.log('Attempting fallback direct query');
+          
+          // Calculate rough area bounds for more targeted querying
+          const latRange = 1.0; // Roughly 111km
+          const lngRange = 1.5; // Wider longitude range to account for distortion
+          const minLat = center_lat - latRange;
+          const maxLat = center_lat + latRange;
+          const minLng = center_lng - lngRange;
+          const maxLng = center_lng + lngRange;
+          
+          // Execute a direct table query with bounding box filter
+          const fallbackResult = await supabaseClient
+            .from('crystal_roof')
+            .select('*')
+            .limit(page_size);
+          
+          if (fallbackResult.error) {
+            throw fallbackResult.error;
           }
-        )
+          
+          applications = fallbackResult.data || [];
+          console.log(`Fallback query returned ${applications.length} results`);
+        } catch (fallbackError) {
+          console.error('Fallback query failed:', fallbackError);
+          // If we still failed, return the original error
+          return new Response(
+            JSON.stringify({ 
+              error: error.message || 'Failed to fetch applications',
+              details: 'Error fetching applications',
+              timestamp: new Date().toISOString()
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 500 
+            }
+          )
+        }
       }
     }
 

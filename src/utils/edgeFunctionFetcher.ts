@@ -10,7 +10,7 @@ import { sortApplicationsByDistance } from "./distance";
  */
 export const fetchApplicationsFromEdge = async (
   coordinates: [number, number],
-  radius: number = 10000 // Increased radius for more comprehensive results
+  radius: number = 50000 // Significantly increased radius for comprehensive coverage
 ): Promise<Application[] | null> => {
   console.log('🔄 Attempting to fetch applications using edge function');
   console.log('🌍 Search coordinates:', coordinates);
@@ -41,10 +41,10 @@ export const fetchApplicationsFromEdge = async (
           center_lat: lat,
           center_lng: lng,
           radius_meters: radius,
-          page_size: 500 // Increased for better coverage
+          page_size: 2000 // Dramatically increased for comprehensive coverage
         })
       }),
-      45000, // Extended timeout for larger data fetch
+      60000, // Extended timeout for larger data fetch
       "Search request timed out. This area may have too many results."
     );
     
@@ -70,8 +70,8 @@ export const fetchApplicationsFromEdge = async (
       const sortedApps = sortApplicationsByDistance(transformedApplications, coordinates);
       
       // Log the top results for debugging
-      console.log(`Top 5 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
-      sortedApps.slice(0, 5).forEach((app, idx) => {
+      console.log(`Top 10 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
+      sortedApps.slice(0, 10).forEach((app, idx) => {
         if (app.coordinates) {
           console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${app.distance}`);
         }

@@ -34,7 +34,7 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
     }
   }
   
-  // As a last resort, try geometry.coordinates if available
+  // Try geometry if it exists as a separate field with coordinates array
   if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
       app.geometry && app.geometry.coordinates && 
       Array.isArray(app.geometry.coordinates) && 
@@ -43,6 +43,28 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
     lng = parseFloat(app.geometry.coordinates[0]);
     lat = parseFloat(app.geometry.coordinates[1]);
     console.log(`Extracted from geometry.coordinates: [${lat}, ${lng}]`);
+  }
+  
+  // Try centroid if all else fails
+  if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
+      app.centroid && app.centroid.coordinates && 
+      Array.isArray(app.centroid.coordinates) && 
+      app.centroid.coordinates.length >= 2) {
+    // GeoJSON centroid is also in [longitude, latitude] order
+    lng = parseFloat(app.centroid.coordinates[0]);
+    lat = parseFloat(app.centroid.coordinates[1]);
+    console.log(`Extracted from centroid.coordinates: [${lat}, ${lng}]`);
+  }
+  
+  // Try geom if it contains coordinates and is an object
+  if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
+      app.geom && typeof app.geom === 'object' && app.geom.coordinates && 
+      Array.isArray(app.geom.coordinates) && 
+      app.geom.coordinates.length >= 2) {
+    // GeoJSON geom is in [longitude, latitude] order
+    lng = parseFloat(app.geom.coordinates[0]);
+    lat = parseFloat(app.geom.coordinates[1]);
+    console.log(`Extracted from geom object coordinates: [${lat}, ${lng}]`);
   }
   
   // Validate coordinates more strictly
