@@ -78,20 +78,10 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
           .map(app => transformApplicationData(app, coordinates))
           .filter((app): app is Application => app !== null);
         
-        // Filter out applications with null storybook values
-        const filteredApplications = transformedApplications.filter(app => 
-          app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
-        );
+        console.log(`Transformed ${transformedApplications.length} applications from edge function`);
         
-        console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
-        
-        // If no filtered applications, log this important information
-        if (filteredApplications.length === 0 && transformedApplications.length > 0) {
-          console.warn(`⚠️ All ${transformedApplications.length} applications were filtered out because they had null storybook values`);
-        }
-        
-        // Sort by distance
-        return filteredApplications.sort((a, b) => {
+        // Return all applications without filtering by storybook
+        return transformedApplications.sort((a, b) => {
           if (!a.coordinates || !b.coordinates) return 0;
           const distanceA = calculateDistance(coordinates, a.coordinates);
           const distanceB = calculateDistance(coordinates, b.coordinates);
@@ -108,8 +98,8 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Fix Error: Create a Promise that properly wraps the Supabase query with catch handling
-    const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
+    // Fix the Promise to properly handle errors and results
+    const queryPromise = new Promise<any[]>((resolve, reject) => {
       supabase
         .from('crystal_roof')
         .select('*')
@@ -118,6 +108,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
             console.error('Supabase query error:', result.error);
             reject(result.error);
           } else {
+            console.log(`Raw query returned ${result.data?.length || 0} results`);
             resolve(result.data || []);
           }
         })
@@ -128,7 +119,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     });
     
     const data = await withTimeout(
-      queryPromiseAsPromise,
+      queryPromise,
       40000, // 40 second timeout
       "Database query timed out. This area may have too many results."
     );
@@ -141,7 +132,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     }
 
     // Log all storybook values to debug the filtering issue
-    console.log('Storybook values in raw data:', data.map(app => ({
+    console.log('Storybook values in raw data:', data.slice(0, 10).map(app => ({
       id: app.id,
       storybook: app.storybook
     })));
@@ -160,23 +151,8 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       console.log('Storybook field sample:', data.slice(0, 5).map(app => app.storybook));
     }
     
-    // IMPORTANT: Temporarily disable storybook filtering for debugging
-    const filteredApplications = transformedApplications;
-    /* Commenting out storybook filter for debugging
-    const filteredApplications = transformedApplications.filter(app => 
-      app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
-    );
-    
-    console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
-    
-    // If no filtered applications, log this important information
-    if (filteredApplications.length === 0 && transformedApplications.length > 0) {
-      console.warn(`⚠️ All ${transformedApplications.length} applications were filtered out because they had null storybook values`);
-    }
-    */
-    
-    // Sort by distance
-    return filteredApplications.sort((a, b) => {
+    // Return all applications without storybook filtering
+    return transformedApplications.sort((a, b) => {
       if (!a.coordinates || !b.coordinates) return 0;
       const distanceA = calculateDistance(coordinates, a.coordinates);
       const distanceB = calculateDistance(coordinates, b.coordinates);

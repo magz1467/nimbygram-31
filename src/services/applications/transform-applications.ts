@@ -45,15 +45,8 @@ export const transformAndSortApplications = (
     console.log(`Do any properties have storybook field? ${hasStorybook ? 'Yes' : 'No'}`);
   }
   
-  // TEMPORARILY disable storybook filtering for debugging
+  // Return all applications without storybook filtering
   const filteredApplications = transformedData;
-  /* Commenting out for debugging
-  const filteredApplications = transformedData.filter(app => 
-    app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
-  );
-  
-  console.log(`Filtered out ${transformedData.length - filteredApplications.length} applications with null storybook values`);
-  */
   
   // Sort by distance
   return filteredApplications.sort((a, b) => {

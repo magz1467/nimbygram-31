@@ -50,19 +50,19 @@ export const fetchNearbyApplications = async (
     
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
-    // Query with explicit Promise to handle errors correctly
-    const queryResult = await new Promise<{ data: any[] | null, error: any }>((resolve, reject) => {
-      supabase
+    // Fix the Promise error by properly defining the Promise
+    let queryResult;
+    try {
+      const result = await supabase
         .from('crystal_roof')
-        .select('*')
-        .then(result => {
-          resolve(result);
-        })
-        .catch(error => {
-          console.error('Error in Supabase query:', error);
-          reject(error);
-        });
-    });
+        .select('*');
+      
+      queryResult = result;
+      console.log('Query executed successfully:', result.status);
+    } catch (error) {
+      console.error('Error in Supabase query:', error);
+      throw error;
+    }
     
     const { data: properties, error } = queryResult;
     
