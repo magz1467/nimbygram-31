@@ -102,33 +102,19 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     let allResults: any[] = [];
 
     while (hasMore) {
-      // Use a proper Promise constructor with explicit error handling
-      const queryPromise = new Promise<any[]>((resolve, reject) => {
+      try {
         // Execute the query with proper promise handling
-        supabase
+        const { data, error } = await supabase
           .from('crystal_roof')
           .select('*')
-          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
-          .then(result => {
-            if (result.error) {
-              console.error("Supabase query error:", result.error);
-              reject(result.error);
-            } else {
-              resolve(result.data || []);
-            }
-          })
-          .catch(error => {
-            console.error("Unexpected error in Supabase query:", error);
-            reject(error);
-          });
-      });
-
-      try {
-        const pageResults = await withTimeout(
-          queryPromise,
-          20000, // 20 second timeout per page
-          "Database query page timed out. Please try again."
-        );
+          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
+          
+        if (error) {
+          console.error("Supabase query error:", error);
+          throw error;
+        }
+        
+        const pageResults = data || [];
 
         if (pageResults.length === 0) {
           hasMore = false;
