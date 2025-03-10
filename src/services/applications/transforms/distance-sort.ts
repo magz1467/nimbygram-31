@@ -1,3 +1,4 @@
+
 /**
  * Transforms and sorts applications by distance from search coordinates
  * @param applications List of applications to transform and sort
@@ -49,21 +50,22 @@ export const transformAndSortApplications = (
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       const distance = R * c;
       
-      return { ...app, distance, score };
+      // Calculate a combined score that blends text relevance with distance
+      // A perfect text match (score 15) would be equivalent to being ~1km away
+      // For normal results, we want physical distance to be the primary factor
+      const distanceScore = Math.max(0, 15 - distance); // Distance score decreases as distance increases
+      const combinedScore = score + (distanceScore * 2); // Give extra weight to distance
+      
+      return { ...app, distance, score: combinedScore };
     } catch (error) {
       console.error(`Error calculating distance for application ${app.id}:`, error);
       return { ...app, distance: Number.MAX_SAFE_INTEGER, score };
     }
   });
   
-  // Sort by score first (from filterByLocationRelevance), then by distance
+  // Sort primarily by the combined score (which now includes distance)
   const sortedApps = [...appsWithDistance].sort((a, b) => {
-    // If both have scores and they're different, sort by score first
-    if (a.score > 0 || b.score > 0) {
-      return (b.score || 0) - (a.score || 0); // Higher scores first
-    }
-    // Otherwise sort by distance
-    return (a.distance || Number.MAX_SAFE_INTEGER) - (b.distance || Number.MAX_SAFE_INTEGER);
+    return (b.score || 0) - (a.score || 0); // Higher scores first
   });
   
   // Log the closest applications for debugging

@@ -41,22 +41,22 @@ export const useFilteredApplications = (
       searchTerm.trim().length >= 3 && // At least 3 characters
       !/^\s*$/.test(searchTerm); // Not just whitespace
     
-    // Apply location relevance filtering for any meaningful search terms
-    const locationFilteredApplications = isSpecificSearchTerm
+    // Add text relevance scores to applications - but don't filter out any yet
+    const scoredApplications = isSpecificSearchTerm
       ? filterByLocationRelevance(filteredApplications, searchTerm)
       : filteredApplications;
     
-    console.log('After location relevance filtering:', locationFilteredApplications.length);
+    console.log('After adding location relevance scores:', scoredApplications.length);
     
-    // If search coordinates available, transform and sort by distance while preserving location relevance
-    let applicationsFinal = locationFilteredApplications;
+    // If search coordinates available, transform and sort by distance + text score
+    let applicationsFinal = scoredApplications;
     if (searchCoordinates) {
       console.log('Adding distance information and final sorting');
-      applicationsFinal = transformAndSortApplications(locationFilteredApplications, searchCoordinates);
+      applicationsFinal = transformAndSortApplications(scoredApplications, searchCoordinates);
     }
     
     // Apply explicit sorting based on active sort type, if different from default
-    // Only do this if not sorting by distance, as transformAndSortApplications already handles that
+    // Only do this if not using distance+relevance sorting
     if (activeSort && activeSort !== 'distance') {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({

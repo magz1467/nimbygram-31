@@ -59,26 +59,23 @@ export const filterByLocationRelevance = (
     return { ...app, score };
   });
   
-  // Filter to only include applications with a positive score
-  // or all applications if no relevant ones were found
-  const relevantApplications = scoredApplications.filter(app => app.score > 0);
+  // With our new sorting approach, we'll return ALL applications with scores attached
+  // rather than filtering, so that distance sorting can be combined with text relevance
+  console.log(`Added text relevance scores to ${applications.length} applications`);
   
-  // If we find relevant applications, return them sorted by score
-  if (relevantApplications.length > 0) {
-    // Sort by score (highest first)
-    relevantApplications.sort((a, b) => b.score - a.score);
+  // Log highly scoring applications
+  const highScoringApps = scoredApplications
+    .filter(app => app.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
     
-    // Log the top scoring applications
-    console.log('Top scoring applications:', relevantApplications.slice(0, 5).map(app => ({
+  if (highScoringApps.length > 0) {
+    console.log('Top text-matching applications:', highScoringApps.map(app => ({
       id: app.id,
       address: app.address,
       score: app.score
     })));
-    
-    console.log(`Found ${relevantApplications.length} location-relevant applications out of ${applications.length}`);
-    return relevantApplications;
   }
   
-  // If no relevant applications, return all applications
-  return applications;
+  return scoredApplications;
 };
