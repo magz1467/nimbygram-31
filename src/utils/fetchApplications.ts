@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/distance";
 import { Application } from "@/types/planning";
@@ -101,16 +102,21 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     let allResults: any[] = [];
 
     while (hasMore) {
-      const queryPromise = supabase
-        .from('crystal_roof')
-        .select('*')
-        .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
-        .then(result => {
-          if (result.error) {
-            throw result.error;
-          }
-          return result.data || [];
-        });
+      // Convert the Supabase query to a Promise directly
+      const queryPromise = new Promise<any[]>((resolve, reject) => {
+        supabase
+          .from('crystal_roof')
+          .select('*')
+          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
+          .then(result => {
+            if (result.error) {
+              reject(result.error);
+            } else {
+              resolve(result.data || []);
+            }
+          })
+          .catch(reject);
+      });
 
       const pageResults = await withTimeout(
         queryPromise,
