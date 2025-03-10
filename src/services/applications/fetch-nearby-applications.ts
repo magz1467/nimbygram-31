@@ -56,6 +56,13 @@ export const fetchNearbyApplications = async (
     if (properties && properties.length > 0) {
       console.log('Raw properties before filtering:', properties.slice(0, 3));
       
+      // Filter out null storybook values first
+      properties = properties.filter(property => 
+        property.storybook !== null && property.storybook !== undefined && property.storybook !== ''
+      );
+      
+      console.log(`After filtering null storybooks: ${properties.length} properties remaining`);
+      
       properties = properties.filter(property => {
         try {
           // Extract coordinates - check both geom and geometry

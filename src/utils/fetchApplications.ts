@@ -34,7 +34,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const radius = 10000; // 10km radius
       
       // Get Supabase URL from environment or use default
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.supabaseUrl;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.url;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
@@ -78,8 +78,15 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
           .map(app => transformApplicationData(app, coordinates))
           .filter((app): app is Application => app !== null);
         
+        // Filter out applications with null storybook values
+        const filteredApplications = transformedApplications.filter(app => 
+          app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
+        );
+        
+        console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
+        
         // Sort by distance
-        return transformedApplications.sort((a, b) => {
+        return filteredApplications.sort((a, b) => {
           if (!a.coordinates || !b.coordinates) return 0;
           const distanceA = calculateDistance(coordinates, a.coordinates);
           const distanceB = calculateDistance(coordinates, b.coordinates);
@@ -135,8 +142,15 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     
     console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
     
+    // Filter out applications with null storybook values
+    const filteredApplications = transformedApplications.filter(app => 
+      app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
+    );
+    
+    console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
+    
     // Sort by distance
-    return transformedApplications.sort((a, b) => {
+    return filteredApplications.sort((a, b) => {
       if (!a.coordinates || !b.coordinates) return 0;
       const distanceA = calculateDistance(coordinates, a.coordinates);
       const distanceB = calculateDistance(coordinates, b.coordinates);

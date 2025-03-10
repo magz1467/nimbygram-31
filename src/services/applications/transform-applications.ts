@@ -24,8 +24,15 @@ export const transformAndSortApplications = (
   
   console.log(`✅ Total transformed applications: ${transformedData.length}`);
   
+  // Filter out applications with null storybook values
+  const filteredApplications = transformedData.filter(app => 
+    app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
+  );
+  
+  console.log(`Filtered out ${transformedData.length - filteredApplications.length} applications with null storybook values`);
+  
   // Sort by distance
-  return transformedData.sort((a, b) => {
+  return filteredApplications.sort((a, b) => {
     if (!a.coordinates || !b.coordinates) return 0;
     const distanceA = calculateDistance(coordinates, a.coordinates);
     const distanceB = calculateDistance(coordinates, b.coordinates);
