@@ -103,7 +103,8 @@ const MapViewPage = () => {
     }
   }, [isLoadingCoordinates, isLoadingApplications, isSearching]);
 
-  const filteredApplications = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
+  const filteredResult = useFilteredApplications(applications, activeFilters, activeSort, coordinates);
+  const filteredApplications = filteredResult.applications;
 
   const handlePostcodeSelect = (newPostcode: string) => {
     console.log('📍 New postcode selected:', newPostcode);

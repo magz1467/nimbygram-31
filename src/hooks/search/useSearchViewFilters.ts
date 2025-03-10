@@ -25,13 +25,15 @@ export const useSearchViewFilters = ({
   searchTerm
 }: UseSearchViewFiltersProps) => {
   // Use the filtered applications hook with coordinates and search term
-  const displayApplications = useFilteredApplications(
+  const result = useFilteredApplications(
     applications || [],
     activeFilters,
     activeSort,
     coordinates,
     searchTerm // Pass search term for location relevance
   );
+
+  const displayApplications = result.applications;
 
   // Log the location search coordinates and closest applications
   useEffect(() => {
@@ -60,6 +62,7 @@ export const useSearchViewFilters = ({
   }, [coordinates, displayApplications]);
 
   return {
-    displayApplications
+    displayApplications,
+    totalCount: result.totalCount
   };
 };

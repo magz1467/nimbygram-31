@@ -121,8 +121,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     activeSort,
     coordinates,
     postcode,
-    25,  // pageSize fixed at 25
-    currentPage
+    25  // pageSize fixed at 25
   );
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;

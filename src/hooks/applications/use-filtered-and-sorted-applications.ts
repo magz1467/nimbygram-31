@@ -29,7 +29,7 @@ export const useFilteredAndSortedApplications = (
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = initialPageSize;
   
-  const { applications: filteredApplications, totalCount } = useFilteredApplications(
+  const result = useFilteredApplications(
     applications,
     activeFilters,
     activeSort,
@@ -40,12 +40,12 @@ export const useFilteredAndSortedApplications = (
   );
   
   const totalPages = useMemo(() => {
-    return Math.ceil(totalCount / pageSize);
-  }, [totalCount, pageSize]);
+    return Math.ceil(result.totalCount / pageSize);
+  }, [result.totalCount, pageSize]);
   
   return {
-    applications: filteredApplications,
-    totalCount,
+    applications: result.applications,
+    totalCount: result.totalCount,
     currentPage,
     setCurrentPage,
     pageSize,

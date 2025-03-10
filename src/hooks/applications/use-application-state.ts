@@ -77,7 +77,7 @@ export const useApplicationState = (initialPostcode = '') => {
     }
   }, [applications, activeSort, handleSortChange]);
 
-  const filteredApplications = useFilteredApplications(
+  const filteredResult = useFilteredApplications(
     applications || [],
     activeFilters,
     activeSort
@@ -92,7 +92,7 @@ export const useApplicationState = (initialPostcode = '') => {
     coordinates,
     isLoading: isLoadingCoords || isLoadingApps,
     applications,
-    filteredApplications,
+    filteredApplications: filteredResult.applications,
     statusCounts,
     handleMarkerClick,
     handleFilterChange,

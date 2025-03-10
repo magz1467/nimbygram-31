@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
@@ -13,6 +13,11 @@ interface ActiveFilters {
   classification?: string;
 }
 
+interface FilteredApplicationsResult {
+  applications: Application[];
+  totalCount: number;
+}
+
 export const useFilteredApplications = (
   applications: Application[],
   activeFilters: ActiveFilters,
@@ -21,7 +26,7 @@ export const useFilteredApplications = (
   searchTerm?: string,
   page: number = 0,
   pageSize: number = 25
-) => {
+): FilteredApplicationsResult => {
   return useMemo(() => {
     console.log('useFilteredApplications - Input applications:', applications?.length);
     console.log('useFilteredApplications - Active filters:', activeFilters);

@@ -17,9 +17,13 @@ export const useApplicationSorting = ({ type, applications }: SortingParams): Ap
     switch (type) {
       case 'newest':
         return appsCopy.sort((a, b) => {
-          // Sort by date received descending (newest first)
-          const dateA = a.date_received ? new Date(a.date_received).getTime() : 0;
-          const dateB = b.date_received ? new Date(b.date_received).getTime() : 0;
+          // Sort by received_date or date_received descending (newest first)
+          const dateA = a.received_date ? new Date(a.received_date).getTime() : 
+                       a.submittedDate ? new Date(a.submittedDate).getTime() : 
+                       a.submissionDate ? new Date(a.submissionDate).getTime() : 0;
+          const dateB = b.received_date ? new Date(b.received_date).getTime() : 
+                       b.submittedDate ? new Date(b.submittedDate).getTime() : 
+                       b.submissionDate ? new Date(b.submissionDate).getTime() : 0;
           return dateB - dateA;
         });
         
@@ -28,9 +32,13 @@ export const useApplicationSorting = ({ type, applications }: SortingParams): Ap
           // Sort by consultation end date ascending (soonest first)
           const dateA = a.last_date_consultation_comments 
             ? new Date(a.last_date_consultation_comments).getTime() 
+            : a.consultationEnd 
+            ? new Date(a.consultationEnd).getTime()
             : Number.MAX_SAFE_INTEGER;
           const dateB = b.last_date_consultation_comments 
             ? new Date(b.last_date_consultation_comments).getTime() 
+            : b.consultationEnd
+            ? new Date(b.consultationEnd).getTime()
             : Number.MAX_SAFE_INTEGER;
           return dateA - dateB;
         });
@@ -38,8 +46,8 @@ export const useApplicationSorting = ({ type, applications }: SortingParams): Ap
       case 'highestImpact':
         return appsCopy.sort((a, b) => {
           // Sort by impact score descending (highest first)
-          const scoreA = a.final_impact_score || 0;
-          const scoreB = b.final_impact_score || 0;
+          const scoreA = a.final_impact_score || a.impact_score || 0;
+          const scoreB = b.final_impact_score || b.impact_score || 0;
           return scoreB - scoreA;
         });
         
@@ -63,8 +71,12 @@ export const useApplicationSorting = ({ type, applications }: SortingParams): Ap
         }
         // Otherwise, sort by newest
         return appsCopy.sort((a, b) => {
-          const dateA = a.date_received ? new Date(a.date_received).getTime() : 0;
-          const dateB = b.date_received ? new Date(b.date_received).getTime() : 0;
+          const dateA = a.received_date ? new Date(a.received_date).getTime() : 
+                       a.submittedDate ? new Date(a.submittedDate).getTime() : 
+                       a.submissionDate ? new Date(a.submissionDate).getTime() : 0;
+          const dateB = b.received_date ? new Date(b.received_date).getTime() : 
+                       b.submittedDate ? new Date(b.submittedDate).getTime() : 
+                       b.submissionDate ? new Date(b.submissionDate).getTime() : 0;
           return dateB - dateA;
         });
     }

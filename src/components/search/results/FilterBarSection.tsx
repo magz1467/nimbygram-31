@@ -21,14 +21,14 @@ interface FilterBarSectionProps {
 }
 
 export const FilterBarSection = ({
-  coordinates,
-  hasSearched,
-  isLoading,
-  applications,
   activeFilters,
   activeSort,
   onFilterChange,
   onSortChange,
+  coordinates,
+  hasSearched,
+  isLoading,
+  applications,
   statusCounts
 }: FilterBarSectionProps) => {
   const isMobile = useIsMobile();

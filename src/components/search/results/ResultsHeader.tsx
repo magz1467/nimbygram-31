@@ -1,26 +1,57 @@
-
-import { Header } from "@/components/Header";
-import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
+import React from 'react';
+import { PostcodeSearch } from '@/components/PostcodeSearch';
+import { Application } from '@/types/planning';
 
 interface ResultsHeaderProps {
-  onPostcodeSelect: (postcode: string) => void;
-  isMapView: boolean;
-  applications?: any[];
+  searchTerm?: string;
+  displayTerm?: string;
+  resultsCount?: number;
+  isLoading?: boolean;
+  onPostcodeSelect?: (postcode: string) => void;
+  isMapView?: boolean;
+  applications?: Application[];
+  hasSearched?: boolean;
+  coordinates?: [number, number] | null;
 }
 
-export const ResultsHeader = ({ 
-  onPostcodeSelect, 
-  isMapView, 
-  applications 
-}: ResultsHeaderProps) => {
+export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
+  searchTerm,
+  displayTerm,
+  resultsCount,
+  isLoading,
+  onPostcodeSelect,
+  isMapView,
+  applications,
+  hasSearched,
+  coordinates
+}) => {
+  const showResultsCount = !isLoading && resultsCount !== undefined;
+  const locationName = displayTerm || searchTerm;
+
   return (
-    <>
-      <Header />
-      <SearchSection
-        onPostcodeSelect={onPostcodeSelect}
-        isMapView={isMapView}
-        applications={applications}
-      />
-    </>
+    <div className="py-4 border-b">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">
+            {showResultsCount ? (
+              <>
+                {resultsCount} planning applications
+                {locationName && <span> near {locationName}</span>}
+              </>
+            ) : isLoading ? (
+              'Searching for planning applications...'
+            ) : (
+              'Planning applications'
+            )}
+          </h1>
+        </div>
+        
+        {onPostcodeSelect && (
+          <div className="w-full md:w-auto">
+            <PostcodeSearch onPostcodeSelect={onPostcodeSelect} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 };

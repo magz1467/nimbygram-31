@@ -85,6 +85,8 @@ export const SearchViewContent = ({
         displayTerm={initialSearch.displayTerm}
         resultsCount={applications.length}
         isLoading={isLoading}
+        hasSearched={hasSearched}
+        coordinates={coordinates}
       />
 
       <FilterBarSection 
@@ -92,6 +94,16 @@ export const SearchViewContent = ({
         activeSort={activeSort}
         onFilterChange={handleFilterUpdate}
         onSortChange={handleSortUpdate}
+        coordinates={coordinates}
+        hasSearched={hasSearched}
+        isLoading={isLoading}
+        applications={applications}
+        statusCounts={{
+          'Under Review': 0,
+          'Approved': 0,
+          'Declined': 0,
+          'Other': 0
+        }}
       />
 
       <ResultsContainer
