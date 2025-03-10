@@ -1,10 +1,9 @@
-
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
 import { useApplicationSorting } from './use-application-sorting';
-import { filterByLocationRelevance, transformAndSortApplications } from '@/services/applications/transforms';
+import { filterByLocationRelevance } from '@/services/applications/transforms';
 
 interface ActiveFilters {
   status?: string;
@@ -28,12 +27,12 @@ export const useFilteredApplications = (
   pageSize: number = 25
 ): FilteredApplicationsResult => {
   return useMemo(() => {
-    console.log('useFilteredApplications - Input applications:', applications?.length);
-    console.log('useFilteredApplications - Active filters:', activeFilters);
-    console.log('useFilteredApplications - Active sort:', activeSort);
-    console.log('useFilteredApplications - Search coordinates:', searchCoordinates);
-    console.log('useFilteredApplications - Search term:', searchTerm);
-    console.log('useFilteredApplications - Page:', page, 'Page size:', pageSize);
+    console.log('📊 useFilteredApplications - Input applications:', applications?.length);
+    console.log('📊 useFilteredApplications - Active filters:', activeFilters);
+    console.log('📊 useFilteredApplications - Active sort:', activeSort);
+    console.log('📊 useFilteredApplications - Search coordinates:', searchCoordinates);
+    console.log('📊 useFilteredApplications - Search term:', searchTerm);
+    console.log('📊 useFilteredApplications - Page:', page, 'Page size:', pageSize);
     
     if (!applications || applications.length === 0) {
       return { applications: [], totalCount: 0 };
@@ -47,15 +46,21 @@ export const useFilteredApplications = (
     const processedApplications = filterByLocationRelevance(filteredApplications, searchTerm || '');
     console.log('After processing location filters:', processedApplications.length);
     
-    // Initialize our array before sorting
-    let applicationsFinal = [...processedApplications];
-    
     // Apply sorting based on sort type and coordinates
-    if (searchCoordinates && (activeSort === 'distance' || activeSort === 'nearest')) {
-      console.log('Sorting by distance');
-      applicationsFinal = transformAndSortApplications(processedApplications, searchCoordinates);
-    } else if (activeSort) {
-      console.log('Applying explicit sorting by:', activeSort);
+    let applicationsFinal = processedApplications;
+    
+    // If we have coordinates and sort type is distance, or no sort is specified, sort by distance
+    if (searchCoordinates && (activeSort === 'distance' || !activeSort)) {
+      console.log('🌍 Sorting by distance using coordinates');
+      applicationsFinal = useApplicationSorting({
+        type: 'distance',
+        applications: processedApplications,
+        coordinates: searchCoordinates
+      });
+    } 
+    // Otherwise, use the specified sort type
+    else if (activeSort) {
+      console.log('🔄 Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
         type: activeSort,
         applications: processedApplications
@@ -70,7 +75,7 @@ export const useFilteredApplications = (
     const startIndex = page * pageSize;
     const paginatedApplications = applicationsFinal.slice(startIndex, startIndex + pageSize);
     
-    console.log('useFilteredApplications - Paginated applications:', paginatedApplications?.length);
+    console.log('📊 useFilteredApplications - Paginated applications:', paginatedApplications?.length);
     
     // Log the final closest applications for debugging
     if (paginatedApplications.length > 0) {
@@ -78,9 +83,10 @@ export const useFilteredApplications = (
         id: app.id,
         distance: app.distance,
         distanceValue: (app as any).distanceValue,
-        address: app.address
+        address: app.address,
+        coordinates: app.coordinates
       }));
-      console.log('Top applications in final result:', topApps);
+      console.log('🏆 Top applications in final result:', topApps);
     }
     
     return { applications: paginatedApplications, totalCount };

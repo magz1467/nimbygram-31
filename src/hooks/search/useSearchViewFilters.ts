@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { Application } from "@/types/planning";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
 import { SortType } from "@/types/application-types";
-import { calculateDistance } from "@/utils/distance";
 
 interface UseSearchViewFiltersProps {
   applications: Application[] | undefined;
@@ -24,11 +23,14 @@ export const useSearchViewFilters = ({
   coordinates,
   searchTerm
 }: UseSearchViewFiltersProps) => {
+  // Default to distance sort when coordinates are available
+  const effectiveSort = coordinates && !activeSort ? 'distance' : activeSort;
+  
   // Use the filtered applications hook with coordinates and search term
   const result = useFilteredApplications(
     applications || [],
     activeFilters,
-    activeSort,
+    effectiveSort,
     coordinates,
     searchTerm // Pass search term for location relevance
   );
@@ -40,24 +42,15 @@ export const useSearchViewFilters = ({
     if (coordinates && displayApplications.length > 0) {
       console.log('🌍 Search location coordinates:', coordinates);
       
-      // Log the 3 closest applications to help with debugging
-      const closestApps = [...displayApplications]
-        .sort((a, b) => {
-          if (!a.coordinates || !b.coordinates || !coordinates) return 0;
-          
-          const distanceA = calculateDistance(coordinates, a.coordinates);
-          const distanceB = calculateDistance(coordinates, b.coordinates);
-          
-          return distanceA - distanceB;
-        })
-        .slice(0, 3);
-      
-      console.log('📍 3 closest applications:', closestApps.map(app => ({
-        id: app.id,
-        address: app.address,
-        coordinates: app.coordinates,
-        distance: app.coordinates ? calculateDistance(coordinates, app.coordinates).toFixed(2) + 'km' : 'unknown'
-      })));
+      // Log the 3 closest applications
+      console.log('📍 Top applications in search results:', 
+        displayApplications.slice(0, 3).map(app => ({
+          id: app.id,
+          address: app.address,
+          coordinates: app.coordinates,
+          distance: app.distance || 'unknown'
+        }))
+      );
     }
   }, [coordinates, displayApplications]);
 

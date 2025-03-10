@@ -1,3 +1,4 @@
+
 import { Application } from "./planning";
 
 export type SortType = 'closingSoon' | 'newest' | 'distance' | null;

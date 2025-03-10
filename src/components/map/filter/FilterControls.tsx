@@ -92,6 +92,7 @@ export const FilterControls = ({
           onFilterChange={handleFilterChange}
           activeFilters={activeFilters}
           statusCounts={statusCounts}
+          isMobile={isMobile}
         />
       )}
     </div>

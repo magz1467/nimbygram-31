@@ -6,7 +6,7 @@ export const transformAndSortApplications = (
   applications: any[],
   coordinates: [number, number]
 ): any[] => {
-  console.log(`Transforming and sorting ${applications.length} applications by distance from`, coordinates);
+  console.log(`🔍 Transforming and sorting ${applications.length} applications by distance from`, coordinates);
   
   if (!applications?.length || !coordinates) {
     return applications;
@@ -17,21 +17,22 @@ export const transformAndSortApplications = (
     // Skip if app doesn't have coordinates
     if (!app.coordinates || !Array.isArray(app.coordinates) || app.coordinates.length !== 2) {
       console.log(`Missing or invalid coordinates for application ${app.id}`);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
     }
     
     try {
-      // IMPORTANT: Extract coordinates ensuring correct order [lat, lng]
+      // IMPORTANT: Coordinates should be in [latitude, longitude] format
       const [searchLat, searchLng] = coordinates;
       const [appLat, appLng] = app.coordinates;
       
       // Basic validation
       if (isNaN(searchLat) || isNaN(searchLng) || isNaN(appLat) || isNaN(appLng)) {
-        console.log(`Invalid coordinates for distance calculation:`, {
+        console.warn(`Invalid coordinates for distance calculation:`, {
           search: [searchLat, searchLng],
-          app: [appLat, appLng]
+          app: [appLat, appLng],
+          appId: app.id
         });
-        return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
+        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
       }
       
       // Using the Haversine formula to calculate distance
@@ -50,7 +51,7 @@ export const transformAndSortApplications = (
       // Store both the raw distance value and formatted string
       const distanceInMiles = distance * 0.621371;
       
-      console.log(`Distance for app ${app.id}: ${distanceInMiles.toFixed(1)} miles`, {
+      console.log(`Distance for app ${app.id} (${app.address || 'No address'}): ${distanceInMiles.toFixed(1)} miles`, {
         appCoords: [appLat, appLng],
         searchCoords: [searchLat, searchLng]
       });
@@ -62,7 +63,7 @@ export const transformAndSortApplications = (
       };
     } catch (error) {
       console.error(`Error calculating distance for application ${app.id}:`, error);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
     }
   });
   
@@ -74,9 +75,9 @@ export const transformAndSortApplications = (
   });
   
   // Log the closest applications for debugging
-  console.log('Top 5 closest applications after sorting:');
+  console.log('🏆 Top 5 closest applications after sorting:');
   sortedApps.slice(0, 5).forEach(app => {
-    console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'}`);
+    console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'} - Coordinates: ${JSON.stringify(app.coordinates)}`);
   });
   
   return sortedApps;
