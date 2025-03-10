@@ -5,7 +5,7 @@ import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
 import { addDistanceToApplications, sortApplicationsByDistance } from "@/utils/applicationDistance";
 import { useApplicationSorting } from './use-application-sorting';
-import { filterByLocationRelevance } from '@/services/applications/transform-applications';
+import { filterByLocationRelevance, transformAndSortApplications } from '@/services/applications/transform-applications';
 
 interface ActiveFilters {
   status?: string;
@@ -36,64 +36,48 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(applications, activeFilters);
     console.log('After applying filters:', filteredApplications.length);
     
-    // Apply location relevance filtering only for exact postcode matches, not for partial matches
-    // This helps prevent incorrect prioritization based on partial postcode matches
-    const shouldApplyLocationFiltering = searchTerm && 
-      searchTerm.trim().length >= 6 && // Only apply for full postcodes
-      !searchTerm.includes(" "); // And only when searching for a specific term, not browsing
+    // For place names like Wendover, ensure we apply location relevance filtering
+    // But don't apply it for partial searches or very short searches
+    const isSpecificSearchTerm = searchTerm && 
+      searchTerm.trim().length >= 3 && // At least 3 characters
+      !/^\s*$/.test(searchTerm); // Not just whitespace
     
-    const locationFilteredApplications = shouldApplyLocationFiltering
+    // Apply location relevance filtering for place names and postcodes
+    const locationFilteredApplications = isSpecificSearchTerm
       ? filterByLocationRelevance(filteredApplications, searchTerm)
       : filteredApplications;
     
     console.log('After location relevance filtering:', locationFilteredApplications.length);
     
-    // Add distance information if search coordinates are available
-    let applicationsWithDistance = locationFilteredApplications;
+    // If search coordinates available, transform and sort by distance while preserving location relevance
+    let applicationsFinal = locationFilteredApplications;
     if (searchCoordinates) {
-      console.log('Adding distance information using coordinates:', searchCoordinates);
-      applicationsWithDistance = addDistanceToApplications(locationFilteredApplications, searchCoordinates);
-      
-      // Log the first few applications with their distances for debugging
-      const sampleApps = applicationsWithDistance.slice(0, 5).map(app => ({
-        id: app.id,
-        distance: app.distance,
-        coordinates: app.coordinates,
-        address: app.address
-      }));
-      console.log('Sample applications with distances:', sampleApps);
+      console.log('Adding distance information and final sorting');
+      applicationsFinal = transformAndSortApplications(locationFilteredApplications, searchCoordinates);
     }
     
-    // Apply sorting based on active sort type
-    let finalSortedApplications = applicationsWithDistance;
-    
-    if ((activeSort === 'distance') && searchCoordinates) {
-      console.log('Explicitly sorting by distance');
-      finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
-    } else if (activeSort) {
-      // Use the application sorting hook for other sort types
-      finalSortedApplications = useApplicationSorting({
+    // Apply explicit sorting based on active sort type, if different from default
+    if (activeSort && activeSort !== 'distance') {
+      console.log('Applying explicit sorting by:', activeSort);
+      applicationsFinal = useApplicationSorting({
         type: activeSort,
-        applications: applicationsWithDistance
+        applications: applicationsFinal
       });
-    } else if (searchCoordinates) {
-      // If no sort specified but we have coordinates, default to distance sort
-      console.log('No sort specified, defaulting to distance sort');
-      finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
     }
 
-    console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
+    console.log('useFilteredApplications - Final applications:', applicationsFinal?.length);
     
-    // Log the final closest applications for debugging
-    if (finalSortedApplications.length > 0 && searchCoordinates) {
-      const closestApps = finalSortedApplications.slice(0, 3).map(app => ({
+    // Log the final closest/most relevant applications for debugging
+    if (applicationsFinal.length > 0) {
+      const topApps = applicationsFinal.slice(0, 3).map(app => ({
         id: app.id,
+        score: app.score,
         distance: app.distance,
         address: app.address
       }));
-      console.log('Closest applications after sorting:', closestApps);
+      console.log('Top applications in final result:', topApps);
     }
     
-    return finalSortedApplications;
+    return applicationsFinal;
   }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm]);
 };

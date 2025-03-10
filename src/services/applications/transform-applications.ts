@@ -1,4 +1,3 @@
-
 /**
  * Filters applications by location relevance to the search term
  * @param applications List of applications to filter
@@ -28,17 +27,25 @@ export const filterByLocationRelevance = (
     
     const normalizedAddress = app.address.toLowerCase().replace(/\s+/g, '');
     
-    // Check for exact postcode match first (highest priority)
-    // This ensures exact matches take precedence over partial matches
+    // Check for exact place name/postcode match first (highest priority)
     if (normalizedAddress.includes(normalizedSearchTerm)) {
-      score += 5;
+      score += 10; // Increase score for exact matches
     } 
-    // Check if the postcode portion matches only (for UK postcodes like "XX1 2YY")
-    else if (normalizedSearchTerm.length >= 6) {
+    // For postcodes, check if the postcode portion matches
+    else if (normalizedSearchTerm.length >= 6 && normalizedSearchTerm.match(/[a-z]{1,2}[0-9][0-9a-z]?\s*[0-9][a-z]{2}/i)) {
       // Try to match the postcode area and district (e.g., "HP22" in "HP22 6JJ")
       const postcodePrefix = normalizedSearchTerm.substring(0, 4);
       if (normalizedAddress.includes(postcodePrefix)) {
-        score += 3;
+        score += 5;
+      }
+    }
+    // For place names (like "Wendover"), check for word boundaries
+    else {
+      // Look for the place name as a whole word, not just part of another word
+      // This helps distinguish "Wendover" from places that might contain it as a substring
+      const placeNamePattern = new RegExp(`\\b${normalizedSearchTerm}\\b`, 'i');
+      if (placeNamePattern.test(normalizedAddress)) {
+        score += 8; // Higher score for exact place name matches
       }
     }
     
@@ -87,21 +94,24 @@ export const transformAndSortApplications = (
   
   // Add distance to each application
   const appsWithDistance = applications.map(app => {
+    // Preserve any existing score from location relevance filtering
+    const score = app.score || 0;
+    
     // Skip if app doesn't have coordinates
     if (!app.coordinates || !Array.isArray(app.coordinates) || app.coordinates.length !== 2) {
       console.log(`Missing or invalid coordinates for application ${app.id}`);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: Number.MAX_SAFE_INTEGER, score };
     }
     
     try {
-      // Calculate distance using the utilities from applicationDistance
+      // Calculate distance using the Haversine formula
       const [lat1, lng1] = coordinates;
       const [lat2, lng2] = app.coordinates;
       
       // Basic validation
       if (isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) {
         console.log(`Invalid coordinates for distance calculation: [${lat1},${lng1}] to [${lat2},${lng2}]`);
-        return { ...app, distance: Number.MAX_SAFE_INTEGER };
+        return { ...app, distance: Number.MAX_SAFE_INTEGER, score };
       }
       
       // Using the Haversine formula to calculate distance
@@ -117,22 +127,27 @@ export const transformAndSortApplications = (
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       const distance = R * c;
       
-      return { ...app, distance };
+      return { ...app, distance, score };
     } catch (error) {
       console.error(`Error calculating distance for application ${app.id}:`, error);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: Number.MAX_SAFE_INTEGER, score };
     }
   });
   
-  // Sort by distance (closest first)
-  const sortedApps = [...appsWithDistance].sort((a, b) => 
-    (a.distance || Number.MAX_SAFE_INTEGER) - (b.distance || Number.MAX_SAFE_INTEGER)
-  );
+  // Sort by score first (from filterByLocationRelevance), then by distance
+  const sortedApps = [...appsWithDistance].sort((a, b) => {
+    // If both have scores and they're different, sort by score first
+    if (a.score && b.score && a.score !== b.score) {
+      return b.score - a.score; // Higher scores first
+    }
+    // Otherwise sort by distance
+    return (a.distance || Number.MAX_SAFE_INTEGER) - (b.distance || Number.MAX_SAFE_INTEGER);
+  });
   
   // Log the closest applications for debugging
-  console.log('Closest applications after sorting:');
+  console.log('Top applications after sorting by relevance and distance:');
   sortedApps.slice(0, 5).forEach(app => {
-    console.log(`App ${app.id}: ${app.distance?.toFixed(2)}km - ${app.address || 'No address'}`);
+    console.log(`App ${app.id}: score=${app.score || 0}, distance=${app.distance?.toFixed(2)}km - ${app.address || 'No address'}`);
   });
   
   return sortedApps;
