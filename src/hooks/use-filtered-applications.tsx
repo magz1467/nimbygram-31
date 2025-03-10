@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
@@ -18,7 +18,9 @@ export const useFilteredApplications = (
   activeFilters: ActiveFilters,
   activeSort?: SortType,
   searchCoordinates?: [number, number] | null,
-  searchTerm?: string
+  searchTerm?: string,
+  page: number = 0,
+  pageSize: number = 25
 ) => {
   return useMemo(() => {
     console.log('useFilteredApplications - Input applications:', applications?.length);
@@ -26,9 +28,10 @@ export const useFilteredApplications = (
     console.log('useFilteredApplications - Active sort:', activeSort);
     console.log('useFilteredApplications - Search coordinates:', searchCoordinates);
     console.log('useFilteredApplications - Search term:', searchTerm);
+    console.log('useFilteredApplications - Page:', page, 'Page size:', pageSize);
     
     if (!applications || applications.length === 0) {
-      return [];
+      return { applications: [], totalCount: 0 };
     }
     
     // Apply all generic filters first (status, type, etc.)
@@ -56,11 +59,19 @@ export const useFilteredApplications = (
       });
     }
 
-    console.log('useFilteredApplications - Final applications:', applicationsFinal?.length);
+    // Store the total count before pagination
+    const totalCount = applicationsFinal.length;
+    console.log('Total applications before pagination:', totalCount);
+    
+    // Apply pagination
+    const startIndex = page * pageSize;
+    const paginatedApplications = applicationsFinal.slice(startIndex, startIndex + pageSize);
+    
+    console.log('useFilteredApplications - Paginated applications:', paginatedApplications?.length);
     
     // Log the final closest applications for debugging
-    if (applicationsFinal.length > 0) {
-      const topApps = applicationsFinal.slice(0, 3).map(app => ({
+    if (paginatedApplications.length > 0) {
+      const topApps = paginatedApplications.slice(0, 3).map(app => ({
         id: app.id,
         distance: app.distance,
         distanceValue: (app as any).distanceValue,
@@ -69,6 +80,6 @@ export const useFilteredApplications = (
       console.log('Top applications in final result:', topApps);
     }
     
-    return applicationsFinal;
-  }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm]);
+    return { applications: paginatedApplications, totalCount };
+  }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm, page, pageSize]);
 };

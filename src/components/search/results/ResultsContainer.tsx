@@ -20,9 +20,13 @@ interface ResultsContainerProps {
   handleMarkerClick: (id: number) => void;
   isLoading: boolean;
   searchTerm?: string;
-  displayTerm?: string; // Add displayTerm property
+  displayTerm?: string;
   onRetry?: () => void;
   error?: Error | null;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  totalCount?: number;
 }
 
 export const ResultsContainer = ({
@@ -38,7 +42,11 @@ export const ResultsContainer = ({
   searchTerm,
   displayTerm,
   onRetry,
-  error
+  error,
+  currentPage = 0,
+  totalPages = 1,
+  onPageChange,
+  totalCount = 0
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -98,7 +106,7 @@ export const ResultsContainer = ({
         isLoading={isLoading}
         onSeeOnMap={handleSeeOnMap}
         searchTerm={searchTerm}
-        displayTerm={displayTerm} // Pass the displayTerm
+        displayTerm={displayTerm}
         onRetry={handleRetry}
         selectedId={selectedId}
         coordinates={coordinates}
@@ -106,6 +114,10 @@ export const ResultsContainer = ({
         allApplications={applications}
         postcode={searchTerm}
         error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        totalCount={totalCount}
       />
       
       {/* Mobile map overlay */}

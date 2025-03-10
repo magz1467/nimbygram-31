@@ -1,8 +1,7 @@
-
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
+import { RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
@@ -19,6 +18,10 @@ interface ResultsListViewProps {
   allApplications?: Application[];
   postcode?: string;
   error?: Error | null;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  totalCount?: number;
 }
 
 export const ResultsListView = ({ 
@@ -33,7 +36,11 @@ export const ResultsListView = ({
   handleMarkerClick,
   allApplications,
   postcode,
-  error
+  error,
+  currentPage = 0,
+  totalPages = 1,
+  onPageChange,
+  totalCount = 0
 }: ResultsListViewProps) => {
   // Use the visible applications or all applications array, whichever is available
   const appArray = allApplications?.length ? allApplications : applications;
@@ -60,6 +67,12 @@ export const ResultsListView = ({
       if (timer) window.clearTimeout(timer);
     };
   }, [isLoading]);
+
+  const handlePageChange = (newPage: number) => {
+    if (onPageChange && newPage >= 0 && newPage < totalPages) {
+      onPageChange(newPage);
+    }
+  };
 
   // If loading, show skeleton cards
   if (isLoading) {
@@ -168,6 +181,38 @@ export const ResultsListView = ({
           postcode={postcode}
         />
       ))}
+      
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center pt-6 pb-8 border-t mt-6">
+          <div className="text-sm text-gray-500">
+            Showing {applications.length} of {totalCount} results
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <div className="flex items-center px-3 text-sm">
+              Page {currentPage + 1} of {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

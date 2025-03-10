@@ -23,6 +23,7 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
   const initialPostcodeValue = initialSearch?.searchType === 'postcode' ? initialSearch.searchTerm : initialPostcode || '';
   const [error, setError] = useState<Error | null>(null);
   const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
+  const [currentPage, setCurrentPage] = useState(0);
 
   const {
     postcode,
@@ -105,14 +106,23 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     // Reset map visibility when search changes
     setShowMap(false);
     setSelectedId(null);
+    // Reset pagination when search changes
+    setCurrentPage(0);
   }, [postcode, coordinates, setShowMap, setSelectedId]);
 
-  // Filter and sort applications
-  const filteredApplications = useFilteredAndSortedApplications(
+  // Filter and sort applications with pagination
+  const {
+    applications: filteredApplications,
+    totalCount,
+    totalPages
+  } = useFilteredAndSortedApplications(
     applications,
     activeFilters,
     activeSort,
-    coordinates
+    coordinates,
+    postcode,
+    25,  // pageSize fixed at 25
+    currentPage
   );
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
@@ -137,6 +147,10 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     handlePostcodeSelect,
     statusCounts,
     refetch,
-    error
+    error,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCount
   };
 };

@@ -1,87 +1,102 @@
 
-import { useIsMobile } from "@/hooks/use-mobile";
-import { FilterBarSection } from "./FilterBarSection";
+import { useEffect } from "react";
+import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { ResultsContainer } from "./ResultsContainer";
-import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
-import { Application } from "@/types/planning";
-import { StatusCounts, SortType } from "@/types/application-types";
+import { FilterBarSection } from "./FilterBarSection";
+import { ResultsHeader } from "./ResultsHeader";
+import { SortType } from "@/types/application-types";
 
 interface SearchViewContentProps {
-  isLoading: boolean;
-  coordinates: [number, number] | null;
-  hasSearched: boolean;
-  applications: Application[] | undefined;
-  activeFilters: {
-    status?: string;
-    type?: string;
-    classification?: string;
+  initialSearch: {
+    searchType: 'postcode' | 'location';
+    searchTerm: string;
+    displayTerm?: string;
+    timestamp?: number;
   };
-  activeSort: SortType;
-  handleFilterChange: (filterType: string, value: string) => void;
-  handleSortChange: (sortType: SortType) => void;
-  statusCounts: StatusCounts;
-  displayApplications: Application[];
-  showMap: boolean;
-  setShowMap: (show: boolean) => void;
-  selectedId: number | null;
-  setSelectedId: (id: number | null) => void;
-  handleMarkerClick: (id: number) => void;
-  searchTerm?: string;
-  displayTerm?: string;
-  onRetry?: () => void;
-  error?: Error | null;
+  onError?: (error: Error | null) => void;
+  onSearchComplete?: () => void;
+  retryCount?: number;
 }
 
-export const SearchViewContent = ({
-  isLoading,
-  coordinates,
-  hasSearched,
-  applications,
-  activeFilters,
-  activeSort,
-  handleFilterChange,
-  handleSortChange,
-  statusCounts,
-  displayApplications,
-  showMap,
-  setShowMap,
-  selectedId,
-  setSelectedId,
-  handleMarkerClick,
-  searchTerm,
-  displayTerm,
-  onRetry,
-  error
+export const SearchViewContent = ({ 
+  initialSearch, 
+  onError, 
+  onSearchComplete,
+  retryCount = 0
 }: SearchViewContentProps) => {
-  const isMobile = useIsMobile();
+  const {
+    postcode,
+    coordinates,
+    displayApplications,
+    applications,
+    isLoading,
+    hasSearched,
+    showMap,
+    setShowMap,
+    selectedId,
+    setSelectedId,
+    handleMarkerClick,
+    activeFilters,
+    activeSort,
+    handleFilterChange,
+    handleSortChange,
+    error,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCount
+  } = useSearchResults({ 
+    initialSearch, 
+    retryCount 
+  });
+
+  // Call the onError handler when an error occurs
+  useEffect(() => {
+    if (onError) {
+      onError(error);
+    }
+  }, [error, onError]);
+
+  // Call the onSearchComplete handler when search is done
+  useEffect(() => {
+    if (hasSearched && !isLoading && onSearchComplete) {
+      onSearchComplete();
+    }
+  }, [hasSearched, isLoading, onSearchComplete]);
+
+  // Callback for filter changes
+  const handleFilterUpdate = (filterType: string, value: string) => {
+    // Reset page to 0 when filters change
+    setCurrentPage(0);
+    handleFilterChange(filterType, value);
+  };
+
+  // Callback for sort changes
+  const handleSortUpdate = (sortType: SortType) => {
+    // Reset page to 0 when sorting changes
+    setCurrentPage(0);
+    handleSortChange(sortType);
+  };
 
   return (
-    <>
-      {isLoading && <LoadingOverlay />}
-      
-      <div className="w-full border-t">
-        <div className={`mx-auto px-2 ${isMobile ? 'max-w-full' : 'container px-4'}`}>
-          <div className="flex flex-col bg-white">
-            <div className="flex items-center justify-between p-1.5 overflow-hidden">
-              <FilterBarSection
-                coordinates={coordinates}
-                hasSearched={hasSearched}
-                isLoading={isLoading}
-                applications={applications || []}
-                activeFilters={activeFilters}
-                activeSort={activeSort}
-                onFilterChange={handleFilterChange}
-                onSortChange={handleSortChange}
-                statusCounts={statusCounts}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      
+    <div className="max-w-7xl mx-auto px-4 lg:px-8 pb-16 pt-4">
+      <ResultsHeader 
+        searchTerm={initialSearch.searchTerm}
+        displayTerm={initialSearch.displayTerm}
+        resultsCount={applications.length}
+        isLoading={isLoading}
+      />
+
+      <FilterBarSection 
+        activeFilters={activeFilters} 
+        activeSort={activeSort}
+        onFilterChange={handleFilterUpdate}
+        onSortChange={handleSortUpdate}
+      />
+
       <ResultsContainer
         displayApplications={displayApplications}
-        applications={applications || []}
+        applications={applications}
         coordinates={coordinates}
         showMap={showMap}
         setShowMap={setShowMap}
@@ -89,11 +104,14 @@ export const SearchViewContent = ({
         setSelectedId={setSelectedId}
         handleMarkerClick={handleMarkerClick}
         isLoading={isLoading}
-        searchTerm={searchTerm}
-        displayTerm={displayTerm}
-        onRetry={onRetry}
+        searchTerm={initialSearch.searchTerm}
+        displayTerm={initialSearch.displayTerm}
         error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalCount={totalCount}
       />
-    </>
+    </div>
   );
 };

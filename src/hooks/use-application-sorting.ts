@@ -1,115 +1,72 @@
+import { useMemo } from 'react';
+import { Application } from '@/types/planning';
+import { SortType } from '@/types/application-types';
 
-import { Application } from "@/types/planning";
-import { isWithinNextSevenDays } from "@/utils/dateUtils";
-import { SortType } from "@/types/application-types";
-
-interface SortConfig {
+interface SortingParams {
   type: SortType;
   applications: Application[];
 }
 
-const sortByClosingDate = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const dateA = a.last_date_consultation_comments ? new Date(a.last_date_consultation_comments) : null;
-    const dateB = b.last_date_consultation_comments ? new Date(b.last_date_consultation_comments) : null;
-
-    // Invalid dates go to the end
-    if (!dateA || isNaN(dateA.getTime())) return 1;
-    if (!dateB || isNaN(dateB.getTime())) return -1;
-
-    const isClosingSoonA = isWithinNextSevenDays(a.last_date_consultation_comments);
-    const isClosingSoonB = isWithinNextSevenDays(b.last_date_consultation_comments);
-
-    // Prioritize "Under Review" status
-    const isUnderReviewA = a.status?.toLowerCase().includes('under consideration');
-    const isUnderReviewB = b.status?.toLowerCase().includes('under consideration');
-
-    if (isUnderReviewA && !isUnderReviewB) return -1;
-    if (!isUnderReviewA && isUnderReviewB) return 1;
-
-    // Then prioritize closing soon
-    if (isClosingSoonA && !isClosingSoonB) return -1;
-    if (!isClosingSoonA && isClosingSoonB) return 1;
-
-    // If both are closing soon, sort by closest date
-    if (isClosingSoonA && isClosingSoonB) {
-      return dateA.getTime() - dateB.getTime();
-    }
-
-    // For non-closing soon, sort by date descending
-    return dateB.getTime() - dateA.getTime();
-  });
-};
-
-const sortByNewest = (applications: Application[]) => {
-  return [...applications].sort((a, b) => {
-    const dateA = a.valid_date ? new Date(a.valid_date) : null;
-    const dateB = b.valid_date ? new Date(b.valid_date) : null;
-
-    // Invalid dates go to the end
-    if (!dateA || isNaN(dateA.getTime())) return 1;
-    if (!dateB || isNaN(dateB.getTime())) return -1;
-
-    // Sort by date descending (newest first)
-    return dateB.getTime() - dateA.getTime();
-  });
-};
-
-const sortByDistance = (applications: Application[]) => {
-  // We rely on the distance information already added to applications
-  return [...applications].sort((a, b) => {
-    // Use distanceValue for sorting - this should have been added by transformAndSortApplications
-    if ('distanceValue' in a && 'distanceValue' in b) {
-      const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
-      const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
-      return distanceA - distanceB;
-    }
+export const useApplicationSorting = ({ type, applications }: SortingParams): Application[] => {
+  return useMemo(() => {
+    if (!applications?.length) return [];
     
-    // Fall back to parsing the distance string if distanceValue isn't available
-    if (a.distance && b.distance) {
-      // Try to parse numerical values from strings like "1.2 mi"
-      const distanceA = parseFloat(a.distance.split(' ')[0]);
-      const distanceB = parseFloat(b.distance.split(' ')[0]);
-      
-      if (!isNaN(distanceA) && !isNaN(distanceB)) {
-        return distanceA - distanceB;
-      }
+    // Create a copy of the array to avoid mutating the original
+    const appsCopy = [...applications];
+    
+    switch (type) {
+      case 'newest':
+        return appsCopy.sort((a, b) => {
+          // Sort by date received descending (newest first)
+          const dateA = a.date_received ? new Date(a.date_received).getTime() : 0;
+          const dateB = b.date_received ? new Date(b.date_received).getTime() : 0;
+          return dateB - dateA;
+        });
+        
+      case 'closingSoon':
+        return appsCopy.sort((a, b) => {
+          // Sort by consultation end date ascending (soonest first)
+          const dateA = a.last_date_consultation_comments 
+            ? new Date(a.last_date_consultation_comments).getTime() 
+            : Number.MAX_SAFE_INTEGER;
+          const dateB = b.last_date_consultation_comments 
+            ? new Date(b.last_date_consultation_comments).getTime() 
+            : Number.MAX_SAFE_INTEGER;
+          return dateA - dateB;
+        });
+        
+      case 'highestImpact':
+        return appsCopy.sort((a, b) => {
+          // Sort by impact score descending (highest first)
+          const scoreA = a.final_impact_score || 0;
+          const scoreB = b.final_impact_score || 0;
+          return scoreB - scoreA;
+        });
+        
+      case 'distance':
+      case 'nearest':
+        return appsCopy.sort((a, b) => {
+          // Sort by distance ascending (closest first)
+          const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+          const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+          return distanceA - distanceB;
+        });
+        
+      default:
+        // Default to sorting by distance if available
+        if (appsCopy[0] && (appsCopy[0] as any).distanceValue) {
+          return appsCopy.sort((a, b) => {
+            const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+            const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+            return distanceA - distanceB;
+          });
+        }
+        // Otherwise, sort by newest
+        return appsCopy.sort((a, b) => {
+          const dateA = a.date_received ? new Date(a.date_received).getTime() : 0;
+          const dateB = b.date_received ? new Date(b.date_received).getTime() : 0;
+          return dateB - dateA;
+        });
     }
-    
-    // If we can't determine distance, place apps without distance at the end
-    if (!a.distance) return 1;
-    if (!b.distance) return -1;
-    
-    // Otherwise keep original order
-    return 0;
-  });
-};
-
-export const useApplicationSorting = ({ type, applications }: SortConfig) => {
-  if (!applications?.length) return [];
-  
-  console.log('Sorting applications with type:', type);
-  console.log('Number of applications before sort:', applications.length);
-
-  let sorted;
-  switch (type) {
-    case 'closingSoon':
-      sorted = sortByClosingDate(applications);
-      break;
-    case 'newest':
-      sorted = sortByNewest(applications);
-      break;
-    case 'distance':
-    case 'nearest':
-      sorted = sortByDistance(applications);
-      break;
-    default:
-      sorted = applications;
-  }
-
-  console.log('Number of applications after sort:', sorted.length);
-  return sorted;
+  }, [type, applications]);
 };
