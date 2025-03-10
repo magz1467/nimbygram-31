@@ -40,6 +40,7 @@ export const SearchViewContent = ({
     activeSort,
     handleFilterChange,
     handleSortChange,
+    handlePostcodeSelect,
     error,
     currentPage,
     setCurrentPage,
@@ -88,7 +89,7 @@ export const SearchViewContent = ({
         isLoading={isLoading}
         hasSearched={hasSearched}
         coordinates={coordinates}
-        onPostcodeSelect={handlePostcodeSelect}
+        onSelect={handlePostcodeSelect}
       />
 
       <FilterBarSection 
