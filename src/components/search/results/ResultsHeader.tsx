@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PostcodeSearch } from '@/components/PostcodeSearch';
 import { Application } from '@/types/planning';
@@ -48,7 +49,7 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
         
         {onPostcodeSelect && (
           <div className="w-full md:w-auto">
-            <PostcodeSearch onPostcodeSelect={onPostcodeSelect} />
+            <PostcodeSearch onSelect={onPostcodeSelect} />
           </div>
         )}
       </div>
