@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { calculateDistance } from "@/utils/distance";
 
 /**
  * Fetches applications near the given coordinates
@@ -56,6 +57,9 @@ export const fetchNearbyApplications = async (
     if (properties && properties.length > 0) {
       console.log('Raw properties before filtering:', properties.slice(0, 3));
       
+      // Store the original count before filtering
+      const originalCount = properties.length;
+      
       properties = properties.filter(property => {
         try {
           // Extract coordinates - check both geom and geometry
@@ -73,23 +77,85 @@ export const fetchNearbyApplications = async (
             propLat = parseFloat(property.latitude);
             propLng = parseFloat(property.longitude);
           } else {
+            console.log(`⚠️ Property ${property.id} missing coordinates`);
             return false; // Skip if no coordinates
           }
           
+          // Log some coordinates to debug
+          if (Math.random() < 0.01) { // Log ~1% of properties to avoid console spam
+            console.log(`Property ${property.id} coordinates: [${propLat}, ${propLng}]`);
+          }
+          
           // Check if within extended bounds
-          return (
+          const inBounds = (
             propLat >= latMin && 
             propLat <= latMax && 
             propLng >= lngMin && 
             propLng <= lngMax
           );
+
+          // Double-check with actual distance calculation (more accurate than bounding box)
+          if (inBounds) {
+            const actualDistance = calculateDistance([lat, lng], [propLat, propLng]);
+            return actualDistance <= radius;
+          }
+          
+          return false;
         } catch (err) {
           console.error(`Error filtering property ${property.id}:`, err);
           return false;
         }
       });
       
-      console.log(`✅ Filtered to ${properties.length} applications within radius`);
+      console.log(`✅ Filtered from ${originalCount} to ${properties.length} applications within ${radius}km radius`);
+      
+      // Pre-calculate distances to assist with sorting
+      properties = properties.map(property => {
+        try {
+          // Extract coordinates again (duplicating logic but necessary for distance calculation)
+          let propLat, propLng;
+          
+          if (property.geom?.coordinates) {
+            propLng = parseFloat(property.geom.coordinates[0]);
+            propLat = parseFloat(property.geom.coordinates[1]);
+          } else if (property.geometry?.coordinates) {
+            propLng = parseFloat(property.geometry.coordinates[0]);
+            propLat = parseFloat(property.geometry.coordinates[1]);
+          } else if (property.latitude && property.longitude) {
+            propLat = parseFloat(property.latitude);
+            propLng = parseFloat(property.longitude);
+          } else {
+            return property; // Skip distance calculation if no coordinates
+          }
+          
+          // Calculate actual distance
+          const distance = calculateDistance([lat, lng], [propLat, propLng]);
+          
+          // Add distance to the property object for sorting
+          return {
+            ...property,
+            calculatedDistance: distance
+          };
+        } catch (err) {
+          console.error(`Error calculating distance for property ${property.id}:`, err);
+          return property;
+        }
+      });
+      
+      // Sort by distance
+      properties.sort((a, b) => {
+        const distA = a.calculatedDistance !== undefined ? a.calculatedDistance : Number.MAX_VALUE;
+        const distB = b.calculatedDistance !== undefined ? b.calculatedDistance : Number.MAX_VALUE;
+        return distA - distB;
+      });
+      
+      // Log the closest properties to verify sorting
+      if (properties.length > 0) {
+        console.log('Top 3 closest properties:');
+        properties.slice(0, 3).forEach((prop, i) => {
+          console.log(`[${i}] ID: ${prop.id}, Distance: ${prop.calculatedDistance?.toFixed(2)}km`);
+        });
+      }
     }
   } catch (error) {
     console.error('❌ Error fetching application data:', error);

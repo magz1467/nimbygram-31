@@ -19,7 +19,8 @@ export const addDistanceToApplications = (
     
     return {
       ...app,
-      distance: `${distanceInMiles.toFixed(1)} mi`
+      distance: `${distanceInMiles.toFixed(1)} mi`,
+      distanceValue: distanceInKm // Add numeric value for sorting
     };
   });
 };

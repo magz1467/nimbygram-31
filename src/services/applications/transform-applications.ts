@@ -24,11 +24,30 @@ export const transformAndSortApplications = (
   
   console.log(`✅ Total transformed applications: ${transformedData.length}`);
   
-  // Sort by distance
-  return transformedData.sort((a, b) => {
-    if (!a.coordinates || !b.coordinates) return 0;
-    const distanceA = calculateDistance(coordinates, a.coordinates);
-    const distanceB = calculateDistance(coordinates, b.coordinates);
-    return distanceA - distanceB;
-  });
+  // Sort by distance - ensure all applications have proper distance calculations
+  return transformedData
+    .map(app => {
+      // Ensure each application has coordinates
+      if (!app.coordinates) {
+        console.log(`⚠️ Application ${app.id} is missing coordinates`);
+        return app;
+      }
+      
+      // Calculate and add distance property directly
+      const distanceKm = calculateDistance(coordinates, app.coordinates);
+      const distanceMiles = distanceKm * 0.621371;
+      
+      return {
+        ...app,
+        distance: `${distanceMiles.toFixed(1)} mi`,
+        distanceValue: distanceKm // Add numeric value for sorting
+      };
+    })
+    .sort((a, b) => {
+      // Use the numeric distance value for sorting
+      const distanceA = a.distanceValue !== undefined ? a.distanceValue : Number.MAX_VALUE;
+      const distanceB = b.distanceValue !== undefined ? b.distanceValue : Number.MAX_VALUE;
+      
+      return distanceA - distanceB;
+    });
 };

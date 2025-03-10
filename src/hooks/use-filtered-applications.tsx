@@ -33,7 +33,9 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(applications, activeFilters);
     
     // Add distance information if search coordinates are available
-    const applicationsWithDistance = addDistanceToApplications(filteredApplications, searchCoordinates);
+    const applicationsWithDistance = searchCoordinates 
+      ? addDistanceToApplications(filteredApplications, searchCoordinates)
+      : filteredApplications;
     
     // Apply sorting based on active sort type or default to distance sort if coordinates available
     const finalSortedApplications = activeSort ? 
@@ -50,6 +52,15 @@ export const useFilteredApplications = (
         applicationsWithDistance);
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
+    
+    // Log the first few results to verify distance sorting
+    if (finalSortedApplications.length > 0 && searchCoordinates) {
+      console.log('First 3 sorted applications distances:');
+      finalSortedApplications.slice(0, 3).forEach((app, i) => {
+        console.log(`[${i}] ${app.id}: ${app.address || 'No address'} - ${app.distance}`);
+      });
+    }
+    
     return finalSortedApplications;
   }, [applications, activeFilters, activeSort, searchCoordinates]);
 };
