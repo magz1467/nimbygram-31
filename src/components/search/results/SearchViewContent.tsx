@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { ResultsContainer } from "./ResultsContainer";
@@ -97,25 +98,15 @@ export const SearchViewContent = ({
         hasSearched={hasSearched}
         coordinates={coordinates}
         onSelect={handlePostcodeSelect}
-      />
-
-      <FilterBarSection 
-        activeFilters={activeFilters} 
+        activeFilters={activeFilters}
         activeSort={activeSort}
         onFilterChange={handleFilterUpdate}
         onSortChange={handleSortUpdate}
-        coordinates={coordinates}
-        hasSearched={hasSearched}
-        isLoading={isLoading}
         applications={applications}
-        statusCounts={statusCounts || {
-          'Under Review': 0,
-          'Approved': 0,
-          'Declined': 0,
-          'Other': 0
-        }}
+        statusCounts={statusCounts}
       />
 
+      {/* We no longer need the separate FilterBarSection as the controls are now in the header */}
       <ResultsContainer
         displayApplications={displayApplications}
         applications={applications}
