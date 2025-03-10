@@ -15,9 +15,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { center_lat, center_lng, radius_meters = 1000000, page_size = 100000, page_number = 0, no_filtering = true } = await req.json()
+    const { center_lat, center_lng, radius_meters = 1000000, page_size = 1000, page_number = 0 } = await req.json()
 
-    console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number, no_filtering });
+    console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number });
 
     if (!center_lat || !center_lng) {
       return new Response(
@@ -31,50 +31,81 @@ serve(async (req) => {
 
     const startTime = Date.now();
     
-    // Skip count query if we're fetching all records
-    let totalCount = 0;
-    let countError = null;
-    
-    // Get ALL applications without any geographic filtering
+    // Fetch applications in smaller batches to avoid timeouts
+    const pageSize = Math.min(page_size, 1000); // Cap the page size
     let applications = [];
-    let applicationsError = null;
+    let totalCount = 0;
+    let hasMore = true;
+    let partialResults = false;
     
     try {
-      console.log('Fetching ALL applications without geographic filtering');
-      
-      // Execute a direct table query without filtering to get ALL records
-      const allRecordsResult = await supabaseClient
+      // First, get a count of all records (with a short timeout)
+      const countResult = await supabaseClient
         .from('crystal_roof')
-        .select('*');
+        .select('id', { count: 'exact', head: true })
+        .timeout(5); // 5 second timeout
+        
+      if (countResult.count !== null) {
+        totalCount = countResult.count;
+        console.log(`Total record count: ${totalCount}`);
+      }
+    } catch (countError) {
+      console.error('Error getting count:', countError);
+      // Continue without count
+    }
+    
+    try {
+      // Fetch the actual records with pagination
+      const offset = page_number * pageSize;
+      console.log(`Fetching records with offset ${offset} and limit ${pageSize}`);
       
-      if (allRecordsResult.error) {
-        throw allRecordsResult.error;
+      const result = await supabaseClient
+        .from('crystal_roof')
+        .select('*')
+        .range(offset, offset + pageSize - 1)
+        .timeout(30); // 30 second timeout
+      
+      if (result.error) {
+        throw result.error;
       }
       
-      applications = allRecordsResult.data || [];
-      totalCount = applications.length;
-      console.log(`Retrieved ALL ${applications.length} records from database`);
-      
+      applications = result.data || [];
+      console.log(`Retrieved ${applications.length} applications from database`);
     } catch (error) {
-      console.error('Error fetching all applications:', error);
-      applicationsError = error;
+      console.error('Error fetching applications:', error);
+      partialResults = true;
+      
+      // Try to get at least some results with a smaller query
+      try {
+        console.log('Attempting to fetch a smaller batch of results');
+        const fallbackResult = await supabaseClient
+          .from('crystal_roof')
+          .select('*')
+          .limit(100)
+          .timeout(10);
+          
+        if (fallbackResult.data && fallbackResult.data.length > 0) {
+          applications = fallbackResult.data;
+          console.log(`Retrieved ${applications.length} applications in fallback query`);
+        }
+      } catch (fallbackError) {
+        console.error('Even fallback query failed:', fallbackError);
+      }
     }
 
     const endTime = Date.now();
     console.log(`Query execution time: ${endTime - startTime}ms`);
-    console.log(`Found ${applications.length} total applications`);
+    console.log(`Returning ${applications.length} applications`);
 
     return new Response(
       JSON.stringify({
         applications: applications,
         total: totalCount,
         page: page_number,
-        pageSize: page_size,
-        hasMore: false, // No more pages when we get all records
+        pageSize: pageSize,
+        hasMore: applications.length >= pageSize,
         executionTime: endTime - startTime,
-        countError: countError ? countError.message : null,
-        applicationsError: applicationsError ? applicationsError.message : null,
-        partialResults: applicationsError !== null
+        partialResults: partialResults
       }),
       { 
         headers: { 

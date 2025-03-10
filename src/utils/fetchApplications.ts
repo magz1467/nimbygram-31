@@ -66,10 +66,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       // Re-sort ALL combined results by distance to ensure the closest applications are first
       combinedResults.sort((a, b) => {
         // Parse distance values to numbers for comparison
-        const distA = typeof a.distanceValue === 'number' ? a.distanceValue : 
-                      parseFloat(a.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
-        const distB = typeof b.distanceValue === 'number' ? b.distanceValue : 
-                      parseFloat(b.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
+        const distA = typeof a.distance === 'string' ? 
+                      parseFloat(a.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER : 
+                      Number.MAX_SAFE_INTEGER;
+        const distB = typeof b.distance === 'string' ? 
+                      parseFloat(b.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER : 
+                      Number.MAX_SAFE_INTEGER;
         return distA - distB;
       });
       

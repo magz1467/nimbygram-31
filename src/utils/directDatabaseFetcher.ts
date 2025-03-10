@@ -6,58 +6,88 @@ import { calculateDistance, sortApplicationsByDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * Fetches ALL applications directly from the database without geographic filtering
+ * Fetches applications directly from the database with pagination to prevent timeouts
  */
 export const fetchApplicationsFromDatabase = async (
   coordinates: [number, number]
 ): Promise<Application[]> => {
-  console.log('📊 Fetching ALL applications directly from database without geographic filtering');
+  console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates for distance calculation:', coordinates);
   
+  const pageSize = 500; // Smaller batch size to prevent timeouts
+  const allApplications: Application[] = [];
+  let hasMore = true;
+  let page = 0;
+  
   try {
-    console.log('Executing unrestricted query to get ALL records');
-    
-    // Execute the Supabase query without any filtering to get ALL records
-    const result = await supabase
-      .from('crystal_roof')
-      .select('*');
-    
-    if (result.error) {
-      console.error('❌ Supabase query error:', result.error);
-      throw result.error;
+    while (hasMore && page < 20) { // Limit to 20 pages maximum to prevent infinite loops
+      console.log(`Fetching page ${page} with ${pageSize} records`);
+      
+      // Execute the Supabase query with pagination
+      const result = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+        .timeout(15); // 15 second timeout per batch
+      
+      if (result.error) {
+        console.error('❌ Supabase query error on page', page, result.error);
+        // Don't throw error, just break the loop to return what we have so far
+        break;
+      }
+      
+      const records = result.data || [];
+      console.log(`✅ Retrieved ${records.length} records for page ${page}`);
+      
+      // If we got fewer records than the page size, we've reached the end
+      if (records.length < pageSize) {
+        hasMore = false;
+      }
+      
+      // Transform the applications with coordinates
+      const transformedApps = records
+        .map(app => transformApplicationData(app, coordinates))
+        .filter((app): app is Application => app !== null);
+      
+      // Add to our results array
+      allApplications.push(...transformedApps);
+      
+      // Increment page counter
+      page++;
+      
+      // If we have a reasonable number of results already, let's return them
+      if (allApplications.length > 1000) {
+        console.log(`Have ${allApplications.length} applications, breaking pagination loop early`);
+        break;
+      }
     }
     
-    const allRecords = result.data || [];
-    console.log(`✅ Retrieved ${allRecords.length} total records from database`);
-
-    if (allRecords.length === 0) {
-      console.log('No applications found in the database');
-      return [];
-    }
-
-    // Transform ALL application data with coordinates
-    console.log('Transforming ALL application data with coordinates:', coordinates);
-    const transformedApplications = allRecords
-      .map(app => transformApplicationData(app, coordinates))
-      .filter((app): app is Application => app !== null);
+    // Sort all applications by distance
+    const sortedApplications = sortApplicationsByDistance(allApplications, coordinates);
     
-    console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
-    
-    // Sort ALL applications by distance - this is critical for accurate results
-    const sortedApplications = sortApplicationsByDistance(transformedApplications, coordinates);
+    console.log(`✅ Total transformed and sorted applications: ${sortedApplications.length}`);
     
     // Log sorted results for debugging
-    console.log(`Top 10 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
-    sortedApplications.slice(0, 10).forEach((app, idx) => {
-      if (app.coordinates) {
-        const dist = calculateDistance(coordinates, app.coordinates);
-        console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${dist.toFixed(2)}km, Address: ${app.address}`);
-      }
-    });
+    if (sortedApplications.length > 0) {
+      console.log(`Top 10 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
+      sortedApplications.slice(0, 10).forEach((app, idx) => {
+        if (app.coordinates) {
+          const dist = calculateDistance(coordinates, app.coordinates);
+          console.log(`${idx+1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km, Address: ${app.address}`);
+        }
+      });
+    }
     
     return sortedApplications;
   } catch (error) {
-    console.error('❌ Error fetching ALL applications:', error);
+    console.error('❌ Error fetching applications with pagination:', error);
+    
+    // If we have some results already, return them instead of showing an error
+    if (allApplications.length > 0) {
+      console.log(`Returning ${allApplications.length} applications retrieved before the error`);
+      return sortApplicationsByDistance(allApplications, coordinates);
+    }
+    
     toast({
       title: "Search Error",
       description: error instanceof Error ? error.message : "We're having trouble loading all results. Please try again.",
