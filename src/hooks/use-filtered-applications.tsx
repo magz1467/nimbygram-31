@@ -36,10 +36,16 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(applications, activeFilters);
     console.log('After applying filters:', filteredApplications.length);
     
-    // Apply location relevance filtering if we have a search term
-    const locationFilteredApplications = searchTerm 
+    // Apply location relevance filtering only for exact postcode matches, not for partial matches
+    // This helps prevent incorrect prioritization based on partial postcode matches
+    const shouldApplyLocationFiltering = searchTerm && 
+      searchTerm.trim().length >= 6 && // Only apply for full postcodes
+      !searchTerm.includes(" "); // And only when searching for a specific term, not browsing
+    
+    const locationFilteredApplications = shouldApplyLocationFiltering
       ? filterByLocationRelevance(filteredApplications, searchTerm)
       : filteredApplications;
+    
     console.log('After location relevance filtering:', locationFilteredApplications.length);
     
     // Add distance information if search coordinates are available

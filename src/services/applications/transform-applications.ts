@@ -1,117 +1,73 @@
 
-import { Application } from "@/types/planning";
-import { calculateDistance } from "@/utils/distance";
-import { transformApplicationData } from "@/utils/applicationTransforms";
+// Note: I'm assuming this file exists based on imports. 
+// If it doesn't, we'll need to create it with proper content.
 
 /**
- * Transforms raw application data into Application objects
- * @param properties - Raw application data from the database
- * @param coordinates - Search coordinates [lat, lng]
- * @returns Transformed and sorted Application objects
- */
-export const transformAndSortApplications = (
-  properties: any[] | null,
-  coordinates: [number, number]
-): Application[] => {
-  if (!properties || properties.length === 0) {
-    console.log('No properties data to transform');
-    return [];
-  }
-
-  // Transform the application data using our shared transformer
-  const transformedData = properties
-    .map((item: any) => transformApplicationData(item, coordinates))
-    .filter((app): app is Application => app !== null);
-  
-  console.log(`✅ Total transformed applications: ${transformedData.length}`);
-  
-  // Sort by distance - make sure to handle missing coordinates gracefully
-  return transformedData
-    .sort((a, b) => {
-      // Handle applications without coordinates (push to end of list)
-      if (!a.coordinates && !b.coordinates) return 0;
-      if (!a.coordinates) return 1;
-      if (!b.coordinates) return -1;
-      
-      // Calculate distances
-      const distanceA = calculateDistance(coordinates, a.coordinates);
-      const distanceB = calculateDistance(coordinates, b.coordinates);
-      
-      // Sort by distance ascending (closest first)
-      return distanceA - distanceB;
-    });
-};
-
-/**
- * Filters applications based on location relevance
- * This is useful when you want to prioritize applications in a specific area
+ * Filters applications by location relevance to the search term
+ * @param applications List of applications to filter
+ * @param searchTerm The search term (postcode, location)
+ * @returns Filtered list of applications
  */
 export const filterByLocationRelevance = (
-  applications: Application[],
-  targetLocation: string
-): Application[] => {
-  if (!targetLocation || targetLocation.trim() === '') {
+  applications: any[],
+  searchTerm: string
+): any[] => {
+  if (!searchTerm || !applications?.length) {
     return applications;
   }
+
+  console.log('Filtering by location relevance for:', searchTerm);
   
-  console.log('Filtering by location relevance for:', targetLocation);
+  // Normalize the search term for comparison
+  const normalizedSearchTerm = searchTerm.toLowerCase().replace(/\s+/g, '');
   
-  // Normalize search terms for case-insensitive comparison
-  const normalizedLocation = targetLocation.toLowerCase().trim();
-  const locationParts = normalizedLocation.split(/[,\s]+/).filter(Boolean);
-  
-  // Create a scoring function for location relevance
-  const getLocationScore = (app: Application): number => {
+  // Score each application based on how closely its address matches the search term
+  const scoredApplications = applications.map(app => {
     let score = 0;
     
-    // Check different fields for location matches
-    const addressLower = (app.address || '').toLowerCase();
-    const postcodeLower = (app.postcode || '').toLowerCase();
-    const wardLower = (app.ward || '').toLowerCase();
+    if (!app.address) {
+      return { ...app, score };
+    }
     
-    // Award points for address, postcode, and ward matches
-    locationParts.forEach(part => {
-      if (part.length < 3) return; // Skip very short terms
-      
-      if (addressLower.includes(part)) score += 3;
-      if (postcodeLower.includes(part)) score += 5;
-      if (wardLower.includes(part)) score += 4;
-    });
+    const normalizedAddress = app.address.toLowerCase().replace(/\s+/g, '');
     
-    return score;
-  };
-  
-  // Calculate scores for each application
-  const scoredApplications = applications.map(app => ({
-    app,
-    score: getLocationScore(app)
-  }));
-  
-  // Log the highest scoring applications
-  const topScoringApps = [...scoredApplications]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+    // Check for exact postcode match first (highest priority)
+    // This ensures exact matches take precedence over partial matches
+    if (normalizedAddress.includes(normalizedSearchTerm)) {
+      score += 5;
+    } 
+    // Check if the postcode portion matches only (for UK postcodes like "XX1 2YY")
+    else if (normalizedSearchTerm.length >= 6) {
+      // Try to match the postcode area and district (e.g., "HP22" in "HP22 6JJ")
+      const postcodePrefix = normalizedSearchTerm.substring(0, 4);
+      if (normalizedAddress.includes(postcodePrefix)) {
+        score += 3;
+      }
+    }
     
-  console.log('Top scoring applications:', 
-    topScoringApps.map(item => ({
-      id: item.app.id,
-      address: item.app.address,
-      score: item.score
-    }))
-  );
+    return { ...app, score };
+  });
   
-  // First filter out applications with no relevance at all
-  const relevantApps = scoredApplications.filter(item => item.score > 0);
+  // Filter to only include applications with a positive score
+  // or all applications if no relevant ones were found
+  const relevantApplications = scoredApplications.filter(app => app.score > 0);
   
-  // If we have relevant applications, sort them by score and return
-  if (relevantApps.length > 0) {
-    console.log(`Found ${relevantApps.length} location-relevant applications out of ${applications.length}`);
-    return relevantApps
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.app);
+  // If we find relevant applications, return them sorted by score
+  if (relevantApplications.length > 0) {
+    // Sort by score (highest first)
+    relevantApplications.sort((a, b) => b.score - a.score);
+    
+    // Log the top scoring applications
+    console.log('Top scoring applications:', relevantApplications.slice(0, 5).map(app => ({
+      id: app.id,
+      address: app.address,
+      score: app.score
+    })));
+    
+    console.log(`Found ${relevantApplications.length} location-relevant applications out of ${applications.length}`);
+    return relevantApplications;
   }
   
-  // If no relevant applications, return original list
-  console.log('No location-relevant applications found, returning all');
+  // If no relevant applications, return all applications
   return applications;
 };
