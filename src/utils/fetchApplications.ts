@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/distance";
 import { Application } from "@/types/planning";
@@ -31,7 +30,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       console.log('🔄 Attempting to fetch applications using edge function');
       
       const [lat, lng] = coordinates;
-      const radius = 10000; // 10km radius
+      const radius = 5000; // Changed from 10000 to 5000 meters (5km radius)
       
       // Get Supabase URL from environment or use a direct URL as fallback
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jposqxdboetyioymfswd.supabase.co';
@@ -58,7 +57,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
             page_size: 100
           })
         }),
-        30000, // 30 second timeout
+        30000,
         "Search request timed out. This area may have too many results."
       );
       

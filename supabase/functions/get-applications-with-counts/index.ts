@@ -14,7 +14,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { center_lat, center_lng, radius_meters, page_size = 100, page_number = 0 } = await req.json()
+    const { center_lat, center_lng, radius_meters = 5000, page_size = 100, page_number = 0 } = await req.json()
 
     console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number })
 
