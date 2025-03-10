@@ -168,7 +168,16 @@ const transformAndSortResults = (
 
   // Transform application data
   const transformedResults = filteredResults
-    .map(app => coordinates ? transformApplicationData(app, coordinates) : transformApplicationData(app))
+    .map(app => {
+      // Fix for the error: Pass default coordinates when none are available
+      if (coordinates) {
+        return transformApplicationData(app, coordinates);
+      } else {
+        // Use a default center point for London when no coordinates are provided
+        const defaultCenter: [number, number] = [51.5074, -0.1278]; // London center
+        return transformApplicationData(app, defaultCenter);
+      }
+    })
     .filter((app): app is Application => app !== null);
 
   // Sort results
