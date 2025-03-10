@@ -54,38 +54,7 @@ export const useApplicationSorting = (
 };
 
 /**
- * Helper function to calculate distance between two coordinates using Haversine formula
- */
-const calculateDistance = (
-  point1: [number, number], 
-  point2: [number, number]
-): number => {
-  const [lat1, lon1] = point1;
-  const [lat2, lon2] = point2;
-  
-  if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
-      typeof lat2 !== 'number' || typeof lon2 !== 'number') {
-    return Number.MAX_SAFE_INTEGER;
-  }
-  
-  // Haversine formula
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-
-  return distance;
-};
-
-/**
- * Sort applications by distance from search coordinates
+ * Sort applications by distance from search coordinates, ensuring proper numeric sorting
  */
 const sortByDistance = (
   applications: Application[],
@@ -97,18 +66,38 @@ const sortByDistance = (
     
     if (app.coordinates) {
       try {
-        // Calculate distance
-        const distance = calculateDistance(coordinates, app.coordinates);
+        // Calculate distance using the Haversine formula
+        const [lat1, lon1] = coordinates;
+        const [lat2, lon2] = app.coordinates;
+        
+        // Haversine formula
+        const R = 6371; // Earth's radius in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
         
         // Store both raw value and formatted string for display
         const distanceInMiles = distance * 0.621371;
         appCopy.distance = `${distanceInMiles.toFixed(1)} mi`;
-        (appCopy as any).distanceValue = distance;
+        
+        // Ensure we store a numeric value for proper sorting
+        const distanceValue = Number(distance);
+        (appCopy as any).distanceValue = isNaN(distanceValue) ? Number.MAX_SAFE_INTEGER : distanceValue;
+        
+        console.log(`Distance for app ${app.id}: ${distance.toFixed(2)}km (${distanceInMiles.toFixed(2)} mi)`);
       } catch (error) {
         console.warn(`Error calculating distance for app ${app.id}:`, error);
         (appCopy as any).distanceValue = Number.MAX_SAFE_INTEGER;
       }
     } else {
+      console.warn(`Application ${app.id} has no coordinates, setting max distance`);
       (appCopy as any).distanceValue = Number.MAX_SAFE_INTEGER;
     }
     
@@ -116,9 +105,24 @@ const sortByDistance = (
   });
   
   // Then sort by the calculated distance value
-  return [...appsWithDistance].sort((a, b) => {
+  const sortedApps = [...appsWithDistance].sort((a, b) => {
     const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
     const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
-    return distanceA - distanceB;
+    
+    // Ensure we're comparing numbers
+    const numA = typeof distanceA === 'number' ? distanceA : Number.MAX_SAFE_INTEGER;
+    const numB = typeof distanceB === 'number' ? distanceB : Number.MAX_SAFE_INTEGER;
+    
+    return numA - numB;
   });
+  
+  // Log the first few sorted applications for debugging
+  if (sortedApps.length > 0) {
+    console.log("🔍 Applications sorted by distance:");
+    sortedApps.slice(0, 3).forEach((app, index) => {
+      console.log(`${index + 1}. ID: ${app.id}, Distance: ${app.distance}, Value: ${(app as any).distanceValue}`);
+    });
+  }
+  
+  return sortedApps;
 };

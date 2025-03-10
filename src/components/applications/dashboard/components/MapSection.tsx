@@ -28,11 +28,12 @@ export const MapSection = memo(({
 }: MapSectionProps) => {
   const handleMarkerClick = useCallback((id: number | null) => {
     console.log('MapSection handleMarkerClick:', id);
-    if (id !== null) {
+    if (id !== null && dispatch && typeof dispatch.payload === 'function') {
       dispatch.payload(id);
     }
   }, [dispatch]);
 
+  // Don't render if no coordinates or map is not visible
   if (!coordinates || (!isMobile && !isMapView)) return null;
 
   return (

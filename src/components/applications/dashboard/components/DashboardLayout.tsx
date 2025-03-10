@@ -1,5 +1,6 @@
 
 import { Application } from "@/types/planning";
+import { ReactNode } from "react";
 import { MapSection } from "./MapSection";
 import { SidebarSection } from "./SidebarSection";
 import { DashboardHeader } from "./DashboardHeader";
@@ -27,6 +28,7 @@ interface DashboardLayoutProps {
   handlePostcodeSelect: (postcode: string) => void;
   handleSortChange: (sortType: SortType) => void;
   setIsMapView: (value: boolean) => void;
+  children?: ReactNode;
 }
 
 export const DashboardLayout = ({
@@ -43,7 +45,8 @@ export const DashboardLayout = ({
   handleFilterChange,
   handlePostcodeSelect,
   handleSortChange,
-  setIsMapView
+  setIsMapView,
+  children
 }: DashboardLayoutProps) => {
   const isMobile = useIsMobile();
 
@@ -90,14 +93,15 @@ export const DashboardLayout = ({
             coordinates={coordinates}
             applications={filteredApplications}
             selectedId={selectedId}
-            dispatch={(action) => {
-              if (action.type === 'SELECT_APPLICATION') {
-                handleMarkerClick(action.payload);
-              }
+            dispatch={{
+              type: 'SELECT_APPLICATION',
+              payload: handleMarkerClick
             }}
             postcode={postcode}
           />
         </div>
+        
+        {children}
       </div>
     </>
   );

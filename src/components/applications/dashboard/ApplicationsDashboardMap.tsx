@@ -25,12 +25,28 @@ const ApplicationsDashboardMap = () => {
     activeSort,
     handleFilterChange,
     handleSortChange,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    postcode
   } = useApplicationState();
 
   return (
     <ErrorBoundary>
-      <DashboardLayout>
+      <DashboardLayout
+        applications={applications}
+        selectedId={selectedId}
+        isMapView={showMap}
+        coordinates={coordinates}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
+        postcode={postcode || searchTerm}
+        isLoading={isLoading}
+        filteredApplications={filteredApplications}
+        handleMarkerClick={handleMarkerClick}
+        handleFilterChange={handleFilterChange}
+        handlePostcodeSelect={handlePostcodeSelect}
+        handleSortChange={handleSortChange}
+        setIsMapView={setShowMap}
+      >
         <SearchSection 
           searchTerm={searchTerm} 
           setSearchTerm={setSearchTerm}
@@ -42,7 +58,7 @@ const ApplicationsDashboardMap = () => {
           applications={filteredApplications}
           selectedId={selectedId}
           coordinates={coordinates}
-          onMarkerClick={handleMarkerClick}
+          onSelectApplication={handleMarkerClick}
           activeFilters={activeFilters}
           activeSort={activeSort}
           onFilterChange={handleFilterChange}
@@ -57,7 +73,10 @@ const ApplicationsDashboardMap = () => {
           coordinates={coordinates}
           applications={applications}
           selectedId={selectedId}
-          dispatch={{ type: 'SELECT_APPLICATION', payload: handleMarkerClick }}
+          dispatch={{ 
+            type: 'SELECT_APPLICATION', 
+            payload: handleMarkerClick 
+          }}
           postcode={searchTerm}
         />
         
