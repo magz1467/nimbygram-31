@@ -25,8 +25,7 @@ const ApplicationsDashboardMap = () => {
     activeSort,
     handleFilterChange,
     handleSortChange,
-    handlePostcodeSelect,
-    postcode
+    handlePostcodeSelect
   } = useApplicationState();
 
   return (
@@ -38,7 +37,7 @@ const ApplicationsDashboardMap = () => {
         coordinates={coordinates}
         activeFilters={activeFilters}
         activeSort={activeSort}
-        postcode={postcode || searchTerm}
+        searchTerm={searchTerm}
         isLoading={isLoading}
         filteredApplications={filteredApplications}
         handleMarkerClick={handleMarkerClick}
@@ -48,23 +47,31 @@ const ApplicationsDashboardMap = () => {
         setIsMapView={setShowMap}
       >
         <SearchSection 
-          searchTerm={searchTerm} 
+          searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onPostcodeSelect={handlePostcodeSelect}
           isLoading={isLoading}
-        />
-        
-        <SidebarSection 
-          applications={filteredApplications}
-          selectedId={selectedId}
-          coordinates={coordinates}
-          onSelectApplication={handleMarkerClick}
+          applications={applications}
           activeFilters={activeFilters}
           activeSort={activeSort}
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
-          onMapToggle={() => setShowMap(!showMap)}
           isMapView={showMap}
+        />
+        
+        <SidebarSection 
+          isMobile={isMobile}
+          isMapView={showMap}
+          applications={filteredApplications}
+          selectedId={selectedId}
+          postcode={searchTerm}
+          coordinates={coordinates || [51.509865, -0.118092]} // Default to London if no coordinates
+          activeFilters={activeFilters}
+          activeSort={activeSort}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          onSelectApplication={handleMarkerClick}
+          onClose={() => handleMarkerClick(null)}
         />
         
         <MapSection 

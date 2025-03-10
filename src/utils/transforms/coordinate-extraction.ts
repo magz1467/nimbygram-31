@@ -1,4 +1,3 @@
-
 import { LatLngTuple } from 'leaflet';
 
 /**
@@ -111,7 +110,7 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
       }
     }
     
-    // Validate coordinates
+    // Update the coordinate extraction part to ensure we always return exactly two numbers
     if (coordinates) {
       // Check for invalid or extreme coordinates
       if (isNaN(coordinates[0]) || isNaN(coordinates[1]) || 
@@ -119,6 +118,8 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
         console.warn('⚠️ Invalid coordinates detected:', coordinates);
         coordinates = null;
       } else {
+        // Ensure we only return exactly two numbers
+        coordinates = [coordinates[0], coordinates[1]];
         console.log('✅ Final valid coordinates:', coordinates);
       }
     }

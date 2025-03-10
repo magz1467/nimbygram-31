@@ -5,6 +5,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
 
 interface SearchSectionProps {
+  searchTerm?: string;
+  setSearchTerm?: (value: string) => void;
   onPostcodeSelect: (postcode: string) => void;
   onFilterChange?: (filterType: string, value: string) => void;
   onSortChange?: (sortType: SortType) => void;
@@ -13,7 +15,7 @@ interface SearchSectionProps {
     type?: string;
   };
   activeSort?: SortType;
-  isMapView: boolean;
+  isMapView?: boolean;
   onToggleView?: () => void;
   applications?: any[];
   statusCounts?: {
@@ -22,9 +24,12 @@ interface SearchSectionProps {
     'Declined': number;
     'Other': number;
   };
+  isLoading?: boolean;
 }
 
 export const SearchSection = ({
+  searchTerm,
+  setSearchTerm,
   onPostcodeSelect,
   onFilterChange,
   onSortChange,
@@ -34,6 +39,7 @@ export const SearchSection = ({
   onToggleView,
   applications,
   statusCounts,
+  isLoading
 }: SearchSectionProps) => {
   const isMobile = useIsMobile();
 
