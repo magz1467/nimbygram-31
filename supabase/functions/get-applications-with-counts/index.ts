@@ -15,13 +15,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { center_lat, center_lng, radius_meters = 200000, page_size = 10000, page_number = 0 } = await req.json()
+    const { center_lat, center_lng, radius_meters = 1000000, page_size = 100000, page_number = 0, no_filtering = true } = await req.json()
 
-    console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number })
+    console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number, no_filtering });
 
-    if (!center_lat || !center_lng || !radius_meters) {
+    if (!center_lat || !center_lng) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
+        JSON.stringify({ error: 'Missing required coordinates parameters' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
@@ -29,120 +29,40 @@ serve(async (req) => {
       )
     }
 
-    const startTime = Date.now()
-
-    // First check if we can get a count quickly
+    const startTime = Date.now();
+    
+    // Skip count query if we're fetching all records
     let totalCount = 0;
     let countError = null;
-    try {
-      // Get total count with timeout handling
-      const countResult = await Promise.race([
-        supabaseClient.rpc(
-          'get_applications_count_within_radius',
-          {
-            center_lat,
-            center_lng,
-            radius_meters
-          }
-        ),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Count query timeout")), 10000)
-        )
-      ]);
-      
-      if (countResult.error) {
-        throw countResult.error;
-      }
-      
-      totalCount = countResult.data || 0;
-      console.log(`Total count: ${totalCount}`);
-      
-    } catch (error) {
-      console.error('Error getting count:', error);
-      countError = error;
-      // Continue anyway - we can still try to get the applications
-    }
-
-    // Get ALL applications without filtering, then sort by distance later in the client
+    
+    // Get ALL applications without any geographic filtering
     let applications = [];
     let applicationsError = null;
     
     try {
-      // First try using the optimized RPC function with radius
-      const applicationsResult = await Promise.race([
-        supabaseClient.rpc(
-          'get_applications_within_radius',
-          {
-            center_lat,
-            center_lng,
-            radius_meters,
-            page_size,
-            page_number
-          }
-        ),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Applications query timeout")), 60000) // Increased timeout
-        )
-      ]);
+      console.log('Fetching ALL applications without geographic filtering');
       
-      if (applicationsResult.error) {
-        throw applicationsResult.error;
+      // Execute a direct table query without filtering to get ALL records
+      const allRecordsResult = await supabaseClient
+        .from('crystal_roof')
+        .select('*');
+      
+      if (allRecordsResult.error) {
+        throw allRecordsResult.error;
       }
       
-      applications = applicationsResult.data || [];
+      applications = allRecordsResult.data || [];
+      totalCount = applications.length;
+      console.log(`Retrieved ALL ${applications.length} records from database`);
       
     } catch (error) {
-      console.error('Error fetching applications:', error);
+      console.error('Error fetching all applications:', error);
       applicationsError = error;
-      
-      // If we failed to get applications, try a direct table query as fallback with no filtering
-      if (applications.length === 0) {
-        try {
-          console.log('Attempting fallback direct query with no filtering');
-          
-          // Execute a direct table query without filtering to get ALL records
-          const fallbackResult = await supabaseClient
-            .from('crystal_roof')
-            .select('*')
-            .limit(page_size);
-          
-          if (fallbackResult.error) {
-            throw fallbackResult.error;
-          }
-          
-          applications = fallbackResult.data || [];
-          console.log(`Fallback query returned ${applications.length} results`);
-        } catch (fallbackError) {
-          console.error('Fallback query failed:', fallbackError);
-          // If we still failed, return the original error
-          return new Response(
-            JSON.stringify({ 
-              error: error.message || 'Failed to fetch applications',
-              details: 'Error fetching applications',
-              timestamp: new Date().toISOString()
-            }),
-            { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 500 
-            }
-          )
-        }
-      }
     }
 
-    const endTime = Date.now()
-    console.log(`Query execution time: ${endTime - startTime}ms`)
-    console.log(`Found ${applications.length} applications${totalCount ? ` out of ${totalCount} total` : ''}`);
-
-    // If we have applications but had a count error, estimate the total
-    if (countError && applications.length > 0) {
-      totalCount = applications.length * 10; // Rough estimate
-    }
-    
-    // If we have no count but have applications, use the applications length
-    if (totalCount === 0 && applications.length > 0) {
-      totalCount = applications.length;
-    }
+    const endTime = Date.now();
+    console.log(`Query execution time: ${endTime - startTime}ms`);
+    console.log(`Found ${applications.length} total applications`);
 
     return new Response(
       JSON.stringify({
@@ -150,7 +70,7 @@ serve(async (req) => {
         total: totalCount,
         page: page_number,
         pageSize: page_size,
-        hasMore: (page_number + 1) * page_size < totalCount,
+        hasMore: false, // No more pages when we get all records
         executionTime: endTime - startTime,
         countError: countError ? countError.message : null,
         applicationsError: applicationsError ? applicationsError.message : null,

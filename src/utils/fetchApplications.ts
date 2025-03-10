@@ -10,11 +10,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     return [];
   }
   
-  console.log('🔍 Fetching applications for coordinates:', coordinates);
+  console.log('🔍 Fetching ALL applications to find closest ones to coordinates:', coordinates);
   
   try {
     // Try both fetching methods simultaneously to maximize results
-    console.log('Starting both edge function and direct database queries in parallel...');
+    console.log('Starting both edge function and direct database queries in parallel to get ALL records...');
     
     const [edgeResults, dbResults] = await Promise.all([
       fetchApplicationsFromEdge(coordinates).catch(err => {
@@ -63,17 +63,19 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
         variant: "destructive",
       });
     } else {
-      // Re-sort the combined results by distance to ensure the closest applications are first
+      // Re-sort ALL combined results by distance to ensure the closest applications are first
       combinedResults.sort((a, b) => {
-        // Safely parse distances
-        const distA = parseFloat(a.distance.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
-        const distB = parseFloat(b.distance.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
+        // Parse distance values to numbers for comparison
+        const distA = typeof a.distanceValue === 'number' ? a.distanceValue : 
+                      parseFloat(a.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
+        const distB = typeof b.distanceValue === 'number' ? b.distanceValue : 
+                      parseFloat(b.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
         return distA - distB;
       });
       
       // Log the top closest results for debugging
-      console.log('Top 10 closest applications after merging and sorting:');
-      combinedResults.slice(0, 10).forEach((app, idx) => {
+      console.log('Top 20 closest applications after merging and sorting:');
+      combinedResults.slice(0, 20).forEach((app, idx) => {
         console.log(`${idx+1}. ID: ${app.id}, Distance: ${app.distance}, Address: ${app.address}`);
       });
     }

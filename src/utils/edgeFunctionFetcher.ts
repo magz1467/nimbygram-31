@@ -6,14 +6,13 @@ import { toast } from "@/hooks/use-toast";
 import { sortApplicationsByDistance } from "./distance";
 
 /**
- * Fetches applications using the edge function
+ * Fetches ALL applications using the edge function without geographic filtering
  */
 export const fetchApplicationsFromEdge = async (
-  coordinates: [number, number],
-  radius: number = 200000 // Dramatically increased for nationwide coverage
+  coordinates: [number, number]
 ): Promise<Application[] | null> => {
-  console.log('🔄 Attempting to fetch applications using edge function');
-  console.log('🌍 Search coordinates:', coordinates);
+  console.log('🔄 Attempting to fetch ALL applications using edge function');
+  console.log('🌍 Search coordinates for distance calculation:', coordinates);
   
   const [lat, lng] = coordinates;
   
@@ -27,7 +26,6 @@ export const fetchApplicationsFromEdge = async (
   }
   
   console.log('🌐 Using Supabase URL:', supabaseUrl);
-  console.log(`🔍 Searching with radius: ${radius}m`);
   
   try {
     const response = await withTimeout(
@@ -40,12 +38,13 @@ export const fetchApplicationsFromEdge = async (
         body: JSON.stringify({
           center_lat: lat,
           center_lng: lng,
-          radius_meters: radius,
-          page_size: 10000 // Dramatically increased for comprehensive coverage
+          radius_meters: 1000000, // Effectively unlimited radius
+          page_size: 100000, // Retrieve as many records as possible
+          no_filtering: true // New flag to indicate no geographic filtering
         })
       }),
-      90000, // Extended timeout for larger data fetch
-      "Search request timed out. This area may have too many results."
+      120000, // Extended timeout for larger data fetch (2 minutes)
+      "Search request timed out. Too many results to process."
     );
     
     if (!response.ok) {
@@ -59,14 +58,14 @@ export const fetchApplicationsFromEdge = async (
     if (result.applications && Array.isArray(result.applications)) {
       console.log(`✅ Successfully retrieved ${result.applications.length} applications from edge function`);
       
-      // Transform the applications with explicit coordinates
+      // Transform ALL applications with coordinates
       const transformedApplications = result.applications
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
       console.log(`Transformed ${transformedApplications.length} applications, sorting by distance...`);
       
-      // Sort by distance using our sortApplicationsByDistance function
+      // Sort ALL applications by distance
       const sortedApps = sortApplicationsByDistance(transformedApplications, coordinates);
       
       // Log the top results for debugging
