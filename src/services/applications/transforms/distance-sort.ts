@@ -21,7 +21,7 @@ export const transformAndSortApplications = (
   
   // Make sure coordinates are valid numbers
   const [searchLat, searchLng] = coordinates;
-  if (isNaN(searchLat) || isNaN(searchLng)) {
+  if (typeof searchLat !== 'number' || typeof searchLng !== 'number' || isNaN(searchLat) || isNaN(searchLng)) {
     console.warn('Invalid coordinate values:', coordinates);
     return [...applications]; // Return a copy of the original array
   }
@@ -47,7 +47,7 @@ export const transformAndSortApplications = (
         }
         
         // Basic validation
-        if (isNaN(appLat) || isNaN(appLng)) {
+        if (typeof appLat !== 'number' || typeof appLng !== 'number' || isNaN(appLat) || isNaN(appLng)) {
           console.warn(`Invalid coordinates for distance calculation:`, {
             search: [searchLat, searchLng],
             app: [appLat, appLng],
@@ -86,6 +86,7 @@ export const transformAndSortApplications = (
     
     // Create a copy before sorting to avoid mutation
     const sortedApps = [...appsWithDistance].sort((a, b) => {
+      // Ensure we have valid distance values with strong type checking
       const distanceA = typeof a?.distanceValue === 'number' ? a.distanceValue : Number.MAX_SAFE_INTEGER;
       const distanceB = typeof b?.distanceValue === 'number' ? b.distanceValue : Number.MAX_SAFE_INTEGER;
       return distanceA - distanceB;

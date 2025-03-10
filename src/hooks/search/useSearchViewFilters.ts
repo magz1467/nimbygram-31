@@ -47,7 +47,7 @@ export const useSearchViewFilters = ({
     searchTerm // Pass search term for location relevance
   );
 
-  // Ensure we have valid results
+  // Ensure we have valid results with explicit type checking
   const displayApplications = result && Array.isArray(result.applications) ? result.applications : [];
   const totalCount = result && typeof result.totalCount === 'number' ? result.totalCount : 0;
 

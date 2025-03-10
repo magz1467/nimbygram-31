@@ -12,8 +12,15 @@ interface SortingParams {
 
 export const useApplicationSorting = ({ type, applications, coordinates }: SortingParams): Application[] => {
   return useMemo(() => {
-    if (!applications || !Array.isArray(applications) || !applications.length) {
+    // Validate applications array
+    if (!applications || !Array.isArray(applications)) {
       console.log('No valid applications provided to sorting function');
+      return [];
+    }
+    
+    // Return empty array for empty input
+    if (applications.length === 0) {
+      console.log('Empty applications array provided to sorting function');
       return [];
     }
     
@@ -23,10 +30,14 @@ export const useApplicationSorting = ({ type, applications, coordinates }: Sorti
     console.log(`🔄 Sorting applications by type: ${type}`);
     
     try {
-      switch (type) {
+      // Ensure we have a valid sort type
+      const validSortType = typeof type === 'string' ? type : 'newest';
+      
+      switch (validSortType) {
         case 'newest':
           console.log('Sorting by newest');
           return [...appsCopy].sort((a, b) => {
+            // Ensure we have valid dates
             const dateA = a.received_date ? new Date(a.received_date).getTime() : 0;
             const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
             return dateB - dateA;
@@ -35,6 +46,7 @@ export const useApplicationSorting = ({ type, applications, coordinates }: Sorti
         case 'closingSoon':
           console.log('Sorting by closing soon');
           return [...appsCopy].sort((a, b) => {
+            // Ensure we have valid dates
             const dateA = a.last_date_consultation_comments 
               ? new Date(a.last_date_consultation_comments).getTime() 
               : Number.MAX_SAFE_INTEGER;
@@ -46,10 +58,15 @@ export const useApplicationSorting = ({ type, applications, coordinates }: Sorti
           
         case 'distance':
           console.log('Sorting by distance');
-          if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+          // Validate coordinates before distance sorting
+          if (coordinates && 
+              Array.isArray(coordinates) && 
+              coordinates.length === 2 &&
+              typeof coordinates[0] === 'number' &&
+              typeof coordinates[1] === 'number') {
             return transformAndSortApplications(appsCopy, coordinates);
           }
-          // If we don't have coordinates, return unsorted
+          // If we don't have valid coordinates, return unsorted
           console.warn('No valid coordinates provided for distance sorting');
           return appsCopy;
           

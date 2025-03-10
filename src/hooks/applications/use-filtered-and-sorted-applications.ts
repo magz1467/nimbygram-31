@@ -25,10 +25,10 @@ export const useFilteredAndSortedApplications = (
   currentPage: number = 0
 ): UseFilteredAndSortedApplicationsResult => {
   // Ensure we have valid inputs - defensive coding
-  const validApplications = applications || [];
+  const validApplications = Array.isArray(applications) ? applications : [];
   const validFilters = activeFilters || {};
-  const validCurrentPage = currentPage || 0;
-  const validPageSize = pageSize || 25;
+  const validCurrentPage = typeof currentPage === 'number' ? currentPage : 0;
+  const validPageSize = typeof pageSize === 'number' ? pageSize : 25;
 
   // Get filtered applications using the filtered applications hook
   const result = useFilteredApplications(
@@ -43,14 +43,15 @@ export const useFilteredAndSortedApplications = (
 
   // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
-    const count = result ? (result.totalCount || 0) : 0;
+    if (!result) return 1;
+    const count = typeof result.totalCount === 'number' ? result.totalCount : 0;
     return Math.max(1, Math.ceil(count / validPageSize));
   }, [result, validPageSize]);
 
   // Return safe values with fallbacks
-  return {
-    applications: result ? (result.applications || []) : [],
-    totalCount: result ? (result.totalCount || 0) : 0,
+  return useMemo(() => ({
+    applications: result && Array.isArray(result.applications) ? result.applications : [],
+    totalCount: result && typeof result.totalCount === 'number' ? result.totalCount : 0,
     totalPages
-  };
+  }), [result, totalPages]);
 };

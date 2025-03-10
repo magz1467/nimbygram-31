@@ -47,24 +47,37 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(safeApplications, safeFilters);
     console.log('After applying filters:', filteredApplications?.length || 0);
     
-    // Process through the location filter
-    const locationFilterInput = filteredApplications || [];
-    const processedApplications = typeof filterByLocationRelevance === 'function' ? 
-      filterByLocationRelevance(locationFilterInput, searchTerm || '') : 
-      locationFilterInput;
+    // Process through the location filter with explicit function check
+    const locationFilterInput = Array.isArray(filteredApplications) ? filteredApplications : [];
+    let processedApplications = locationFilterInput;
+    
+    if (typeof filterByLocationRelevance === 'function' && searchTerm) {
+      try {
+        processedApplications = filterByLocationRelevance(locationFilterInput, searchTerm);
+      } catch (error) {
+        console.error('Error in location relevance filtering:', error);
+        processedApplications = locationFilterInput;
+      }
+    }
+    
     console.log('After processing location filters:', processedApplications?.length || 0);
     
-    // Apply sorting based on sort type and coordinates
-    let applicationsFinal = processedApplications || [];
+    // Apply sorting based on sort type and coordinates - with strong validation
+    let applicationsFinal = Array.isArray(processedApplications) ? processedApplications : [];
     
     try {
+      const validCoordinates = searchCoordinates && 
+                               Array.isArray(searchCoordinates) && 
+                               searchCoordinates.length === 2 && 
+                               typeof searchCoordinates[0] === 'number' && 
+                               typeof searchCoordinates[1] === 'number';
+      
       // If we have coordinates and sort type is distance, or no sort is specified, sort by distance
-      if (searchCoordinates && Array.isArray(searchCoordinates) && searchCoordinates.length === 2 && 
-          (activeSort === 'distance' || !activeSort)) {
+      if (validCoordinates && (activeSort === 'distance' || !activeSort)) {
         console.log('🌍 Sorting by distance using coordinates:', searchCoordinates);
         applicationsFinal = useApplicationSorting({
           type: 'distance',
-          applications: processedApplications || [],
+          applications: processedApplications,
           coordinates: searchCoordinates
         });
       } 
@@ -73,25 +86,33 @@ export const useFilteredApplications = (
         console.log('🔄 Applying explicit sorting by:', activeSort);
         applicationsFinal = useApplicationSorting({
           type: activeSort,
-          applications: processedApplications || []
+          applications: processedApplications
         });
       }
     } catch (error) {
       console.error('Error during sorting:', error);
-      // Fall back to unsorted applications
-      applicationsFinal = processedApplications || [];
+      // Fall back to unsorted applications - ensure it's a valid array
+      applicationsFinal = Array.isArray(processedApplications) ? processedApplications : [];
     }
 
-    // Store the total count before pagination
-    const totalCount = applicationsFinal?.length || 0;
+    // Store the total count before pagination - with validation
+    const totalCount = Array.isArray(applicationsFinal) ? applicationsFinal.length : 0;
     console.log('Total applications before pagination:', totalCount);
     
-    // Apply pagination with safe defaults
-    const safePage = typeof page === 'number' ? page : 0;
-    const safePageSize = typeof pageSize === 'number' ? pageSize : 25;
+    // Apply pagination with safe defaults and strong type checking
+    const safePage = typeof page === 'number' && !isNaN(page) ? Math.max(0, page) : 0;
+    const safePageSize = typeof pageSize === 'number' && !isNaN(pageSize) ? Math.max(1, pageSize) : 25;
     const safeApplicationsFinal = Array.isArray(applicationsFinal) ? applicationsFinal : [];
+    
     const startIndex = safePage * safePageSize;
-    const paginatedApplications = safeApplicationsFinal.slice(startIndex, startIndex + safePageSize);
+    let paginatedApplications = [];
+    
+    try {
+      paginatedApplications = safeApplicationsFinal.slice(startIndex, startIndex + safePageSize);
+    } catch (error) {
+      console.error('Error during pagination:', error);
+      paginatedApplications = [];
+    }
     
     console.log('📊 useFilteredApplications - Paginated applications:', paginatedApplications?.length || 0);
     
@@ -110,7 +131,7 @@ export const useFilteredApplications = (
     }
     
     return { 
-      applications: paginatedApplications || [], 
+      applications: Array.isArray(paginatedApplications) ? paginatedApplications : [], 
       totalCount 
     };
   }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm, page, pageSize]);
