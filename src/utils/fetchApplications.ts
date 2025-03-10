@@ -104,14 +104,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     while (hasMore) {
       // Use a proper Promise constructor with explicit error handling
       const queryPromise = new Promise<any[]>((resolve, reject) => {
-        // Store the query in a variable so we can properly handle its result
-        const query = supabase
+        // Execute the query with proper promise handling
+        supabase
           .from('crystal_roof')
           .select('*')
-          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
-          
-        // Execute the query and handle both success and failure cases
-        query
+          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
           .then(result => {
             if (result.error) {
               console.error("Supabase query error:", result.error);
