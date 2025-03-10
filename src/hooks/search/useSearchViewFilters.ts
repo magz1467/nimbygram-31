@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { Application } from "@/types/planning";
 import { useFilteredApplications } from "@/hooks/use-filtered-applications";
+import { SortType } from "@/types/application-types";
 
 interface UseSearchViewFiltersProps {
   applications: Application[] | undefined;
@@ -10,7 +11,7 @@ interface UseSearchViewFiltersProps {
     type?: string;
     classification?: string;
   };
-  activeSort: string;
+  activeSort: SortType;
   coordinates: [number, number] | null;
   searchTerm?: string;
 }

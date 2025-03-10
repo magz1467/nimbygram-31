@@ -4,6 +4,7 @@ import { FilterBarSection } from "./FilterBarSection";
 import { ResultsContainer } from "./ResultsContainer";
 import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 import { Application } from "@/types/planning";
+import { StatusCounts, SortType } from "@/types/application-types";
 
 interface SearchViewContentProps {
   isLoading: boolean;
@@ -15,10 +16,10 @@ interface SearchViewContentProps {
     type?: string;
     classification?: string;
   };
-  activeSort: string;
+  activeSort: SortType;
   handleFilterChange: (filterType: string, value: string) => void;
-  handleSortChange: (sortType: string) => void;
-  statusCounts: Record<string, number>;
+  handleSortChange: (sortType: SortType) => void;
+  statusCounts: StatusCounts;
   displayApplications: Application[];
   showMap: boolean;
   setShowMap: (show: boolean) => void;

@@ -1,9 +1,11 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchState } from '@/hooks/applications/use-search-state';
 import { useFilterSortState } from '@/hooks/applications/use-filter-sort-state';
 import { useStatusCounts } from '@/hooks/applications/use-status-counts';
 import { useInterestingApplications } from '@/hooks/applications/use-interesting-applications';
+import { useFilteredAndSortedApplications } from './use-filtered-and-sorted-applications';
+import { useMapInteractions } from './use-map-interactions';
 import { Application } from '@/types/planning';
 
 interface SearchResultsOptions {
@@ -20,6 +22,7 @@ interface SearchResultsOptions {
 export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 0 }: SearchResultsOptions = {}) => {
   const initialPostcodeValue = initialSearch?.searchType === 'postcode' ? initialSearch.searchTerm : initialPostcode || '';
   const [error, setError] = useState<Error | null>(null);
+  const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
 
   const {
     postcode,
@@ -33,6 +36,21 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     coordsError
   } = useSearchState(initialPostcodeValue);
 
+  const {
+    activeFilters,
+    activeSort,
+    handleFilterChange,
+    handleSortChange,
+  } = useFilterSortState();
+
+  const {
+    showMap,
+    setShowMap,
+    selectedId,
+    setSelectedId,
+    handleMarkerClick
+  } = useMapInteractions();
+
   // Combine and prioritize errors
   useEffect(() => {
     if (coordsError) {
@@ -45,17 +63,6 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
       setError(null);
     }
   }, [searchStateError, coordsError]);
-
-  const [hasSearched, setHasSearched] = useState(Boolean(initialPostcodeValue));
-  const [showMap, setShowMap] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  const {
-    activeFilters,
-    activeSort,
-    handleFilterChange,
-    handleSortChange,
-  } = useFilterSortState();
 
   // Get status counts from applications
   const statusCounts = useStatusCounts(applications);
@@ -98,49 +105,15 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     // Reset map visibility when search changes
     setShowMap(false);
     setSelectedId(null);
-  }, [postcode, coordinates]);
+  }, [postcode, coordinates, setShowMap, setSelectedId]);
 
-  // Memoize filtered and sorted applications
-  const filteredApplications = useMemo(() => {
-    console.log('🔍 Filtering applications:', {
-      total: applications?.length || 0,
-      filters: activeFilters,
-      sort: activeSort
-    });
-
-    if (!applications || applications.length === 0) {
-      return [];
-    }
-
-    const filtered = applications.filter(app => {
-      if (activeFilters.status && app.status !== activeFilters.status) {
-        return false;
-      }
-      return true;
-    });
-
-    return filtered.sort((a, b) => {
-      if (activeSort === 'newest') {
-        return new Date(b.submissionDate || '').getTime() - new Date(a.submissionDate || '').getTime();
-      }
-      if (activeSort === 'closingSoon' && coordinates) {
-        const dateA = new Date(a.last_date_consultation_comments || '').getTime();
-        const dateB = new Date(b.last_date_consultation_comments || '').getTime();
-        return dateA - dateB;
-      }
-      return 0;
-    });
-  }, [applications, activeFilters, activeSort, coordinates]);
-
-  // Handle marker click
-  const handleMarkerClick = useCallback((id: number | null) => {
-    console.log('Marker clicked for application:', id);
-    setSelectedId(id);
-    if (id) {
-      const element = document.getElementById(`application-${id}`);
-      element?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, []);
+  // Filter and sort applications
+  const filteredApplications = useFilteredAndSortedApplications(
+    applications,
+    activeFilters,
+    activeSort,
+    coordinates
+  );
 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
   const displayApplications = hasSearched ? filteredApplications : interestingApplications;
