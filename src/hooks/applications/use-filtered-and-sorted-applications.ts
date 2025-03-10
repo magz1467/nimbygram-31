@@ -7,9 +7,6 @@ import { useFilteredApplications } from '@/hooks/use-filtered-applications';
 interface UseFilteredAndSortedApplicationsResult {
   applications: Application[];
   totalCount: number;
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
-  pageSize: number;
   totalPages: number;
 }
 
@@ -24,14 +21,16 @@ export const useFilteredAndSortedApplications = (
   activeSort?: SortType,
   coordinates?: [number, number] | null,
   searchTerm?: string,
-  initialPageSize: number = 25
+  pageSize: number = 25,
+  currentPage: number = 0
 ): UseFilteredAndSortedApplicationsResult => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = initialPageSize;
+  // Ensure we have valid inputs
+  const validApplications = applications || [];
+  const validFilters = activeFilters || {};
   
   const result = useFilteredApplications(
-    applications,
-    activeFilters,
+    validApplications,
+    validFilters,
     activeSort,
     coordinates,
     searchTerm,
@@ -40,15 +39,13 @@ export const useFilteredAndSortedApplications = (
   );
   
   const totalPages = useMemo(() => {
-    return Math.ceil(result.totalCount / pageSize);
+    const count = result.totalCount || 0;
+    return Math.max(1, Math.ceil(count / pageSize));
   }, [result.totalCount, pageSize]);
   
   return {
-    applications: result.applications,
-    totalCount: result.totalCount,
-    currentPage,
-    setCurrentPage,
-    pageSize,
+    applications: result.applications || [],
+    totalCount: result.totalCount || 0,
     totalPages
   };
 };

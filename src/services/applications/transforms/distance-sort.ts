@@ -9,13 +9,14 @@ export const transformAndSortApplications = (
   console.log(`🔍 Transforming and sorting ${applications.length} applications by distance from`, coordinates);
   
   if (!applications?.length || !coordinates) {
-    return applications;
+    console.log('No applications or coordinates provided for distance sorting');
+    return applications || [];
   }
   
   // Add distance to each application
   const appsWithDistance = applications.map(app => {
     // Skip if app doesn't have coordinates
-    if (!app.coordinates || !Array.isArray(app.coordinates) || app.coordinates.length !== 2) {
+    if (!app.coordinates || !Array.isArray(app.coordinates)) {
       console.log(`Missing or invalid coordinates for application ${app.id}`);
       return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
     }
@@ -75,10 +76,14 @@ export const transformAndSortApplications = (
   });
   
   // Log the closest applications for debugging
-  console.log('🏆 Top 5 closest applications after sorting:');
-  sortedApps.slice(0, 5).forEach(app => {
-    console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'} - Coordinates: ${JSON.stringify(app.coordinates)}`);
-  });
+  if (sortedApps.length > 0) {
+    console.log('🏆 Top 5 closest applications after sorting:');
+    sortedApps.slice(0, 5).forEach(app => {
+      console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'} - Coordinates: ${JSON.stringify(app.coordinates)}`);
+    });
+  } else {
+    console.log('No applications found after sorting');
+  }
   
   return sortedApps;
 };

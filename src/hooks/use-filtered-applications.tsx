@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
@@ -43,7 +44,8 @@ export const useFilteredApplications = (
     console.log('After applying filters:', filteredApplications.length);
     
     // Process through the location filter (which just passes applications through)
-    const processedApplications = filterByLocationRelevance(filteredApplications, searchTerm || '');
+    const locationFilterInput = filteredApplications || [];
+    const processedApplications = filterByLocationRelevance(locationFilterInput, searchTerm || '');
     console.log('After processing location filters:', processedApplications.length);
     
     // Apply sorting based on sort type and coordinates
@@ -89,6 +91,9 @@ export const useFilteredApplications = (
       console.log('🏆 Top applications in final result:', topApps);
     }
     
-    return { applications: paginatedApplications, totalCount };
+    return { 
+      applications: paginatedApplications, 
+      totalCount 
+    };
   }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm, page, pageSize]);
 };

@@ -35,7 +35,7 @@ export const useSearchViewFilters = ({
     searchTerm // Pass search term for location relevance
   );
 
-  const displayApplications = result.applications;
+  const displayApplications = result.applications || [];
 
   // Log the location search coordinates and closest applications
   useEffect(() => {
@@ -56,6 +56,6 @@ export const useSearchViewFilters = ({
 
   return {
     displayApplications,
-    totalCount: result.totalCount
+    totalCount: result.totalCount || 0
   };
 };
