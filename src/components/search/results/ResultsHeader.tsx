@@ -8,7 +8,7 @@ interface ResultsHeaderProps {
   displayTerm?: string;
   resultsCount?: number;
   isLoading?: boolean;
-  onPostcodeSelect?: (postcode: string) => void;
+  onSelect?: (postcode: string) => void;  // Changed from onPostcodeSelect to onSelect
   isMapView?: boolean;
   applications?: Application[];
   hasSearched?: boolean;
@@ -20,7 +20,7 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
   displayTerm,
   resultsCount,
   isLoading,
-  onPostcodeSelect,
+  onSelect, // Changed from onPostcodeSelect to onSelect
   isMapView,
   applications,
   hasSearched,
@@ -47,9 +47,9 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
           </h1>
         </div>
         
-        {onPostcodeSelect && (
+        {onSelect && (
           <div className="w-full md:w-auto">
-            <PostcodeSearch onSelect={onPostcodeSelect} />
+            <PostcodeSearch onSelect={onSelect} />
           </div>
         )}
       </div>
