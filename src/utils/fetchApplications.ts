@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/distance";
 import { Application } from "@/types/planning";
@@ -138,8 +139,6 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const distanceB = calculateDistance(coordinates, b.coordinates);
       return distanceA - distanceB;
     });
-    
-    return data;
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
