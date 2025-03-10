@@ -35,28 +35,21 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(applications, activeFilters);
     console.log('After applying filters:', filteredApplications.length);
     
-    // For place names like Wendover, ensure we apply location relevance filtering
-    // But don't apply it for partial searches or very short searches
-    const isSpecificSearchTerm = searchTerm && 
-      searchTerm.trim().length >= 3 && // At least 3 characters
-      !/^\s*$/.test(searchTerm); // Not just whitespace
+    // Process through the location filter (which now just passes applications through)
+    // This is kept for extensibility but no longer affects sorting
+    const processedApplications = filterByLocationRelevance(filteredApplications, searchTerm || '');
     
-    // Add text relevance scores to applications - but don't filter out any yet
-    const scoredApplications = isSpecificSearchTerm
-      ? filterByLocationRelevance(filteredApplications, searchTerm)
-      : filteredApplications;
+    console.log('After processing location filters:', processedApplications.length);
     
-    console.log('After adding location relevance scores:', scoredApplications.length);
-    
-    // If search coordinates available, transform and sort by distance + text score
-    let applicationsFinal = scoredApplications;
+    // If search coordinates available, sort by distance only
+    let applicationsFinal = processedApplications;
     if (searchCoordinates) {
-      console.log('Adding distance information and final sorting');
-      applicationsFinal = transformAndSortApplications(scoredApplications, searchCoordinates);
+      console.log('Sorting by distance only');
+      applicationsFinal = transformAndSortApplications(processedApplications, searchCoordinates);
     }
     
     // Apply explicit sorting based on active sort type, if different from default
-    // Only do this if not using distance+relevance sorting
+    // Only do this if not using distance sorting
     if (activeSort && activeSort !== 'distance') {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
@@ -67,11 +60,10 @@ export const useFilteredApplications = (
 
     console.log('useFilteredApplications - Final applications:', applicationsFinal?.length);
     
-    // Log the final closest/most relevant applications for debugging
+    // Log the final closest applications for debugging
     if (applicationsFinal.length > 0) {
       const topApps = applicationsFinal.slice(0, 3).map(app => ({
         id: app.id,
-        score: app.score,
         distance: app.distance,
         address: app.address
       }));
