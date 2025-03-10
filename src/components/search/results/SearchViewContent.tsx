@@ -1,9 +1,8 @@
 
 import { useEffect } from "react";
-import { useSearchResults } from "@/hooks/applications/use-search-results";
+import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
-import { SortType } from "@/types/application-types";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -46,19 +45,10 @@ export const SearchViewContent = ({
     totalPages,
     totalCount,
     statusCounts
-  } = useSearchResults({ 
+  } = useUnifiedSearch({ 
     initialSearch, 
     retryCount 
   });
-
-  // Set distance sorting by default for location searches
-  useEffect(() => {
-    // Only set to distance sort if coordinates are available and no active sort is set
-    if (coordinates && (!activeSort || activeSort !== 'distance')) {
-      console.log('Auto-setting sort type to distance due to location search');
-      handleSortChange('distance');
-    }
-  }, [coordinates, activeSort, handleSortChange]);
 
   // Call the onError handler when an error occurs
   useEffect(() => {
@@ -74,20 +64,6 @@ export const SearchViewContent = ({
     }
   }, [hasSearched, isLoading, onSearchComplete]);
 
-  // Callback for filter changes
-  const handleFilterUpdate = (filterType: string, value: string) => {
-    // Reset page to 0 when filters change
-    setCurrentPage(0);
-    handleFilterChange(filterType, value);
-  };
-
-  // Callback for sort changes
-  const handleSortUpdate = (sortType: SortType) => {
-    // Reset page to 0 when sorting changes
-    setCurrentPage(0);
-    handleSortChange(sortType);
-  };
-
   return (
     <div className="max-w-7xl mx-auto pb-16 pt-0">
       <ResultsHeader 
@@ -100,13 +76,12 @@ export const SearchViewContent = ({
         onSelect={handlePostcodeSelect}
         activeFilters={activeFilters}
         activeSort={activeSort}
-        onFilterChange={handleFilterUpdate}
-        onSortChange={handleSortUpdate}
+        onFilterChange={handleFilterChange}
+        onSortChange={handleSortChange}
         applications={applications}
         statusCounts={statusCounts}
       />
 
-      {/* Results container */}
       <div className="px-4 lg:px-8">
         <ResultsContainer
           displayApplications={displayApplications}
