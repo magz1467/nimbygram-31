@@ -2,9 +2,7 @@
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
-import { applyAllFilters } from "@/utils/applicationFilters";
-import { useApplicationSorting } from './use-application-sorting';
-import { filterByLocationRelevance } from '@/services/applications/transforms';
+import { sortApplicationsByDistance } from '@/utils/distance';
 
 interface ActiveFilters {
   status?: string;
@@ -13,56 +11,51 @@ interface ActiveFilters {
   classification?: string;
 }
 
-interface FilteredApplicationsResult {
-  applications: Application[];
-  totalCount: number;
-}
-
 export const useFilteredApplications = (
   applications: Application[],
   activeFilters: ActiveFilters = {},
   activeSort?: SortType,
-  searchCoordinates?: [number, number] | null,
-  searchTerm?: string,
+  coordinates?: [number, number] | null,
   page: number = 0,
   pageSize: number = 25
-): FilteredApplicationsResult => {
+) => {
   return useMemo(() => {
-    // Guard against empty applications array
-    if (!applications || !Array.isArray(applications) || applications.length === 0) {
+    if (!applications?.length) {
       return { applications: [], totalCount: 0 };
     }
-    
-    // Apply all generic filters first (status, type, etc.)
-    const filteredApplications = applyAllFilters(applications, activeFilters);
-    
-    // Process through the location filter if needed
-    let processedApplications = filteredApplications;
-    if (searchTerm) {
-      try {
-        processedApplications = filterByLocationRelevance(filteredApplications, searchTerm);
-      } catch (error) {
-        console.error('Error in location relevance filtering:', error);
-      }
-    }
-    
-    // Apply sorting using our simplified hook
-    const sortedApplications = useApplicationSorting(
-      processedApplications,
-      activeSort,
-      searchCoordinates
-    );
 
-    // Store the total count before pagination
-    const totalCount = sortedApplications.length;
-    
-    // Apply pagination
-    const startIndex = page * pageSize;
-    const paginatedApplications = sortedApplications.slice(startIndex, startIndex + pageSize);
-    
+    // Apply filters
+    let filtered = applications.filter(app => {
+      if (activeFilters.status && !app.status?.toLowerCase().includes(activeFilters.status.toLowerCase())) {
+        return false;
+      }
+      if (activeFilters.type && !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
+        return false;
+      }
+      if (activeFilters.classification && !app.class_3?.toLowerCase().includes(activeFilters.classification.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+
+    // Apply sorting
+    if (coordinates && activeSort === 'distance') {
+      filtered = sortApplicationsByDistance(filtered, coordinates);
+    } else if (activeSort === 'newest') {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.received_date ? new Date(a.received_date).getTime() : 0;
+        const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
+
+    // Calculate pagination
+    const totalCount = filtered.length;
+    const paginatedApplications = filtered.slice(page * pageSize, (page + 1) * pageSize);
+
     return { 
       applications: paginatedApplications, 
       totalCount 
     };
-  }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm, page, pageSize]);
+  }, [applications, activeFilters, activeSort, coordinates, page, pageSize]);
 };
