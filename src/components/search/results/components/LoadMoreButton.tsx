@@ -1,6 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 
 interface LoadMoreButtonProps {
   onLoadMore: () => void;
@@ -15,6 +17,17 @@ export const LoadMoreButton = ({
   totalCount, 
   isLastPage 
 }: LoadMoreButtonProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLoadMore = async () => {
+    setIsLoading(true);
+    try {
+      await onLoadMore();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLastPage) {
     return (
       <div className="text-center py-6 border-t mt-6">
@@ -26,17 +39,18 @@ export const LoadMoreButton = ({
   }
 
   return (
-    <div className="flex justify-center py-8 border-t mt-6">
+    <div className="flex flex-col items-center py-8 border-t mt-6">
       <Button 
         variant="outline" 
         size="lg" 
-        onClick={onLoadMore}
-        className="gap-2 px-8"
+        onClick={handleLoadMore}
+        className="gap-2 px-8 mb-4"
+        disabled={isLoading}
       >
-        See More Results
-        <ChevronDown className="h-4 w-4" />
+        {isLoading ? "Loading..." : "See More Results"}
+        {!isLoading && <ChevronDown className="h-4 w-4" />}
       </Button>
-      <div className="text-sm text-gray-500 ml-4 self-center">
+      <div className="text-sm text-gray-500 self-center">
         Showing {loadedCount} of {totalCount} results
       </div>
     </div>
