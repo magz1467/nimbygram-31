@@ -4,7 +4,7 @@ import { Application } from "@/types/planning";
 import { SortType, StatusCounts } from "@/types/application-types";
 import { useSearchState } from './use-search-state';
 import { useFilterSortState } from './use-filter-sort-state';
-import { useFilteredAndSortedApplications } from './use-filtered-and-sorted-applications';
+import { useApplicationSorting } from '@/hooks/use-application-sorting';
 import { calculateStatusCounts } from './use-status-counts';
 
 interface UseUnifiedSearchProps {
@@ -52,22 +52,52 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     setCurrentPage(0);
   }, [postcode, coordinates, activeFilters, activeSort]);
 
-  // Get filtered and sorted applications
-  const {
-    applications: filteredApplications,
-    totalCount,
-    totalPages
-  } = useFilteredAndSortedApplications(
-    applications,
-    activeFilters,
-    activeSort,
-    coordinates,
-    postcode,
-    PAGE_SIZE,
-    currentPage
-  );
+  // Apply filtering and sorting
+  const filteredApplications = useMemo(() => {
+    // Filter applications based on activeFilters
+    let filtered = [...(applications || [])];
+    
+    if (activeFilters.status) {
+      filtered = filtered.filter(app => 
+        app.status?.toLowerCase().includes(activeFilters.status.toLowerCase())
+      );
+    }
+    
+    if (activeFilters.type) {
+      filtered = filtered.filter(app => 
+        app.application_type_full?.toLowerCase().includes(activeFilters.type.toLowerCase()) ||
+        app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())
+      );
+    }
+    
+    if (activeFilters.classification) {
+      filtered = filtered.filter(app => 
+        app.class_3?.toLowerCase().includes(activeFilters.classification.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [applications, activeFilters]);
 
-  // Calculate status counts using the imported function
+  // Sort the filtered applications
+  const sortedApplications = useApplicationSorting(
+    filteredApplications,
+    activeSort,
+    coordinates
+  );
+  
+  // Apply pagination
+  const paginatedApplications = useMemo(() => {
+    const startIndex = currentPage * PAGE_SIZE;
+    return sortedApplications.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [sortedApplications, currentPage, PAGE_SIZE]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(sortedApplications.length / PAGE_SIZE));
+  }, [sortedApplications.length, PAGE_SIZE]);
+
+  // Calculate status counts
   const statusCounts = useMemo<StatusCounts>(() => {
     return calculateStatusCounts(applications);
   }, [applications]);
@@ -77,7 +107,7 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     postcode,
     coordinates,
     applications,
-    displayApplications: filteredApplications,
+    displayApplications: paginatedApplications,
     isLoading: isLoadingCoords || isLoadingApps,
     error: searchError || coordsError,
     hasSearched: Boolean(postcode || coordinates),
@@ -98,7 +128,7 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     currentPage,
     setCurrentPage,
     totalPages,
-    totalCount,
+    totalCount: sortedApplications.length,
 
     // Stats
     statusCounts,
