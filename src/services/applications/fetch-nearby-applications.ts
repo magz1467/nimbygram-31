@@ -51,7 +51,7 @@ export const fetchNearbyApplications = async (
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
     // Query with explicit Promise to handle errors correctly
-    const queryResult = await new Promise<{ data: any[] | null, error: any }>((resolve) => {
+    const queryResult = await new Promise<{ data: any[] | null, error: any }>((resolve, reject) => {
       supabase
         .from('crystal_roof')
         .select('*')
@@ -59,7 +59,8 @@ export const fetchNearbyApplications = async (
           resolve(result);
         })
         .catch(error => {
-          resolve({ data: null, error });
+          console.error('Error in Supabase query:', error);
+          reject(error);
         });
     });
     
@@ -91,7 +92,8 @@ export const fetchNearbyApplications = async (
       geom: p.geom,
       geometry: p.geometry,
       latitude: p.latitude,
-      longitude: p.longitude
+      longitude: p.longitude,
+      storybook: p.storybook
     }));
     console.log('Coordinate samples:', sampleCoords);
     
@@ -131,6 +133,8 @@ export const fetchNearbyApplications = async (
 
         if (!withinBounds) {
           console.log(`Property ${property.id} outside bounds: [${propLat}, ${propLng}]`);
+        } else {
+          console.log(`Property ${property.id} WITHIN bounds: [${propLat}, ${propLng}], has storybook: ${property.storybook ? 'Yes' : 'No'}`);
         }
         
         return withinBounds;

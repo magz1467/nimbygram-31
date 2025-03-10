@@ -23,6 +23,11 @@ export const transformAndSortApplications = (
   // Log a sample property to see what data we're working with
   if (properties.length > 0) {
     console.log('Sample property data:', properties[0]);
+    // Log storybook values
+    console.log('Storybook values in properties:', properties.slice(0, 10).map(p => ({
+      id: p.id,
+      storybook: p.storybook
+    })));
   }
 
   // Transform the application data using our shared transformer
@@ -40,12 +45,15 @@ export const transformAndSortApplications = (
     console.log(`Do any properties have storybook field? ${hasStorybook ? 'Yes' : 'No'}`);
   }
   
-  // Filter out applications with null storybook values
+  // TEMPORARILY disable storybook filtering for debugging
+  const filteredApplications = transformedData;
+  /* Commenting out for debugging
   const filteredApplications = transformedData.filter(app => 
     app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
   );
   
   console.log(`Filtered out ${transformedData.length - filteredApplications.length} applications with null storybook values`);
+  */
   
   // Sort by distance
   return filteredApplications.sort((a, b) => {

@@ -140,6 +140,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       return [];
     }
 
+    // Log all storybook values to debug the filtering issue
+    console.log('Storybook values in raw data:', data.map(app => ({
+      id: app.id,
+      storybook: app.storybook
+    })));
+
     // Transform all application data
     const transformedApplications = data
       .map(app => transformApplicationData(app, coordinates))
@@ -154,7 +160,9 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       console.log('Storybook field sample:', data.slice(0, 5).map(app => app.storybook));
     }
     
-    // Filter out applications with null storybook values
+    // IMPORTANT: Temporarily disable storybook filtering for debugging
+    const filteredApplications = transformedApplications;
+    /* Commenting out storybook filter for debugging
     const filteredApplications = transformedApplications.filter(app => 
       app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
     );
@@ -165,6 +173,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     if (filteredApplications.length === 0 && transformedApplications.length > 0) {
       console.warn(`⚠️ All ${transformedApplications.length} applications were filtered out because they had null storybook values`);
     }
+    */
     
     // Sort by distance
     return filteredApplications.sort((a, b) => {
