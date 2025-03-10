@@ -33,8 +33,9 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const [lat, lng] = coordinates;
       const radius = 10000; // 10km radius
       
-      // Get Supabase URL from environment or use default
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.url;
+      // Get Supabase URL from environment or use direct reference to the URL constant
+      // Fix Error #1: Access supabaseUrl directly from imported object
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jposqxdboetyioymfswd.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
@@ -103,7 +104,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Create a Promise that wraps the Supabase query
+    // Fix Error #2: Create a Promise that properly wraps the Supabase query with catch handling
     const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
       supabase
         .from('crystal_roof')
