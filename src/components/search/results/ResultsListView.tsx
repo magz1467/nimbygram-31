@@ -1,11 +1,9 @@
-
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
-import { Button } from "@/components/ui/button";
-import { RotateCw, ChevronDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LoadingSkeletons } from "./components/LoadingSkeletons";
+import { ErrorMessage } from "./components/ErrorMessage";
+import { LoadMoreButton } from "./components/LoadMoreButton";
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -49,8 +47,12 @@ export const ResultsListView = ({
   // Use displayTerm if available, otherwise use searchTerm
   const displayLocation = displayTerm || searchTerm || postcode;
   
-  // Add state to detect long-running searches
+  // State to detect long-running searches
   const [isLongSearch, setIsLongSearch] = useState(false);
+  
+  // State to track loaded applications
+  const [loadedApps, setLoadedApps] = useState<Application[]>([]);
+  const [visiblePages, setVisiblePages] = useState<number>(1);
   
   // Set a timer to detect long-running searches
   useEffect(() => {
@@ -70,10 +72,6 @@ export const ResultsListView = ({
     };
   }, [isLoading]);
 
-  // State to track loaded applications
-  const [loadedApps, setLoadedApps] = useState<Application[]>([]);
-  const [visiblePages, setVisiblePages] = useState<number>(1);
-  
   // Reset loaded apps when applications change
   useEffect(() => {
     if (applications.length > 0) {
@@ -81,13 +79,6 @@ export const ResultsListView = ({
       setVisiblePages(1);
     }
   }, [applications]);
-
-  // Function to load more results
-  const handleLoadMore = () => {
-    if (onPageChange && currentPage < totalPages - 1) {
-      onPageChange(currentPage + 1);
-    }
-  };
 
   // When new results come in after a page change, add them to loadedApps
   useEffect(() => {
@@ -101,50 +92,22 @@ export const ResultsListView = ({
         setVisiblePages(currentPage + 1);
       }
     }
-  }, [applications, currentPage]);
+  }, [applications, currentPage, loadedApps]);
+
+  // Function to load more results
+  const handleLoadMore = () => {
+    if (onPageChange && currentPage < totalPages - 1) {
+      onPageChange(currentPage + 1);
+    }
+  };
 
   // If loading, show skeleton cards
   if (isLoading) {
-    return (
-      <div className="space-y-6 py-8">
-        {[1, 2, 3].map((i) => (
-          <div 
-            key={i} 
-            className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto h-[300px] animate-pulse"
-          >
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-24 w-full" />
-              <div className="flex gap-2 mt-4">
-                <Skeleton className="h-8 w-24" />
-                <Skeleton className="h-8 w-24" />
-              </div>
-            </div>
-          </div>
-        ))}
-        
-        {/* Show message for long-running searches */}
-        {isLongSearch && (
-          <div className="text-center mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md mx-auto">
-            <h4 className="text-amber-800 font-medium">Search taking longer than usual</h4>
-            <p className="text-amber-700 text-sm mt-1">
-              We're still looking for applications in this area. This might be a busy area with many applications.
-            </p>
-            {onRetry && (
-              <Button onClick={onRetry} variant="outline" size="sm" className="mt-3 gap-2">
-                <RotateCw className="h-3 w-3" />
-                Try again
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    );
+    return <LoadingSkeletons isLongSearch={isLongSearch} onRetry={onRetry} />;
   }
 
-  // If error or no applications found, show empty state
-  if (error || !applications.length) {
+  // Parse error message for better display
+  const getErrorInfo = () => {
     let errorTitle = "No results found";
     let errorMessage = `We couldn't find any planning applications for ${displayLocation}. Please try another search.`;
     
@@ -178,23 +141,16 @@ export const ResultsListView = ({
         `We encountered an error while searching: ${errorText || "Please try another location or search term."}`;
     }
 
-    return (
-      <div className="py-16 text-center max-w-md mx-auto">
-        <h3 className="text-lg font-semibold mb-2">{errorTitle}</h3>
-        <p className="text-gray-500 mb-6 text-center max-w-md">
-          {errorMessage}
-        </p>
-        {onRetry && (
-          <Button onClick={onRetry} variant="outline" className="gap-2">
-            <RotateCw className="h-4 w-4" />
-            Try Again
-          </Button>
-        )}
-      </div>
-    );
+    return { errorTitle, errorMessage };
+  };
+
+  // If error or no applications found, show empty state
+  if (error || !applications.length) {
+    const { errorTitle, errorMessage } = getErrorInfo();
+    return <ErrorMessage title={errorTitle} message={errorMessage} onRetry={onRetry} />;
   }
 
-  // Otherwise, render the application cards
+  // Otherwise, render the application cards with loaded applications
   return (
     <div className="py-4 space-y-8">
       {/* Display all loaded applications */}
@@ -212,32 +168,13 @@ export const ResultsListView = ({
         />
       ))}
       
-      {/* "See More" Button - only show if there are more pages to load */}
-      {visiblePages < totalPages && (
-        <div className="flex justify-center py-8 border-t mt-6">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            onClick={handleLoadMore}
-            className="gap-2 px-8"
-          >
-            See More Results
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-          <div className="text-sm text-gray-500 ml-4 self-center">
-            Showing {loadedApps.length} of {totalCount} results
-          </div>
-        </div>
-      )}
-      
-      {/* Show completion message when all results are loaded */}
-      {visiblePages >= totalPages && totalPages > 1 && (
-        <div className="text-center py-6 border-t mt-6">
-          <p className="text-sm text-gray-500">
-            Showing all {loadedApps.length} results
-          </p>
-        </div>
-      )}
+      {/* "See More" Button */}
+      <LoadMoreButton 
+        onLoadMore={handleLoadMore}
+        loadedCount={loadedApps.length}
+        totalCount={totalCount}
+        isLastPage={visiblePages >= totalPages}
+      />
     </div>
   );
 };
