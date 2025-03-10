@@ -29,7 +29,7 @@ export const useFilteredAndSortedApplications = (
   const validFilters = activeFilters || {};
   const validCurrentPage = currentPage || 0;
   const validPageSize = pageSize || 25;
-  
+
   // Get filtered applications using the filtered applications hook
   const result = useFilteredApplications(
     validApplications,
@@ -40,13 +40,13 @@ export const useFilteredAndSortedApplications = (
     validCurrentPage,
     validPageSize
   );
-  
+
   // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
     const count = result?.totalCount ?? 0;
     return Math.max(1, Math.ceil(count / validPageSize));
   }, [result?.totalCount, validPageSize]);
-  
+
   // Return safe values with fallbacks
   return {
     applications: result?.applications || [],
