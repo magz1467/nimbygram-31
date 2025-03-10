@@ -23,8 +23,9 @@ interface ResultsContainerProps {
   displayTerm?: string;
   onRetry?: () => void;
   error?: Error | null;
-  hasMore?: boolean;
-  loadMoreResults?: () => void;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
   totalCount?: number;
 }
 
@@ -42,8 +43,9 @@ export const ResultsContainer = ({
   displayTerm,
   onRetry,
   error,
-  hasMore = false,
-  loadMoreResults,
+  currentPage = 0,
+  totalPages = 1,
+  onPageChange,
   totalCount = 0
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
@@ -83,6 +85,13 @@ export const ResultsContainer = ({
     handleMarkerClick(id);
   };
   
+  // Handler for retrying the search
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    }
+  };
+
   // Handler to close the map and return to results list
   const handleCloseMap = () => {
     setShowMap(false);
@@ -98,15 +107,16 @@ export const ResultsContainer = ({
         onSeeOnMap={handleSeeOnMap}
         searchTerm={searchTerm}
         displayTerm={displayTerm}
-        onRetry={onRetry}
+        onRetry={handleRetry}
         selectedId={selectedId}
         coordinates={coordinates}
         handleMarkerClick={handleMarkerClick}
         allApplications={applications}
         postcode={searchTerm}
         error={error}
-        hasMore={hasMore}
-        loadMoreResults={loadMoreResults}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
         totalCount={totalCount}
       />
       

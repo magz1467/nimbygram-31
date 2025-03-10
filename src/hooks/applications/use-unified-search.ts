@@ -6,7 +6,6 @@ import { useSearchState } from './use-search-state';
 import { useFilterSortState } from './use-filter-sort-state';
 import { useApplicationSorting } from '@/hooks/use-application-sorting';
 import { calculateStatusCounts } from './use-status-counts';
-import { fetchApplicationsPage } from '@/utils/fetchApplications';
 
 interface UseUnifiedSearchProps {
   initialSearch?: {
@@ -19,21 +18,20 @@ interface UseUnifiedSearchProps {
 }
 
 export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSearchProps) => {
-  const PAGE_SIZE = 25;
   const [currentPage, setCurrentPage] = useState(0);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const PAGE_SIZE = 25;
 
-  // Use search state for coordinates fetching
+  // Use search state for coordinates and applications fetching
   const {
     postcode,
     coordinates,
+    applications = [],
     isLoadingCoords,
+    isLoadingApps,
     error: searchError,
     coordsError,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    refetch
   } = useSearchState(initialSearch?.searchTerm || '');
 
   // Use filter sort state for UI controls
@@ -49,66 +47,15 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     handleSortChange
   } = useFilterSortState();
 
-  // Load initial page of results when coordinates change
+  // Reset pagination when search changes
   useEffect(() => {
-    const loadInitialPage = async () => {
-      if (coordinates) {
-        setIsLoadingPage(true);
-        setCurrentPage(0);
-        
-        try {
-          const result = await fetchApplicationsPage(coordinates, 0, PAGE_SIZE);
-          setApplications(result.applications);
-          setTotalCount(result.totalCount);
-          setHasMore(result.hasMore);
-        } catch (error) {
-          console.error('Error loading initial page:', error);
-          setApplications([]);
-          setTotalCount(0);
-          setHasMore(false);
-        } finally {
-          setIsLoadingPage(false);
-        }
-      }
-    };
-    
-    loadInitialPage();
-  }, [coordinates, retryCount]);
-
-  // Load next page when currentPage changes (except on initial load)
-  useEffect(() => {
-    const loadNextPage = async () => {
-      if (coordinates && currentPage > 0) {
-        setIsLoadingPage(true);
-        
-        try {
-          const result = await fetchApplicationsPage(coordinates, currentPage, PAGE_SIZE);
-          setApplications(prev => [...prev, ...result.applications]);
-          setHasMore(result.hasMore);
-          // Don't update totalCount here as it should remain consistent
-        } catch (error) {
-          console.error('Error loading next page:', error);
-          // Don't change existing applications on error
-        } finally {
-          setIsLoadingPage(false);
-        }
-      }
-    };
-    
-    loadNextPage();
-  }, [currentPage, coordinates]);
-
-  // Reset pagination and map state when search changes
-  useEffect(() => {
-    setShowMap(false);
-    setSelectedId(null);
     setCurrentPage(0);
-  }, [postcode, coordinates, setShowMap, setSelectedId]);
+  }, [postcode, coordinates, activeFilters, activeSort]);
 
-  // Apply filtering 
+  // Apply filtering and sorting
   const filteredApplications = useMemo(() => {
     // Filter applications based on activeFilters
-    let filtered = [...applications];
+    let filtered = [...(applications || [])];
     
     if (activeFilters.status) {
       filtered = filtered.filter(app => 
@@ -139,33 +86,31 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     coordinates
   );
   
+  // Apply pagination
+  const paginatedApplications = useMemo(() => {
+    const startIndex = currentPage * PAGE_SIZE;
+    return sortedApplications.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [sortedApplications, currentPage, PAGE_SIZE]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(sortedApplications.length / PAGE_SIZE));
+  }, [sortedApplications.length, PAGE_SIZE]);
+
   // Calculate status counts
   const statusCounts = useMemo<StatusCounts>(() => {
     return calculateStatusCounts(applications);
   }, [applications]);
-
-  // Function to load more results
-  const loadMoreResults = () => {
-    if (hasMore && !isLoadingPage) {
-      setCurrentPage(prev => prev + 1);
-    }
-  };
-
-  // Calculate if we're loading
-  const isLoading = isLoadingCoords || isLoadingPage;
-
-  // Calculate if we have searched
-  const hasSearched = Boolean(postcode || coordinates);
 
   return {
     // Search state
     postcode,
     coordinates,
     applications,
-    displayApplications: sortedApplications,
-    isLoading,
+    displayApplications: paginatedApplications,
+    isLoading: isLoadingCoords || isLoadingApps,
     error: searchError || coordsError,
-    hasSearched,
+    hasSearched: Boolean(postcode || coordinates),
 
     // UI state
     showMap,
@@ -181,11 +126,14 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
 
     // Pagination
     currentPage,
-    loadMoreResults,
-    hasMore,
-    totalCount,
+    setCurrentPage,
+    totalPages,
+    totalCount: sortedApplications.length,
 
     // Stats
-    statusCounts
+    statusCounts,
+    
+    // Actions
+    refetch
   };
 };

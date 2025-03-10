@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
+import { StatusCounts } from "@/types/application-types";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -40,8 +41,9 @@ export const SearchViewContent = ({
     handleSortChange,
     handlePostcodeSelect,
     error,
-    hasMore,
-    loadMoreResults,
+    currentPage,
+    setCurrentPage,
+    totalPages,
     totalCount,
     statusCounts
   } = useUnifiedSearch({ 
@@ -95,8 +97,9 @@ export const SearchViewContent = ({
           searchTerm={initialSearch.searchTerm}
           displayTerm={initialSearch.displayTerm}
           error={error}
-          hasMore={hasMore}
-          loadMoreResults={loadMoreResults}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
           totalCount={totalCount}
         />
       </div>
