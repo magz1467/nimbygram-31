@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -19,57 +20,98 @@ export const transformApplicationData = (
     image: app.image
   });
   
-  // Extract coordinates from geometry - more flexible approach
+  // Extract coordinates from geometry - prioritize the geometry column for accuracy
   let coordinates: [number, number] | null = null;
   
   try {
-    // Try multiple approaches to get coordinates
-    if (app.latitude && app.longitude) {
-      // Direct latitude/longitude fields - already in [lat, lng] order
-      coordinates = [
-        parseFloat(app.latitude),
-        parseFloat(app.longitude)
-      ];
-    } else if (app.geom) {
-      // Geometry object - GeoJSON uses [lng, lat] order, so we need to swap
-      if (typeof app.geom === 'object' && app.geom.type === 'Point') {
-        // GeoJSON Point objects have coordinates in [longitude, latitude] order!
-        coordinates = [
-          parseFloat(app.geom.coordinates[1]), // lat
-          parseFloat(app.geom.coordinates[0])  // lng
-        ];
-      } else if (typeof app.geom === 'object' && Array.isArray(app.geom.coordinates)) {
-        // GeoJSON coordinate arrays are in [longitude, latitude] order!
-        coordinates = [
-          parseFloat(app.geom.coordinates[1]), // lat
-          parseFloat(app.geom.coordinates[0])  // lng
-        ];
-      } else if (typeof app.geom === 'string') {
-        // Handle case where geom might be a stringified object
+    // First try: Use the geometry column if available (most accurate)
+    if (app.geom) {
+      console.log('Found geom field:', app.geom);
+      // Handle PostGIS geometry format (WKT, GeoJSON, etc.)
+      if (typeof app.geom === 'string' && app.geom.startsWith('SRID=4326;POINT(')) {
+        // Parse WKT format: "SRID=4326;POINT(lng lat)"
+        const match = app.geom.match(/POINT\(([^ ]+) ([^)]+)\)/);
+        if (match && match[1] && match[2]) {
+          // WKT is in longitude, latitude order
+          coordinates = [
+            parseFloat(match[2]), // lat
+            parseFloat(match[1])  // lng
+          ];
+          console.log('Extracted coordinates from WKT geometry:', coordinates);
+        }
+      }
+      // Handle GeoJSON geometry object
+      else if (typeof app.geom === 'object') {
+        if (app.geom.type === 'Point' && Array.isArray(app.geom.coordinates)) {
+          // GeoJSON Point objects have coordinates in [longitude, latitude] order!
+          coordinates = [
+            parseFloat(app.geom.coordinates[1]), // lat
+            parseFloat(app.geom.coordinates[0])  // lng
+          ];
+          console.log('Extracted coordinates from GeoJSON Point:', coordinates);
+        } else if (Array.isArray(app.geom.coordinates)) {
+          // Generic GeoJSON coordinate arrays are in [longitude, latitude] order!
+          coordinates = [
+            parseFloat(app.geom.coordinates[1]), // lat
+            parseFloat(app.geom.coordinates[0])  // lng
+          ];
+          console.log('Extracted coordinates from GeoJSON coordinates array:', coordinates);
+        }
+      }
+      // Handle stringified geometry
+      else if (typeof app.geom === 'string') {
         try {
           const geomObj = JSON.parse(app.geom);
-          if (geomObj.coordinates) {
+          if (geomObj.coordinates && Array.isArray(geomObj.coordinates)) {
             // GeoJSON coordinates are [longitude, latitude]
             coordinates = [
               parseFloat(geomObj.coordinates[1]), // lat
               parseFloat(geomObj.coordinates[0])  // lng
             ];
+            console.log('Extracted coordinates from stringified geometry:', coordinates);
           }
         } catch (e) {
           console.warn('⚠️ Could not parse geom string:', e);
         }
       }
-    } else if (app.centroid) {
-      // Try using centroid if available - likely in [lng, lat] order too
+    }
+
+    // Fallback 1: Direct latitude/longitude fields
+    if (!coordinates && app.latitude && app.longitude) {
+      coordinates = [
+        parseFloat(app.latitude),
+        parseFloat(app.longitude)
+      ];
+      console.log('Using direct latitude/longitude fields:', coordinates);
+    } 
+    // Fallback 2: Centroid
+    else if (!coordinates && app.centroid) {
       if (typeof app.centroid === 'object' && app.centroid.coordinates) {
         coordinates = [
           parseFloat(app.centroid.coordinates[1]), // lat
           parseFloat(app.centroid.coordinates[0])  // lng
         ];
+        console.log('Using centroid coordinates:', coordinates);
+      } else if (typeof app.centroid === 'object' && app.centroid.lat && app.centroid.lon) {
+        coordinates = [
+          parseFloat(app.centroid.lat),
+          parseFloat(app.centroid.lon)
+        ];
+        console.log('Using centroid lat/lon:', coordinates);
       }
     }
     
-    console.log('📍 Coordinates extracted:', coordinates);
+    // Validate coordinates
+    if (coordinates) {
+      // Check for invalid or extreme coordinates
+      if (isNaN(coordinates[0]) || isNaN(coordinates[1]) || 
+          Math.abs(coordinates[0]) > 90 || Math.abs(coordinates[1]) > 180) {
+        console.warn('⚠️ Invalid coordinates detected:', coordinates);
+        coordinates = null;
+      } else {
+        console.log('✅ Final valid coordinates:', coordinates);
+      }
+    }
   } catch (e) {
     console.warn('⚠️ Error extracting coordinates:', e);
   }

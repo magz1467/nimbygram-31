@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
-import { addDistanceToApplications, sortApplicationsByDistance } from "@/utils/applicationDistance";
 import { useApplicationSorting } from './use-application-sorting';
 import { filterByLocationRelevance, transformAndSortApplications } from '@/services/applications/transform-applications';
 
@@ -42,7 +41,7 @@ export const useFilteredApplications = (
       searchTerm.trim().length >= 3 && // At least 3 characters
       !/^\s*$/.test(searchTerm); // Not just whitespace
     
-    // Apply location relevance filtering for place names and postcodes
+    // Apply location relevance filtering for any meaningful search terms
     const locationFilteredApplications = isSpecificSearchTerm
       ? filterByLocationRelevance(filteredApplications, searchTerm)
       : filteredApplications;
@@ -57,7 +56,8 @@ export const useFilteredApplications = (
     }
     
     // Apply explicit sorting based on active sort type, if different from default
-    if (activeSort && activeSort !== 'distance') {
+    // Only do this if not sorting by distance, as transformAndSortApplications already handles that
+    if (activeSort && activeSort !== 'distance' && activeSort !== 'nearest') {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
         type: activeSort,

@@ -30,6 +30,12 @@ export const filterByLocationRelevance = (
     // Check for exact place name/postcode match first (highest priority)
     if (normalizedAddress.includes(normalizedSearchTerm)) {
       score += 10; // Increase score for exact matches
+      
+      // Boost score for word boundary matches to prioritize exact place names
+      const placeNamePattern = new RegExp(`\\b${normalizedSearchTerm}\\b`, 'i');
+      if (placeNamePattern.test(app.address)) {
+        score += 5; // Additional points for exact word match
+      }
     } 
     // For postcodes, check if the postcode portion matches
     else if (normalizedSearchTerm.length >= 6 && normalizedSearchTerm.match(/[a-z]{1,2}[0-9][0-9a-z]?\s*[0-9][a-z]{2}/i)) {
@@ -44,8 +50,8 @@ export const filterByLocationRelevance = (
       // Look for the place name as a whole word, not just part of another word
       // This helps distinguish "Wendover" from places that might contain it as a substring
       const placeNamePattern = new RegExp(`\\b${normalizedSearchTerm}\\b`, 'i');
-      if (placeNamePattern.test(normalizedAddress)) {
-        score += 8; // Higher score for exact place name matches
+      if (placeNamePattern.test(app.address)) {
+        score += 15; // Higher score for exact place name matches
       }
     }
     
@@ -137,8 +143,8 @@ export const transformAndSortApplications = (
   // Sort by score first (from filterByLocationRelevance), then by distance
   const sortedApps = [...appsWithDistance].sort((a, b) => {
     // If both have scores and they're different, sort by score first
-    if (a.score && b.score && a.score !== b.score) {
-      return b.score - a.score; // Higher scores first
+    if (a.score > 0 || b.score > 0) {
+      return (b.score || 0) - (a.score || 0); // Higher scores first
     }
     // Otherwise sort by distance
     return (a.distance || Number.MAX_SAFE_INTEGER) - (b.distance || Number.MAX_SAFE_INTEGER);
