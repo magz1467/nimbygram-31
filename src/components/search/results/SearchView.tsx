@@ -59,12 +59,13 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
     }
   }, [error, onError]);
 
-  // Use the filtered applications hook with coordinates
+  // Use the filtered applications hook with coordinates and search term
   const displayApplications = useFilteredApplications(
     applications || [],
     activeFilters,
     activeSort,
-    coordinates
+    coordinates,
+    initialSearch?.searchTerm // Pass search term for location relevance
   );
 
   // Handle marker click to show map and select application
