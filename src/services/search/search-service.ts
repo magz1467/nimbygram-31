@@ -70,13 +70,21 @@ const searchWithEdgeFunction = async (
  * Makes a direct database query
  */
 const searchWithDirectQuery = async (searchTerm?: string): Promise<Application[]> => {
+  console.log('📊 Direct query search with term:', searchTerm);
   let query = supabase
     .from('crystal_roof')
     .select('*');
   
-  // If we have a search term, use it to filter results
+  // If we have a search term, use it to filter results with OR conditions
   if (searchTerm) {
-    query = query.or(`address.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+    const searchTermLower = searchTerm.toLowerCase();
+    // Improve location matching by specifically searching these fields
+    query = query.or(
+      `address.ilike.%${searchTermLower}%,` +
+      `description.ilike.%${searchTermLower}%,` + 
+      `ward_name.ilike.%${searchTermLower}%,` + 
+      `local_authority_district_name.ilike.%${searchTermLower}%`
+    );
   }
   
   const { data, error } = await query;
@@ -85,6 +93,7 @@ const searchWithDirectQuery = async (searchTerm?: string): Promise<Application[]
     throw error;
   }
 
+  console.log(`📊 Direct query returned ${data?.length || 0} results`);
   return data || [];
 }
 
@@ -150,20 +159,32 @@ const transformAndSortResults = (
   coordinates: [number, number] | null,
   searchTerm?: string
 ): Application[] => {
+  console.log('🔄 Transforming and sorting results:', { 
+    resultCount: results.length, 
+    hasCoordinates: !!coordinates, 
+    searchTerm 
+  });
+  
   // First filter results if we have a search term and no coordinates
   let filteredResults = results;
+  
   if (searchTerm && !coordinates) {
     const searchTermLower = searchTerm.toLowerCase();
+    console.log('🔍 Filtering by search term without coordinates:', searchTermLower);
+    
+    // Add more precise filtering for location searches
     filteredResults = results.filter(app => {
-      // Check if the application data contains the search term
-      return (
-        (app.address && app.address.toLowerCase().includes(searchTermLower)) ||
-        (app.description && app.description.toLowerCase().includes(searchTermLower)) ||
-        (app.ward_name && app.ward_name.toLowerCase().includes(searchTermLower)) ||
-        (app.local_authority_district_name && 
-         app.local_authority_district_name.toLowerCase().includes(searchTermLower))
-      );
+      // Check specific location fields
+      const addressMatch = app.address && app.address.toLowerCase().includes(searchTermLower);
+      const wardMatch = app.ward_name && app.ward_name.toLowerCase().includes(searchTermLower);
+      const districtMatch = app.local_authority_district_name && 
+                            app.local_authority_district_name.toLowerCase().includes(searchTermLower);
+      const descriptionMatch = app.description && app.description.toLowerCase().includes(searchTermLower);
+      
+      return addressMatch || wardMatch || districtMatch || descriptionMatch;
     });
+    
+    console.log(`🔍 Filtered from ${results.length} to ${filteredResults.length} results by text`);
   }
 
   // Transform application data
@@ -183,6 +204,7 @@ const transformAndSortResults = (
   // Sort results
   if (coordinates) {
     // Sort by distance if we have coordinates
+    console.log('🔄 Sorting by distance from coordinates');
     return transformedResults.sort((a, b) => {
       if (!a.coordinates || !b.coordinates) return 0;
       
@@ -192,8 +214,10 @@ const transformAndSortResults = (
       return distanceA - distanceB;
     });
   } else if (searchTerm) {
-    // If we only have a search term, sort by relevance
+    // If we only have a search term, sort by relevance with improved location matching
     const searchTermLower = searchTerm.toLowerCase();
+    console.log('🔄 Sorting by relevance to:', searchTermLower);
+    
     return transformedResults.sort((a, b) => {
       const relevanceA = calculateRelevance(a, searchTermLower);
       const relevanceB = calculateRelevance(b, searchTermLower);
@@ -204,6 +228,7 @@ const transformAndSortResults = (
   }
   
   // Default: sort by most recent
+  console.log('🔄 Using default sort by submission date');
   return transformedResults.sort((a, b) => {
     const dateA = a.submittedDate || a.submissionDate || a.received_date || '';
     const dateB = b.submittedDate || b.submissionDate || b.received_date || '';
@@ -213,12 +238,32 @@ const transformAndSortResults = (
 };
 
 /**
- * Calculate relevance score for text search
+ * Calculate relevance score for text search with improved location matching
  */
 const calculateRelevance = (application: Application, searchTerm: string): number => {
   let score = 0;
   
-  // Check for exact matches in address (highest priority)
+  // Exact location matches should get HIGHEST priority
+  // This is the main fix for the Wendover issue
+  if (application.ward && application.ward.toLowerCase() === searchTerm) {
+    // Exact ward name match (e.g. Wendover)
+    score += 300;
+  } else if (application.ward && application.ward.toLowerCase().includes(searchTerm)) {
+    // Ward name contains the search term
+    score += 200;
+  }
+  
+  // Check for district matches
+  const district = application.local_authority_district_name || '';
+  if (district.toLowerCase() === searchTerm) {
+    // Exact district match
+    score += 250;
+  } else if (district.toLowerCase().includes(searchTerm)) {
+    // District contains search term
+    score += 150;
+  }
+  
+  // Check for exact matches in address (high priority)
   if (application.address && application.address.toLowerCase().includes(searchTerm)) {
     score += 100;
     // Exact match at start of address gets higher score
@@ -227,16 +272,12 @@ const calculateRelevance = (application: Application, searchTerm: string): numbe
     }
   }
   
-  // Check for matches in description
+  // Check for matches in description (lower priority)
   if (application.description && application.description.toLowerCase().includes(searchTerm)) {
     score += 30;
   }
   
-  // Check for matches in ward name
-  if (application.ward && application.ward.toLowerCase().includes(searchTerm)) {
-    score += 20;
-  }
-  
+  console.log(`🔢 Relevance score for app ${application.id}: ${score} (${application.ward || 'no ward'}, ${district || 'no district'})`);
   return score;
 };
 

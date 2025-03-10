@@ -48,14 +48,29 @@ serve(async (req) => {
       
       // Add text search if provided
       if (search_term) {
-        query = query.or(`address.ilike.%${search_term}%,description.ilike.%${search_term}%,ward_name.ilike.%${search_term}%,local_authority_district_name.ilike.%${search_term}%`)
+        // Improved search text filtering to include more fields
+        const searchCondition = [
+          `address.ilike.%${search_term}%`,
+          `description.ilike.%${search_term}%`,
+          `ward_name.ilike.%${search_term}%`,
+          `local_authority_district_name.ilike.%${search_term}%`
+        ].join(',')
+        
+        query = query.or(searchCondition)
       }
     } else if (search_term) {
-      // Text-only search
+      // Text-only search - Improved to better match location names
+      const searchCondition = [
+        `address.ilike.%${search_term}%`,
+        `description.ilike.%${search_term}%`,
+        `ward_name.ilike.%${search_term}%`,
+        `local_authority_district_name.ilike.%${search_term}%`
+      ].join(',')
+      
       query = supabaseClient
         .from('crystal_roof')
         .select('*')
-        .or(`address.ilike.%${search_term}%,description.ilike.%${search_term}%,ward_name.ilike.%${search_term}%,local_authority_district_name.ilike.%${search_term}%`)
+        .or(searchCondition)
         .limit(page_size)
         .range(page_number * page_size, (page_number + 1) * page_size - 1)
     } else {
@@ -101,10 +116,18 @@ serve(async (req) => {
       totalCount = countResult.data || 0
       countError = countResult.error
     } else if (search_term) {
+      // Improved count query for location searches
+      const searchCondition = [
+        `address.ilike.%${search_term}%`,
+        `description.ilike.%${search_term}%`,
+        `ward_name.ilike.%${search_term}%`,
+        `local_authority_district_name.ilike.%${search_term}%`
+      ].join(',')
+      
       const countResult = await supabaseClient
         .from('crystal_roof')
         .select('id', { count: 'exact', head: true })
-        .or(`address.ilike.%${search_term}%,description.ilike.%${search_term}%,ward_name.ilike.%${search_term}%,local_authority_district_name.ilike.%${search_term}%`)
+        .or(searchCondition)
         .timeout(15000)
         
       totalCount = countResult.count || 0
