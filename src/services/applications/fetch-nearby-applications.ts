@@ -23,10 +23,6 @@ export const fetchNearbyApplications = async (
   const [lat, lng] = coordinates;
   console.log(`📍 Fetching applications within ${radius}km of [${lat}, ${lng}]`);
   
-  // Try using the RPC function first
-  let properties;
-  let error;
-  
   try {
     // Calculate bounds for a radius search
     const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
@@ -44,8 +40,8 @@ export const fetchNearbyApplications = async (
       .from('crystal_roof')
       .select('*');
         
-    properties = queryResult.data;
-    error = queryResult.error;
+    let properties = queryResult.data;
+    const error = queryResult.error;
     
     console.log('🔍 Query result:', { 
       success: !error, 
@@ -55,11 +51,11 @@ export const fetchNearbyApplications = async (
     
     // Filter the results in JavaScript based on approximate distance
     if (properties && properties.length > 0) {
-      console.log('Raw properties before filtering:', properties.slice(0, 3));
-      
       // Store the original count before filtering
       const originalCount = properties.length;
+      console.log('Raw properties before filtering:', properties.slice(0, 3));
       
+      // Filter applications by distance
       properties = properties.filter(property => {
         try {
           // Extract coordinates - check both geom and geometry
@@ -77,30 +73,19 @@ export const fetchNearbyApplications = async (
             propLat = parseFloat(property.latitude);
             propLng = parseFloat(property.longitude);
           } else {
-            console.log(`⚠️ Property ${property.id} missing coordinates`);
             return false; // Skip if no coordinates
           }
           
-          // Log some coordinates to debug
-          if (Math.random() < 0.01) { // Log ~1% of properties to avoid console spam
-            console.log(`Property ${property.id} coordinates: [${propLat}, ${propLng}]`);
+          // Check if coordinates are valid numbers
+          if (isNaN(propLat) || isNaN(propLng)) {
+            return false;
           }
           
-          // Check if within extended bounds
-          const inBounds = (
-            propLat >= latMin && 
-            propLat <= latMax && 
-            propLng >= lngMin && 
-            propLng <= lngMax
-          );
-
-          // Double-check with actual distance calculation (more accurate than bounding box)
-          if (inBounds) {
-            const actualDistance = calculateDistance([lat, lng], [propLat, propLng]);
-            return actualDistance <= radius;
-          }
+          // Calculate actual distance
+          const distance = calculateDistance([lat, lng], [propLat, propLng]);
           
-          return false;
+          // Only include applications within the specified radius
+          return distance <= radius;
         } catch (err) {
           console.error(`Error filtering property ${property.id}:`, err);
           return false;
@@ -109,10 +94,10 @@ export const fetchNearbyApplications = async (
       
       console.log(`✅ Filtered from ${originalCount} to ${properties.length} applications within ${radius}km radius`);
       
-      // Pre-calculate distances to assist with sorting
+      // Calculate and add distance for each property
       properties = properties.map(property => {
         try {
-          // Extract coordinates again (duplicating logic but necessary for distance calculation)
+          // Extract coordinates again for distance calculation
           let propLat, propLng;
           
           if (property.geom?.coordinates) {
@@ -128,10 +113,10 @@ export const fetchNearbyApplications = async (
             return property; // Skip distance calculation if no coordinates
           }
           
-          // Calculate actual distance
+          // Calculate distance
           const distance = calculateDistance([lat, lng], [propLat, propLng]);
           
-          // Add distance to the property object for sorting
+          // Add distance to the property object
           return {
             ...property,
             calculatedDistance: distance
@@ -151,22 +136,22 @@ export const fetchNearbyApplications = async (
       
       // Log the closest properties to verify sorting
       if (properties.length > 0) {
-        console.log('Top 3 closest properties:');
-        properties.slice(0, 3).forEach((prop, i) => {
+        console.log('Top 5 closest properties:');
+        properties.slice(0, 5).forEach((prop, i) => {
           console.log(`[${i}] ID: ${prop.id}, Distance: ${prop.calculatedDistance?.toFixed(2)}km`);
         });
       }
     }
+    
+    if (error) {
+      console.error('❌ Error fetching application data:', error);
+      return null;
+    }
+
+    console.log(`✨ Returning ${properties?.length || 0} applications sorted by distance`);
+    return properties || [];
   } catch (error) {
     console.error('❌ Error fetching application data:', error);
     return null;
   }
-
-  if (error) {
-    console.error('❌ Error fetching application data:', error);
-    return null;
-  }
-
-  console.log(`✨ Received ${properties?.length || 0} applications from database`);
-  return properties || [];
 };

@@ -37,27 +37,29 @@ export const useFilteredApplications = (
       ? addDistanceToApplications(filteredApplications, searchCoordinates)
       : filteredApplications;
     
-    // Apply sorting based on active sort type or default to distance sort if coordinates available
-    const finalSortedApplications = activeSort ? 
-      useApplicationSorting({
-        type: activeSort,
-        applications: applicationsWithDistance
-      }) : 
-      // If no sort specified but we have coordinates, default to distance sort
-      (searchCoordinates ? 
-        useApplicationSorting({
-          type: 'distance',
+    // Determine which sort type to use
+    // If coordinates are available, prioritize distance sort
+    const effectiveSort = searchCoordinates 
+      ? (activeSort || 'distance') 
+      : activeSort;
+    
+    console.log('Using effective sort type:', effectiveSort);
+    
+    // Apply sorting based on determined sort type
+    const finalSortedApplications = effectiveSort
+      ? useApplicationSorting({
+          type: effectiveSort,
           applications: applicationsWithDistance
-        }) : 
-        applicationsWithDistance);
+        }) 
+      : applicationsWithDistance;
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
     
     // Log the first few results to verify distance sorting
     if (finalSortedApplications.length > 0 && searchCoordinates) {
-      console.log('First 3 sorted applications distances:');
-      finalSortedApplications.slice(0, 3).forEach((app, i) => {
-        console.log(`[${i}] ${app.id}: ${app.address || 'No address'} - ${app.distance}`);
+      console.log('First 5 sorted applications distances:');
+      finalSortedApplications.slice(0, 5).forEach((app, i) => {
+        console.log(`[${i}] ${app.id}: ${app.address || 'No address'} - ${app.distance} (${app.distanceValue?.toFixed(2)}km)`);
       });
     }
     

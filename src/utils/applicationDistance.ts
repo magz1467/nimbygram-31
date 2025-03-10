@@ -11,6 +11,8 @@ export const addDistanceToApplications = (
 ): Application[] => {
   if (!searchCoordinates) return applications;
   
+  console.log(`🔄 Adding distance to ${applications.length} applications from coordinates: [${searchCoordinates}]`);
+  
   return applications.map(app => {
     if (!app.coordinates) return app;
     
