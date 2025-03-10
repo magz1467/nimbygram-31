@@ -94,6 +94,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
+    // Fix: Create a properly formed Promise that has .catch method
     const queryPromise = new Promise<Application[]>((resolve, reject) => {
       supabase
         .from('crystal_roof')
