@@ -24,30 +24,33 @@ export const useFilteredAndSortedApplications = (
   pageSize: number = 25,
   currentPage: number = 0
 ): UseFilteredAndSortedApplicationsResult => {
-  // Ensure we have valid inputs
+  // Ensure we have valid inputs - defensive coding
   const validApplications = applications || [];
   const validFilters = activeFilters || {};
+  const validCurrentPage = currentPage || 0;
+  const validPageSize = pageSize || 25;
   
-  // Get filtered and sorted applications
+  // Get filtered applications using the filtered applications hook
   const result = useFilteredApplications(
     validApplications,
     validFilters,
     activeSort,
     coordinates,
     searchTerm,
-    currentPage,
-    pageSize
+    validCurrentPage,
+    validPageSize
   );
   
-  // Calculate total pages
+  // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
-    const count = result.totalCount ?? 0;
-    return Math.max(1, Math.ceil(count / pageSize));
-  }, [result.totalCount, pageSize]);
+    const count = result?.totalCount || 0;
+    return Math.max(1, Math.ceil(count / validPageSize));
+  }, [result?.totalCount, validPageSize]);
   
+  // Return safe values with fallbacks
   return {
-    applications: result.applications || [],
-    totalCount: result.totalCount || 0,
+    applications: result?.applications || [],
+    totalCount: result?.totalCount || 0,
     totalPages
   };
 };

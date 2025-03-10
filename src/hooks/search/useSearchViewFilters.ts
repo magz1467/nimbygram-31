@@ -34,16 +34,21 @@ export const useSearchViewFilters = ({
     searchTerm
   });
   
+  // Make sure we have valid inputs
+  const safeApplications = applications && Array.isArray(applications) ? applications : [];
+  const safeFilters = activeFilters || {};
+  
   // Use the filtered applications hook with coordinates and search term
   const result = useFilteredApplications(
-    applications || [],
-    activeFilters || {},
+    safeApplications,
+    safeFilters,
     effectiveSort,
     coordinates,
     searchTerm // Pass search term for location relevance
   );
 
-  const displayApplications = result.applications || [];
+  const displayApplications = result?.applications || [];
+  const totalCount = result?.totalCount || 0;
 
   // Log the location search coordinates and closest applications
   useEffect(() => {
@@ -66,6 +71,6 @@ export const useSearchViewFilters = ({
 
   return {
     displayApplications,
-    totalCount: result.totalCount || 0
+    totalCount
   };
 };

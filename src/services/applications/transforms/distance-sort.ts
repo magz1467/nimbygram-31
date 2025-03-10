@@ -8,92 +8,106 @@ export const transformAndSortApplications = (
 ): any[] => {
   console.log(`🔍 Transforming and sorting ${applications?.length || 0} applications by distance from`, coordinates);
   
-  if (!applications?.length || !coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
-    console.log('No valid applications or coordinates provided for distance sorting', {
-      appCount: applications?.length || 0,
-      coordinates
-    });
-    return applications || [];
+  // Guard clauses for invalid inputs
+  if (!applications || !Array.isArray(applications)) {
+    console.log('No valid applications array provided for distance sorting');
+    return [];
   }
   
-  // Add distance to each application
-  const appsWithDistance = applications.map(app => {
-    // Skip if app doesn't have coordinates
-    if (!app?.coordinates || !Array.isArray(app.coordinates)) {
-      console.log(`Missing or invalid coordinates for application ${app?.id || 'unknown'}`);
-      return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+  if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+    console.log('Invalid coordinates provided for distance sorting:', coordinates);
+    return applications;
+  }
+  
+  // Make sure coordinates are valid numbers
+  const [searchLat, searchLng] = coordinates;
+  if (isNaN(searchLat) || isNaN(searchLng)) {
+    console.warn('Invalid coordinate values:', coordinates);
+    return applications;
+  }
+  
+  try {
+    // Add distance to each application
+    const appsWithDistance = applications.map(app => {
+      // Skip if app doesn't have coordinates
+      if (!app || !app.coordinates || !Array.isArray(app.coordinates)) {
+        console.log(`Missing or invalid coordinates for application ${app?.id || 'unknown'}`);
+        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+      }
+      
+      try {
+        // IMPORTANT: Coordinates should be in [latitude, longitude] format
+        let appLat, appLng;
+        
+        if (app.coordinates.length >= 2) {
+          [appLat, appLng] = app.coordinates;
+        } else {
+          console.warn(`Invalid coordinates format for app ${app.id}:`, app.coordinates);
+          return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+        }
+        
+        // Basic validation
+        if (isNaN(appLat) || isNaN(appLng)) {
+          console.warn(`Invalid coordinates for distance calculation:`, {
+            search: [searchLat, searchLng],
+            app: [appLat, appLng],
+            appId: app.id
+          });
+          return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+        }
+        
+        // Using the Haversine formula to calculate distance
+        const R = 6371; // Earth's radius in kilometers
+        const dLat = (appLat - searchLat) * Math.PI / 180;
+        const dLon = (appLng - searchLng) * Math.PI / 180;
+        
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(searchLat * Math.PI / 180) * Math.cos(appLat * Math.PI / 180) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        // Store both the raw distance value and formatted string
+        const distanceInMiles = distance * 0.621371;
+        
+        console.log(`Distance for app ${app.id} (${app.address || 'No address'}): ${distanceInMiles.toFixed(1)} miles`, {
+          appCoords: [appLat, appLng],
+          searchCoords: [searchLat, searchLng]
+        });
+        
+        return { 
+          ...app, 
+          distance: `${distanceInMiles.toFixed(1)} mi`,
+          distanceValue: distance // Store raw distance in km for consistent sorting
+        };
+      } catch (error) {
+        console.error(`Error calculating distance for application ${app?.id || 'unknown'}:`, error);
+        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+      }
+    });
+    
+    // Sort by the raw distance value
+    const sortedApps = appsWithDistance.sort((a, b) => {
+      const distanceA = a?.distanceValue ?? Number.MAX_SAFE_INTEGER;
+      const distanceB = b?.distanceValue ?? Number.MAX_SAFE_INTEGER;
+      return distanceA - distanceB;
+    });
+    
+    // Log the closest applications for debugging
+    if (sortedApps.length > 0) {
+      console.log('🏆 Top 5 closest applications after sorting:');
+      sortedApps.slice(0, 5).forEach(app => {
+        console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'} - Coordinates: ${JSON.stringify(app.coordinates)}`);
+      });
+    } else {
+      console.log('No applications found after sorting');
     }
     
-    try {
-      // IMPORTANT: Coordinates should be in [latitude, longitude] format
-      const [searchLat, searchLng] = coordinates;
-      let appLat, appLng;
-      
-      if (app.coordinates.length >= 2) {
-        [appLat, appLng] = app.coordinates;
-      } else {
-        console.warn(`Invalid coordinates format for app ${app.id}:`, app.coordinates);
-        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
-      }
-      
-      // Basic validation
-      if (isNaN(searchLat) || isNaN(searchLng) || isNaN(appLat) || isNaN(appLng)) {
-        console.warn(`Invalid coordinates for distance calculation:`, {
-          search: [searchLat, searchLng],
-          app: [appLat, appLng],
-          appId: app.id
-        });
-        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
-      }
-      
-      // Using the Haversine formula to calculate distance
-      const R = 6371; // Earth's radius in kilometers
-      const dLat = (appLat - searchLat) * Math.PI / 180;
-      const dLon = (appLng - searchLng) * Math.PI / 180;
-      
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(searchLat * Math.PI / 180) * Math.cos(appLat * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
-      
-      // Store both the raw distance value and formatted string
-      const distanceInMiles = distance * 0.621371;
-      
-      console.log(`Distance for app ${app.id} (${app.address || 'No address'}): ${distanceInMiles.toFixed(1)} miles`, {
-        appCoords: [appLat, appLng],
-        searchCoords: [searchLat, searchLng]
-      });
-      
-      return { 
-        ...app, 
-        distance: `${distanceInMiles.toFixed(1)} mi`,
-        distanceValue: distance // Store raw distance in km for consistent sorting
-      };
-    } catch (error) {
-      console.error(`Error calculating distance for application ${app?.id || 'unknown'}:`, error);
-      return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
-    }
-  });
-  
-  // Sort by the raw distance value
-  const sortedApps = [...(appsWithDistance || [])].sort((a, b) => {
-    const distanceA = a?.distanceValue ?? Number.MAX_SAFE_INTEGER;
-    const distanceB = b?.distanceValue ?? Number.MAX_SAFE_INTEGER;
-    return distanceA - distanceB;
-  });
-  
-  // Log the closest applications for debugging
-  if (sortedApps.length > 0) {
-    console.log('🏆 Top 5 closest applications after sorting:');
-    sortedApps.slice(0, 5).forEach(app => {
-      console.log(`App ${app.id}: ${app.distance} - ${app.address || 'No address'} - Coordinates: ${JSON.stringify(app.coordinates)}`);
-    });
-  } else {
-    console.log('No applications found after sorting');
+    return sortedApps;
+  } catch (error) {
+    console.error('Error in transformAndSortApplications:', error);
+    return applications; // Return original applications if there's an error
   }
-  
-  return sortedApps;
 };

@@ -110,27 +110,49 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
     setCurrentPage(0);
   }, [postcode, coordinates, setShowMap, setSelectedId]);
 
-  // Filter and sort applications with pagination
+  console.log('Before useFilteredAndSortedApplications:', {
+    applicationsCount: applications?.length || 0,
+    coordinates,
+    activeFilters,
+    activeSort,
+    postcode
+  });
+
+  // Filter and sort applications with pagination - add safety checks
+  const safeApplications = applications || [];
   const {
     applications: filteredApplications,
     totalCount,
     totalPages
   } = useFilteredAndSortedApplications(
-    applications,
-    activeFilters,
+    safeApplications,
+    activeFilters || {},
     activeSort,
     coordinates,
     postcode,
-    25  // pageSize fixed at 25
+    25,  // pageSize fixed at 25
+    currentPage || 0
   );
 
+  console.log('After useFilteredAndSortedApplications:', {
+    filteredCount: filteredApplications?.length || 0,
+    totalCount,
+    totalPages
+  });
+
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
-  const displayApplications = hasSearched ? filteredApplications : interestingApplications;
+  
+  // Make sure we have valid applications array
+  const safeFilteredApplications = filteredApplications || [];
+  const safeInterestingApplications = interestingApplications || [];
+  
+  // Choose which applications to display
+  const displayApplications = hasSearched ? safeFilteredApplications : safeInterestingApplications;
 
   return {
     postcode,
     coordinates,
-    applications,
+    applications: safeApplications,
     displayApplications,
     isLoading,
     hasSearched,
