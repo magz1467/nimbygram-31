@@ -35,7 +35,7 @@ export const useSearchViewFilters = ({
   });
   
   // Make sure we have valid inputs
-  const safeApplications = applications && Array.isArray(applications) ? applications : [];
+  const safeApplications = Array.isArray(applications) ? applications : [];
   const safeFilters = activeFilters || {};
   
   // Use the filtered applications hook with coordinates and search term

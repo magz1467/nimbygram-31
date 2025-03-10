@@ -11,13 +11,13 @@ interface UseFilteredAndSortedApplicationsResult {
 }
 
 export const useFilteredAndSortedApplications = (
-  applications: Application[],
+  applications: Application[] | undefined,
   activeFilters: {
     status?: string;
     type?: string;
     search?: string;
     classification?: string;
-  },
+  } | undefined,
   activeSort?: SortType,
   coordinates?: [number, number] | null,
   searchTerm?: string,
@@ -43,7 +43,7 @@ export const useFilteredAndSortedApplications = (
   
   // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
-    const count = result?.totalCount || 0;
+    const count = result?.totalCount ?? 0;
     return Math.max(1, Math.ceil(count / validPageSize));
   }, [result?.totalCount, validPageSize]);
   

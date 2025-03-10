@@ -9,21 +9,21 @@ export const transformAndSortApplications = (
   console.log(`🔍 Transforming and sorting ${applications?.length || 0} applications by distance from`, coordinates);
   
   // Guard clauses for invalid inputs
-  if (!applications || !Array.isArray(applications)) {
+  if (!applications || !Array.isArray(applications) || applications.length === 0) {
     console.log('No valid applications array provided for distance sorting');
     return [];
   }
   
   if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
     console.log('Invalid coordinates provided for distance sorting:', coordinates);
-    return applications;
+    return [...applications]; // Return a copy of the original array
   }
   
   // Make sure coordinates are valid numbers
   const [searchLat, searchLng] = coordinates;
   if (isNaN(searchLat) || isNaN(searchLng)) {
     console.warn('Invalid coordinate values:', coordinates);
-    return applications;
+    return [...applications]; // Return a copy of the original array
   }
   
   try {
@@ -89,7 +89,7 @@ export const transformAndSortApplications = (
     });
     
     // Sort by the raw distance value
-    const sortedApps = appsWithDistance.sort((a, b) => {
+    const sortedApps = [...appsWithDistance].sort((a, b) => {
       const distanceA = a?.distanceValue ?? Number.MAX_SAFE_INTEGER;
       const distanceB = b?.distanceValue ?? Number.MAX_SAFE_INTEGER;
       return distanceA - distanceB;
@@ -108,6 +108,6 @@ export const transformAndSortApplications = (
     return sortedApps;
   } catch (error) {
     console.error('Error in transformAndSortApplications:', error);
-    return applications; // Return original applications if there's an error
+    return [...applications]; // Return a copy of the original array as fallback
   }
 };

@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
@@ -19,7 +20,7 @@ interface FilteredApplicationsResult {
 
 export const useFilteredApplications = (
   applications: Application[],
-  activeFilters: ActiveFilters,
+  activeFilters: ActiveFilters = {},
   activeSort?: SortType,
   searchCoordinates?: [number, number] | null,
   searchTerm?: string,
@@ -35,7 +36,7 @@ export const useFilteredApplications = (
     console.log('📊 useFilteredApplications - Page:', page, 'Page size:', pageSize);
     
     // Guard against empty applications array
-    const safeApplications = applications && Array.isArray(applications) ? applications : [];
+    const safeApplications = Array.isArray(applications) ? applications : [];
     if (safeApplications.length === 0) {
       console.log('No applications provided to filter');
       return { applications: [], totalCount: 0 };
@@ -48,7 +49,9 @@ export const useFilteredApplications = (
     
     // Process through the location filter
     const locationFilterInput = filteredApplications || [];
-    const processedApplications = filterByLocationRelevance(locationFilterInput, searchTerm || '');
+    const processedApplications = filterByLocationRelevance ? 
+      filterByLocationRelevance(locationFilterInput, searchTerm || '') : 
+      locationFilterInput;
     console.log('After processing location filters:', processedApplications?.length || 0);
     
     // Apply sorting based on sort type and coordinates
@@ -84,8 +87,8 @@ export const useFilteredApplications = (
     console.log('Total applications before pagination:', totalCount);
     
     // Apply pagination with safe defaults
-    const safePage = page || 0;
-    const safePageSize = pageSize || 25;
+    const safePage = page ?? 0;
+    const safePageSize = pageSize ?? 25;
     const safeApplicationsFinal = applicationsFinal || [];
     const startIndex = safePage * safePageSize;
     const paginatedApplications = safeApplicationsFinal.slice(startIndex, startIndex + safePageSize);
