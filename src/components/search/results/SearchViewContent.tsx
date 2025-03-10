@@ -44,7 +44,8 @@ export const SearchViewContent = ({
     currentPage,
     setCurrentPage,
     totalPages,
-    totalCount
+    totalCount,
+    statusCounts
   } = useSearchResults({ 
     initialSearch, 
     retryCount 
@@ -83,10 +84,11 @@ export const SearchViewContent = ({
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
         displayTerm={initialSearch.displayTerm}
-        resultsCount={applications.length}
+        resultsCount={totalCount}
         isLoading={isLoading}
         hasSearched={hasSearched}
         coordinates={coordinates}
+        onPostcodeSelect={handlePostcodeSelect}
       />
 
       <FilterBarSection 
@@ -98,7 +100,7 @@ export const SearchViewContent = ({
         hasSearched={hasSearched}
         isLoading={isLoading}
         applications={applications}
-        statusCounts={{
+        statusCounts={statusCounts || {
           'Under Review': 0,
           'Approved': 0,
           'Declined': 0,

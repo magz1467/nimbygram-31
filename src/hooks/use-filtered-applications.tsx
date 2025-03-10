@@ -47,20 +47,18 @@ export const useFilteredApplications = (
     const processedApplications = filterByLocationRelevance(filteredApplications, searchTerm || '');
     console.log('After processing location filters:', processedApplications.length);
     
-    // If search coordinates available, sort by distance only
-    let applicationsFinal = processedApplications;
-    if (searchCoordinates) {
-      console.log('Sorting by distance only');
-      applicationsFinal = transformAndSortApplications(processedApplications, searchCoordinates);
-    }
+    // Initialize our array before sorting
+    let applicationsFinal = [...processedApplications];
     
-    // Apply explicit sorting based on active sort type, if different from default
-    // Only do this if not using distance sorting
-    if (activeSort && activeSort !== 'distance' && activeSort !== 'nearest') {
+    // Apply sorting based on sort type and coordinates
+    if (searchCoordinates && (activeSort === 'distance' || activeSort === 'nearest')) {
+      console.log('Sorting by distance');
+      applicationsFinal = transformAndSortApplications(processedApplications, searchCoordinates);
+    } else if (activeSort) {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
         type: activeSort,
-        applications: applicationsFinal
+        applications: processedApplications
       });
     }
 
