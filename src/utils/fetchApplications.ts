@@ -102,7 +102,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     let allResults: any[] = [];
 
     while (hasMore) {
-      // Convert the Supabase query to a Promise directly
+      // Create a proper Promise that fulfills TypeScript's full Promise interface requirements
       const queryPromise = new Promise<any[]>((resolve, reject) => {
         supabase
           .from('crystal_roof')
@@ -115,7 +115,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
               resolve(result.data || []);
             }
           })
-          .catch(reject);
+          .catch(error => reject(error)); // Explicitly handle errors
       });
 
       const pageResults = await withTimeout(
