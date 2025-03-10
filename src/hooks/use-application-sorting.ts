@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
 import { SortType } from "@/types/application-types";
@@ -59,22 +58,32 @@ const sortByNewest = (applications: Application[]) => {
 };
 
 const sortByDistance = (applications: Application[]) => {
-  // Distance is already calculated and added to the applications in useFilteredApplications
-  // We simply need to sort by the distance property
+  // We rely on the distance information already added to applications
   return [...applications].sort((a, b) => {
-    // If application has no distance property, put it at the end
+    // If either application has distanceValue, use that for sorting
+    if ('distanceValue' in a && 'distanceValue' in b) {
+      const distanceA = (a.distanceValue as number);
+      const distanceB = (b.distanceValue as number);
+      return distanceA - distanceB;
+    }
+    
+    // Fall back to parsing the distance string
+    if (a.distance && b.distance) {
+      // Try to parse numerical values from strings like "1.2 mi"
+      const distanceA = parseFloat(a.distance.split(' ')[0]);
+      const distanceB = parseFloat(b.distance.split(' ')[0]);
+      
+      if (!isNaN(distanceA) && !isNaN(distanceB)) {
+        return distanceA - distanceB;
+      }
+    }
+    
+    // If we can't determine distance, place apps without distance at the end
     if (!a.distance) return 1;
     if (!b.distance) return -1;
     
-    // Parse the distance value from strings like "1.2 mi"
-    const distanceA = parseFloat(a.distance.split(' ')[0]);
-    const distanceB = parseFloat(b.distance.split(' ')[0]);
-    
-    if (isNaN(distanceA)) return 1;
-    if (isNaN(distanceB)) return -1;
-    
-    // Sort by distance ascending (closest first)
-    return distanceA - distanceB;
+    // Otherwise keep original order
+    return 0;
   });
 };
 

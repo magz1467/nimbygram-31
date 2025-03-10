@@ -1,9 +1,8 @@
-
 import { Application } from "@/types/planning";
 import { withTimeout } from "./fetchUtils";
 import { transformApplicationData } from "./applicationTransforms";
-import { calculateDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
+import { sortApplicationsByDistance } from "./applicationDistance";
 
 /**
  * Fetches applications using the edge function
@@ -62,13 +61,8 @@ export const fetchApplicationsFromEdge = async (
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
-      // Sort by distance
-      return transformedApplications.sort((a, b) => {
-        if (!a.coordinates || !b.coordinates) return 0;
-        const distanceA = calculateDistance(coordinates, a.coordinates);
-        const distanceB = calculateDistance(coordinates, b.coordinates);
-        return distanceA - distanceB;
-      });
+      // Sort by distance using our enhanced sorting function
+      return sortApplicationsByDistance(transformedApplications, coordinates);
     }
     
     console.log('Edge function returned no applications, returning null');

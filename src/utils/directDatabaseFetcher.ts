@@ -1,9 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationData } from "./applicationTransforms";
 import { calculateDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
+import { sortApplicationsByDistance } from "./applicationDistance";
 
 const MAX_RETRY_ATTEMPTS = 2;
 
@@ -126,11 +126,6 @@ export const fetchApplicationsFromDatabase = async (
   
   console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
   
-  // Sort by distance
-  return transformedApplications.sort((a, b) => {
-    if (!a.coordinates || !b.coordinates) return 0;
-    const distanceA = calculateDistance(coordinates, a.coordinates);
-    const distanceB = calculateDistance(coordinates, b.coordinates);
-    return distanceA - distanceB;
-  });
+  // Sort by distance using our enhanced sorting function
+  return sortApplicationsByDistance(transformedApplications, coordinates);
 };
