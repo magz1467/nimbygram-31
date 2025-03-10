@@ -141,13 +141,10 @@ export const useSearchResultsPage = () => {
       formattedErrorMessage = error.message;
     } else if (typeof error === 'object' && error !== null) {
       // Handle when error is an object (but not Error instance)
-      formattedErrorMessage = 
-        error.toString && error.toString() !== '[object Object]' 
-          ? error.toString() 
-          : 'Unknown error occurred';
+      formattedErrorMessage = String(error);
       
       // Try to extract message if it exists
-      if (error && 'message' in error) {
+      if ('message' in error) {
         formattedErrorMessage = String((error as any).message);
       }
     } else {

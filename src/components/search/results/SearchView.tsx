@@ -1,14 +1,10 @@
 
-import { Header } from "@/components/Header";
-import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
-import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
-import { ResultsContainer } from "./ResultsContainer";
+import { useState, useEffect } from 'react';
+import { ResultsHeader } from "./ResultsHeader";
+import { SearchViewContent } from "./SearchViewContent";
 import { NoResultsView } from "./NoResultsView";
-import { FilterBarSection } from "./FilterBarSection";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useFilteredApplications } from "@/hooks/use-filtered-applications";
-import { useEffect } from "react";
+import { useSearchViewFilters } from "@/hooks/search/useSearchViewFilters";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -29,7 +25,6 @@ export const SearchView = ({
   onSearchComplete
 }: SearchViewProps) => {
   console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
-  const isMobile = useIsMobile();
 
   const {
     postcode,
@@ -79,14 +74,14 @@ export const SearchView = ({
     }
   }, [coordinates, isLoading, hasSearched, error, applications, onSearchComplete]);
 
-  // Use the filtered applications hook with coordinates and search term
-  const displayApplications = useFilteredApplications(
-    applications || [],
+  // Use our custom hook for filtering
+  const { displayApplications } = useSearchViewFilters({
+    applications,
     activeFilters,
     activeSort,
     coordinates,
-    initialSearch?.searchTerm // Pass search term for location relevance
-  );
+    searchTerm: initialSearch?.searchTerm
+  });
 
   // Handle marker click to show map and select application
   const handleMapMarkerClick = (id: number) => {
@@ -111,42 +106,28 @@ export const SearchView = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {isLoading && <LoadingOverlay />}
-      <Header />
-      <SearchSection
+      <ResultsHeader 
         onPostcodeSelect={handlePostcodeSelect}
         isMapView={false}
         applications={applications}
       />
-      <div className="w-full border-t">
-        <div className={`mx-auto px-2 ${isMobile ? 'max-w-full' : 'container px-4'}`}>
-          <div className="flex flex-col bg-white">
-            <div className="flex items-center justify-between p-1.5 overflow-hidden">
-              <FilterBarSection
-                coordinates={coordinates}
-                hasSearched={hasSearched}
-                isLoading={isLoading}
-                applications={applications}
-                activeFilters={activeFilters}
-                activeSort={activeSort}
-                onFilterChange={handleFilterChange}
-                onSortChange={handleSortChange}
-                statusCounts={statusCounts}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <ResultsContainer
-        displayApplications={displayApplications}
-        applications={applications}
+      
+      <SearchViewContent
+        isLoading={isLoading}
         coordinates={coordinates}
+        hasSearched={hasSearched}
+        applications={applications}
+        activeFilters={activeFilters}
+        activeSort={activeSort}
+        handleFilterChange={handleFilterChange}
+        handleSortChange={handleSortChange}
+        statusCounts={statusCounts}
+        displayApplications={displayApplications}
         showMap={showMap}
         setShowMap={setShowMap}
         selectedId={selectedId}
         setSelectedId={setSelectedId}
         handleMarkerClick={handleMapMarkerClick}
-        isLoading={isLoading}
         searchTerm={initialSearch?.searchTerm}
         displayTerm={initialSearch?.displayTerm}
         onRetry={handleRetry}
