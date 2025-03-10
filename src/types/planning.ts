@@ -1,4 +1,3 @@
-
 export interface Application {
   id: number;
   title?: string;
@@ -60,6 +59,7 @@ export interface Application {
   storybook?: string;
   storybook_header?: string;
   received_date?: string | null;
+  local_authority_district_name?: string;
 }
 
 export interface Comment {
