@@ -14,32 +14,46 @@ export const fetchApplicationsFromDatabase = async (
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates for distance calculation:', coordinates);
   
-  const pageSize = 500; // Smaller batch size to prevent timeouts
+  const pageSize = 250; // Smaller batch size for better performance
   const allApplications: Application[] = [];
   let hasMore = true;
   let page = 0;
+  let lastId: number | null = null;
   
   try {
-    while (hasMore && page < 20) { // Limit to 20 pages maximum to prevent infinite loops
-      console.log(`Fetching page ${page} with ${pageSize} records`);
+    while (hasMore && page < 20) { // Limit to 20 pages maximum
+      console.log(`Fetching page ${page} with ${pageSize} records, starting after ID ${lastId || 'start'}`);
       
-      // Execute the Supabase query with pagination
-      const result = await supabase
+      // Build the query with cursor-based pagination
+      let query = supabase
         .from('crystal_roof')
         .select('*')
-        .range(page * pageSize, (page + 1) * pageSize - 1)
-        .timeout(15); // 15 second timeout per batch
+        .order('id', { ascending: true });
+        
+      // Add cursor condition if we have a last ID
+      if (lastId) {
+        query = query.gt('id', lastId);
+      }
+      
+      // Limit the number of records
+      query = query.limit(pageSize);
+      
+      const result = await query;
       
       if (result.error) {
         console.error('❌ Supabase query error on page', page, result.error);
-        // Don't throw error, just break the loop to return what we have so far
         break;
       }
       
       const records = result.data || [];
       console.log(`✅ Retrieved ${records.length} records for page ${page}`);
       
-      // If we got fewer records than the page size, we've reached the end
+      // Update the last ID for the next query
+      if (records.length > 0) {
+        lastId = records[records.length - 1].id;
+      }
+      
+      // If we got fewer records than requested, we've reached the end
       if (records.length < pageSize) {
         hasMore = false;
       }
@@ -79,6 +93,7 @@ export const fetchApplicationsFromDatabase = async (
     }
     
     return sortedApplications;
+    
   } catch (error) {
     console.error('❌ Error fetching applications with pagination:', error);
     
