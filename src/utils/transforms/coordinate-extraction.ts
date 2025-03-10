@@ -10,10 +10,10 @@ import { LatLngTuple } from 'leaflet';
 export const extractCoordinates = (app: any, center: LatLngTuple): [number, number] | null => {
   console.group(`Extracting coordinates for application ${app.id}`);
   console.log('Input data:', {
-    geom: app.geom,
+    geom: app.geom ? (typeof app.geom === 'string' ? app.geom.substring(0, 50) + '...' : 'object') : null,
     latitude: app.latitude,
     longitude: app.longitude,
-    centroid: app.centroid
+    centroid: app.centroid ? 'present' : null
   });
   
   let coordinates: [number, number] | null = null;
@@ -21,19 +21,19 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
   try {
     // First try: Use the geometry column if available (most accurate)
     if (app.geom) {
-      console.log('Found geom field:', app.geom);
+      console.log('Found geom field');
       // Handle PostGIS geometry format (WKT, GeoJSON, etc.)
       if (typeof app.geom === 'string' && app.geom.startsWith('SRID=4326;POINT(')) {
         // Parse WKT format: "SRID=4326;POINT(lng lat)"
         const match = app.geom.match(/POINT\(([^ ]+) ([^)]+)\)/);
         if (match && match[1] && match[2]) {
           // WKT is in longitude, latitude order
-          const lat = parseFloat(match[2]);
           const lng = parseFloat(match[1]);
+          const lat = parseFloat(match[2]);
           
           if (!isNaN(lat) && !isNaN(lng)) {
             coordinates = [lat, lng];
-            console.log('Extracted coordinates from WKT geometry:', coordinates);
+            console.log('✅ Extracted coordinates from WKT geometry:', coordinates);
           }
         }
       }
@@ -41,21 +41,21 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
       else if (typeof app.geom === 'object') {
         if (app.geom.type === 'Point' && Array.isArray(app.geom.coordinates)) {
           // GeoJSON Point objects have coordinates in [longitude, latitude] order!
-          const lat = parseFloat(app.geom.coordinates[1]);
           const lng = parseFloat(app.geom.coordinates[0]);
+          const lat = parseFloat(app.geom.coordinates[1]);
           
           if (!isNaN(lat) && !isNaN(lng)) {
             coordinates = [lat, lng];
-            console.log('Extracted coordinates from GeoJSON Point:', coordinates);
+            console.log('✅ Extracted coordinates from GeoJSON Point:', coordinates);
           }
         } else if (Array.isArray(app.geom.coordinates)) {
           // Generic GeoJSON coordinate arrays are in [longitude, latitude] order!
-          const lat = parseFloat(app.geom.coordinates[1]);
           const lng = parseFloat(app.geom.coordinates[0]);
+          const lat = parseFloat(app.geom.coordinates[1]);
           
           if (!isNaN(lat) && !isNaN(lng)) {
             coordinates = [lat, lng];
-            console.log('Extracted coordinates from GeoJSON coordinates array:', coordinates);
+            console.log('✅ Extracted coordinates from GeoJSON coordinates array:', coordinates);
           }
         }
       }
@@ -65,12 +65,12 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
           const geomObj = JSON.parse(app.geom);
           if (geomObj.coordinates && Array.isArray(geomObj.coordinates)) {
             // GeoJSON coordinates are [longitude, latitude]
-            const lat = parseFloat(geomObj.coordinates[1]);
             const lng = parseFloat(geomObj.coordinates[0]);
+            const lat = parseFloat(geomObj.coordinates[1]);
             
             if (!isNaN(lat) && !isNaN(lng)) {
               coordinates = [lat, lng];
-              console.log('Extracted coordinates from stringified geometry:', coordinates);
+              console.log('✅ Extracted coordinates from stringified geometry:', coordinates);
             }
           }
         } catch (e) {
@@ -86,19 +86,19 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
       
       if (!isNaN(lat) && !isNaN(lng)) {
         coordinates = [lat, lng];
-        console.log('Using direct latitude/longitude fields:', coordinates);
+        console.log('✅ Using direct latitude/longitude fields:', coordinates);
       }
     } 
     // Fallback 2: Centroid
     else if (!coordinates && app.centroid) {
       if (typeof app.centroid === 'object' && app.centroid.coordinates) {
         // GeoJSON coordinates are [longitude, latitude]
-        const lat = parseFloat(app.centroid.coordinates[1]);
         const lng = parseFloat(app.centroid.coordinates[0]);
+        const lat = parseFloat(app.centroid.coordinates[1]);
         
         if (!isNaN(lat) && !isNaN(lng)) {
           coordinates = [lat, lng];
-          console.log('Using centroid coordinates:', coordinates);
+          console.log('✅ Using centroid coordinates:', coordinates);
         }
       } else if (typeof app.centroid === 'object' && app.centroid.lat && app.centroid.lon) {
         const lat = parseFloat(app.centroid.lat);
@@ -106,7 +106,7 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
         
         if (!isNaN(lat) && !isNaN(lng)) {
           coordinates = [lat, lng];
-          console.log('Using centroid lat/lon:', coordinates);
+          console.log('✅ Using centroid lat/lon:', coordinates);
         }
       }
     }
@@ -127,9 +127,12 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
   }
 
   // Return fallback location if coordinates are missing
-  if (!coordinates || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
-    console.warn('⚠️ Invalid coordinates for application:', app.id);
-    coordinates = center ? [center[0], center[1]] : null;
+  if (!coordinates) {
+    console.warn('⚠️ No valid coordinates found for application:', app.id);
+    coordinates = center ? [...center] : null;
+    if (coordinates) {
+      console.log('Using fallback center coordinates:', coordinates);
+    }
   }
   
   console.groupEnd();
