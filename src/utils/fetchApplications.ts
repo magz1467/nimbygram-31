@@ -33,7 +33,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const [lat, lng] = coordinates;
       const radius = 10000; // 10km radius
       
-      // Get Supabase URL from environment or fallback to a direct import
+      // Get Supabase URL from environment or use a direct URL as fallback
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jposqxdboetyioymfswd.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
@@ -98,6 +98,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     
     // Create a Promise that wraps the Supabase query
     const queryPromise = new Promise<any[]>((resolve, reject) => {
+      // Execute the query and handle the response
       supabase
         .from('crystal_roof')
         .select('*')

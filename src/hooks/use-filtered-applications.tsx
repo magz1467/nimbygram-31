@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
-import { addDistanceToApplications } from "@/utils/applicationDistance";
+import { addDistanceToApplications, sortApplicationsByDistance } from "@/utils/applicationDistance";
 import { useApplicationSorting } from './use-application-sorting';
 import { filterByLocationRelevance } from '@/services/applications/transform-applications';
 
@@ -48,20 +48,21 @@ export const useFilteredApplications = (
       : locationFilteredApplications;
     console.log('After adding distance:', applicationsWithDistance.length);
     
-    // Apply sorting based on active sort type or default to distance sort if coordinates available
+    // Apply sorting based on active sort type
     let finalSortedApplications = applicationsWithDistance;
     
-    if (activeSort) {
+    if (activeSort === 'distance' && searchCoordinates) {
+      // Use our enhanced distance sorting utility
+      finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
+    } else if (activeSort) {
+      // Use the application sorting hook for other sort types
       finalSortedApplications = useApplicationSorting({
         type: activeSort,
         applications: applicationsWithDistance
       });
     } else if (searchCoordinates) {
       // If no sort specified but we have coordinates, default to distance sort
-      finalSortedApplications = useApplicationSorting({
-        type: 'distance',
-        applications: applicationsWithDistance
-      });
+      finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
     }
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);

@@ -30,10 +30,11 @@ export const addDistanceToApplications = (
       const distanceInKm = calculateDistance(searchCoordinates, app.coordinates);
       const distanceInMiles = distanceInKm * 0.621371;
       
-      // Add formatted distance
+      // Add formatted distance and raw distance for sorting
       return {
         ...app,
-        distance: `${distanceInMiles.toFixed(1)} mi`
+        distance: `${distanceInMiles.toFixed(1)} mi`,
+        distanceValue: distanceInMiles // Add raw value for sorting
       };
     } catch (err) {
       console.error('Error calculating distance for application:', app.id, err);
@@ -84,4 +85,39 @@ export const groupApplicationsByDistance = (
   });
   
   return result;
+};
+
+/**
+ * Sorts applications by distance from search coordinates
+ */
+export const sortApplicationsByDistance = (
+  applications: Application[],
+  searchCoordinates: [number, number] | null | undefined
+): Application[] => {
+  if (!searchCoordinates) {
+    console.log('No search coordinates provided for distance sorting');
+    return applications;
+  }
+  
+  // First add distance information if not already present
+  const appsWithDistance = applications.every(app => 'distanceValue' in app) 
+    ? applications 
+    : addDistanceToApplications(applications, searchCoordinates);
+  
+  // Sort by distance, handling applications without coordinates
+  return [...appsWithDistance].sort((a, b) => {
+    // Handle missing distance values
+    if (!a.coordinates && !b.coordinates) return 0;
+    if (!a.coordinates) return 1; // Push items without coordinates to the end
+    if (!b.coordinates) return -1;
+    
+    // Sort by numeric distance value
+    const distanceA = 'distanceValue' in a ? (a.distanceValue as number) : 
+      calculateDistance(searchCoordinates, a.coordinates) * 0.621371;
+    
+    const distanceB = 'distanceValue' in b ? (b.distanceValue as number) : 
+      calculateDistance(searchCoordinates, b.coordinates) * 0.621371;
+    
+    return distanceA - distanceB;
+  });
 };
