@@ -90,47 +90,58 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       console.log('Edge function returned no applications, falling back to direct query');
     } catch (edgeFunctionError) {
       console.warn('⚠️ Edge function failed, falling back to direct query:', edgeFunctionError);
-      // Continue to fallback method
     }
     
-    // Fallback to direct query with a timeout
-    console.log('📊 Fetching applications directly from database');
+    // Fallback to direct query with pagination to prevent timeouts
+    console.log('📊 Fetching applications directly from database with pagination');
     
-    // Create a Promise that wraps the Supabase query
-    const queryPromise = new Promise<any[]>((resolve, reject) => {
-      // Execute the query and handle the response
-      supabase
+    const [lat, lng] = coordinates;
+    const pageSize = 100;
+    let currentPage = 0;
+    let hasMore = true;
+    let allResults: any[] = [];
+
+    while (hasMore) {
+      const queryPromise = supabase
         .from('crystal_roof')
         .select('*')
+        .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
         .then(result => {
           if (result.error) {
-            console.error('Supabase query error:', result.error);
-            reject(result.error);
-          } else {
-            resolve(result.data || []);
+            throw result.error;
           }
-        })
-        .catch(error => {
-          console.error('Unexpected query error:', error);
-          reject(error);
+          return result.data || [];
         });
-    });
-    
-    const data = await withTimeout(
-      queryPromise,
-      40000, // 40 second timeout
-      "Database query timed out. This area may have too many results."
-    );
-    
-    console.log(`✅ Raw data from supabase: ${data?.length || 0} results`);
 
-    if (!data || data.length === 0) {
+      const pageResults = await withTimeout(
+        queryPromise,
+        20000, // 20 second timeout per page
+        "Database query page timed out. Please try again."
+      );
+
+      if (pageResults.length === 0) {
+        hasMore = false;
+      } else {
+        allResults = [...allResults, ...pageResults];
+        currentPage++;
+
+        // Limit total results to prevent memory issues
+        if (allResults.length >= 1000) {
+          hasMore = false;
+          console.log('Reached maximum result limit of 1000');
+        }
+      }
+    }
+    
+    console.log(`✅ Raw data from supabase: ${allResults.length} results`);
+
+    if (allResults.length === 0) {
       console.log('No applications found in the database');
       return [];
     }
 
     // Transform all application data
-    const transformedApplications = data
+    const transformedApplications = allResults
       .map(app => transformApplicationData(app, coordinates))
       .filter((app): app is Application => app !== null);
     
@@ -143,6 +154,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const distanceB = calculateDistance(coordinates, b.coordinates);
       return distanceA - distanceB;
     });
+    
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
