@@ -39,3 +39,36 @@ export const sortApplicationsByDistance = (
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .map(item => item.application);
 };
+
+/**
+ * Adds distance information to applications based on coordinates
+ * @param applications Applications to add distance to
+ * @param coordinates Center coordinates to measure distance from
+ * @returns Applications with distance information added
+ */
+export const addDistanceToApplications = (
+  applications: Application[],
+  coordinates: [number, number]
+): Application[] => {
+  if (!applications || applications.length === 0 || !coordinates) {
+    return applications || [];
+  }
+  
+  return applications.map(app => {
+    // Create a new object to avoid mutating the original
+    const appWithDistance = { ...app };
+    
+    if (appWithDistance.coordinates) {
+      const distance = calculateDistance(coordinates, appWithDistance.coordinates);
+      
+      // Store the raw distance value for sorting
+      (appWithDistance as any).distanceValue = distance;
+      
+      // Format the distance for display (convert km to miles)
+      const distanceInMiles = distance * 0.621371;
+      appWithDistance.distance = `${distanceInMiles.toFixed(1)} mi`;
+    }
+    
+    return appWithDistance;
+  });
+};
