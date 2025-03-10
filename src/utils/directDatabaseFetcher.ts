@@ -4,7 +4,6 @@ import { Application } from "@/types/planning";
 import { transformApplicationData } from "./applicationTransforms";
 import { calculateDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
-import { withTimeout } from "./fetchUtils";
 
 const MAX_RETRY_ATTEMPTS = 2;
 
@@ -30,28 +29,43 @@ export const fetchApplicationsFromDatabase = async (
       
       console.log(`Fetching page ${currentPage} (range: ${startIndex}-${endIndex})`);
       
-      // Use withTimeout to prevent long-running queries
-      const { data, error } = await withTimeout(
-        supabase
-          .from('crystal_roof')
-          .select('*')
-          .range(startIndex, endIndex),
-        15000, // 15 second timeout per page
-        `Query timeout for page ${currentPage}`
-      );
+      // Create a promise with a timeout for the Supabase query
+      const queryPromise = new Promise<{data: any[] | null, error: any}>(async (resolve, reject) => {
+        try {
+          // Execute the Supabase query
+          const result = await supabase
+            .from('crystal_roof')
+            .select('*')
+            .range(startIndex, endIndex);
+          
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      
+      // Set a timeout for the query
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Query timeout for page ${currentPage}`));
+        }, 15000); // 15 second timeout per page
+      });
+      
+      // Race the query against the timeout
+      const result = await Promise.race([queryPromise, timeoutPromise]) as {data: any[] | null, error: any};
         
-      if (error) {
-        console.error(`Supabase query error on page ${currentPage}:`, error);
+      if (result.error) {
+        console.error(`Supabase query error on page ${currentPage}:`, result.error);
         
         // Handle specific database errors
-        if (error.code === '57014' || error.message.includes('statement canceled')) {
+        if (result.error.code === '57014' || result.error.message?.includes('statement canceled')) {
           throw new Error(`Database query timeout on page ${currentPage}`);
         }
         
-        throw error;
+        throw result.error;
       }
       
-      const pageResults = data || [];
+      const pageResults = result.data || [];
       console.log(`Retrieved ${pageResults.length} results from page ${currentPage}`);
 
       if (pageResults.length === 0) {
@@ -81,7 +95,7 @@ export const fetchApplicationsFromDatabase = async (
       
       // If we've exhausted retries, stop pagination but return any results we have so far
       hasMore = false;
-      lastError = pageError;
+      lastError = pageError instanceof Error ? pageError : new Error(String(pageError));
       
       // Show a toast only if we have no results at all or very few results
       if (allResults.length < pageSize) {
