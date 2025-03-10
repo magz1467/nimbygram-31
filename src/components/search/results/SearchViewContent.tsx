@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { ResultsContainer } from "./ResultsContainer";
@@ -94,7 +93,6 @@ export const SearchViewContent = ({
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
         displayTerm={initialSearch.displayTerm}
-        resultsCount={totalCount}
         isLoading={isLoading}
         hasSearched={hasSearched}
         coordinates={coordinates}
