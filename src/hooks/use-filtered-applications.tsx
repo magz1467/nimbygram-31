@@ -49,7 +49,7 @@ export const useFilteredApplications = (
     
     // Process through the location filter
     const locationFilterInput = filteredApplications || [];
-    const processedApplications = filterByLocationRelevance ? 
+    const processedApplications = typeof filterByLocationRelevance === 'function' ? 
       filterByLocationRelevance(locationFilterInput, searchTerm || '') : 
       locationFilterInput;
     console.log('After processing location filters:', processedApplications?.length || 0);
@@ -87,9 +87,9 @@ export const useFilteredApplications = (
     console.log('Total applications before pagination:', totalCount);
     
     // Apply pagination with safe defaults
-    const safePage = page ?? 0;
-    const safePageSize = pageSize ?? 25;
-    const safeApplicationsFinal = applicationsFinal || [];
+    const safePage = typeof page === 'number' ? page : 0;
+    const safePageSize = typeof pageSize === 'number' ? pageSize : 25;
+    const safeApplicationsFinal = Array.isArray(applicationsFinal) ? applicationsFinal : [];
     const startIndex = safePage * safePageSize;
     const paginatedApplications = safeApplicationsFinal.slice(startIndex, startIndex + safePageSize);
     

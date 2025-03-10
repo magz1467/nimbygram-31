@@ -72,11 +72,7 @@ export const transformAndSortApplications = (
         // Store both the raw distance value and formatted string
         const distanceInMiles = distance * 0.621371;
         
-        console.log(`Distance for app ${app.id} (${app.address || 'No address'}): ${distanceInMiles.toFixed(1)} miles`, {
-          appCoords: [appLat, appLng],
-          searchCoords: [searchLat, searchLng]
-        });
-        
+        // Create a new object to avoid mutating original
         return { 
           ...app, 
           distance: `${distanceInMiles.toFixed(1)} mi`,
@@ -88,10 +84,10 @@ export const transformAndSortApplications = (
       }
     });
     
-    // Sort by the raw distance value
+    // Create a copy before sorting to avoid mutation
     const sortedApps = [...appsWithDistance].sort((a, b) => {
-      const distanceA = a?.distanceValue ?? Number.MAX_SAFE_INTEGER;
-      const distanceB = b?.distanceValue ?? Number.MAX_SAFE_INTEGER;
+      const distanceA = typeof a?.distanceValue === 'number' ? a.distanceValue : Number.MAX_SAFE_INTEGER;
+      const distanceB = typeof b?.distanceValue === 'number' ? b.distanceValue : Number.MAX_SAFE_INTEGER;
       return distanceA - distanceB;
     });
     

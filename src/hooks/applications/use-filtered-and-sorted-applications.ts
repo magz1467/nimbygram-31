@@ -43,14 +43,14 @@ export const useFilteredAndSortedApplications = (
 
   // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
-    const count = result?.totalCount ?? 0;
+    const count = result ? (result.totalCount || 0) : 0;
     return Math.max(1, Math.ceil(count / validPageSize));
-  }, [result?.totalCount, validPageSize]);
+  }, [result, validPageSize]);
 
   // Return safe values with fallbacks
   return {
-    applications: result?.applications || [],
-    totalCount: result?.totalCount || 0,
+    applications: result ? (result.applications || []) : [],
+    totalCount: result ? (result.totalCount || 0) : 0,
     totalPages
   };
 };

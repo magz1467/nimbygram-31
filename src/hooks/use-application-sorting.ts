@@ -26,7 +26,7 @@ export const useApplicationSorting = ({ type, applications, coordinates }: Sorti
       switch (type) {
         case 'newest':
           console.log('Sorting by newest');
-          return appsCopy.sort((a, b) => {
+          return [...appsCopy].sort((a, b) => {
             const dateA = a.received_date ? new Date(a.received_date).getTime() : 0;
             const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
             return dateB - dateA;
@@ -34,7 +34,7 @@ export const useApplicationSorting = ({ type, applications, coordinates }: Sorti
           
         case 'closingSoon':
           console.log('Sorting by closing soon');
-          return appsCopy.sort((a, b) => {
+          return [...appsCopy].sort((a, b) => {
             const dateA = a.last_date_consultation_comments 
               ? new Date(a.last_date_consultation_comments).getTime() 
               : Number.MAX_SAFE_INTEGER;

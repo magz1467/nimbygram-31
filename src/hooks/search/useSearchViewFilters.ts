@@ -47,8 +47,9 @@ export const useSearchViewFilters = ({
     searchTerm // Pass search term for location relevance
   );
 
-  const displayApplications = result?.applications || [];
-  const totalCount = result?.totalCount || 0;
+  // Ensure we have valid results
+  const displayApplications = result && Array.isArray(result.applications) ? result.applications : [];
+  const totalCount = result && typeof result.totalCount === 'number' ? result.totalCount : 0;
 
   // Log the location search coordinates and closest applications
   useEffect(() => {
