@@ -27,6 +27,7 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
   if (lat && lng && 
       !isNaN(lat) && !isNaN(lng) &&
       Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    // Explicitly return a tuple with exactly two numbers
     return [lat, lng];
   }
 

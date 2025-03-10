@@ -44,7 +44,7 @@ export const useSearchViewFilters = ({
     safeFilters,
     effectiveSort,
     coordinates,
-    searchTerm // Pass search term for location relevance
+    searchTerm
   );
 
   // Ensure we have valid results with explicit type checking

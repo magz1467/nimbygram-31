@@ -47,8 +47,6 @@ const ApplicationsDashboardMap = () => {
         setIsMapView={setShowMap}
       >
         <SearchSection 
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
           onPostcodeSelect={handlePostcodeSelect}
           isLoading={isLoading}
           applications={applications}

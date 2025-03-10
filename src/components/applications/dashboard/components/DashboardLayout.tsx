@@ -20,7 +20,7 @@ interface DashboardLayoutProps {
     type?: string;
   };
   activeSort: SortType;
-  postcode: string;
+  searchTerm: string; // Added this property
   isLoading?: boolean;
   filteredApplications: Application[];
   handleMarkerClick: (id: number | null) => void;
@@ -38,7 +38,7 @@ export const DashboardLayout = ({
   coordinates,
   activeFilters,
   activeSort,
-  postcode,
+  searchTerm, // Added this parameter
   isLoading = false,
   filteredApplications,
   handleMarkerClick,
@@ -77,7 +77,7 @@ export const DashboardLayout = ({
             isMapView={isMapView}
             applications={filteredApplications}
             selectedId={selectedId}
-            postcode={postcode}
+            postcode={searchTerm}
             coordinates={coordinates as [number, number]}
             activeFilters={activeFilters}
             activeSort={activeSort}
@@ -97,7 +97,7 @@ export const DashboardLayout = ({
               type: 'SELECT_APPLICATION',
               payload: handleMarkerClick
             }}
-            postcode={postcode}
+            postcode={searchTerm}
           />
         </div>
         

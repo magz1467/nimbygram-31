@@ -16,6 +16,7 @@ export const useFilteredApplications = (
   activeFilters: ActiveFilters = {},
   activeSort?: SortType,
   coordinates?: [number, number] | null,
+  searchTerm?: string,
   page: number = 0,
   pageSize: number = 25
 ) => {
@@ -57,5 +58,5 @@ export const useFilteredApplications = (
       applications: paginatedApplications, 
       totalCount 
     };
-  }, [applications, activeFilters, activeSort, coordinates, page, pageSize]);
+  }, [applications, activeFilters, activeSort, coordinates, searchTerm, page, pageSize]);
 };

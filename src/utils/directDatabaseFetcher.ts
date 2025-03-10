@@ -4,7 +4,7 @@ import { Application } from "@/types/planning";
 import { transformApplicationData } from "./transforms/application-transformer";
 import { calculateDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
-import { sortApplicationsByDistance } from "./applicationDistance";
+import { sortApplicationsByDistance } from "./distance";
 
 const MAX_RETRY_ATTEMPTS = 2;
 
@@ -127,6 +127,6 @@ export const fetchApplicationsFromDatabase = async (
   
   console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
   
-  // Sort by distance using our enhanced sorting function
+  // Sort by distance
   return sortApplicationsByDistance(transformedApplications, coordinates);
 };

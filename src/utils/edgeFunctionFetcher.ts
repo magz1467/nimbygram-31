@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { withTimeout } from "./fetchUtils";
 import { transformApplicationData } from "./transforms/application-transformer";
 import { toast } from "@/hooks/use-toast";
-import { sortApplicationsByDistance } from "./applicationDistance";
+import { sortApplicationsByDistance } from "./distance";
 
 /**
  * Fetches applications using the edge function
@@ -62,7 +62,7 @@ export const fetchApplicationsFromEdge = async (
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
-      // Sort by distance using our enhanced sorting function
+      // Sort by distance
       return sortApplicationsByDistance(transformedApplications, coordinates);
     }
     
