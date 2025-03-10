@@ -112,8 +112,8 @@ export const ResultsListView = ({
       
       if (error instanceof Error) {
         errorText = error.message;
-      } else if (typeof error === 'object') {
-        errorText = error && 'message' in error ? String(error.message) : 'Unknown error occurred';
+      } else if (typeof error === 'object' && error !== null) {
+        errorText = error && 'message' in error ? String((error as any).message) : 'Unknown error occurred';
       } else {
         errorText = String(error);
       }
