@@ -35,10 +35,8 @@ export const useFilteredApplications = (
     const filteredApplications = applyAllFilters(applications, activeFilters);
     console.log('After applying filters:', filteredApplications.length);
     
-    // Process through the location filter (which now just passes applications through)
-    // This is kept for extensibility but no longer affects sorting
+    // Process through the location filter (which just passes applications through)
     const processedApplications = filterByLocationRelevance(filteredApplications, searchTerm || '');
-    
     console.log('After processing location filters:', processedApplications.length);
     
     // If search coordinates available, sort by distance only
@@ -50,7 +48,7 @@ export const useFilteredApplications = (
     
     // Apply explicit sorting based on active sort type, if different from default
     // Only do this if not using distance sorting
-    if (activeSort && activeSort !== 'distance') {
+    if (activeSort && activeSort !== 'distance' && activeSort !== 'nearest') {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
         type: activeSort,
@@ -65,6 +63,7 @@ export const useFilteredApplications = (
       const topApps = applicationsFinal.slice(0, 3).map(app => ({
         id: app.id,
         distance: app.distance,
+        distanceValue: (app as any).distanceValue,
         address: app.address
       }));
       console.log('Top applications in final result:', topApps);

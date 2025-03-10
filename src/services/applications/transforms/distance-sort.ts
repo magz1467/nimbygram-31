@@ -20,7 +20,7 @@ export const transformAndSortApplications = (
     // Skip if app doesn't have coordinates
     if (!app.coordinates || !Array.isArray(app.coordinates) || app.coordinates.length !== 2) {
       console.log(`Missing or invalid coordinates for application ${app.id}`);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
     }
     
     try {
@@ -31,7 +31,7 @@ export const transformAndSortApplications = (
       // Basic validation
       if (isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) {
         console.log(`Invalid coordinates for distance calculation: [${lat1},${lng1}] to [${lat2},${lng2}]`);
-        return { ...app, distance: Number.MAX_SAFE_INTEGER };
+        return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
       }
       
       // Using the Haversine formula to calculate distance
@@ -47,22 +47,30 @@ export const transformAndSortApplications = (
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       const distance = R * c;
       
-      return { ...app, distance };
+      // Store both the raw distance value and formatted string
+      const distanceInMiles = distance * 0.621371;
+      return { 
+        ...app, 
+        distance: `${distanceInMiles.toFixed(1)} mi`,
+        distanceValue: distance // Store raw distance in km for consistent sorting
+      };
     } catch (error) {
       console.error(`Error calculating distance for application ${app.id}:`, error);
-      return { ...app, distance: Number.MAX_SAFE_INTEGER };
+      return { ...app, distance: Number.MAX_SAFE_INTEGER, distanceValue: Number.MAX_SAFE_INTEGER };
     }
   });
   
-  // Sort purely by distance - no text relevance factored in
+  // Sort purely by distance using the raw distanceValue
   const sortedApps = [...appsWithDistance].sort((a, b) => {
-    return (a.distance || Number.MAX_SAFE_INTEGER) - (b.distance || Number.MAX_SAFE_INTEGER);
+    const distanceA = a.distanceValue ?? Number.MAX_SAFE_INTEGER;
+    const distanceB = b.distanceValue ?? Number.MAX_SAFE_INTEGER;
+    return distanceA - distanceB;
   });
   
   // Log the closest applications for debugging
   console.log('Top applications after sorting by distance:');
   sortedApps.slice(0, 5).forEach(app => {
-    console.log(`App ${app.id}: distance=${app.distance?.toFixed(2)}km - ${app.address || 'No address'}`);
+    console.log(`App ${app.id}: distance=${app.distanceValue?.toFixed(2)}km (${app.distance}) - ${app.address || 'No address'}`);
   });
   
   return sortedApps;

@@ -15,9 +15,7 @@ export const filterByLocationRelevance = (
 
   console.log('Processing location search term:', searchTerm);
   
-  // For location searches, we're simply passing through the applications
-  // without any text relevance scoring - sorting will be handled by 
-  // pure distance calculations
-  
+  // Simply pass through all applications without any text relevance filtering
+  // Distance sorting will be handled separately by transformAndSortApplications
   return applications;
 };

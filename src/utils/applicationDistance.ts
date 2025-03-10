@@ -22,32 +22,38 @@ export const sortApplicationsByDistance = (
   const applicationsWithDistance = applications.map(app => {
     let distance = Number.MAX_SAFE_INTEGER;
     
+    // If app already has distanceValue, use it (avoid recalculating)
+    if ('distanceValue' in app && typeof app.distanceValue === 'number') {
+      return app;
+    }
+    
     if (app.coordinates) {
-      distance = calculateDistance(coordinates, app.coordinates);
-      console.log(`Application ${app.id} is ${distance.toFixed(2)}km from search location`);
-      
-      // Update the distance display in the application
-      const distanceInMiles = distance * 0.621371;
-      app.distance = `${distanceInMiles.toFixed(1)} mi`;
+      try {
+        distance = calculateDistance(coordinates, app.coordinates);
+        
+        // Update the distance display in the application
+        const distanceInMiles = distance * 0.621371;
+        
+        // Store both the formatted string and raw value
+        app.distance = `${distanceInMiles.toFixed(1)} mi`;
+        (app as any).distanceValue = distance;
+        
+      } catch (err) {
+        console.warn(`Could not calculate distance for application ${app.id}:`, err);
+      }
     } else {
       console.warn(`Application ${app.id} has no coordinates, setting maximum distance`);
     }
     
-    return {
-      application: app,
-      distanceKm: distance
-    };
+    return app;
   });
   
-  // Then sort by distance - lower distance values come first
-  const sortedApplications = applicationsWithDistance
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .map(item => item.application);
-    
-  console.log(`✅ Sorted ${sortedApplications.length} applications by distance. First 3 distances:`, 
-    sortedApplications.slice(0, 3).map(app => app.distance));
-  
-  return sortedApplications;
+  // Then sort by the raw distance value - lower distance values come first
+  return [...applicationsWithDistance].sort((a, b) => {
+    const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+    const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+    return distanceA - distanceB;
+  });
 };
 
 /**
@@ -71,20 +77,26 @@ export const addDistanceToApplications = (
     const appWithDistance = { ...app };
     
     if (appWithDistance.coordinates) {
-      const distance = calculateDistance(coordinates, appWithDistance.coordinates);
-      
-      // Store the raw distance value for sorting
-      (appWithDistance as any).distanceValue = distance;
-      
-      // Format the distance for display (convert km to miles)
-      const distanceInMiles = distance * 0.621371;
-      appWithDistance.distance = `${distanceInMiles.toFixed(1)} mi`;
-      
-      if (distance > 50) {
-        console.warn(`Application ${app.id} is very far: ${distance.toFixed(2)}km / ${distanceInMiles.toFixed(1)} miles`);
+      try {
+        const distance = calculateDistance(coordinates, appWithDistance.coordinates);
+        
+        // Store the raw distance value for sorting
+        (appWithDistance as any).distanceValue = distance;
+        
+        // Format the distance for display (convert km to miles)
+        const distanceInMiles = distance * 0.621371;
+        appWithDistance.distance = `${distanceInMiles.toFixed(1)} mi`;
+        
+        if (distance > 50) {
+          console.warn(`Application ${app.id} is very far: ${distance.toFixed(2)}km / ${distanceInMiles.toFixed(1)} miles`);
+        }
+      } catch (err) {
+        console.warn(`Could not calculate distance for application ${app.id}:`, err);
+        (appWithDistance as any).distanceValue = Number.MAX_SAFE_INTEGER;
       }
     } else {
       console.warn(`Could not calculate distance for application ${app.id}: missing coordinates`);
+      (appWithDistance as any).distanceValue = Number.MAX_SAFE_INTEGER;
     }
     
     return appWithDistance;

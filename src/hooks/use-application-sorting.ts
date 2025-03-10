@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
 import { SortType } from "@/types/application-types";
@@ -60,14 +61,14 @@ const sortByNewest = (applications: Application[]) => {
 const sortByDistance = (applications: Application[]) => {
   // We rely on the distance information already added to applications
   return [...applications].sort((a, b) => {
-    // If either application has distanceValue, use that for sorting
+    // Use distanceValue for sorting - this should have been added by transformAndSortApplications
     if ('distanceValue' in a && 'distanceValue' in b) {
-      const distanceA = (a.distanceValue as number);
-      const distanceB = (b.distanceValue as number);
+      const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+      const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
       return distanceA - distanceB;
     }
     
-    // Fall back to parsing the distance string
+    // Fall back to parsing the distance string if distanceValue isn't available
     if (a.distance && b.distance) {
       // Try to parse numerical values from strings like "1.2 mi"
       const distanceA = parseFloat(a.distance.split(' ')[0]);
@@ -102,6 +103,7 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
       sorted = sortByNewest(applications);
       break;
     case 'distance':
+    case 'nearest':
       sorted = sortByDistance(applications);
       break;
     default:
