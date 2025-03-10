@@ -1,10 +1,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Application } from "@/types/planning";
-import { SortType } from "@/types/application-types";
+import { SortType, StatusCounts } from "@/types/application-types";
 import { useSearchState } from './use-search-state';
 import { useFilterSortState } from './use-filter-sort-state';
 import { useFilteredAndSortedApplications } from './use-filtered-and-sorted-applications';
+import { calculateStatusCounts } from './use-status-counts';
 
 interface UseUnifiedSearchProps {
   initialSearch?: {
@@ -66,28 +67,9 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     currentPage
   );
 
-  // Calculate status counts
-  const statusCounts = useMemo(() => {
-    if (!applications?.length) return {
-      'Under Review': 0,
-      'Approved': 0,
-      'Declined': 0,
-      'Other': 0
-    };
-
-    return applications.reduce((counts: Record<string, number>, app) => {
-      const status = app.status?.toLowerCase() || 'other';
-      if (status.includes('under consideration')) counts['Under Review']++;
-      else if (status.includes('approved')) counts['Approved']++;
-      else if (status.includes('declined')) counts['Declined']++;
-      else counts['Other']++;
-      return counts;
-    }, {
-      'Under Review': 0,
-      'Approved': 0,
-      'Declined': 0,
-      'Other': 0
-    });
+  // Calculate status counts using the imported function
+  const statusCounts = useMemo<StatusCounts>(() => {
+    return calculateStatusCounts(applications);
   }, [applications]);
 
   return {

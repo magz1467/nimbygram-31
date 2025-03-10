@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
+import { StatusCounts } from "@/types/application-types";
 
 interface SearchViewContentProps {
   initialSearch: {

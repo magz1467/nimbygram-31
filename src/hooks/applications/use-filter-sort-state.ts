@@ -6,7 +6,7 @@ export const useFilterSortState = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterType>({});
   const [activeSort, setActiveSort] = useState<SortType>(null);
-  const [isMapView, setIsMapView] = useState(true);
+  const [showMap, setShowMap] = useState(true);
 
   const handleMarkerClick = (id: number | null) => {
     setSelectedId(id);
@@ -31,10 +31,11 @@ export const useFilterSortState = () => {
 
   return {
     selectedId,
+    setSelectedId,
     activeFilters,
     activeSort,
-    isMapView,
-    setIsMapView,
+    showMap,
+    setShowMap,
     handleMarkerClick,
     handleFilterChange,
     handleSortChange
