@@ -34,31 +34,35 @@ export const useFilteredApplications = (
     
     // Apply all generic filters first (status, type, etc.)
     const filteredApplications = applyAllFilters(applications, activeFilters);
+    console.log('After applying filters:', filteredApplications.length);
     
     // Apply location relevance filtering if we have a search term
     const locationFilteredApplications = searchTerm 
       ? filterByLocationRelevance(filteredApplications, searchTerm)
       : filteredApplications;
+    console.log('After location relevance filtering:', locationFilteredApplications.length);
     
     // Add distance information if search coordinates are available
-    const applicationsWithDistance = addDistanceToApplications(
-      locationFilteredApplications, 
-      searchCoordinates
-    );
+    const applicationsWithDistance = searchCoordinates
+      ? addDistanceToApplications(locationFilteredApplications, searchCoordinates)
+      : locationFilteredApplications;
+    console.log('After adding distance:', applicationsWithDistance.length);
     
     // Apply sorting based on active sort type or default to distance sort if coordinates available
-    const finalSortedApplications = activeSort ? 
-      useApplicationSorting({
+    let finalSortedApplications = applicationsWithDistance;
+    
+    if (activeSort) {
+      finalSortedApplications = useApplicationSorting({
         type: activeSort,
         applications: applicationsWithDistance
-      }) : 
+      });
+    } else if (searchCoordinates) {
       // If no sort specified but we have coordinates, default to distance sort
-      (searchCoordinates ? 
-        useApplicationSorting({
-          type: 'distance',
-          applications: applicationsWithDistance
-        }) : 
-        applicationsWithDistance);
+      finalSortedApplications = useApplicationSorting({
+        type: 'distance',
+        applications: applicationsWithDistance
+      });
+    }
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
     return finalSortedApplications;

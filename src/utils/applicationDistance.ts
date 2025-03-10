@@ -9,7 +9,12 @@ export const addDistanceToApplications = (
   applications: Application[],
   searchCoordinates: [number, number] | null | undefined
 ): Application[] => {
-  if (!searchCoordinates) return applications;
+  if (!searchCoordinates) {
+    console.log('No search coordinates provided for distance calculation');
+    return applications;
+  }
+  
+  console.log(`Adding distance information to ${applications.length} applications`);
   
   return applications.map(app => {
     if (!app.coordinates) {

@@ -54,6 +54,8 @@ export const filterByLocationRelevance = (
     return applications;
   }
   
+  console.log('Filtering by location relevance for:', targetLocation);
+  
   // Normalize search terms for case-insensitive comparison
   const normalizedLocation = targetLocation.toLowerCase().trim();
   const locationParts = normalizedLocation.split(/[,\s]+/).filter(Boolean);
@@ -79,14 +81,37 @@ export const filterByLocationRelevance = (
     return score;
   };
   
+  // Calculate scores for each application
+  const scoredApplications = applications.map(app => ({
+    app,
+    score: getLocationScore(app)
+  }));
+  
+  // Log the highest scoring applications
+  const topScoringApps = [...scoredApplications]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+    
+  console.log('Top scoring applications:', 
+    topScoringApps.map(item => ({
+      id: item.app.id,
+      address: item.app.address,
+      score: item.score
+    }))
+  );
+  
   // First filter out applications with no relevance at all
-  const relevantApps = applications.filter(app => getLocationScore(app) > 0);
+  const relevantApps = scoredApplications.filter(item => item.score > 0);
   
   // If we have relevant applications, sort them by score and return
   if (relevantApps.length > 0) {
-    return relevantApps.sort((a, b) => getLocationScore(b) - getLocationScore(a));
+    console.log(`Found ${relevantApps.length} location-relevant applications out of ${applications.length}`);
+    return relevantApps
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.app);
   }
   
   // If no relevant applications, return original list
+  console.log('No location-relevant applications found, returning all');
   return applications;
 };
