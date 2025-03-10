@@ -119,19 +119,22 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
   });
 
   // Filter and sort applications with pagination - add safety checks
-  const safeApplications = applications || [];
+  const safeApplications = Array.isArray(applications) ? applications : [];
+  const safeActiveFilters = activeFilters || {};
+  const safeCurrentPage = typeof currentPage === 'number' && !isNaN(currentPage) ? currentPage : 0;
+  
   const {
     applications: filteredApplications,
     totalCount,
     totalPages
   } = useFilteredAndSortedApplications(
     safeApplications,
-    activeFilters || {},
+    safeActiveFilters,
     activeSort,
     coordinates,
     postcode,
     25,  // pageSize fixed at 25
-    currentPage || 0
+    safeCurrentPage
   );
 
   console.log('After useFilteredAndSortedApplications:', {
@@ -143,8 +146,8 @@ export const useSearchResults = ({ initialPostcode, initialSearch, retryCount = 
   const isLoading = isLoadingCoords || isLoadingApps || isLoadingInteresting;
   
   // Make sure we have valid applications array
-  const safeFilteredApplications = filteredApplications || [];
-  const safeInterestingApplications = interestingApplications || [];
+  const safeFilteredApplications = Array.isArray(filteredApplications) ? filteredApplications : [];
+  const safeInterestingApplications = Array.isArray(interestingApplications) ? interestingApplications : [];
   
   // Choose which applications to display
   const displayApplications = hasSearched ? safeFilteredApplications : safeInterestingApplications;

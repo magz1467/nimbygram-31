@@ -16,14 +16,14 @@ export const transformAndSortApplications = (
   
   if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
     console.log('Invalid coordinates provided for distance sorting:', coordinates);
-    return [...applications]; // Return a copy of the original array
+    return Array.isArray(applications) ? [...applications] : []; // Return a copy of the original array
   }
   
   // Make sure coordinates are valid numbers
   const [searchLat, searchLng] = coordinates;
   if (typeof searchLat !== 'number' || typeof searchLng !== 'number' || isNaN(searchLat) || isNaN(searchLng)) {
     console.warn('Invalid coordinate values:', coordinates);
-    return [...applications]; // Return a copy of the original array
+    return Array.isArray(applications) ? [...applications] : []; // Return a copy of the original array
   }
   
   try {
@@ -87,8 +87,8 @@ export const transformAndSortApplications = (
     // Create a copy before sorting to avoid mutation
     const sortedApps = [...appsWithDistance].sort((a, b) => {
       // Ensure we have valid distance values with strong type checking
-      const distanceA = typeof a?.distanceValue === 'number' ? a.distanceValue : Number.MAX_SAFE_INTEGER;
-      const distanceB = typeof b?.distanceValue === 'number' ? b.distanceValue : Number.MAX_SAFE_INTEGER;
+      const distanceA = typeof a?.distanceValue === 'number' && !isNaN(a.distanceValue) ? a.distanceValue : Number.MAX_SAFE_INTEGER;
+      const distanceB = typeof b?.distanceValue === 'number' && !isNaN(b.distanceValue) ? b.distanceValue : Number.MAX_SAFE_INTEGER;
       return distanceA - distanceB;
     });
     
@@ -105,6 +105,6 @@ export const transformAndSortApplications = (
     return sortedApps;
   } catch (error) {
     console.error('Error in transformAndSortApplications:', error);
-    return [...applications]; // Return a copy of the original array as fallback
+    return Array.isArray(applications) ? [...applications] : []; // Return a copy of the original array as fallback
   }
 };

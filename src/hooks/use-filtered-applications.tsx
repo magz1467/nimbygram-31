@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
@@ -71,10 +72,10 @@ export const useFilteredApplications = (
     
     try {
       const validCoordinates = searchCoordinates && 
-                               Array.isArray(searchCoordinates) && 
-                               searchCoordinates.length === 2 && 
-                               typeof searchCoordinates[0] === 'number' && 
-                               typeof searchCoordinates[1] === 'number';
+                             Array.isArray(searchCoordinates) && 
+                             searchCoordinates.length === 2 && 
+                             typeof searchCoordinates[0] === 'number' && 
+                             typeof searchCoordinates[1] === 'number';
       
       // If we have coordinates and sort type is distance, or no sort is specified, sort by distance
       if (validCoordinates && (activeSort === 'distance' || !activeSort)) {

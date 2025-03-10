@@ -27,31 +27,41 @@ export const useFilteredAndSortedApplications = (
   // Ensure we have valid inputs - defensive coding
   const validApplications = Array.isArray(applications) ? applications : [];
   const validFilters = activeFilters || {};
-  const validCurrentPage = typeof currentPage === 'number' && !isNaN(currentPage) ? currentPage : 0;
-  const validPageSize = typeof pageSize === 'number' && !isNaN(pageSize) ? pageSize : 25;
+  const validCurrentPage = typeof currentPage === 'number' && !isNaN(currentPage) ? Math.max(0, currentPage) : 0;
+  const validPageSize = typeof pageSize === 'number' && !isNaN(pageSize) ? Math.max(1, pageSize) : 25;
+  const validCoordinates = coordinates && Array.isArray(coordinates) && coordinates.length === 2 ? coordinates : null;
+  const validSearchTerm = typeof searchTerm === 'string' ? searchTerm : '';
+  const validActiveSort = typeof activeSort === 'string' ? activeSort : undefined;
 
   // Get filtered applications using the filtered applications hook
-  const result = useFilteredApplications(
+  const filteredResult = useFilteredApplications(
     validApplications,
     validFilters,
-    activeSort,
-    coordinates,
-    searchTerm,
+    validActiveSort,
+    validCoordinates,
+    validSearchTerm,
     validCurrentPage,
     validPageSize
   );
 
+  // Safely extract applications and total count from result
+  const safeApplications = (filteredResult && Array.isArray(filteredResult.applications)) 
+    ? filteredResult.applications 
+    : [];
+  
+  const safeTotalCount = (filteredResult && typeof filteredResult.totalCount === 'number') 
+    ? filteredResult.totalCount 
+    : 0;
+
   // Calculate total pages safely - always return at least 1 page
   const totalPages = useMemo(() => {
-    // Ensure result exists and has a valid totalCount
-    const count = result && typeof result.totalCount === 'number' ? result.totalCount : 0;
-    return Math.max(1, Math.ceil(count / validPageSize));
-  }, [result, validPageSize]);
+    return Math.max(1, Math.ceil(safeTotalCount / validPageSize));
+  }, [safeTotalCount, validPageSize]);
 
   // Return safe values with fallbacks
   return useMemo(() => ({
-    applications: result && Array.isArray(result.applications) ? result.applications : [],
-    totalCount: result && typeof result.totalCount === 'number' ? result.totalCount : 0,
+    applications: safeApplications,
+    totalCount: safeTotalCount,
     totalPages
-  }), [result, totalPages]);
+  }), [safeApplications, safeTotalCount, totalPages]);
 };
