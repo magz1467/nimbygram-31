@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { ResultsContainer } from "./ResultsContainer";
-import { FilterBarSection } from "./FilterBarSection";
 import { ResultsHeader } from "./ResultsHeader";
 import { SortType } from "@/types/application-types";
 
@@ -90,10 +89,11 @@ export const SearchViewContent = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 pb-16 pt-4">
+    <div className="max-w-7xl mx-auto pb-16 pt-0">
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
         displayTerm={initialSearch.displayTerm}
+        resultsCount={totalCount}
         isLoading={isLoading}
         hasSearched={hasSearched}
         coordinates={coordinates}
@@ -106,25 +106,27 @@ export const SearchViewContent = ({
         statusCounts={statusCounts}
       />
 
-      {/* We no longer need the separate FilterBarSection as the controls are now in the header */}
-      <ResultsContainer
-        displayApplications={displayApplications}
-        applications={applications}
-        coordinates={coordinates}
-        showMap={showMap}
-        setShowMap={setShowMap}
-        selectedId={selectedId}
-        setSelectedId={setSelectedId}
-        handleMarkerClick={handleMarkerClick}
-        isLoading={isLoading}
-        searchTerm={initialSearch.searchTerm}
-        displayTerm={initialSearch.displayTerm}
-        error={error}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        totalCount={totalCount}
-      />
+      {/* Results container */}
+      <div className="px-4 lg:px-8">
+        <ResultsContainer
+          displayApplications={displayApplications}
+          applications={applications}
+          coordinates={coordinates}
+          showMap={showMap}
+          setShowMap={setShowMap}
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          handleMarkerClick={handleMarkerClick}
+          isLoading={isLoading}
+          searchTerm={initialSearch.searchTerm}
+          displayTerm={initialSearch.displayTerm}
+          error={error}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalCount={totalCount}
+        />
+      </div>
     </div>
   );
 };

@@ -1,80 +1,104 @@
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { StatusFilter } from "./StatusFilter"; 
-import { SortDropdown } from "./SortDropdown"; 
-import { Button } from "@/components/ui/button";
-import { List } from "lucide-react";
-import { ClassificationFilters } from "./ClassificationFilters";
-import { SortType, FilterType, StatusCounts } from "@/types/application-types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SortDropdown } from "./SortDropdown";
+import { FilterDropdown } from "./FilterDropdown";
+import { ClassificationFilters } from "./ClassificationFilters";
+import { StatusFilter } from "./StatusFilter";
+import { SortType } from "@/types/application-types";
+import { useCallback } from "react";
 
 interface FilterControlsProps {
   onFilterChange: (filterType: string, value: string) => void;
   onSortChange: (sortType: SortType) => void;
-  activeFilters: FilterType;
+  activeFilters?: {
+    status?: string;
+    type?: string;
+    classification?: string;
+  };
   activeSort: SortType;
-  isMobile: boolean;
+  isMobile?: boolean;
   applications?: any[];
-  isMapView: boolean;
+  statusCounts?: {
+    'Under Review': number;
+    'Approved': number;
+    'Declined': number;
+    'Other': number;
+  };
+  isMapView?: boolean;
   onToggleView?: () => void;
-  statusCounts?: StatusCounts;
+  showCategoryFiltersOnly?: boolean;
 }
 
 export const FilterControls = ({
   onFilterChange,
   onSortChange,
-  activeFilters,
+  activeFilters = {},
   activeSort,
-  isMobile,
-  applications,
+  isMobile: forceMobile,
+  applications = [],
+  statusCounts = {
+    'Under Review': 0,
+    'Approved': 0,
+    'Declined': 0,
+    'Other': 0
+  },
   isMapView,
   onToggleView,
-  statusCounts
+  showCategoryFiltersOnly = false
 }: FilterControlsProps) => {
-  // Use the useIsMobile hook directly to get a more accurate reading
-  const reallyIsMobile = useIsMobile();
+  const isMobileDetected = useIsMobile();
+  const isMobile = forceMobile !== undefined ? forceMobile : isMobileDetected;
 
-  return (
-    <div className="flex flex-col w-full gap-2">
-      <div className="flex justify-between items-center gap-2">
-        <ErrorBoundary>
-          <StatusFilter
-            onFilterChange={onFilterChange}
-            activeFilters={activeFilters}
-            isMobile={reallyIsMobile}
-            applications={applications}
-            statusCounts={statusCounts}
-          />
-        </ErrorBoundary>
+  const handleFilterChange = useCallback((filterType: string, value: string) => {
+    onFilterChange(filterType, value);
+  }, [onFilterChange]);
 
-        <div className="flex items-center gap-2">
-          <ErrorBoundary>
-            {reallyIsMobile && isMapView ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1 whitespace-nowrap"
-                onClick={onToggleView}
-              >
-                <List className="h-3.5 w-3.5" />
-                Feed
-              </Button>
-            ) : (
-              <SortDropdown
-                activeSort={activeSort}
-                onSortChange={onSortChange}
-              />
-            )}
-          </ErrorBoundary>
-        </div>
-      </div>
+  const handleSortChange = useCallback((sortType: SortType) => {
+    onSortChange(sortType);
+  }, [onSortChange]);
 
-      <div className={`w-full ${reallyIsMobile ? 'overflow-x-auto scrollbar-hide -mx-1 px-1' : 'overflow-hidden'}`}>
+  // If we only want to show category filters, render just those
+  if (showCategoryFiltersOnly) {
+    return (
+      <div className="flex items-center space-x-2 w-full overflow-x-auto hide-scrollbar">
         <ClassificationFilters 
-          onFilterChange={onFilterChange}
-          activeFilter={activeFilters.classification}
+          onFilterChange={handleFilterChange} 
+          activeClassification={activeFilters.classification} 
+          isMobile={isMobile}
         />
       </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center space-x-2 ${isMobile ? 'w-full overflow-x-auto hide-scrollbar' : ''}`}>
+      <FilterDropdown 
+        onFilterChange={handleFilterChange} 
+        activeFilters={activeFilters} 
+        statusCounts={statusCounts}
+        isMobile={isMobile}
+      />
+      
+      <SortDropdown 
+        onSortChange={handleSortChange} 
+        activeSort={activeSort} 
+        isMobile={isMobile}
+      />
+      
+      <ClassificationFilters 
+        onFilterChange={handleFilterChange} 
+        activeClassification={activeFilters.classification} 
+        isMobile={isMobile}
+      />
+
+      {applications.length > 0 && (
+        <StatusFilter 
+          onFilterChange={handleFilterChange}
+          activeStatus={activeFilters.status || ''}
+          statusCounts={statusCounts}
+          isMobile={isMobile}
+        />
+      )}
     </div>
   );
 };
