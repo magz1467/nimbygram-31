@@ -61,7 +61,7 @@ export const useFilteredApplications = (
     // Apply sorting based on active sort type
     let finalSortedApplications = applicationsWithDistance;
     
-    if ((activeSort === 'distance' || activeSort === 'nearest') && searchCoordinates) {
+    if ((activeSort === 'distance') && searchCoordinates) {
       console.log('Explicitly sorting by distance');
       finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
     } else if (activeSort) {
