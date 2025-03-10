@@ -29,8 +29,8 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
 }) => {
   return (
     <div className="border-b">
-      {/* Logo header row */}
-      <div className="py-4 border-b">
+      {/* Logo header row with white background */}
+      <div className="py-4 border-b bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <Logo />
         </div>
