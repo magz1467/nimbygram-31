@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchResults } from "@/hooks/applications/use-search-results";
 import { ResultsContainer } from "./ResultsContainer";
@@ -97,7 +98,7 @@ export const SearchViewContent = ({
         isLoading={isLoading}
         hasSearched={hasSearched}
         coordinates={coordinates}
-        onPostcodeSelect={handlePostcodeSelect}
+        onSelect={handlePostcodeSelect}
       />
 
       <FilterBarSection 
