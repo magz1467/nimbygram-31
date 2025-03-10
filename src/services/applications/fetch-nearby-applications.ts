@@ -28,16 +28,16 @@ export const fetchNearbyApplications = async (
     
     // Select all applications without any filtering initially
     // This helps us determine if there's any data in the table at all
-    console.log('Fetching all records from crystal_roof table to check data availability');
-    const allDataQuery = await supabase
+    const { data: totalCountData, error: countError } = await supabase
       .from('crystal_roof')
       .select('count');
     
-    if (allDataQuery.error) {
-      console.error('Error checking data count:', allDataQuery.error);
-    } else {
-      console.log('Total records in database:', allDataQuery.count);
+    if (countError) {
+      console.error('Error checking data count:', countError);
+      throw countError;
     }
+
+    console.log('Total records in database:', totalCountData?.[0]?.count);
     
     // Calculate bounds for a radius search
     const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
@@ -50,13 +50,20 @@ export const fetchNearbyApplications = async (
     
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
-    // Select all applications without initial storybook filtering
-    const queryResult = await supabase
-      .from('crystal_roof')
-      .select('*');
+    // Query with explicit Promise to handle errors correctly
+    const queryResult = await new Promise<{ data: any[] | null, error: any }>((resolve) => {
+      supabase
+        .from('crystal_roof')
+        .select('*')
+        .then(result => {
+          resolve(result);
+        })
+        .catch(error => {
+          resolve({ data: null, error });
+        });
+    });
     
-    let properties = queryResult.data;
-    const error = queryResult.error;
+    const { data: properties, error } = queryResult;
     
     console.log('🔍 Query result:', { 
       success: !error, 
@@ -67,7 +74,7 @@ export const fetchNearbyApplications = async (
     
     if (error) {
       console.error('Database query error:', error);
-      return null;
+      throw error;
     }
     
     if (!properties || properties.length === 0) {
@@ -75,72 +82,67 @@ export const fetchNearbyApplications = async (
       return [];
     }
     
-    // Log a sample row to see what data we're working with
-    console.log('Sample row from crystal_roof:', properties[0]);
+    // Log details about the first few records
+    console.log('Sample rows from crystal_roof:', properties.slice(0, 3));
     
-    // Check if any records have storybook values
-    const storybookCount = properties.filter(p => p.storybook).length;
-    console.log(`Records with storybook values: ${storybookCount} out of ${properties.length}`);
-    
-    // If none have storybook values, we should report this as a potential issue
-    if (storybookCount === 0) {
-      console.warn('⚠️ NO RECORDS HAVE STORYBOOK VALUES - this will cause empty search results');
-    }
+    // Check coordinates in raw data
+    const sampleCoords = properties.slice(0, 5).map(p => ({
+      id: p.id,
+      geom: p.geom,
+      geometry: p.geometry,
+      latitude: p.latitude,
+      longitude: p.longitude
+    }));
+    console.log('Coordinate samples:', sampleCoords);
     
     // Filter the results in JavaScript based on approximate distance
-    console.log('Raw properties before filtering:', properties.slice(0, 3));
-    
-    // Filter out null storybook values
-    const nonNullStorybooks = properties.filter(property => 
-      property.storybook !== null && property.storybook !== undefined && property.storybook !== ''
-    );
-    
-    console.log(`After filtering null storybooks: ${nonNullStorybooks.length} properties remaining`);
-    
-    // Filter by distance
-    properties = nonNullStorybooks.filter(property => {
+    const filteredProperties = properties.filter(property => {
       try {
         // Extract coordinates - check both geom and geometry
         let propLat, propLng;
         
         if (property.geom?.coordinates) {
-          // CRITICAL: Check coordinate order in geom - ensure [lng, lat] is converted to [lat, lng]
           propLng = parseFloat(property.geom.coordinates[0]);
           propLat = parseFloat(property.geom.coordinates[1]);
         } else if (property.geometry?.coordinates) {
           propLng = parseFloat(property.geometry.coordinates[0]);
           propLat = parseFloat(property.geometry.coordinates[1]);
         } else if (property.latitude && property.longitude) {
-          // Use direct lat/lng properties if available
           propLat = parseFloat(property.latitude);
           propLng = parseFloat(property.longitude);
         } else {
-          return false; // Skip if no coordinates
+          console.log('No coordinates found for property:', property.id);
+          return false;
         }
         
-        // Check if within extended bounds
-        return (
+        // Check if coordinates are valid
+        if (isNaN(propLat) || isNaN(propLng)) {
+          console.log('Invalid coordinates for property:', property.id);
+          return false;
+        }
+        
+        // Check if within bounds
+        const withinBounds = (
           propLat >= latMin && 
           propLat <= latMax && 
           propLng >= lngMin && 
           propLng <= lngMax
         );
+
+        if (!withinBounds) {
+          console.log(`Property ${property.id} outside bounds: [${propLat}, ${propLng}]`);
+        }
+        
+        return withinBounds;
       } catch (err) {
         console.error(`Error filtering property ${property.id}:`, err);
         return false;
       }
     });
     
-    console.log(`✅ Filtered to ${properties.length} applications within radius`);
+    console.log(`✅ Filtered to ${filteredProperties.length} applications within radius`);
     
-    // If we end up with zero results, but had data in the table, we should explain why
-    if (properties.length === 0 && nonNullStorybooks.length > 0) {
-      console.warn('⚠️ All records were filtered out by distance, consider increasing the radius');
-    } else if (properties.length === 0 && nonNullStorybooks.length === 0) {
-      console.warn('⚠️ All records were filtered out because none had storybook values');
-    }
-    
-    return properties;
+    return filteredProperties;
   } catch (error) {
     console.error('❌ Error fetching application data:', error);
     return null;
