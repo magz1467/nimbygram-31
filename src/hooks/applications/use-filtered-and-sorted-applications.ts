@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { useFilteredApplications } from '@/hooks/use-filtered-applications';
@@ -28,6 +28,7 @@ export const useFilteredAndSortedApplications = (
   const validApplications = applications || [];
   const validFilters = activeFilters || {};
   
+  // Get filtered and sorted applications
   const result = useFilteredApplications(
     validApplications,
     validFilters,
@@ -38,8 +39,9 @@ export const useFilteredAndSortedApplications = (
     pageSize
   );
   
+  // Calculate total pages
   const totalPages = useMemo(() => {
-    const count = result.totalCount || 0;
+    const count = result.totalCount ?? 0;
     return Math.max(1, Math.ceil(count / pageSize));
   }, [result.totalCount, pageSize]);
   

@@ -6,25 +6,35 @@ export const transformAndSortApplications = (
   applications: any[],
   coordinates: [number, number]
 ): any[] => {
-  console.log(`🔍 Transforming and sorting ${applications.length} applications by distance from`, coordinates);
+  console.log(`🔍 Transforming and sorting ${applications?.length || 0} applications by distance from`, coordinates);
   
-  if (!applications?.length || !coordinates) {
-    console.log('No applications or coordinates provided for distance sorting');
+  if (!applications?.length || !coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+    console.log('No valid applications or coordinates provided for distance sorting', {
+      appCount: applications?.length || 0,
+      coordinates
+    });
     return applications || [];
   }
   
   // Add distance to each application
   const appsWithDistance = applications.map(app => {
     // Skip if app doesn't have coordinates
-    if (!app.coordinates || !Array.isArray(app.coordinates)) {
-      console.log(`Missing or invalid coordinates for application ${app.id}`);
+    if (!app?.coordinates || !Array.isArray(app.coordinates)) {
+      console.log(`Missing or invalid coordinates for application ${app?.id || 'unknown'}`);
       return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
     }
     
     try {
       // IMPORTANT: Coordinates should be in [latitude, longitude] format
       const [searchLat, searchLng] = coordinates;
-      const [appLat, appLng] = app.coordinates;
+      let appLat, appLng;
+      
+      if (app.coordinates.length >= 2) {
+        [appLat, appLng] = app.coordinates;
+      } else {
+        console.warn(`Invalid coordinates format for app ${app.id}:`, app.coordinates);
+        return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
+      }
       
       // Basic validation
       if (isNaN(searchLat) || isNaN(searchLng) || isNaN(appLat) || isNaN(appLng)) {
@@ -63,15 +73,15 @@ export const transformAndSortApplications = (
         distanceValue: distance // Store raw distance in km for consistent sorting
       };
     } catch (error) {
-      console.error(`Error calculating distance for application ${app.id}:`, error);
+      console.error(`Error calculating distance for application ${app?.id || 'unknown'}:`, error);
       return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };
     }
   });
   
   // Sort by the raw distance value
-  const sortedApps = [...appsWithDistance].sort((a, b) => {
-    const distanceA = a.distanceValue ?? Number.MAX_SAFE_INTEGER;
-    const distanceB = b.distanceValue ?? Number.MAX_SAFE_INTEGER;
+  const sortedApps = [...(appsWithDistance || [])].sort((a, b) => {
+    const distanceA = a?.distanceValue ?? Number.MAX_SAFE_INTEGER;
+    const distanceB = b?.distanceValue ?? Number.MAX_SAFE_INTEGER;
     return distanceA - distanceB;
   });
   

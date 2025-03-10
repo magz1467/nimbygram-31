@@ -26,10 +26,18 @@ export const useSearchViewFilters = ({
   // Default to distance sort when coordinates are available
   const effectiveSort = coordinates && !activeSort ? 'distance' : activeSort;
   
+  console.log('🔍 useSearchViewFilters - Inputs:', {
+    applicationsCount: applications?.length || 0,
+    filters: activeFilters,
+    sort: effectiveSort,
+    coordinates,
+    searchTerm
+  });
+  
   // Use the filtered applications hook with coordinates and search term
   const result = useFilteredApplications(
     applications || [],
-    activeFilters,
+    activeFilters || {},
     effectiveSort,
     coordinates,
     searchTerm // Pass search term for location relevance
@@ -51,6 +59,8 @@ export const useSearchViewFilters = ({
           distance: app.distance || 'unknown'
         }))
       );
+    } else if (coordinates) {
+      console.log('🌍 Search location coordinates:', coordinates, 'but no applications found');
     }
   }, [coordinates, displayApplications]);
 
