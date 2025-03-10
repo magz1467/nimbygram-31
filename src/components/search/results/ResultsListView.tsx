@@ -1,7 +1,7 @@
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { Button } from "@/components/ui/button";
-import { RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RotateCw, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
@@ -19,8 +19,8 @@ interface ResultsListViewProps {
   postcode?: string;
   error?: Error | null;
   currentPage?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
+  hasMore?: boolean;
+  loadMoreResults?: () => void;
   totalCount?: number;
 }
 
@@ -37,9 +37,8 @@ export const ResultsListView = ({
   allApplications,
   postcode,
   error,
-  currentPage = 0,
-  totalPages = 1,
-  onPageChange,
+  hasMore = false,
+  loadMoreResults,
   totalCount = 0
 }: ResultsListViewProps) => {
   // Use the visible applications or all applications array, whichever is available
@@ -49,6 +48,7 @@ export const ResultsListView = ({
   
   // Add state to detect long-running searches
   const [isLongSearch, setIsLongSearch] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Set a timer to detect long-running searches
   useEffect(() => {
@@ -67,15 +67,25 @@ export const ResultsListView = ({
       if (timer) window.clearTimeout(timer);
     };
   }, [isLoading]);
-
-  const handlePageChange = (newPage: number) => {
-    if (onPageChange && newPage >= 0 && newPage < totalPages) {
-      onPageChange(newPage);
+  
+  // Function to handle loading more results
+  const handleLoadMore = async () => {
+    if (loadMoreResults && hasMore && !isLoadingMore) {
+      setIsLoadingMore(true);
+      
+      try {
+        loadMoreResults();
+      } finally {
+        // Wait a bit before resetting the loading state to show the button animation
+        setTimeout(() => {
+          setIsLoadingMore(false);
+        }, 1000);
+      }
     }
   };
 
-  // If loading, show skeleton cards
-  if (isLoading) {
+  // If loading initial results, show skeleton cards
+  if (isLoading && applications.length === 0) {
     return (
       <div className="space-y-6 py-8">
         {[1, 2, 3].map((i) => (
@@ -182,37 +192,35 @@ export const ResultsListView = ({
         />
       ))}
       
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center pt-6 pb-8 border-t mt-6">
-          <div className="text-sm text-gray-500">
-            Showing {applications.length} of {totalCount} results
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <div className="flex items-center px-3 text-sm">
-              Page {currentPage + 1} of {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex justify-center pt-6 pb-8">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleLoadMore}
+            disabled={isLoadingMore || isLoading}
+            className="gap-2 min-w-40"
+          >
+            {isLoadingMore ? (
+              <>
+                <RotateCw className="h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Load More Results
+              </>
+            )}
+          </Button>
         </div>
       )}
+      
+      {/* Results Count */}
+      <div className="text-center text-sm text-gray-500 pb-4">
+        Showing {applications.length} of {totalCount} results
+      </div>
     </div>
   );
 };
