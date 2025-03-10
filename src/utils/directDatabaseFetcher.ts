@@ -2,9 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationData } from "./transforms/application-transformer";
-import { calculateDistance } from "./distance";
+import { calculateDistance, sortApplicationsByDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
-import { sortApplicationsByDistance } from "./distance";
 
 const MAX_RETRY_ATTEMPTS = 2;
 
@@ -15,6 +14,7 @@ export const fetchApplicationsFromDatabase = async (
   coordinates: [number, number]
 ): Promise<Application[]> => {
   console.log('📊 Fetching applications directly from database with pagination');
+  console.log('🌍 Search coordinates:', coordinates);
   
   const pageSize = 100;
   let currentPage = 0;
@@ -121,6 +121,7 @@ export const fetchApplicationsFromDatabase = async (
   }
 
   // Transform all application data
+  console.log('Transforming application data with coordinates:', coordinates);
   const transformedApplications = allResults
     .map(app => transformApplicationData(app, coordinates))
     .filter((app): app is Application => app !== null);

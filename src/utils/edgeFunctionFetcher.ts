@@ -13,6 +13,7 @@ export const fetchApplicationsFromEdge = async (
   radius: number = 5000
 ): Promise<Application[] | null> => {
   console.log('🔄 Attempting to fetch applications using edge function');
+  console.log('🌍 Search coordinates:', coordinates);
   
   const [lat, lng] = coordinates;
   
@@ -57,12 +58,14 @@ export const fetchApplicationsFromEdge = async (
     if (result.applications && Array.isArray(result.applications)) {
       console.log(`✅ Successfully retrieved ${result.applications.length} applications from edge function`);
       
-      // Transform the applications
+      // Transform the applications with explicit coordinates
       const transformedApplications = result.applications
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
-      // Sort by distance
+      console.log(`Transformed ${transformedApplications.length} applications, sorting by distance...`);
+      
+      // Sort by distance using our sortApplicationsByDistance function
       return sortApplicationsByDistance(transformedApplications, coordinates);
     }
     

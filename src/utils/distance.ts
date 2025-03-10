@@ -75,20 +75,30 @@ export const sortApplicationsByDistance = (
 
   console.log(`Sorting ${applications.length} applications from [${coordinates}]`);
   
-  return [...applications].sort((a, b) => {
-    if (!a.coordinates || !b.coordinates) {
-      console.warn('Missing coordinates for application:', { 
-        aId: a.id, 
-        bId: b.id,
-        aCoords: a.coordinates,
-        bCoords: b.coordinates
-      });
-      return 0;
+  // Create a copy of applications with calculated distances
+  const appsWithDistance = applications.map(app => {
+    if (!app.coordinates) {
+      console.warn(`Application ${app.id} missing coordinates`);
+      return { ...app, _distanceValue: Number.MAX_SAFE_INTEGER };
     }
-
-    const distanceA = calculateDistance(coordinates, a.coordinates);
-    const distanceB = calculateDistance(coordinates, b.coordinates);
     
-    return distanceA - distanceB;
+    const distance = calculateDistance(coordinates, app.coordinates);
+    return { ...app, _distanceValue: distance };
   });
+  
+  // Sort by the calculated distance
+  const sortedApps = appsWithDistance.sort((a, b) => {
+    // @ts-ignore - we added _distanceValue above
+    return a._distanceValue - b._distanceValue;
+  });
+  
+  // Log the first few results for debugging
+  console.log("\nSorted applications (first 5):");
+  sortedApps.slice(0, 5).forEach((app, index) => {
+    // @ts-ignore - we added _distanceValue above
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${app._distanceValue.toFixed(2)}km (${app.distance}), Coordinates: ${app.coordinates}`);
+  });
+  
+  // Return sorted applications without the temporary _distanceValue property
+  return sortedApps.map(({ _distanceValue, ...app }) => app as Application);
 };
