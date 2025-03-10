@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PostcodeSearch } from '@/components/PostcodeSearch';
 import { Application } from '@/types/planning';
@@ -128,7 +127,7 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
                           <ArrowDownUp className="h-4 w-4" />
                           <span>{activeSort === 'distance' ? 'Distance' : 
                                   activeSort === 'newest' ? 'Newest' : 
-                                  activeSort === 'oldest' ? 'Oldest' : 'Sort'}</span>
+                                  activeSort === 'closingSoon' ? 'Closing Soon' : 'Sort'}</span>
                         </Button>
                       </div>
                     </div>

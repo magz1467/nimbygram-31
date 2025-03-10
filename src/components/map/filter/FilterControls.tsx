@@ -57,14 +57,12 @@ export const FilterControls = ({
     onSortChange(sortType);
   }, [onSortChange]);
 
-  // If we only want to show category filters, render just those
   if (showCategoryFiltersOnly) {
     return (
       <div className="flex items-center space-x-2 w-full overflow-x-auto hide-scrollbar">
         <ClassificationFilters 
           onFilterChange={handleFilterChange} 
-          activeClassification={activeFilters.classification} 
-          isMobile={isMobile}
+          activeFilter={activeFilters.classification} 
         />
       </div>
     );
@@ -81,22 +79,19 @@ export const FilterControls = ({
       
       <SortDropdown 
         onSortChange={handleSortChange} 
-        activeSort={activeSort} 
-        isMobile={isMobile}
+        activeSort={activeSort}
       />
       
       <ClassificationFilters 
         onFilterChange={handleFilterChange} 
-        activeClassification={activeFilters.classification} 
-        isMobile={isMobile}
+        activeFilter={activeFilters.classification} 
       />
 
       {applications.length > 0 && (
         <StatusFilter 
           onFilterChange={handleFilterChange}
-          activeStatus={activeFilters.status || ''}
+          activeFilters={activeFilters}
           statusCounts={statusCounts}
-          isMobile={isMobile}
         />
       )}
     </div>
