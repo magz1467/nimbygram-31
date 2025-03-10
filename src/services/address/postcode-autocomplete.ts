@@ -1,11 +1,6 @@
 
 import { PostcodeSuggestion } from '../../types/address-suggestions';
 
-/**
- * Fetch autocomplete suggestions for postcodes
- * @param searchTerm The search term to get suggestions for
- * @returns Promise with postcode suggestions
- */
 export const fetchAddressSuggestions = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
   console.log('🔍 Fetching address suggestions for:', searchTerm);
   
@@ -14,18 +9,22 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
     return [];
   }
 
+  // Format search term - remove spaces and convert to uppercase for consistency
+  const formattedSearchTerm = searchTerm.replace(/\s+/g, '').toUpperCase();
+
   try {
     // First try to get postcode autocomplete results
-    const postcodeSuggestions = await getPostcodeAutocomplete(searchTerm);
+    console.log('📫 Fetching postcode autocomplete for:', formattedSearchTerm);
+    const postcodeSuggestions = await getPostcodeAutocomplete(formattedSearchTerm);
     
     // If no postcode matches are found, try searching for location names
     if (postcodeSuggestions.length === 0) {
       const locationSuggestions = await searchLocationsByName(searchTerm);
-      console.log('📋 Fetched location suggestions count:', locationSuggestions.length);
+      console.log('📋 Location suggestions count:', locationSuggestions.length);
       return locationSuggestions;
     }
     
-    console.log('📋 Fetched address suggestions count:', postcodeSuggestions.length);
+    console.log('📋 Postcode suggestions count:', postcodeSuggestions.length);
     return postcodeSuggestions;
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
@@ -33,84 +32,89 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
   }
 };
 
-/**
- * Get postcode autocomplete suggestions with enhanced location data
- */
 export const getPostcodeAutocomplete = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
   try {
-    // Construct the API URL
+    // Use the correct API endpoint with proper error handling
     const autocompleteUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(searchTerm)}/autocomplete`;
-    console.log('🔍 Fetching postcode autocomplete:', autocompleteUrl);
+    console.log('🔍 Fetching from:', autocompleteUrl);
     
-    // Make the API request
     const response = await fetch(autocompleteUrl);
+    
+    // Log the raw response for debugging
+    const responseText = await response.text();
+    console.log('📦 Raw API response:', responseText);
+    
+    // Parse the response text as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON response:', e);
+      return [];
+    }
+    
     if (!response.ok) {
-      console.log('❌ Postcode autocomplete failed with status:', response.status);
+      console.warn('❌ API request failed:', data);
       return [];
     }
     
-    // Parse the response JSON
-    const data = await response.json();
-    
-    // Check if we have results - API returns null for no results
+    // Handle null result case
     if (!data.result) {
-      console.log('ℹ️ No postcode autocomplete results found (null result)');
+      console.log('ℹ️ No results found');
       return [];
     }
     
-    // Ensure result is an array (API returns null for no results)
+    // Ensure result is an array
     if (!Array.isArray(data.result)) {
-      console.log('ℹ️ Result is not an array:', typeof data.result);
+      console.warn('⚠️ Unexpected response format:', data);
       return [];
     }
     
-    console.log('📍 Found postcode autocomplete results:', data.result.length);
+    console.log('📍 Found postcode matches:', data.result.length);
     
-    // Get detailed information for each postcode
-    const enhancedSuggestions = await Promise.all(
+    // Transform the results into PostcodeSuggestion format
+    const suggestions: PostcodeSuggestion[] = await Promise.all(
       data.result.map(async (postcode: string) => {
         try {
           const details = await fetchPostcodeDetails(postcode);
           return {
             postcode,
+            address: postcode, // Use postcode as address for display
             country: details?.country || 'United Kingdom',
             county: details?.county || '',
             district: details?.admin_district || '',
             locality: details?.admin_ward || '',
-            nhs_ha: details?.nhs_ha || '',
             admin_district: details?.admin_district || '',
-            address: postcode
+            nhs_ha: details?.nhs_ha || ''
           };
         } catch (error) {
           console.error(`Error fetching details for ${postcode}:`, error);
+          // Return basic suggestion if details fetch fails
           return {
             postcode,
-            country: 'United Kingdom',
             address: postcode,
-            nhs_ha: '',
-            admin_district: ''
+            country: 'United Kingdom',
+            admin_district: '',
+            nhs_ha: ''
           };
         }
       })
     );
     
-    return enhancedSuggestions;
+    return suggestions;
   } catch (error) {
     console.error('Error in getPostcodeAutocomplete:', error);
     return [];
   }
 };
 
-/**
- * Fetch detailed information for a specific postcode
- */
 const fetchPostcodeDetails = async (postcode: string) => {
   try {
+    console.log('🔍 Fetching details for postcode:', postcode);
     const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
     if (!response.ok) {
-      return null;
+      throw new Error(`Failed to fetch postcode details: ${response.status}`);
     }
-    
     const data = await response.json();
     return data.result;
   } catch (error) {
