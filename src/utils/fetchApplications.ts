@@ -102,38 +102,61 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     let allResults: any[] = [];
 
     while (hasMore) {
-      // Create a proper Promise that fulfills TypeScript's full Promise interface requirements
+      // Use a proper Promise constructor with explicit error handling
       const queryPromise = new Promise<any[]>((resolve, reject) => {
-        supabase
+        // Store the query in a variable so we can properly handle its result
+        const query = supabase
           .from('crystal_roof')
           .select('*')
-          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1)
+          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
+          
+        // Execute the query and handle both success and failure cases
+        query
           .then(result => {
             if (result.error) {
+              console.error("Supabase query error:", result.error);
               reject(result.error);
             } else {
               resolve(result.data || []);
             }
           })
-          .catch(error => reject(error)); // Explicitly handle errors
+          .catch(error => {
+            console.error("Unexpected error in Supabase query:", error);
+            reject(error);
+          });
       });
 
-      const pageResults = await withTimeout(
-        queryPromise,
-        20000, // 20 second timeout per page
-        "Database query page timed out. Please try again."
-      );
+      try {
+        const pageResults = await withTimeout(
+          queryPromise,
+          20000, // 20 second timeout per page
+          "Database query page timed out. Please try again."
+        );
 
-      if (pageResults.length === 0) {
-        hasMore = false;
-      } else {
-        allResults = [...allResults, ...pageResults];
-        currentPage++;
-
-        // Limit total results to prevent memory issues
-        if (allResults.length >= 1000) {
+        if (pageResults.length === 0) {
           hasMore = false;
-          console.log('Reached maximum result limit of 1000');
+        } else {
+          allResults = [...allResults, ...pageResults];
+          currentPage++;
+
+          // Limit total results to prevent memory issues
+          if (allResults.length >= 1000) {
+            hasMore = false;
+            console.log('Reached maximum result limit of 1000');
+          }
+        }
+      } catch (pageError) {
+        console.error('Error fetching page:', pageError);
+        // If a page fails, stop paginating but return any results we have so far
+        hasMore = false;
+        
+        // Show a toast only if we have no results at all
+        if (allResults.length === 0) {
+          toast({
+            title: "Search Pagination Error",
+            description: "We encountered an issue retrieving all results. Showing partial results.",
+            variant: "destructive",
+          });
         }
       }
     }
