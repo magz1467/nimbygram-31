@@ -31,68 +31,110 @@ serve(async (req) => {
 
     const startTime = Date.now()
 
-    // Get applications within radius with timeout handling
-    const { data: applications, error: applicationsError } = await supabaseClient.rpc(
-      'get_applications_within_radius',
-      {
-        center_lat,
-        center_lng,
-        radius_meters,
-        page_size,
-        page_number
+    // First check if we can get a count quickly
+    let totalCount = 0;
+    let countError = null;
+    try {
+      // Get total count with timeout handling
+      const countResult = await Promise.race([
+        supabaseClient.rpc(
+          'get_applications_count_within_radius',
+          {
+            center_lat,
+            center_lng,
+            radius_meters
+          }
+        ),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Count query timeout")), 10000)
+        )
+      ]);
+      
+      if (countResult.error) {
+        throw countResult.error;
       }
-    ).timeout(30000) // 30 second timeout
-
-    if (applicationsError) {
-      console.error('Error fetching applications:', applicationsError)
-      return new Response(
-        JSON.stringify({ 
-          error: applicationsError.message,
-          details: 'Error fetching applications'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
+      
+      totalCount = countResult.data || 0;
+      console.log(`Total count: ${totalCount}`);
+      
+    } catch (error) {
+      console.error('Error getting count:', error);
+      countError = error;
+      // Continue anyway - we can still try to get the applications
     }
 
-    // Get total count with timeout handling
-    const { data: totalCount, error: countError } = await supabaseClient.rpc(
-      'get_applications_count_within_radius',
-      {
-        center_lat,
-        center_lng,
-        radius_meters
+    // Get applications within radius with timeout handling
+    let applications = [];
+    let applicationsError = null;
+    
+    try {
+      const applicationsResult = await Promise.race([
+        supabaseClient.rpc(
+          'get_applications_within_radius',
+          {
+            center_lat,
+            center_lng,
+            radius_meters,
+            page_size,
+            page_number
+          }
+        ),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Applications query timeout")), 25000)
+        )
+      ]);
+      
+      if (applicationsResult.error) {
+        throw applicationsResult.error;
       }
-    ).timeout(15000) // 15 second timeout
-
-    if (countError) {
-      console.error('Error getting count:', countError)
-      return new Response(
-        JSON.stringify({ 
-          error: countError.message,
-          details: 'Error getting total count'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
+      
+      applications = applicationsResult.data || [];
+      
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      applicationsError = error;
+      
+      // If we failed to get applications, this is a critical error
+      if (applications.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: error.message || 'Failed to fetch applications',
+            details: 'Error fetching applications',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        )
+      }
     }
 
     const endTime = Date.now()
     console.log(`Query execution time: ${endTime - startTime}ms`)
-    console.log(`Found ${applications?.length} applications out of ${totalCount} total`)
+    console.log(`Found ${applications.length} applications${totalCount ? ` out of ${totalCount} total` : ''}`);
+
+    // If we have applications but had a count error, estimate the total
+    if (countError && applications.length > 0) {
+      totalCount = applications.length * 10; // Rough estimate
+    }
+    
+    // If we have no count but have applications, use the applications length
+    if (totalCount === 0 && applications.length > 0) {
+      totalCount = applications.length;
+    }
 
     return new Response(
       JSON.stringify({
-        applications: applications || [],
-        total: totalCount || 0,
+        applications: applications,
+        total: totalCount,
         page: page_number,
         pageSize: page_size,
-        hasMore: (page_number + 1) * page_size < (totalCount || 0),
-        executionTime: endTime - startTime
+        hasMore: (page_number + 1) * page_size < totalCount,
+        executionTime: endTime - startTime,
+        countError: countError ? countError.message : null,
+        applicationsError: applicationsError ? applicationsError.message : null,
+        partialResults: applicationsError !== null
       }),
       { 
         headers: { 

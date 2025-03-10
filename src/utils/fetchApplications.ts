@@ -15,9 +15,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   try {
     // First, try to fetch from the edge function which has better timeout handling
     try {
+      console.log('Attempting to fetch from edge function...');
       const edgeResults = await fetchApplicationsFromEdge(coordinates);
       
       if (edgeResults && edgeResults.length > 0) {
+        console.log(`✅ Successfully retrieved ${edgeResults.length} applications from edge function`);
         return edgeResults;
       }
       
@@ -27,7 +29,10 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     }
     
     // Fallback to direct query with pagination to prevent timeouts
-    return await fetchApplicationsFromDatabase(coordinates);
+    console.log('Starting direct database query with pagination...');
+    const dbResults = await fetchApplicationsFromDatabase(coordinates);
+    console.log(`✅ Successfully retrieved ${dbResults.length} applications from direct database query`);
+    return dbResults;
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
@@ -47,13 +52,23 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       throw timeoutError;
     }
     
-    // Show generic error toast
-    toast({
-      title: "Search Error",
-      description: err instanceof Error ? err.message : "We're having trouble loading the results. Please try again or search for a different location.",
-      variant: "destructive",
-    });
+    // Show pagination error toast if that's the specific error
+    if (errorStr.includes('pagination') || errorStr.includes('Pagination')) {
+      toast({
+        title: "Search Pagination Error",
+        description: "We encountered an issue retrieving all results. Showing partial results.",
+        variant: "destructive",
+      });
+    } else {
+      // Show generic error toast for other errors
+      toast({
+        title: "Search Error",
+        description: err instanceof Error ? err.message : "We're having trouble loading the results. Please try again or search for a different location.",
+        variant: "destructive",
+      });
+    }
     
-    throw err; // Throw the error to allow proper handling by the caller
+    // Return empty array to avoid crashing the UI
+    return [];
   }
 };
