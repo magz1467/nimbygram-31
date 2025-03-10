@@ -61,6 +61,7 @@ export const SearchView = ({
   // Report errors back to parent component
   useEffect(() => {
     if (error && onError) {
+      console.error('SearchView reporting error to parent:', error);
       onError(error);
     }
   }, [error, onError]);
@@ -97,12 +98,13 @@ export const SearchView = ({
 
   // Retry search function
   const handleRetry = () => {
+    console.log('🔄 Retry search requested');
     if (refetch) {
       refetch();
     }
   };
 
-  // Show no results view if appropriate
+  // Show no results view if appropriate - only after loading is complete and we have no data
   if (!isLoading && !applications?.length && !coordinates) {
     return <NoResultsView onPostcodeSelect={handlePostcodeSelect} />;
   }

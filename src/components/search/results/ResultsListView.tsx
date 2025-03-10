@@ -107,7 +107,17 @@ export const ResultsListView = ({
     let errorMessage = `We couldn't find any planning applications for ${displayLocation}. Please try another search.`;
     
     if (error) {
-      const errorText = error.message || "";
+      // Format error message properly to avoid [object Object] display
+      let errorText: string;
+      
+      if (error instanceof Error) {
+        errorText = error.message;
+      } else if (typeof error === 'object') {
+        errorText = error && 'message' in error ? String(error.message) : 'Unknown error occurred';
+      } else {
+        errorText = String(error);
+      }
+      
       const isTimeoutError = errorText.includes("timeout") || errorText.includes("57014") || errorText.includes("statement canceled");
       const isLocationError = errorText.includes("find coordinates") || 
                              errorText.includes("location") ||
@@ -123,17 +133,19 @@ export const ResultsListView = ({
         `The search for "${displayLocation}" timed out. This area may have too many results or the database is busy. Please try again with a more specific location.` :
         isLocationError ? 
         `We couldn't find the exact location for "${displayLocation}". Please try using a postcode or more specific location name.` :
-        `We encountered an error while searching. ${errorText || "Please try another location or search term."}`;
+        `We encountered an error while searching: ${errorText || "Please try another location or search term."}`;
     }
 
     return (
       <div className="py-16 text-center max-w-md mx-auto">
         <h3 className="text-lg font-semibold mb-2">{errorTitle}</h3>
-        <p className="text-gray-500 mb-6">{errorMessage}</p>
+        <p className="text-gray-500 mb-6 text-center max-w-md">
+          {errorMessage}
+        </p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" className="gap-2">
             <RotateCw className="h-4 w-4" />
-            Try again
+            Try Again
           </Button>
         )}
       </div>

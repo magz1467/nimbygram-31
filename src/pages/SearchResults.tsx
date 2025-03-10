@@ -65,6 +65,8 @@ const SearchResultsPage = () => {
     
     // Reset the search complete flag when starting a new search
     setSearchComplete(false);
+    setIsError(false);
+    setErrorDetails(null);
     
     // Set a global timeout for the search - if it takes more than 2 minutes, consider it failed
     searchTimeoutRef.current = setTimeout(() => {
@@ -131,14 +133,34 @@ const SearchResultsPage = () => {
     console.error('Search error detected:', error);
     setIsError(true);
     
+    // Format the error for display, handling various error types
+    let formattedErrorMessage: string;
+    
+    if (error instanceof Error) {
+      formattedErrorMessage = error.message;
+    } else if (typeof error === 'object') {
+      // Handle when error is an object (but not Error instance)
+      formattedErrorMessage = error ? 
+        (error.toString() !== '[object Object]' ? 
+          error.toString() : 'Unknown error occurred') 
+        : 'Unknown error occurred';
+      
+      // Try to extract message if it exists
+      if (error && 'message' in error) {
+        formattedErrorMessage = String(error.message);
+      }
+    } else {
+      formattedErrorMessage = String(error);
+    }
+    
     // Extract more detailed error message if available
-    const errorMessage = error.message || '';
+    const errorMessage = formattedErrorMessage || '';
     if (errorMessage.includes('timeout') || errorMessage.includes('57014') || errorMessage.includes('statement canceled')) {
       setErrorDetails('The search timed out. This area may have too many results or the database is busy. Try a more specific location.');
-    } else if (errorMessage.includes('location') || errorMessage.includes('coordinates')) {
-      setErrorDetails('We couldn\'t find this location. Please try a more specific UK location name or postcode.');
+    } else if (errorMessage.includes('location') || errorMessage.includes('coordinates') || errorMessage.includes('find')) {
+      setErrorDetails(`We couldn't find this location. Please try a more specific UK location name or postcode.`);
     } else {
-      setErrorDetails(errorMessage || 'Unknown error occurred while searching.');
+      setErrorDetails(formattedErrorMessage || 'We encountered an unexpected error. Please try your search again.');
     }
   };
 
