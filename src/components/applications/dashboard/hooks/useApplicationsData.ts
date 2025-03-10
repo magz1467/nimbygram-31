@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/applicationTransforms';
+import { transformApplicationData } from '@/utils/transforms/application-transformer';
 import { LatLngTuple } from 'leaflet';
 
 interface ApplicationError {
