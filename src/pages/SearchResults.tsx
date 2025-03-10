@@ -1,7 +1,7 @@
 
 import { SearchView } from "@/components/search/results/SearchView";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RotateCw } from "lucide-react";
@@ -16,7 +16,8 @@ const SearchResultsPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [isError, setIsError] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [searchComplete, setSearchComplete] = useState(false);
 
   // Validate that we have search state
   useEffect(() => {
@@ -57,37 +58,42 @@ const SearchResultsPage = () => {
       });
     }
     
-    // Set a global timeout for the search - if it takes more than 2 minutes, consider it failed
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
     
-    const timeout = setTimeout(() => {
-      console.error('Search timed out after 2 minutes');
-      setIsError(true);
-      setErrorDetails('The search took too long to complete. Please try searching with a more specific location.');
-      
-      toast({
-        title: "Search Timeout",
-        description: "The search took too long. Please try a more specific location.",
-        variant: "destructive",
-      });
+    // Reset the search complete flag when starting a new search
+    setSearchComplete(false);
+    
+    // Set a global timeout for the search - if it takes more than 2 minutes, consider it failed
+    searchTimeoutRef.current = setTimeout(() => {
+      if (!searchComplete) {
+        console.error('Search timed out after 2 minutes');
+        setIsError(true);
+        setErrorDetails('The search took too long to complete. Please try searching with a more specific location.');
+        
+        toast({
+          title: "Search Timeout",
+          description: "The search took too long. Please try a more specific location.",
+          variant: "destructive",
+        });
+      }
     }, 120000); // 2 minutes
     
-    setSearchTimeout(timeout);
-    
     return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [location.state, navigate, toast, searchTimeout]);
+  }, [location.state, navigate, toast]);
 
   // Handle retry
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     setIsError(false);
     setErrorDetails(null);
+    setSearchComplete(false);
     
     toast({
       title: "Retrying search",
@@ -117,9 +123,9 @@ const SearchResultsPage = () => {
     if (!error) return; // Early return if no error is provided
     
     // Clear any search timeout since we've already detected an error
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-      setSearchTimeout(null);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
     }
     
     console.error('Search error detected:', error);
@@ -133,6 +139,18 @@ const SearchResultsPage = () => {
       setErrorDetails('We couldn\'t find this location. Please try a more specific UK location name or postcode.');
     } else {
       setErrorDetails(errorMessage || 'Unknown error occurred while searching.');
+    }
+  };
+
+  // Handle search completion
+  const handleSearchComplete = () => {
+    console.log('Search completed successfully');
+    setSearchComplete(true);
+    
+    // Clear the timeout when search completes successfully
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
     }
   };
 
@@ -179,6 +197,7 @@ const SearchResultsPage = () => {
     initialSearch={searchState} 
     retryCount={retryCount}
     onError={handleError}
+    onSearchComplete={handleSearchComplete}
   />;
 };
 

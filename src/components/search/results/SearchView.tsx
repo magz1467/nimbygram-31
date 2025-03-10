@@ -19,9 +19,15 @@ interface SearchViewProps {
   };
   retryCount?: number;
   onError?: (error: Error | null) => void;
+  onSearchComplete?: () => void;
 }
 
-export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchViewProps) => {
+export const SearchView = ({ 
+  initialSearch, 
+  retryCount = 0, 
+  onError,
+  onSearchComplete
+}: SearchViewProps) => {
   console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
   const isMobile = useIsMobile();
 
@@ -58,6 +64,19 @@ export const SearchView = ({ initialSearch, retryCount = 0, onError }: SearchVie
       onError(error);
     }
   }, [error, onError]);
+
+  // Notify parent when search completes successfully
+  useEffect(() => {
+    // Only consider the search complete when:
+    // 1. We have coordinates
+    // 2. We have applications data (or confirmed empty result)
+    // 3. Loading has finished
+    // 4. No errors occurred
+    if (coordinates && !isLoading && hasSearched && !error && onSearchComplete) {
+      console.log('Search completed successfully, notifying parent');
+      onSearchComplete();
+    }
+  }, [coordinates, isLoading, hasSearched, error, applications, onSearchComplete]);
 
   // Use the filtered applications hook with coordinates and search term
   const displayApplications = useFilteredApplications(
