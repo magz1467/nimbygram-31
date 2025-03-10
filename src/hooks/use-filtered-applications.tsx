@@ -4,7 +4,7 @@ import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { applyAllFilters } from "@/utils/applicationFilters";
 import { useApplicationSorting } from './use-application-sorting';
-import { filterByLocationRelevance, transformAndSortApplications } from '@/services/applications/transform-applications';
+import { filterByLocationRelevance, transformAndSortApplications } from '@/services/applications/transforms';
 
 interface ActiveFilters {
   status?: string;

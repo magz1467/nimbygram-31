@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
 import { fetchNearbyApplications } from "@/services/applications/fetch-nearby-applications";
-import { transformAndSortApplications } from "@/services/applications/transform-applications";
+import { transformAndSortApplications } from "@/services/applications/transforms";
 
 export const useMapApplications = (coordinates?: [number, number] | null) => {
   const [applications, setApplications] = useState<Application[]>([]);
