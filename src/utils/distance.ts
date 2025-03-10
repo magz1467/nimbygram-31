@@ -3,14 +3,15 @@ import { LatLngTuple } from "leaflet";
 import { Application } from "@/types/planning";
 
 /**
- * Calculate distance between two points using PostGIS ST_Distance_Sphere
- * All coordinates must be in SRID 4326 (WGS84)
+ * Calculate distance between two points using Haversine formula
+ * All coordinates must be in [latitude, longitude] format
  */
 export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): number => {
+  // Verify coordinates are in correct order [lat, lng]
   const [lat1, lon1] = point1;
   const [lat2, lon2] = point2;
   
-  // Validate coordinates
+  // Early validation to prevent NaN results
   if (!isValidCoordinate(lat1) || !isValidCoordinate(lon1) || 
       !isValidCoordinate(lat2) || !isValidCoordinate(lon2)) {
     console.warn('Invalid coordinates:', { point1, point2 });
@@ -18,7 +19,6 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   }
 
   // Calculate great-circle distance using Haversine formula
-  // This matches PostGIS ST_Distance_Sphere calculations
   const R = 6371; // Earth's radius in kilometers
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -30,12 +30,20 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
 
-  console.log(`Distance: [${lat1}, ${lon1}] to [${lat2}, ${lon2}] = ${distance.toFixed(3)}km`);
+  // Log for debugging
+  console.log(`Distance calculation:
+    From: [${lat1}, ${lon1}]
+    To: [${lat2}, ${lon2}]
+    Result: ${distance.toFixed(2)}km`);
+  
   return distance;
 };
 
 function isValidCoordinate(coord: number): boolean {
-  return typeof coord === 'number' && !isNaN(coord) && isFinite(coord);
+  return typeof coord === 'number' && 
+         !isNaN(coord) && 
+         isFinite(coord) && 
+         Math.abs(coord) <= 180; // Basic range check
 }
 
 function toRad(degrees: number): number {
@@ -51,13 +59,17 @@ export const formatDistance = (distanceKm: number): string => {
 };
 
 /**
- * Sort applications by distance using PostGIS-compatible calculations
+ * Sort applications by distance using Haversine formula
  */
 export const sortApplicationsByDistance = (
   applications: Application[],
   coordinates: [number, number]
 ): Application[] => {
   if (!applications || !coordinates) {
+    console.warn('Missing data for distance sorting:', { 
+      hasApplications: !!applications, 
+      coordinates 
+    });
     return [...applications];
   }
 
@@ -65,6 +77,12 @@ export const sortApplicationsByDistance = (
   
   return [...applications].sort((a, b) => {
     if (!a.coordinates || !b.coordinates) {
+      console.warn('Missing coordinates for application:', { 
+        aId: a.id, 
+        bId: b.id,
+        aCoords: a.coordinates,
+        bCoords: b.coordinates
+      });
       return 0;
     }
 
