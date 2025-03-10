@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { transformApplicationData } from "./applicationTransforms";
+import { transformApplicationData } from "./transforms/application-transformer";
 import { calculateDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
 import { sortApplicationsByDistance } from "./applicationDistance";

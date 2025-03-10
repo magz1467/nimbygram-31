@@ -1,6 +1,7 @@
+
 import { Application } from "@/types/planning";
 import { withTimeout } from "./fetchUtils";
-import { transformApplicationData } from "./applicationTransforms";
+import { transformApplicationData } from "./transforms/application-transformer";
 import { toast } from "@/hooks/use-toast";
 import { sortApplicationsByDistance } from "./applicationDistance";
 

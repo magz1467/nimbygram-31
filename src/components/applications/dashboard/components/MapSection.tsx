@@ -1,8 +1,8 @@
+
 import { Application } from "@/types/planning";
 import { MapView } from "./MapView";
 import { MobileApplicationCards } from "@/components/map/mobile/MobileApplicationCards";
 import { useCallback, memo } from "react";
-import { MapAction } from "@/types/map-reducer";
 
 interface MapSectionProps {
   isMobile: boolean;
@@ -10,7 +10,10 @@ interface MapSectionProps {
   coordinates: [number, number] | null;
   applications: Application[];
   selectedId: number | null;
-  dispatch: React.Dispatch<MapAction>;
+  dispatch: { 
+    type: string;
+    payload: (id: number) => void;
+  };
   postcode: string;
 }
 
@@ -25,7 +28,9 @@ export const MapSection = memo(({
 }: MapSectionProps) => {
   const handleMarkerClick = useCallback((id: number | null) => {
     console.log('MapSection handleMarkerClick:', id);
-    dispatch({ type: 'SELECT_APPLICATION', payload: id });
+    if (id !== null) {
+      dispatch.payload(id);
+    }
   }, [dispatch]);
 
   if (!coordinates || (!isMobile && !isMapView)) return null;
