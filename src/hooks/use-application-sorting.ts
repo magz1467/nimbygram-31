@@ -17,13 +17,16 @@ export const useApplicationSorting = (
       return [];
     }
 
+    console.log(`Sorting ${applications.length} applications by ${sortType || 'default'}`);
     let sortedApps = [...applications];
 
     switch (sortType) {
       case 'distance':
         if (coordinates) {
+          console.log(`Using distance sorting with coordinates [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
           return sortApplicationsByDistance(sortedApps, coordinates);
         }
+        console.warn('Distance sorting requested but no coordinates provided');
         break;
       
       case 'newest':
@@ -41,7 +44,13 @@ export const useApplicationSorting = (
         });
     }
 
-    // Default: return applications in original order
+    // If still here and we have coordinates, default to distance sort
+    if (coordinates) {
+      console.log('Defaulting to distance sort since coordinates are available');
+      return sortApplicationsByDistance(sortedApps, coordinates);
+    }
+
+    // Return applications in original order
     return sortedApps;
   }, [applications, sortType, coordinates]);
 };

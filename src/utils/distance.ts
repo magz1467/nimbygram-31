@@ -14,7 +14,7 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   // Early validation to prevent NaN results
   if (!isValidCoordinate(lat1) || !isValidCoordinate(lon1) || 
       !isValidCoordinate(lat2) || !isValidCoordinate(lon2)) {
-    console.warn('Invalid coordinates:', { point1, point2 });
+    console.error('Invalid coordinates in distance calculation:', { point1, point2 });
     return Number.MAX_SAFE_INTEGER;
   }
 
@@ -30,11 +30,7 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
 
-  // Log for debugging
-  console.log(`Distance calculation:
-    From: [${lat1}, ${lon1}]
-    To: [${lat2}, ${lon2}]
-    Result: ${distance.toFixed(2)}km`);
+  console.log(`Distance calculation: From [${lat1.toFixed(6)}, ${lon1.toFixed(6)}] to [${lat2.toFixed(6)}, ${lon2.toFixed(6)}] = ${distance.toFixed(2)}km`);
   
   return distance;
 };
@@ -66,14 +62,14 @@ export const sortApplicationsByDistance = (
   coordinates: [number, number]
 ): Application[] => {
   if (!applications || !coordinates) {
-    console.warn('Missing data for distance sorting:', { 
+    console.error('Missing data for distance sorting:', { 
       hasApplications: !!applications, 
       coordinates 
     });
     return [...applications];
   }
 
-  console.log(`Sorting ${applications.length} applications from [${coordinates}]`);
+  console.log(`Sorting ${applications.length} applications from [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
   
   // Create a copy of applications with calculated distances
   const appsWithDistance = applications.map(app => {
@@ -82,23 +78,27 @@ export const sortApplicationsByDistance = (
       return { ...app, _distanceValue: Number.MAX_SAFE_INTEGER };
     }
     
+    // Calculate and store distance
     const distance = calculateDistance(coordinates, app.coordinates);
     return { ...app, _distanceValue: distance };
   });
   
   // Sort by the calculated distance
   const sortedApps = appsWithDistance.sort((a, b) => {
-    // @ts-ignore - we added _distanceValue above
-    return a._distanceValue - b._distanceValue;
+    // Safely access _distanceValue which we just added
+    const distA = (a as any)._distanceValue;
+    const distB = (b as any)._distanceValue;
+    return distA - distB;
   });
   
   // Log the first few results for debugging
   console.log("\nSorted applications (first 5):");
   sortedApps.slice(0, 5).forEach((app, index) => {
-    // @ts-ignore - we added _distanceValue above
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${app._distanceValue.toFixed(2)}km (${app.distance}), Coordinates: ${app.coordinates}`);
+    // Safely access _distanceValue which we just added
+    const dist = (app as any)._distanceValue;
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
   });
   
   // Return sorted applications without the temporary _distanceValue property
-  return sortedApps.map(({ _distanceValue, ...app }) => app as Application);
+  return sortedApps.map(({ _distanceValue, ...app }: any) => app as Application);
 };

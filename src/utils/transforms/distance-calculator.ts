@@ -7,10 +7,19 @@ import { calculateDistance, formatDistance } from '../distance';
  */
 export const calculateFormattedDistance = (
   center: LatLngTuple, 
-  coordinates: [number, number]
+  coordinates: [number, number] | null
 ): string => {
   if (!center || !coordinates) {
     return 'Unknown';
+  }
+  
+  // Log the input coordinates for debugging
+  console.log(`Calculating distance from [${center[0].toFixed(6)}, ${center[1].toFixed(6)}] to [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
+  
+  // Validate coordinates are in correct format [lat, lng]
+  if (Math.abs(center[0]) > 90 || Math.abs(coordinates[0]) > 90) {
+    console.error('Invalid latitude detected in coordinates', { center, coordinates });
+    return 'Invalid coords';
   }
   
   const distanceInKm = calculateDistance(center, coordinates);
