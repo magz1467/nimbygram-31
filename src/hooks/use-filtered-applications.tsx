@@ -57,7 +57,7 @@ export const useFilteredApplications = (
     
     // Apply explicit sorting based on active sort type, if different from default
     // Only do this if not sorting by distance, as transformAndSortApplications already handles that
-    if (activeSort && activeSort !== 'distance' && activeSort !== 'nearest') {
+    if (activeSort && activeSort !== 'distance') {
       console.log('Applying explicit sorting by:', activeSort);
       applicationsFinal = useApplicationSorting({
         type: activeSort,
