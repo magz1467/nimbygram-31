@@ -20,7 +20,7 @@ export const SortDropdown = ({
   children, 
   activeSort, 
   onSortChange, 
-  showDistanceSort = true // Changed default to true to always show distance sort
+  showDistanceSort = false 
 }: SortDropdownProps) => {
   // Get sort button text based on active sort
   const getSortLabel = () => {
@@ -45,14 +45,6 @@ export const SortDropdown = ({
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
-        {/* Always show distance first, makes it more prominent */}
-        <DropdownMenuItem
-          className="justify-between font-medium"
-          onClick={() => onSortChange('distance')}
-        >
-          Distance (Closest First)
-          {activeSort === 'distance' && <span>✓</span>}
-        </DropdownMenuItem>
         <DropdownMenuItem
           className="justify-between"
           onClick={() => onSortChange('newest')}
@@ -67,6 +59,15 @@ export const SortDropdown = ({
           Closing Soon
           {activeSort === 'closingSoon' && <span>✓</span>}
         </DropdownMenuItem>
+        {showDistanceSort && (
+          <DropdownMenuItem
+            className="justify-between"
+            onClick={() => onSortChange('distance')}
+          >
+            Distance
+            {activeSort === 'distance' && <span>✓</span>}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
