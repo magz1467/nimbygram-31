@@ -1,9 +1,11 @@
+
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { Button } from "@/components/ui/button";
-import { RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RotateCw, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -68,11 +70,38 @@ export const ResultsListView = ({
     };
   }, [isLoading]);
 
-  const handlePageChange = (newPage: number) => {
-    if (onPageChange && newPage >= 0 && newPage < totalPages) {
-      onPageChange(newPage);
+  // State to track loaded applications
+  const [loadedApps, setLoadedApps] = useState<Application[]>([]);
+  const [visiblePages, setVisiblePages] = useState<number>(1);
+  
+  // Reset loaded apps when applications change
+  useEffect(() => {
+    if (applications.length > 0) {
+      setLoadedApps(applications);
+      setVisiblePages(1);
+    }
+  }, [applications]);
+
+  // Function to load more results
+  const handleLoadMore = () => {
+    if (onPageChange && currentPage < totalPages - 1) {
+      onPageChange(currentPage + 1);
     }
   };
+
+  // When new results come in after a page change, add them to loadedApps
+  useEffect(() => {
+    if (currentPage > 0 && applications.length > 0) {
+      // Avoid duplicates by checking IDs
+      const existingIds = new Set(loadedApps.map(app => app.id));
+      const uniqueNewApps = applications.filter(app => !existingIds.has(app.id));
+      
+      if (uniqueNewApps.length > 0) {
+        setLoadedApps(prev => [...prev, ...uniqueNewApps]);
+        setVisiblePages(currentPage + 1);
+      }
+    }
+  }, [applications, currentPage]);
 
   // If loading, show skeleton cards
   if (isLoading) {
@@ -168,7 +197,8 @@ export const ResultsListView = ({
   // Otherwise, render the application cards
   return (
     <div className="py-4 space-y-8">
-      {applications.map((application) => (
+      {/* Display all loaded applications */}
+      {loadedApps.map((application) => (
         <SearchResultCard
           key={application.id}
           application={application}
@@ -182,35 +212,30 @@ export const ResultsListView = ({
         />
       ))}
       
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center pt-6 pb-8 border-t mt-6">
-          <div className="text-sm text-gray-500">
-            Showing {applications.length} of {totalCount} results
+      {/* "See More" Button - only show if there are more pages to load */}
+      {visiblePages < totalPages && (
+        <div className="flex justify-center py-8 border-t mt-6">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={handleLoadMore}
+            className="gap-2 px-8"
+          >
+            See More Results
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+          <div className="text-sm text-gray-500 ml-4 self-center">
+            Showing {loadedApps.length} of {totalCount} results
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <div className="flex items-center px-3 text-sm">
-              Page {currentPage + 1} of {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
+        </div>
+      )}
+      
+      {/* Show completion message when all results are loaded */}
+      {visiblePages >= totalPages && totalPages > 1 && (
+        <div className="text-center py-6 border-t mt-6">
+          <p className="text-sm text-gray-500">
+            Showing all {loadedApps.length} results
+          </p>
         </div>
       )}
     </div>

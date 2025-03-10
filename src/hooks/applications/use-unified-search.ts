@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Application } from "@/types/planning";
 import { SortType, StatusCounts } from "@/types/application-types";
 import { useSearchState } from './use-search-state';
@@ -19,6 +19,7 @@ interface UseUnifiedSearchProps {
 
 export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSearchProps) => {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isLoadingNextPage, setIsLoadingNextPage] = useState(false);
   const PAGE_SIZE = 25;
 
   // Use search state for coordinates and applications fetching
@@ -102,14 +103,28 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     return calculateStatusCounts(applications);
   }, [applications]);
 
+  // Function to load the next page of results
+  const loadNextPage = useCallback((newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setIsLoadingNextPage(true);
+      // Simulate loading time for smoother UX
+      setTimeout(() => {
+        setCurrentPage(newPage);
+        setIsLoadingNextPage(false);
+      }, 300);
+    }
+  }, [totalPages]);
+
+  // Combined loading state
+  const isLoading = isLoadingCoords || isLoadingApps || isLoadingNextPage;
+
   return {
     // Search state
     postcode,
     coordinates,
     applications,
     displayApplications: paginatedApplications,
-    isLoading: isLoadingCoords || isLoadingApps,
-    error: searchError || coordsError,
+    isLoading,
     hasSearched: Boolean(postcode || coordinates),
 
     // UI state
@@ -129,11 +144,15 @@ export const useUnifiedSearch = ({ initialSearch, retryCount = 0 }: UseUnifiedSe
     setCurrentPage,
     totalPages,
     totalCount: sortedApplications.length,
+    loadNextPage,
 
     // Stats
     statusCounts,
     
     // Actions
-    refetch
+    refetch,
+    
+    // Errors
+    error: searchError || coordsError
   };
 };

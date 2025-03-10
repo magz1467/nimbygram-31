@@ -45,7 +45,8 @@ export const SearchViewContent = ({
     setCurrentPage,
     totalPages,
     totalCount,
-    statusCounts
+    statusCounts,
+    loadNextPage
   } = useUnifiedSearch({ 
     initialSearch, 
     retryCount 
@@ -64,6 +65,15 @@ export const SearchViewContent = ({
       onSearchComplete();
     }
   }, [hasSearched, isLoading, onSearchComplete]);
+
+  // Handler for loading the next page of results
+  const handlePageChange = (newPage: number) => {
+    if (loadNextPage) {
+      loadNextPage(newPage);
+    } else {
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto pb-16 pt-0">
@@ -99,7 +109,7 @@ export const SearchViewContent = ({
           error={error}
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
           totalCount={totalCount}
         />
       </div>
