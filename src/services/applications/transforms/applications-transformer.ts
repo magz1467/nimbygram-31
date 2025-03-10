@@ -3,9 +3,6 @@ import { Application } from "@/types/planning";
 import { transformApplicationData } from "@/utils/transforms/application-transformer";
 import { calculateDistance } from "@/utils/distance";
 
-/**
- * Transform raw application data and sort by distance
- */
 export const transformAndSortApplications = (
   applications: any[],
   coordinates: [number, number]
@@ -25,17 +22,17 @@ export const transformAndSortApplications = (
     
     if (app.coordinates) {
       try {
-        // Calculate distance
+        // Calculate distance in kilometers
         const distance = calculateDistance(coordinates, app.coordinates);
         
-        // Store both raw value and formatted string for display
-        const distanceInMiles = distance * 0.621371; // Convert km to miles
-        appCopy.distance = `${distanceInMiles.toFixed(1)} mi`;
-        
-        // Explicitly set a numeric property for sorting
+        // Store the raw distance value for sorting (in kilometers)
         (appCopy as any).distanceValue = distance;
         
-        console.log(`Application ${app.id} is ${distance.toFixed(2)}km (${distanceInMiles.toFixed(2)} mi) away`);
+        // Convert to miles for display only
+        const distanceInMiles = distance * 0.621371;
+        appCopy.distance = `${distanceInMiles.toFixed(1)} mi`;
+        
+        console.log(`📍 App ${app.id} distance: ${distance.toFixed(3)}km (${distanceInMiles.toFixed(3)} mi)`);
       } catch (error) {
         console.warn(`Error calculating distance for app ${app.id}:`, error);
         (appCopy as any).distanceValue = Number.MAX_SAFE_INTEGER;
@@ -48,20 +45,18 @@ export const transformAndSortApplications = (
     return appCopy;
   });
   
-  // Sort by the calculated distance value
+  // Sort by the raw distance value
   const sortedApps = [...appsWithDistance].sort((a, b) => {
-    const distanceA = (a as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
-    const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
+    const distanceA = (a as any).distanceValue;
+    const distanceB = (b as any).distanceValue;
     return distanceA - distanceB;
   });
   
-  // Log the first few sorted applications for debugging
-  if (sortedApps.length > 0) {
-    console.log("🔍 Applications sorted by distance:");
-    sortedApps.slice(0, 3).forEach((app, index) => {
-      console.log(`${index + 1}. ID: ${app.id}, Distance: ${app.distance}, Raw: ${(app as any).distanceValue}`);
-    });
-  }
+  // Log the first few sorted applications
+  console.log("\n🔍 First 5 applications sorted by distance:");
+  sortedApps.slice(0, 5).forEach((app, index) => {
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${(app as any).distanceValue.toFixed(3)}km (${app.distance})`);
+  });
   
   return sortedApps;
 };
