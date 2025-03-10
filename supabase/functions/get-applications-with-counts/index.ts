@@ -15,7 +15,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { center_lat, center_lng, radius_meters = 50000, page_size = 2000, page_number = 0 } = await req.json()
+    const { center_lat, center_lng, radius_meters = 200000, page_size = 10000, page_number = 0 } = await req.json()
 
     console.log('Received request with params:', { center_lat, center_lng, radius_meters, page_size, page_number })
 
@@ -63,11 +63,12 @@ serve(async (req) => {
       // Continue anyway - we can still try to get the applications
     }
 
-    // Get applications within radius with timeout handling
+    // Get ALL applications without filtering, then sort by distance later in the client
     let applications = [];
     let applicationsError = null;
     
     try {
+      // First try using the optimized RPC function with radius
       const applicationsResult = await Promise.race([
         supabaseClient.rpc(
           'get_applications_within_radius',
@@ -80,7 +81,7 @@ serve(async (req) => {
           }
         ),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Applications query timeout")), 45000) // Increased timeout
+          setTimeout(() => reject(new Error("Applications query timeout")), 60000) // Increased timeout
         )
       ]);
       
@@ -94,20 +95,12 @@ serve(async (req) => {
       console.error('Error fetching applications:', error);
       applicationsError = error;
       
-      // If we failed to get applications, try a direct table query as fallback
+      // If we failed to get applications, try a direct table query as fallback with no filtering
       if (applications.length === 0) {
         try {
-          console.log('Attempting fallback direct query');
+          console.log('Attempting fallback direct query with no filtering');
           
-          // Calculate rough area bounds for more targeted querying
-          const latRange = 1.0; // Roughly 111km
-          const lngRange = 1.5; // Wider longitude range to account for distortion
-          const minLat = center_lat - latRange;
-          const maxLat = center_lat + latRange;
-          const minLng = center_lng - lngRange;
-          const maxLng = center_lng + lngRange;
-          
-          // Execute a direct table query with bounding box filter
+          // Execute a direct table query without filtering to get ALL records
           const fallbackResult = await supabaseClient
             .from('crystal_roof')
             .select('*')

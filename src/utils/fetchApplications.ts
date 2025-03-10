@@ -13,53 +13,72 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Fetching applications for coordinates:', coordinates);
   
   try {
-    // First, try to fetch from the edge function which has better timeout handling
-    let edgeResults: Application[] | null = null;
-    try {
-      console.log('Attempting to fetch from edge function...');
-      edgeResults = await fetchApplicationsFromEdge(coordinates);
-      
-      if (edgeResults && edgeResults.length > 0) {
-        console.log(`✅ Successfully retrieved ${edgeResults.length} applications from edge function`);
-      } else {
-        console.log('Edge function returned no applications, falling back to direct query');
-      }
-    } catch (edgeFunctionError) {
-      console.warn('⚠️ Edge function failed, falling back to direct query:', edgeFunctionError);
+    // Try both fetching methods simultaneously to maximize results
+    console.log('Starting both edge function and direct database queries in parallel...');
+    
+    const [edgeResults, dbResults] = await Promise.all([
+      fetchApplicationsFromEdge(coordinates).catch(err => {
+        console.warn('⚠️ Edge function failed:', err);
+        return null;
+      }),
+      fetchApplicationsFromDatabase(coordinates).catch(err => {
+        console.warn('⚠️ Direct database query failed:', err);
+        return [];
+      })
+    ]);
+    
+    console.log(`Edge function returned ${edgeResults?.length || 0} results`);
+    console.log(`Direct database query returned ${dbResults.length} results`);
+    
+    // Combine results from both sources, ensuring we eliminate duplicates
+    let combinedResults: Application[] = [];
+    
+    // Start with edge results if we have them
+    if (edgeResults && edgeResults.length > 0) {
+      combinedResults = [...edgeResults];
+      console.log(`Added ${edgeResults.length} applications from edge function`);
     }
     
-    // Fallback to direct query with pagination to prevent timeouts
-    console.log('Starting direct database query with pagination...');
-    const dbResults = await fetchApplicationsFromDatabase(coordinates);
-    console.log(`✅ Successfully retrieved ${dbResults.length} applications from direct database query`);
-    
-    // If we successfully got results from both sources, merge and deduplicate them
-    if (edgeResults && edgeResults.length > 0 && dbResults.length > 0) {
-      console.log('Merging results from edge function and direct query');
+    // Add unique results from the direct database query
+    if (dbResults.length > 0) {
+      // Create a Set of IDs from the combined results so far
+      const existingIds = new Set(combinedResults.map(app => app.id));
       
-      // Create a Set of IDs from the edge results for fast lookup
-      const edgeIds = new Set(edgeResults.map(app => app.id));
-      
-      // Add unique applications from dbResults 
-      const uniqueDbResults = dbResults.filter(app => !edgeIds.has(app.id));
+      // Add only unique applications from dbResults
+      const uniqueDbResults = dbResults.filter(app => !existingIds.has(app.id));
       console.log(`Found ${uniqueDbResults.length} unique applications from direct query`);
       
-      // Combine the results
-      const combinedResults = [...edgeResults, ...uniqueDbResults];
-      console.log(`Total combined results: ${combinedResults.length}`);
-      
-      // Re-sort the combined results by distance
-      const sortedCombined = combinedResults.sort((a, b) => {
-        const distA = parseFloat(a.distance.split(' ')[0]) || 0;
-        const distB = parseFloat(b.distance.split(' ')[0]) || 0;
+      // Add the unique results to our combined results
+      combinedResults = [...combinedResults, ...uniqueDbResults];
+    }
+    
+    console.log(`Total combined results: ${combinedResults.length}`);
+    
+    // If we have no results at all, show an error
+    if (combinedResults.length === 0) {
+      console.warn('⚠️ No applications found after combining results');
+      toast({
+        title: "No Results Found",
+        description: "We couldn't find any planning applications in this area. Please try searching for a different location.",
+        variant: "destructive",
+      });
+    } else {
+      // Re-sort the combined results by distance to ensure the closest applications are first
+      combinedResults.sort((a, b) => {
+        // Safely parse distances
+        const distA = parseFloat(a.distance.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
+        const distB = parseFloat(b.distance.split(' ')[0]) || Number.MAX_SAFE_INTEGER;
         return distA - distB;
       });
       
-      return sortedCombined;
+      // Log the top closest results for debugging
+      console.log('Top 10 closest applications after merging and sorting:');
+      combinedResults.slice(0, 10).forEach((app, idx) => {
+        console.log(`${idx+1}. ID: ${app.id}, Distance: ${app.distance}, Address: ${app.address}`);
+      });
     }
     
-    // If one method worked, return those results
-    return edgeResults && edgeResults.length > 0 ? edgeResults : dbResults;
+    return combinedResults;
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);

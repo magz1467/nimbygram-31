@@ -10,7 +10,7 @@ import { sortApplicationsByDistance } from "./distance";
  */
 export const fetchApplicationsFromEdge = async (
   coordinates: [number, number],
-  radius: number = 50000 // Significantly increased radius for comprehensive coverage
+  radius: number = 200000 // Dramatically increased for nationwide coverage
 ): Promise<Application[] | null> => {
   console.log('🔄 Attempting to fetch applications using edge function');
   console.log('🌍 Search coordinates:', coordinates);
@@ -41,10 +41,10 @@ export const fetchApplicationsFromEdge = async (
           center_lat: lat,
           center_lng: lng,
           radius_meters: radius,
-          page_size: 2000 // Dramatically increased for comprehensive coverage
+          page_size: 10000 // Dramatically increased for comprehensive coverage
         })
       }),
-      60000, // Extended timeout for larger data fetch
+      90000, // Extended timeout for larger data fetch
       "Search request timed out. This area may have too many results."
     );
     

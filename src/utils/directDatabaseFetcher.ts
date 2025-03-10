@@ -6,7 +6,7 @@ import { calculateDistance, sortApplicationsByDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
 
 const MAX_RETRY_ATTEMPTS = 2;
-const MAX_RESULTS = 15000; // Dramatically increased for better coverage
+const MAX_RESULTS = 50000; // Dramatically increased for comprehensive coverage
 
 /**
  * Fetches applications directly from the database using pagination with retry logic
@@ -17,7 +17,7 @@ export const fetchApplicationsFromDatabase = async (
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates:', coordinates);
   
-  const pageSize = 500; // Increased for better coverage
+  const pageSize = 2000; // Significantly increased for better coverage
   let currentPage = 0;
   let hasMore = true;
   let allResults: any[] = [];
@@ -26,14 +26,14 @@ export const fetchApplicationsFromDatabase = async (
 
   // Calculate very large area bounds for comprehensive querying
   const [lat, lng] = coordinates;
-  const latRange = 2.0; // Doubled from previous (roughly 222km)
-  const lngRange = 3.0; // Doubled from previous
+  const latRange = 5.0; // Dramatically increased for nationwide coverage
+  const lngRange = 7.0; // Dramatically increased for nationwide coverage
   const minLat = lat - latRange;
   const maxLat = lat + latRange;
   const minLng = lng - lngRange;
   const maxLng = lng + lngRange;
 
-  console.log('Using extended bounding box:', { latMin: minLat, latMax: maxLat, lngMin: minLng, lngMax: maxLng });
+  console.log('Using massively extended bounding box:', { latMin: minLat, latMax: maxLat, lngMin: minLng, lngMax: maxLng });
 
   while (hasMore) {
     try {
@@ -45,7 +45,7 @@ export const fetchApplicationsFromDatabase = async (
       // Create a promise with a timeout for the Supabase query
       const queryPromise = new Promise<{data: any[] | null, error: any}>(async (resolve, reject) => {
         try {
-          // Execute the Supabase query with basic geospatial filtering
+          // Execute the Supabase query without filtering to get ALL records
           const result = await supabase
             .from('crystal_roof')
             .select('*')
@@ -61,7 +61,7 @@ export const fetchApplicationsFromDatabase = async (
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error(`Query timeout for page ${currentPage}`));
-        }, 30000); // 30 second timeout per page
+        }, 45000); // 45 second timeout per page
       });
       
       // Race the query against the timeout
