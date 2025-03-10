@@ -29,7 +29,7 @@ export const transformAndSortApplications = (
   try {
     // Add distance to each application
     const appsWithDistance = applications.map(app => {
-      // Skip if app doesn't have coordinates
+      // Skip if app doesn't have coordinates or app is null/undefined
       if (!app || !app.coordinates || !Array.isArray(app.coordinates)) {
         console.log(`Missing or invalid coordinates for application ${app?.id || 'unknown'}`);
         return { ...app, distance: "Unknown", distanceValue: Number.MAX_SAFE_INTEGER };

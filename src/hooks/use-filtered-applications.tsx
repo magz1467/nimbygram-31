@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
@@ -36,9 +35,14 @@ export const useFilteredApplications = (
     console.log('📊 useFilteredApplications - Page:', page, 'Page size:', pageSize);
     
     // Guard against empty applications array
-    const safeApplications = Array.isArray(applications) ? applications : [];
+    if (!applications || !Array.isArray(applications)) {
+      console.log('No valid applications array provided to filter');
+      return { applications: [], totalCount: 0 };
+    }
+    
+    const safeApplications = applications;
     if (safeApplications.length === 0) {
-      console.log('No applications provided to filter');
+      console.log('Empty applications array provided to filter');
       return { applications: [], totalCount: 0 };
     }
     
