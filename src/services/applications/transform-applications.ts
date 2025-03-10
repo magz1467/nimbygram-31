@@ -14,7 +14,15 @@ export const transformAndSortApplications = (
   coordinates: [number, number]
 ): Application[] => {
   if (!properties || properties.length === 0) {
+    console.log('No properties to transform');
     return [];
+  }
+
+  console.log(`Starting to transform ${properties.length} properties`);
+  
+  // Log a sample property to see what data we're working with
+  if (properties.length > 0) {
+    console.log('Sample property data:', properties[0]);
   }
 
   // Transform the application data using our shared transformer
@@ -23,6 +31,14 @@ export const transformAndSortApplications = (
   ).filter((app): app is Application => app !== null);
   
   console.log(`✅ Total transformed applications: ${transformedData.length}`);
+  
+  // Debug why applications might be getting filtered out
+  if (transformedData.length === 0 && properties.length > 0) {
+    console.warn('⚠️ All applications were filtered out during transformation');
+    // Check if any properties have a storybook field
+    const hasStorybook = properties.some(prop => prop.storybook);
+    console.log(`Do any properties have storybook field? ${hasStorybook ? 'Yes' : 'No'}`);
+  }
   
   // Filter out applications with null storybook values
   const filteredApplications = transformedData.filter(app => 

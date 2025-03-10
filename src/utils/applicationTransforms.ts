@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { calculateDistance } from './distance';
@@ -16,7 +17,8 @@ export const transformApplicationData = (
     received_date: app.received_date,
     submittedDate: app.submittedDate,
     streetview_url: app.streetview_url,
-    image: app.image
+    image: app.image,
+    storybook: app.storybook
   });
   
   // Extract coordinates from geometry - more flexible approach
@@ -173,7 +175,8 @@ export const transformApplicationData = (
     streetview_url: application.streetview_url,
     image_map_url: application.image_map_url,
     submittedDate: application.submittedDate,
-    received_date: application.received_date
+    received_date: application.received_date,
+    storybook: application.storybook ? 'Has storybook' : 'No storybook'
   });
   console.groupEnd();
   

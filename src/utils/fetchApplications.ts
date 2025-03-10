@@ -34,7 +34,6 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const radius = 10000; // 10km radius
       
       // Get Supabase URL from environment or use direct reference to the URL constant
-      // Fix Error #1: Access supabaseUrl directly from imported object
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jposqxdboetyioymfswd.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
@@ -86,6 +85,11 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
         
         console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
         
+        // If no filtered applications, log this important information
+        if (filteredApplications.length === 0 && transformedApplications.length > 0) {
+          console.warn(`⚠️ All ${transformedApplications.length} applications were filtered out because they had null storybook values`);
+        }
+        
         // Sort by distance
         return filteredApplications.sort((a, b) => {
           if (!a.coordinates || !b.coordinates) return 0;
@@ -104,7 +108,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Fix Error #2: Create a Promise that properly wraps the Supabase query with catch handling
+    // Fix Error: Create a Promise that properly wraps the Supabase query with catch handling
     const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
       supabase
         .from('crystal_roof')
@@ -143,12 +147,24 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     
     console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
     
+    // Debug raw data sample to troubleshoot filtering issues
+    if (data.length > 0) {
+      console.log('Sample raw application data:', data.slice(0, 1));
+      console.log('Sample transformed application:', transformedApplications.slice(0, 1));
+      console.log('Storybook field sample:', data.slice(0, 5).map(app => app.storybook));
+    }
+    
     // Filter out applications with null storybook values
     const filteredApplications = transformedApplications.filter(app => 
       app.storybook !== null && app.storybook !== undefined && app.storybook !== ''
     );
     
     console.log(`Filtered out ${transformedApplications.length - filteredApplications.length} applications with null storybook values`);
+    
+    // If no filtered applications, log this important information
+    if (filteredApplications.length === 0 && transformedApplications.length > 0) {
+      console.warn(`⚠️ All ${transformedApplications.length} applications were filtered out because they had null storybook values`);
+    }
     
     // Sort by distance
     return filteredApplications.sort((a, b) => {
