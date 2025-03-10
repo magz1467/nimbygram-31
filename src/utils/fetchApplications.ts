@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/distance";
 import { Application } from "@/types/planning";
@@ -26,15 +25,14 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Fetching applications for coordinates:', coordinates);
   
   try {
-    // First, try to fetch from the edge function which has better timeout handling
     try {
       console.log('🔄 Attempting to fetch applications using edge function');
       
       const [lat, lng] = coordinates;
       const radius = 10000; // 10km radius
       
-      // Get Supabase URL from environment or use default
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.supabaseUrl;
+      // Get Supabase URL from environment or fallback to window.location.origin
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || window.location.origin;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
@@ -58,7 +56,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
             page_size: 100
           })
         }),
-        30000, // 30 second timeout
+        30000,
         "Search request timed out. This area may have too many results."
       );
       
@@ -90,14 +88,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       console.log('Edge function returned no applications, falling back to direct query');
     } catch (edgeFunctionError) {
       console.warn('⚠️ Edge function failed, falling back to direct query:', edgeFunctionError);
-      // Continue to fallback method
     }
     
     // Fallback to direct query with a timeout
     console.log('📊 Fetching applications directly from database');
     
-    // Create a Promise that wraps the Supabase query
-    const queryPromiseAsPromise = new Promise<any[]>((resolve, reject) => {
+    const queryPromise = new Promise<Application[]>((resolve, reject) => {
       supabase
         .from('crystal_roof')
         .select('*')
@@ -114,13 +110,13 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
           reject(error);
         });
     });
-    
+
     const data = await withTimeout(
-      queryPromiseAsPromise,
-      40000, // 40 second timeout
+      queryPromise,
+      40000,
       "Database query timed out. This area may have too many results."
     );
-    
+
     console.log(`✅ Raw data from supabase: ${data?.length || 0} results`);
 
     if (!data || data.length === 0) {
@@ -142,6 +138,8 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       const distanceB = calculateDistance(coordinates, b.coordinates);
       return distanceA - distanceB;
     });
+    
+    return data;
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
@@ -167,6 +165,6 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       variant: "destructive",
     });
     
-    throw err; // Throw the error to allow proper handling by the caller
+    throw err;
   }
 };
