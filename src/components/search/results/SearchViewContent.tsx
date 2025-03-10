@@ -5,7 +5,6 @@ import { ResultsContainer } from "./ResultsContainer";
 import { FilterBarSection } from "./FilterBarSection";
 import { ResultsHeader } from "./ResultsHeader";
 import { SortType } from "@/types/application-types";
-import { Header } from "@/components/Header";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -91,55 +90,52 @@ export const SearchViewContent = ({
   };
 
   return (
-    <>
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 pb-16 pt-4">
-        <ResultsHeader 
-          searchTerm={initialSearch.searchTerm}
-          displayTerm={initialSearch.displayTerm}
-          resultsCount={totalCount}
-          isLoading={isLoading}
-          hasSearched={hasSearched}
-          coordinates={coordinates}
-          onSelect={handlePostcodeSelect}
-        />
+    <div className="max-w-7xl mx-auto px-4 lg:px-8 pb-16 pt-4">
+      <ResultsHeader 
+        searchTerm={initialSearch.searchTerm}
+        displayTerm={initialSearch.displayTerm}
+        resultsCount={totalCount}
+        isLoading={isLoading}
+        hasSearched={hasSearched}
+        coordinates={coordinates}
+        onSelect={handlePostcodeSelect}
+      />
 
-        <FilterBarSection 
-          activeFilters={activeFilters} 
-          activeSort={activeSort}
-          onFilterChange={handleFilterUpdate}
-          onSortChange={handleSortUpdate}
-          coordinates={coordinates}
-          hasSearched={hasSearched}
-          isLoading={isLoading}
-          applications={applications}
-          statusCounts={statusCounts || {
-            'Under Review': 0,
-            'Approved': 0,
-            'Declined': 0,
-            'Other': 0
-          }}
-        />
+      <FilterBarSection 
+        activeFilters={activeFilters} 
+        activeSort={activeSort}
+        onFilterChange={handleFilterUpdate}
+        onSortChange={handleSortUpdate}
+        coordinates={coordinates}
+        hasSearched={hasSearched}
+        isLoading={isLoading}
+        applications={applications}
+        statusCounts={statusCounts || {
+          'Under Review': 0,
+          'Approved': 0,
+          'Declined': 0,
+          'Other': 0
+        }}
+      />
 
-        <ResultsContainer
-          displayApplications={displayApplications}
-          applications={applications}
-          coordinates={coordinates}
-          showMap={showMap}
-          setShowMap={setShowMap}
-          selectedId={selectedId}
-          setSelectedId={setSelectedId}
-          handleMarkerClick={handleMarkerClick}
-          isLoading={isLoading}
-          searchTerm={initialSearch.searchTerm}
-          displayTerm={initialSearch.displayTerm}
-          error={error}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalCount={totalCount}
-        />
-      </div>
-    </>
+      <ResultsContainer
+        displayApplications={displayApplications}
+        applications={applications}
+        coordinates={coordinates}
+        showMap={showMap}
+        setShowMap={setShowMap}
+        selectedId={selectedId}
+        setSelectedId={setSelectedId}
+        handleMarkerClick={handleMarkerClick}
+        isLoading={isLoading}
+        searchTerm={initialSearch.searchTerm}
+        displayTerm={initialSearch.displayTerm}
+        error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalCount={totalCount}
+      />
+    </div>
   );
 };
