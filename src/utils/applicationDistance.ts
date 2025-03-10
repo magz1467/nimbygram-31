@@ -16,16 +16,21 @@ export const sortApplicationsByDistance = (
     return applications || [];
   }
   
-  // First calculate distances
+  console.log('📏 Sorting applications by distance from:', coordinates);
+  
+  // First calculate distances and create an array with distance information
   const applicationsWithDistance = applications.map(app => {
     let distance = Number.MAX_SAFE_INTEGER;
     
     if (app.coordinates) {
       distance = calculateDistance(coordinates, app.coordinates);
+      console.log(`Application ${app.id} is ${distance.toFixed(2)}km from search location`);
       
       // Update the distance display in the application
       const distanceInMiles = distance * 0.621371;
       app.distance = `${distanceInMiles.toFixed(1)} mi`;
+    } else {
+      console.warn(`Application ${app.id} has no coordinates, setting maximum distance`);
     }
     
     return {
@@ -34,10 +39,15 @@ export const sortApplicationsByDistance = (
     };
   });
   
-  // Then sort by distance
-  return applicationsWithDistance
+  // Then sort by distance - lower distance values come first
+  const sortedApplications = applicationsWithDistance
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .map(item => item.application);
+    
+  console.log(`✅ Sorted ${sortedApplications.length} applications by distance. First 3 distances:`, 
+    sortedApplications.slice(0, 3).map(app => app.distance));
+  
+  return sortedApplications;
 };
 
 /**
@@ -54,6 +64,8 @@ export const addDistanceToApplications = (
     return applications || [];
   }
   
+  console.log('📏 Adding distance information to applications from:', coordinates);
+  
   return applications.map(app => {
     // Create a new object to avoid mutating the original
     const appWithDistance = { ...app };
@@ -67,6 +79,12 @@ export const addDistanceToApplications = (
       // Format the distance for display (convert km to miles)
       const distanceInMiles = distance * 0.621371;
       appWithDistance.distance = `${distanceInMiles.toFixed(1)} mi`;
+      
+      if (distance > 50) {
+        console.warn(`Application ${app.id} is very far: ${distance.toFixed(2)}km / ${distanceInMiles.toFixed(1)} miles`);
+      }
+    } else {
+      console.warn(`Could not calculate distance for application ${app.id}: missing coordinates`);
     }
     
     return appWithDistance;

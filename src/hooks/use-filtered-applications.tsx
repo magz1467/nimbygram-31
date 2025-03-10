@@ -43,16 +43,26 @@ export const useFilteredApplications = (
     console.log('After location relevance filtering:', locationFilteredApplications.length);
     
     // Add distance information if search coordinates are available
-    const applicationsWithDistance = searchCoordinates
-      ? addDistanceToApplications(locationFilteredApplications, searchCoordinates)
-      : locationFilteredApplications;
-    console.log('After adding distance:', applicationsWithDistance.length);
+    let applicationsWithDistance = locationFilteredApplications;
+    if (searchCoordinates) {
+      console.log('Adding distance information using coordinates:', searchCoordinates);
+      applicationsWithDistance = addDistanceToApplications(locationFilteredApplications, searchCoordinates);
+      
+      // Log the first few applications with their distances for debugging
+      const sampleApps = applicationsWithDistance.slice(0, 5).map(app => ({
+        id: app.id,
+        distance: app.distance,
+        coordinates: app.coordinates,
+        address: app.address
+      }));
+      console.log('Sample applications with distances:', sampleApps);
+    }
     
     // Apply sorting based on active sort type
     let finalSortedApplications = applicationsWithDistance;
     
-    if (activeSort === 'distance' && searchCoordinates) {
-      // Use our enhanced distance sorting utility
+    if ((activeSort === 'distance' || activeSort === 'nearest') && searchCoordinates) {
+      console.log('Explicitly sorting by distance');
       finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
     } else if (activeSort) {
       // Use the application sorting hook for other sort types
@@ -62,10 +72,22 @@ export const useFilteredApplications = (
       });
     } else if (searchCoordinates) {
       // If no sort specified but we have coordinates, default to distance sort
+      console.log('No sort specified, defaulting to distance sort');
       finalSortedApplications = sortApplicationsByDistance(applicationsWithDistance, searchCoordinates);
     }
 
     console.log('useFilteredApplications - Final sorted applications:', finalSortedApplications?.length);
+    
+    // Log the final closest applications for debugging
+    if (finalSortedApplications.length > 0 && searchCoordinates) {
+      const closestApps = finalSortedApplications.slice(0, 3).map(app => ({
+        id: app.id,
+        distance: app.distance,
+        address: app.address
+      }));
+      console.log('Closest applications after sorting:', closestApps);
+    }
+    
     return finalSortedApplications;
   }, [applications, activeFilters, activeSort, searchCoordinates, searchTerm]);
 };

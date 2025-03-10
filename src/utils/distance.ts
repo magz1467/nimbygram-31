@@ -6,6 +6,12 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const [lat1, lon1] = point1;
   const [lat2, lon2] = point2;
   
+  // Validate coordinates before calculation
+  if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+    console.error('Invalid coordinates in distance calculation:', { point1, point2 });
+    return Number.MAX_SAFE_INTEGER; // Return max distance for invalid coordinates
+  }
+  
   // Using the Haversine formula to calculate distance
   const R = 6371; // Earth's radius in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -40,4 +46,3 @@ export const findClosestApplication = (
 
   return closestId;
 };
-

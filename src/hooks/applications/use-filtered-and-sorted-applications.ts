@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { Application } from '@/types/planning';
-import { calculateDistance } from '@/utils/distance';
+import { sortApplicationsByDistance } from '@/utils/applicationDistance';
 
 export const useFilteredAndSortedApplications = (
   applications: Application[] | undefined,
@@ -47,36 +47,44 @@ export const useFilteredAndSortedApplications = (
     });
 
     // Sort filtered applications
-    return filtered.sort((a, b) => {
-      // Sort by newest first (most recent submission date)
-      if (activeSort === 'newest') {
+    let sortedApplications = filtered;
+    
+    // Sort by newest first (most recent submission date)
+    if (activeSort === 'newest') {
+      sortedApplications = filtered.sort((a, b) => {
         const dateA = new Date(a.submissionDate || '').getTime() || 0;
         const dateB = new Date(b.submissionDate || '').getTime() || 0;
         return dateB - dateA;
-      }
-      
-      // Sort by closing soon (earliest consultation end date)
-      if (activeSort === 'closingSoon') {
+      });
+    }
+    // Sort by closing soon (earliest consultation end date)
+    else if (activeSort === 'closingSoon') {
+      sortedApplications = filtered.sort((a, b) => {
         const dateA = new Date(a.last_date_consultation_comments || '').getTime() || Number.MAX_SAFE_INTEGER;
         const dateB = new Date(b.last_date_consultation_comments || '').getTime() || Number.MAX_SAFE_INTEGER;
         return dateA - dateB;
-      }
-      
-      // Sort by distance from search coordinates
-      if (activeSort === 'nearest' && coordinates) {
-        const distanceA = a.coordinates ? calculateDistance(coordinates, a.coordinates) : Number.MAX_SAFE_INTEGER;
-        const distanceB = b.coordinates ? calculateDistance(coordinates, b.coordinates) : Number.MAX_SAFE_INTEGER;
-        return distanceA - distanceB;
-      }
-      
-      // Default sorting: by distance from search coordinates if available
-      if (coordinates) {
-        const distanceA = a.coordinates ? calculateDistance(coordinates, a.coordinates) : Number.MAX_SAFE_INTEGER;
-        const distanceB = b.coordinates ? calculateDistance(coordinates, b.coordinates) : Number.MAX_SAFE_INTEGER;
-        return distanceA - distanceB;
-      }
-      
-      return 0;
-    });
+      });
+    }
+    // Sort by distance from search coordinates
+    else if ((activeSort === 'nearest' || activeSort === 'distance') && coordinates) {
+      sortedApplications = sortApplicationsByDistance(filtered, coordinates);
+    }
+    // Default sorting: by distance from search coordinates if available
+    else if (coordinates) {
+      sortedApplications = sortApplicationsByDistance(filtered, coordinates);
+    }
+    
+    // Log the first few sorted applications for debugging
+    if (sortedApplications.length > 0 && coordinates) {
+      const sampleApps = sortedApplications.slice(0, 3).map(app => ({
+        id: app.id,
+        distance: app.distance || 'unknown',
+        coordinates: app.coordinates,
+        address: app.address
+      }));
+      console.log('Top sorted applications:', sampleApps);
+    }
+    
+    return sortedApplications;
   }, [applications, activeFilters, activeSort, coordinates]);
 };
