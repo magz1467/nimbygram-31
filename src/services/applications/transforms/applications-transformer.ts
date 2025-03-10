@@ -45,17 +45,24 @@ export const transformAndSortApplications = (
     return appCopy;
   });
   
-  // Sort by the raw distance value
+  // Sort by the raw distance value - ensure we're using numeric values
   const sortedApps = [...appsWithDistance].sort((a, b) => {
+    // Extract the distance values, checking for undefined/null
     const distanceA = (a as any).distanceValue;
     const distanceB = (b as any).distanceValue;
-    return distanceA - distanceB;
+    
+    // Convert to numeric values, with fallbacks for any NaN or invalid values
+    const numA = typeof distanceA === 'number' && !isNaN(distanceA) ? distanceA : Number.MAX_SAFE_INTEGER;
+    const numB = typeof distanceB === 'number' && !isNaN(distanceB) ? distanceB : Number.MAX_SAFE_INTEGER;
+    
+    return numA - numB;
   });
   
   // Log the first few sorted applications
   console.log("\n🔍 First 5 applications sorted by distance:");
   sortedApps.slice(0, 5).forEach((app, index) => {
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${(app as any).distanceValue.toFixed(3)}km (${app.distance})`);
+    const distVal = (app as any).distanceValue;
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${typeof distVal === 'number' ? distVal.toFixed(3) : 'unknown'}km (${app.distance})`);
   });
   
   return sortedApps;

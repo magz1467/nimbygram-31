@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { Application } from '@/types/planning';
 import { SortType } from '@/types/application-types';
+import { calculateDistance } from '@/utils/distance';
 
 /**
  * Simple hook to sort applications based on sort type and coordinates
@@ -66,32 +67,18 @@ const sortByDistance = (
     
     if (app.coordinates) {
       try {
-        // Calculate distance using the Haversine formula
-        const [lat1, lon1] = coordinates;
-        const [lat2, lon2] = app.coordinates;
+        // Use the shared distance calculation function
+        const distance = calculateDistance(coordinates, app.coordinates);
         
-        // Haversine formula
-        const R = 6371; // Earth's radius in kilometers
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        
-        const a = 
-          Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = R * c;
-        
-        // Store both raw value and formatted string for display
-        const distanceInMiles = distance * 0.621371;
-        appCopy.distance = `${distanceInMiles.toFixed(1)} mi`;
-        
-        // Ensure we store a numeric value for proper sorting
+        // Store distance value for sorting
         const distanceValue = Number(distance);
         (appCopy as any).distanceValue = isNaN(distanceValue) ? Number.MAX_SAFE_INTEGER : distanceValue;
         
-        console.log(`Distance for app ${app.id}: ${distance.toFixed(2)}km (${distanceInMiles.toFixed(2)} mi)`);
+        // Format distance for display
+        const distanceInMiles = distance * 0.621371;
+        appCopy.distance = `${distanceInMiles.toFixed(1)} mi`;
+        
+        console.log(`Distance sort: App ${app.id} is ${distance.toFixed(3)}km (${distanceInMiles.toFixed(2)} mi) away`);
       } catch (error) {
         console.warn(`Error calculating distance for app ${app.id}:`, error);
         (appCopy as any).distanceValue = Number.MAX_SAFE_INTEGER;
@@ -110,17 +97,17 @@ const sortByDistance = (
     const distanceB = (b as any).distanceValue ?? Number.MAX_SAFE_INTEGER;
     
     // Ensure we're comparing numbers
-    const numA = typeof distanceA === 'number' ? distanceA : Number.MAX_SAFE_INTEGER;
-    const numB = typeof distanceB === 'number' ? distanceB : Number.MAX_SAFE_INTEGER;
+    const numA = typeof distanceA === 'number' && !isNaN(distanceA) ? distanceA : Number.MAX_SAFE_INTEGER;
+    const numB = typeof distanceB === 'number' && !isNaN(distanceB) ? distanceB : Number.MAX_SAFE_INTEGER;
     
     return numA - numB;
   });
   
   // Log the first few sorted applications for debugging
   if (sortedApps.length > 0) {
-    console.log("🔍 Applications sorted by distance:");
-    sortedApps.slice(0, 3).forEach((app, index) => {
-      console.log(`${index + 1}. ID: ${app.id}, Distance: ${app.distance}, Value: ${(app as any).distanceValue}`);
+    console.log("🔍 Applications sorted by distance in hook:");
+    sortedApps.slice(0, 5).forEach((app, index) => {
+      console.log(`${index + 1}. ID: ${app.id}, Distance: ${app.distance}, Value: ${(app as any).distanceValue?.toFixed(3) || 'unknown'}`);
     });
   }
   

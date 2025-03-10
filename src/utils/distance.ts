@@ -11,7 +11,9 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   
   // Validate coordinates
   if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
-      typeof lat2 !== 'number' || typeof lon2 !== 'number') {
+      typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
+      isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+    console.warn('Invalid coordinates:', { point1, point2 });
     return Number.MAX_SAFE_INTEGER;
   }
   
@@ -27,6 +29,9 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
+
+  // Debug log the distance calculation details
+  console.log(`Distance calculation: [${lat1.toFixed(6)}, ${lon1.toFixed(6)}] to [${lat2.toFixed(6)}, ${lon2.toFixed(6)}] = ${distance.toFixed(3)}km`);
 
   return distance;
 };
