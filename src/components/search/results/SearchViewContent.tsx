@@ -52,6 +52,15 @@ export const SearchViewContent = ({
     retryCount 
   });
 
+  // Set distance sorting by default for location searches
+  useEffect(() => {
+    // Only set to distance sort if coordinates are available and no active sort is set
+    if (coordinates && (!activeSort || activeSort !== 'distance')) {
+      console.log('Auto-setting sort type to distance due to location search');
+      handleSortChange('distance');
+    }
+  }, [coordinates, activeSort, handleSortChange]);
+
   // Call the onError handler when an error occurs
   useEffect(() => {
     if (onError) {
