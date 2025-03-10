@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
@@ -67,8 +66,6 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
 
         // Transform and sort applications
         const sortedData = transformAndSortApplications(properties, coordinates);
-        
-        // Note: No need to filter here as transformAndSortApplications already filters out null storybooks
         setApplications(sortedData);
         setRetryCount(0); // Reset retry count on success
 
