@@ -32,7 +32,8 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage:
 const searchWithEdgeFunction = async (
   lat: number, 
   lng: number, 
-  radius: number
+  radius: number,
+  searchTerm?: string
 ): Promise<Application[]> => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -51,6 +52,7 @@ const searchWithEdgeFunction = async (
       center_lat: lat,
       center_lng: lng,
       radius_meters: radius,
+      search_term: searchTerm,
       page_size: 100
     })
   });
@@ -67,10 +69,17 @@ const searchWithEdgeFunction = async (
 /**
  * Makes a direct database query
  */
-const searchWithDirectQuery = async (): Promise<Application[]> => {
-  const { data, error } = await supabase
+const searchWithDirectQuery = async (searchTerm?: string): Promise<Application[]> => {
+  let query = supabase
     .from('crystal_roof')
     .select('*');
+  
+  // If we have a search term, use it to filter results
+  if (searchTerm) {
+    query = query.or(`address.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+  }
+  
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -82,44 +91,50 @@ const searchWithDirectQuery = async (): Promise<Application[]> => {
 /**
  * Main search function
  */
-export const searchApplications = async (coordinates: [number, number]): Promise<Application[]> => {
-  if (!coordinates) {
-    console.log('❌ No coordinates provided');
+export const searchApplications = async (
+  coordinates: [number, number] | null,
+  searchTerm?: string
+): Promise<Application[]> => {
+  if (!coordinates && !searchTerm) {
+    console.log('❌ No search parameters provided');
     return [];
   }
 
-  console.log('🔍 Searching applications for coordinates:', coordinates);
-  const [lat, lng] = coordinates;
-  const radius = 10000; // 10km radius
-
+  console.log('🔍 Searching applications:', { coordinates, searchTerm });
+  
   try {
-    // First try edge function with timeout
-    try {
-      console.log('🔄 Attempting search with edge function');
-      const results = await withTimeout(
-        searchWithEdgeFunction(lat, lng, radius),
-        30000,
-        "Edge function search timed out"
-      );
+    if (coordinates) {
+      const [lat, lng] = coordinates;
+      const radius = 10000; // 10km radius
 
-      if (results.length > 0) {
-        console.log(`✅ Edge function returned ${results.length} results`);
-        return transformAndSortResults(results, coordinates);
+      // First try edge function with timeout
+      try {
+        console.log('🔄 Attempting search with edge function');
+        const results = await withTimeout(
+          searchWithEdgeFunction(lat, lng, radius, searchTerm),
+          30000,
+          "Edge function search timed out"
+        );
+
+        if (results.length > 0) {
+          console.log(`✅ Edge function returned ${results.length} results`);
+          return transformAndSortResults(results, coordinates, searchTerm);
+        }
+      } catch (error) {
+        console.warn('⚠️ Edge function search failed, falling back to direct query:', error);
       }
-    } catch (error) {
-      console.warn('⚠️ Edge function search failed, falling back to direct query:', error);
     }
 
     // Fallback to direct query with timeout
     console.log('📊 Falling back to direct database query');
     const results = await withTimeout(
-      searchWithDirectQuery(),
+      searchWithDirectQuery(searchTerm),
       40000,
       "Database query timed out"
     );
 
     console.log(`✅ Direct query returned ${results.length} results`);
-    return transformAndSortResults(results, coordinates);
+    return transformAndSortResults(results, coordinates, searchTerm);
 
   } catch (error: any) {
     handleSearchError(error);
@@ -130,16 +145,90 @@ export const searchApplications = async (coordinates: [number, number]): Promise
 /**
  * Transform and sort search results
  */
-const transformAndSortResults = (results: any[], coordinates: [number, number]): Application[] => {
-  return results
-    .map(app => transformApplicationData(app, coordinates))
-    .filter((app): app is Application => app !== null)
-    .sort((a, b) => {
+const transformAndSortResults = (
+  results: any[], 
+  coordinates: [number, number] | null,
+  searchTerm?: string
+): Application[] => {
+  // First filter results if we have a search term and no coordinates
+  let filteredResults = results;
+  if (searchTerm && !coordinates) {
+    const searchTermLower = searchTerm.toLowerCase();
+    filteredResults = results.filter(app => {
+      // Check if the application data contains the search term
+      return (
+        (app.address && app.address.toLowerCase().includes(searchTermLower)) ||
+        (app.description && app.description.toLowerCase().includes(searchTermLower)) ||
+        (app.ward_name && app.ward_name.toLowerCase().includes(searchTermLower)) ||
+        (app.local_authority_district_name && 
+         app.local_authority_district_name.toLowerCase().includes(searchTermLower))
+      );
+    });
+  }
+
+  // Transform application data
+  const transformedResults = filteredResults
+    .map(app => coordinates ? transformApplicationData(app, coordinates) : transformApplicationData(app))
+    .filter((app): app is Application => app !== null);
+
+  // Sort results
+  if (coordinates) {
+    // Sort by distance if we have coordinates
+    return transformedResults.sort((a, b) => {
       if (!a.coordinates || !b.coordinates) return 0;
+      
       const distanceA = calculateDistance(coordinates, a.coordinates);
       const distanceB = calculateDistance(coordinates, b.coordinates);
+      
       return distanceA - distanceB;
     });
+  } else if (searchTerm) {
+    // If we only have a search term, sort by relevance
+    const searchTermLower = searchTerm.toLowerCase();
+    return transformedResults.sort((a, b) => {
+      const relevanceA = calculateRelevance(a, searchTermLower);
+      const relevanceB = calculateRelevance(b, searchTermLower);
+      
+      // Higher relevance comes first
+      return relevanceB - relevanceA;
+    });
+  }
+  
+  // Default: sort by most recent
+  return transformedResults.sort((a, b) => {
+    const dateA = a.submittedDate || a.submissionDate || a.received_date || '';
+    const dateB = b.submittedDate || b.submissionDate || b.received_date || '';
+    
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+};
+
+/**
+ * Calculate relevance score for text search
+ */
+const calculateRelevance = (application: Application, searchTerm: string): number => {
+  let score = 0;
+  
+  // Check for exact matches in address (highest priority)
+  if (application.address && application.address.toLowerCase().includes(searchTerm)) {
+    score += 100;
+    // Exact match at start of address gets higher score
+    if (application.address.toLowerCase().startsWith(searchTerm)) {
+      score += 50;
+    }
+  }
+  
+  // Check for matches in description
+  if (application.description && application.description.toLowerCase().includes(searchTerm)) {
+    score += 30;
+  }
+  
+  // Check for matches in ward name
+  if (application.ward && application.ward.toLowerCase().includes(searchTerm)) {
+    score += 20;
+  }
+  
+  return score;
 };
 
 /**
@@ -171,9 +260,21 @@ const handleSearchError = (error: any) => {
  * Calculate distance between coordinates
  */
 const calculateDistance = (point1: [number, number], point2: [number, number]): number => {
-  // Simple Euclidean distance for sorting purposes
+  // Using the Haversine formula to calculate distance
   const [lat1, lon1] = point1;
   const [lat2, lon2] = point2;
-  return Math.sqrt(Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2));
-};
+  
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
 
+  return distance;
+};
