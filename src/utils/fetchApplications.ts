@@ -1,21 +1,8 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { calculateDistance } from "@/utils/distance";
 import { Application } from "@/types/planning";
-import { transformApplicationData } from "./applicationTransforms";
 import { toast } from "@/hooks/use-toast";
-
-/**
- * Helper function to implement timeout for promises
- */
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
-    )
-  ]) as Promise<T>;
-};
+import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
+import { fetchApplicationsFromDatabase } from "./directDatabaseFetcher";
 
 export const fetchApplications = async (coordinates: [number, number] | null): Promise<Application[]> => {
   if (!coordinates) {
@@ -28,63 +15,10 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   try {
     // First, try to fetch from the edge function which has better timeout handling
     try {
-      console.log('🔄 Attempting to fetch applications using edge function');
+      const edgeResults = await fetchApplicationsFromEdge(coordinates);
       
-      const [lat, lng] = coordinates;
-      const radius = 5000; // Changed from 10000 to 5000 meters (5km radius)
-      
-      // Get Supabase URL from environment or use a direct URL as fallback
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jposqxdboetyioymfswd.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey) {
-        console.warn('⚠️ Missing Supabase URL or key, skipping edge function');
-        throw new Error('Missing Supabase configuration');
-      }
-      
-      console.log('🌐 Using Supabase URL:', supabaseUrl);
-      
-      const response = await withTimeout(
-        fetch(`${supabaseUrl}/functions/v1/get-applications-with-counts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`
-          },
-          body: JSON.stringify({
-            center_lat: lat,
-            center_lng: lng,
-            radius_meters: radius,
-            page_size: 100
-          })
-        }),
-        30000,
-        "Search request timed out. This area may have too many results."
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Edge function error:', errorText, 'Status:', response.status);
-        throw new Error('Edge function failed: ' + (errorText || response.statusText));
-      }
-      
-      const result = await response.json();
-      
-      if (result.applications && Array.isArray(result.applications)) {
-        console.log(`✅ Successfully retrieved ${result.applications.length} applications from edge function`);
-        
-        // Transform the applications
-        const transformedApplications = result.applications
-          .map(app => transformApplicationData(app, coordinates))
-          .filter((app): app is Application => app !== null);
-        
-        // Sort by distance
-        return transformedApplications.sort((a, b) => {
-          if (!a.coordinates || !b.coordinates) return 0;
-          const distanceA = calculateDistance(coordinates, a.coordinates);
-          const distanceB = calculateDistance(coordinates, b.coordinates);
-          return distanceA - distanceB;
-        });
+      if (edgeResults && edgeResults.length > 0) {
+        return edgeResults;
       }
       
       console.log('Edge function returned no applications, falling back to direct query');
@@ -93,78 +27,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     }
     
     // Fallback to direct query with pagination to prevent timeouts
-    console.log('📊 Fetching applications directly from database with pagination');
-    
-    const [lat, lng] = coordinates;
-    const pageSize = 100;
-    let currentPage = 0;
-    let hasMore = true;
-    let allResults: any[] = [];
-
-    while (hasMore) {
-      try {
-        // Execute the query with proper promise handling
-        const { data, error } = await supabase
-          .from('crystal_roof')
-          .select('*')
-          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
-          
-        if (error) {
-          console.error("Supabase query error:", error);
-          throw error;
-        }
-        
-        const pageResults = data || [];
-
-        if (pageResults.length === 0) {
-          hasMore = false;
-        } else {
-          allResults = [...allResults, ...pageResults];
-          currentPage++;
-
-          // Limit total results to prevent memory issues
-          if (allResults.length >= 1000) {
-            hasMore = false;
-            console.log('Reached maximum result limit of 1000');
-          }
-        }
-      } catch (pageError) {
-        console.error('Error fetching page:', pageError);
-        // If a page fails, stop paginating but return any results we have so far
-        hasMore = false;
-        
-        // Show a toast only if we have no results at all
-        if (allResults.length === 0) {
-          toast({
-            title: "Search Pagination Error",
-            description: "We encountered an issue retrieving all results. Showing partial results.",
-            variant: "destructive",
-          });
-        }
-      }
-    }
-    
-    console.log(`✅ Raw data from supabase: ${allResults.length} results`);
-
-    if (allResults.length === 0) {
-      console.log('No applications found in the database');
-      return [];
-    }
-
-    // Transform all application data
-    const transformedApplications = allResults
-      .map(app => transformApplicationData(app, coordinates))
-      .filter((app): app is Application => app !== null);
-    
-    console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
-    
-    // Sort by distance
-    return transformedApplications.sort((a, b) => {
-      if (!a.coordinates || !b.coordinates) return 0;
-      const distanceA = calculateDistance(coordinates, a.coordinates);
-      const distanceB = calculateDistance(coordinates, b.coordinates);
-      return distanceA - distanceB;
-    });
+    return await fetchApplicationsFromDatabase(coordinates);
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
