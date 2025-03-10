@@ -59,30 +59,14 @@ const sortByNewest = (applications: Application[]) => {
 };
 
 const sortByDistance = (applications: Application[]) => {
-  console.log('Sorting applications by distance');
-  
-  // First check if we have the distanceValue property
-  const hasDistanceValue = applications.some(app => 'distanceValue' in app);
-  
+  // Distance is already calculated and added to the applications in useFilteredApplications
+  // We simply need to sort by the distance property
   return [...applications].sort((a, b) => {
     // If application has no distance property, put it at the end
     if (!a.distance) return 1;
     if (!b.distance) return -1;
     
-    // If we have the numeric distanceValue property, use it directly
-    if (hasDistanceValue) {
-      const distanceA = a.distanceValue ?? Number.MAX_VALUE;
-      const distanceB = b.distanceValue ?? Number.MAX_VALUE;
-      
-      // Log sorting data for debugging
-      if (Math.random() < 0.01) { // Log only ~1% of comparisons to avoid flooding console
-        console.log(`Comparing distances: ${a.id} (${distanceA?.toFixed(2)}km) vs ${b.id} (${distanceB?.toFixed(2)}km)`);
-      }
-      
-      return distanceA - distanceB;
-    }
-    
-    // Otherwise parse the distance value from strings like "1.2 mi"
+    // Parse the distance value from strings like "1.2 mi"
     const distanceA = parseFloat(a.distance.split(' ')[0]);
     const distanceB = parseFloat(b.distance.split(' ')[0]);
     
@@ -112,19 +96,9 @@ export const useApplicationSorting = ({ type, applications }: SortConfig) => {
       sorted = sortByDistance(applications);
       break;
     default:
-      // Default to distance sort
-      sorted = sortByDistance(applications);
+      sorted = applications;
   }
 
   console.log('Number of applications after sort:', sorted.length);
-  
-  // Log first few sorted applications to verify sorting
-  if (sorted.length > 0 && type === 'distance') {
-    console.log('First 5 applications after distance sorting:');
-    sorted.slice(0, 5).forEach((app, idx) => {
-      console.log(`[${idx}] ID: ${app.id}, Distance: ${app.distance}, Value: ${app.distanceValue?.toFixed(2) || 'N/A'}`);
-    });
-  }
-  
   return sorted;
 };

@@ -11,8 +11,6 @@ export const addDistanceToApplications = (
 ): Application[] => {
   if (!searchCoordinates) return applications;
   
-  console.log(`🔄 Adding distance to ${applications.length} applications from coordinates: [${searchCoordinates}]`);
-  
   return applications.map(app => {
     if (!app.coordinates) return app;
     
@@ -21,8 +19,7 @@ export const addDistanceToApplications = (
     
     return {
       ...app,
-      distance: `${distanceInMiles.toFixed(1)} mi`,
-      distanceValue: distanceInKm // Add numeric value for sorting
+      distance: `${distanceInMiles.toFixed(1)} mi`
     };
   });
 };

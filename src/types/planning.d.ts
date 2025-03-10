@@ -1,37 +1,33 @@
-
-// If this file doesn't exist, we need to create it with the Application type definition
 export interface Application {
   id: number;
   title?: string;
-  address: string;
+  description: string;
   status: string;
-  distance?: string;
-  distanceValue?: number; // Add this property for numeric distance sorting
   reference?: string;
-  description?: string;
-  applicant?: string;
   submissionDate?: string;
-  submittedDate?: string | null;
+  coordinates: [number, number];
+  postcode: string;
+  applicant?: string;
   decisionDue?: string;
   type?: string;
   ward?: string;
   officer?: string;
   consultationEnd?: string;
+  address: string;
   image?: string;
-  streetview_url?: string | null;
-  image_map_url?: string | null;
-  coordinates?: [number, number] | null;
+  image_map_url?: string;
   ai_title?: string;
-  postcode?: string;
+  last_date_consultation_comments?: string;
+  valid_date?: string;
+  centroid?: any;
   impact_score?: number | null;
   impact_score_details?: any;
-  last_date_consultation_comments?: string | null;
-  valid_date?: string | null;
-  centroid?: any;
-  class_3?: string;
-  final_impact_score?: number | null;
-  engaging_title?: string | null;
-  storybook?: any;
-  storybook_header?: any;
-  received_date?: string | null;
+  impacted_services?: any;
+  distance?: string;
+  final_impact_score?: number;
+  engaging_title?: string;
+  feedback_stats?: {
+    yimby?: number;
+    nimby?: number;
+  };
 }

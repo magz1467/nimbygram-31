@@ -1,22 +1,22 @@
+
 export interface Application {
   id: number;
   title?: string;
   address: string;
   status: string;
   distance?: string;
-  distanceValue?: number;  // Add this property
   reference?: string;
   description?: string;
   applicant?: string;
   submissionDate?: string;
-  submittedDate?: string | null;
+  submittedDate?: string; // Added this field
   decisionDue?: string;
   type?: string;
   ward?: string;
   officer?: string;
   consultationEnd?: string;
   image?: string;
-  streetview_url?: string | null;
+  streetview_url?: string | null; // Added this field explicitly
   image_map_url?: string | null;
   coordinates?: [number, number];
   ai_title?: string;
@@ -46,6 +46,7 @@ export interface Application {
       details: string;
     };
   };
+  application_type_full?: string;
   class_3?: string | null;
   final_impact_score?: number | null;
   engaging_title?: string | null;
@@ -58,8 +59,7 @@ export interface Application {
   decision?: string;
   storybook?: string;
   storybook_header?: string;
-  received_date?: string | null;
-  local_authority_district_name?: string;
+  received_date?: string | null; // Added this field
 }
 
 export interface Comment {

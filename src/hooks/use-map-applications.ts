@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
@@ -65,18 +64,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           return;
         }
 
-        // Transform and sort applications by distance
+        // Transform and sort applications
         const sortedData = transformAndSortApplications(properties, coordinates);
-        console.log('✅ Applications sorted by distance:', sortedData.length);
-        
-        // Log the first few items to verify sorting
-        if (sortedData.length > 0) {
-          console.log('First 3 applications after sorting:');
-          sortedData.slice(0, 3).forEach((app, i) => {
-            console.log(`[${i}] ${app.id}: ${app.address || 'No address'} - ${app.distance}`);
-          });
-        }
-        
         setApplications(sortedData);
         setRetryCount(0); // Reset retry count on success
 
