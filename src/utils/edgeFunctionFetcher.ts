@@ -10,7 +10,7 @@ import { sortApplicationsByDistance } from "./distance";
  */
 export const fetchApplicationsFromEdge = async (
   coordinates: [number, number],
-  radius: number = 5000
+  radius: number = 10000 // Increased radius for more comprehensive results
 ): Promise<Application[] | null> => {
   console.log('🔄 Attempting to fetch applications using edge function');
   console.log('🌍 Search coordinates:', coordinates);
@@ -27,6 +27,7 @@ export const fetchApplicationsFromEdge = async (
   }
   
   console.log('🌐 Using Supabase URL:', supabaseUrl);
+  console.log(`🔍 Searching with radius: ${radius}m`);
   
   try {
     const response = await withTimeout(
@@ -40,10 +41,10 @@ export const fetchApplicationsFromEdge = async (
           center_lat: lat,
           center_lng: lng,
           radius_meters: radius,
-          page_size: 100
+          page_size: 500 // Increased for better coverage
         })
       }),
-      30000,
+      45000, // Extended timeout for larger data fetch
       "Search request timed out. This area may have too many results."
     );
     
@@ -66,7 +67,17 @@ export const fetchApplicationsFromEdge = async (
       console.log(`Transformed ${transformedApplications.length} applications, sorting by distance...`);
       
       // Sort by distance using our sortApplicationsByDistance function
-      return sortApplicationsByDistance(transformedApplications, coordinates);
+      const sortedApps = sortApplicationsByDistance(transformedApplications, coordinates);
+      
+      // Log the top results for debugging
+      console.log(`Top 5 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
+      sortedApps.slice(0, 5).forEach((app, idx) => {
+        if (app.coordinates) {
+          console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${app.distance}`);
+        }
+      });
+      
+      return sortedApps;
     }
     
     console.log('Edge function returned no applications, returning null');

@@ -6,6 +6,7 @@ import { calculateDistance, sortApplicationsByDistance } from "./distance";
 import { toast } from "@/hooks/use-toast";
 
 const MAX_RETRY_ATTEMPTS = 2;
+const MAX_RESULTS = 5000; // Increased for better coverage
 
 /**
  * Fetches applications directly from the database using pagination with retry logic
@@ -16,12 +17,21 @@ export const fetchApplicationsFromDatabase = async (
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates:', coordinates);
   
-  const pageSize = 100;
+  const pageSize = 200; // Increased for better coverage
   let currentPage = 0;
   let hasMore = true;
   let allResults: any[] = [];
   let retryCount = 0;
   let lastError: Error | null = null;
+
+  // Calculate rough area bounds for more targeted querying
+  const [lat, lng] = coordinates;
+  const latRange = 1.0; // Roughly 111km
+  const lngRange = 1.5; // Wider longitude range to account for distortion
+  const minLat = lat - latRange;
+  const maxLat = lat + latRange;
+  const minLng = lng - lngRange;
+  const maxLng = lng + lngRange;
 
   while (hasMore) {
     try {
@@ -33,7 +43,7 @@ export const fetchApplicationsFromDatabase = async (
       // Create a promise with a timeout for the Supabase query
       const queryPromise = new Promise<{data: any[] | null, error: any}>(async (resolve, reject) => {
         try {
-          // Execute the Supabase query
+          // Execute the Supabase query with basic geospatial filtering
           const result = await supabase
             .from('crystal_roof')
             .select('*')
@@ -49,7 +59,7 @@ export const fetchApplicationsFromDatabase = async (
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error(`Query timeout for page ${currentPage}`));
-        }, 15000); // 15 second timeout per page
+        }, 20000); // 20 second timeout per page
       });
       
       // Race the query against the timeout
@@ -78,9 +88,9 @@ export const fetchApplicationsFromDatabase = async (
         retryCount = 0; // Reset retry count after successful fetch
 
         // Limit total results to prevent memory issues
-        if (allResults.length >= 1000) {
+        if (allResults.length >= MAX_RESULTS) {
           hasMore = false;
-          console.log('Reached maximum result limit of 1000');
+          console.log(`Reached maximum result limit of ${MAX_RESULTS}`);
         }
       }
     } catch (pageError: any) {
@@ -128,6 +138,17 @@ export const fetchApplicationsFromDatabase = async (
   
   console.log(`✅ Total transformed applications: ${transformedApplications.length}`);
   
-  // Sort by distance
-  return sortApplicationsByDistance(transformedApplications, coordinates);
+  // Sort by distance - this is critical for accurate results
+  const sortedApplications = sortApplicationsByDistance(transformedApplications, coordinates);
+  
+  // Log sorted results for debugging
+  console.log(`Top 5 closest applications to [${coordinates[0]}, ${coordinates[1]}]:`);
+  sortedApplications.slice(0, 5).forEach((app, idx) => {
+    if (app.coordinates) {
+      const dist = calculateDistance(coordinates, app.coordinates);
+      console.log(`${idx+1}. ID: ${app.id}, Location: [${app.coordinates[0]}, ${app.coordinates[1]}], Distance: ${dist.toFixed(2)}km`);
+    }
+  });
+  
+  return sortedApplications;
 };

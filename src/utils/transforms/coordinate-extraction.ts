@@ -14,6 +14,14 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
     console.log(`Extracted from direct fields: [${lat}, ${lng}]`);
   }
   
+  // If direct fields didn't work, try lat/lng
+  if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
+      app.lat && app.lng) {
+    lat = parseFloat(app.lat);
+    lng = parseFloat(app.lng);
+    console.log(`Extracted from lat/lng fields: [${lat}, ${lng}]`);
+  }
+  
   // Try WKT POINT format if direct fields failed
   if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
       app.geom && typeof app.geom === 'string' && app.geom.startsWith('SRID=4326;POINT(')) {

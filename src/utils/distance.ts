@@ -7,7 +7,7 @@ import { Application } from "@/types/planning";
  * All coordinates must be in [latitude, longitude] format
  */
 export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): number => {
-  // Verify coordinates are in correct order [lat, lng]
+  // Ensure coordinates are in correct order [lat, lng]
   const [lat1, lon1] = point1;
   const [lat2, lon2] = point2;
   
