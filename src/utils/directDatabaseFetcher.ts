@@ -70,7 +70,7 @@ export const fetchApplicationsFromDatabase = async (
       page++;
       
       // If we have a reasonable number of results already, let's return them
-      if (allApplications.length > 1000) {
+      if (allApplications.length > 0) {
         console.log(`Have ${allApplications.length} applications, breaking pagination loop early`);
         break;
       }

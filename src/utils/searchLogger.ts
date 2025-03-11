@@ -5,7 +5,6 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
   try {
     const { data, error } = await supabase.from('Searches').insert({
       'Post Code': searchTerm,
-      'Location': searchTerm, // Add Location field
       'User_logged_in': true,
       'Type': type,
       'Tab': tab
