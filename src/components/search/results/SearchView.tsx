@@ -38,8 +38,10 @@ export const SearchView = ({
   } = usePlanningSearch(coordinates);
 
   useEffect(() => {
-    if (onError) {
-      onError(error || null);
+    // Only propagate meaningful errors, not infrastructure setup messages
+    if (onError && error && !error.message?.toLowerCase().includes('support table')) {
+      console.log('🚨 Search error:', error);
+      onError(error);
     }
   }, [error, onError]);
 
@@ -53,7 +55,8 @@ export const SearchView = ({
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  if (error && !applications.length) {
+  // Only show error view for real errors, not infrastructure messages
+  if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
     return (
       <SearchErrorView 
         errorDetails={error.message}
@@ -79,3 +82,4 @@ export const SearchView = ({
     />
   );
 };
+
