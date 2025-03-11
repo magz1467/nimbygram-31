@@ -58,7 +58,7 @@ export const SearchViewContent = ({
   }, [applications, isLoading]);
 
   return (
-    <div className="max-w-5xl mx-auto pb-16 pt-0">
+    <div className="max-w-4xl mx-auto pb-16 pt-0">
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
         displayTerm={initialSearch.displayTerm}
@@ -70,7 +70,7 @@ export const SearchViewContent = ({
         applications={applications}
       />
 
-      <div className="px-4 lg:px-8">
+      <div className="px-4 lg:px-6">
         <ResultsContainer
           applications={applications}
           isLoading={isLoading}
@@ -88,3 +88,4 @@ export const SearchViewContent = ({
     </div>
   );
 };
+
