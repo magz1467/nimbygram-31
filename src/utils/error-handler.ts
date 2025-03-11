@@ -203,11 +203,11 @@ export function handleError(
       title: context ? `Error in ${context}` : "Error",
       description: appError.message,
       variant: "destructive",
-      action: retry ? (
-        <ToastAction altText="Retry" onClick={retry}>
-          Retry
-        </ToastAction>
-      ) : undefined
+      action: retry ? {
+        altText: "Retry",
+        children: "Retry",
+        onClick: retry
+      } : undefined
     });
   }
   
