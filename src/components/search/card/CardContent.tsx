@@ -74,8 +74,8 @@ export const CardContent = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Restored content section */}
+    <div className="space-y-4">
+      {/* Content Section */}
       {formattedStorybook?.content && (
         <div className="space-y-4">
           {/* Display NimbyWatch box if present */}
@@ -115,15 +115,17 @@ export const CardContent = ({
         </div>
       )}
 
-      {/* See on Map button - always visible as its own row */}
-      <Button 
-        variant="outline" 
-        onClick={handleSeeOnMapClick}
-        className="w-full text-primary flex items-center justify-center gap-1.5"
-      >
-        <MapPin className="w-4 h-4" />
-        See on map
-      </Button>
+      {/* Map Button Section */}
+      <div className="pt-2">
+        <Button 
+          variant="outline" 
+          onClick={handleSeeOnMapClick}
+          className="w-full text-primary flex items-center justify-center gap-1.5"
+        >
+          <MapPin className="w-4 h-4" />
+          See on map
+        </Button>
+      </div>
 
       {/* Map Dialog for Desktop */}
       {!isMobile && applicationId && (

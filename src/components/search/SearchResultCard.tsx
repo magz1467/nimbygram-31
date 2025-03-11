@@ -6,6 +6,7 @@ import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
 import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
+import { ListingContent } from "./card/ListingContent";
 import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
 import { getImageUrl } from "@/utils/imageUtils";
@@ -109,8 +110,14 @@ export const SearchResultCard = ({
             </div>
           )}
           
+          {/* Listing content */}
+          <div className="mb-4">
+            <ListingContent storybook={application.storybook} />
+          </div>
+          
+          {/* Map button and dialog */}
           <CardContent 
-            storybook={application.storybook} 
+            storybook={null} 
             onSeeOnMap={handleSeeOnMap}
             applicationId={application.id}
             applications={applications}
