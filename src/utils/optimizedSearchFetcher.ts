@@ -39,15 +39,18 @@ export const fetchApplicationsWithSpatialQuery = async (
       throw new Error(`Spatial query failed: ${error.message}`);
     }
     
-    if (!data || !Array.isArray(data)) {
+    if (!data) {
       console.warn('⚠️ No results returned from spatial query');
       return [];
     }
     
-    console.log(`✅ Spatial query returned ${data.length} results`);
+    // Ensure data is an array (defensive check)
+    const applications = Array.isArray(data) ? data : [];
+    
+    console.log(`✅ Spatial query returned ${applications.length} results`);
     
     // Transform raw data to Application objects
-    const transformedApplications = data
+    const transformedApplications = applications
       .filter((app) => app != null) // Filter out null entries
       .map(app => transformApplicationData(app, coordinates))
       .filter((app): app is Application => app !== null);

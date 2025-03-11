@@ -61,6 +61,7 @@ export const fetchApplicationsFromDatabase = async (
       
       // Transform the applications with coordinates
       const transformedApps = records
+        .filter(app => app != null)
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
@@ -69,7 +70,7 @@ export const fetchApplicationsFromDatabase = async (
         if (!app.coordinates) return false;
         const distKm = calculateDistance(coordinates, app.coordinates);
         // Store the raw distance value for sorting
-        (app as any)._distanceValue = distKm;
+        app.distance = distKm;
         // Only keep applications within the max distance
         return distKm <= maxDistanceKm;
       });

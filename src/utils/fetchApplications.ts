@@ -15,7 +15,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   
   try {
     // Try multiple approaches in parallel to ensure we get results
-    const [spatialResults, directResults, edgeResults] = await Promise.allSettled([
+    const results = await Promise.allSettled([
       // Try the optimized spatial query first
       fetchApplicationsWithSpatialQuery(coordinates, 20),
       
@@ -26,30 +26,30 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       fetchApplicationsFromEdge(coordinates)
     ]);
     
+    // Extract successful results and filter out null/empty arrays
+    const validResults = results
+      .filter((result): result is PromiseFulfilledResult<Application[]> => 
+        result.status === 'fulfilled')
+      .map(result => (result as PromiseFulfilledResult<Application[]>).value)
+      .filter(apps => Array.isArray(apps) && apps.length > 0);
+    
     console.log('Results from different query methods:', {
-      spatial: spatialResults.status === 'fulfilled' ? spatialResults.value.length : 'failed',
-      direct: directResults.status === 'fulfilled' ? directResults.value.length : 'failed',
-      edge: edgeResults.status === 'fulfilled' ? edgeResults.value.length : 'failed'
+      count: validResults.length,
+      sizes: validResults.map(r => r.length)
     });
     
-    // Use the results from whichever method returned data, prioritizing spatial
-    if (spatialResults.status === 'fulfilled' && spatialResults.value.length > 0) {
-      return spatialResults.value;
-    }
-    
-    if (directResults.status === 'fulfilled' && directResults.value.length > 0) {
-      return directResults.value;
-    }
-    
-    if (edgeResults.status === 'fulfilled' && edgeResults.value && edgeResults.value.length > 0) {
-      return edgeResults.value;
+    // Use the results from whichever method returned most data
+    if (validResults.length > 0) {
+      // Sort by array length to get the one with most results
+      validResults.sort((a, b) => b.length - a.length);
+      return validResults[0];
     }
     
     // If no results from initial radius, try with progressively larger radius
     console.log('No results found with initial queries, trying expanded radius');
     
     const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, 50);
-    if (expandedResults.length > 0) {
+    if (expandedResults && expandedResults.length > 0) {
       console.log(`Found ${expandedResults.length} results with expanded 50km radius`);
       
       // Add a note to the first result
@@ -62,7 +62,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     
     // Last resort - try with very large radius
     const wideResults = await fetchApplicationsWithSpatialQuery(coordinates, 100);
-    if (wideResults.length > 0) {
+    if (wideResults && wideResults.length > 0) {
       console.log(`Found ${wideResults.length} results with wide 100km radius`);
       
       // Add a note to the first result

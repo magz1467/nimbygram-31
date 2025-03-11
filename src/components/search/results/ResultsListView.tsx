@@ -65,7 +65,7 @@ export const ResultsListView = ({
 
   // Update loaded applications when new applications come in
   useEffect(() => {
-    if (applications.length > 0 && !isLoading) {
+    if (applications && applications.length > 0 && !isLoading) {
       if (currentPage === 0) {
         // Reset for new search
         setLoadedApplications(applications);
@@ -93,7 +93,7 @@ export const ResultsListView = ({
   }
 
   // If error or no applications found, show empty state
-  if (error || (!applications.length && !loadedApplications.length)) {
+  if (error || (!applications?.length && !loadedApplications?.length)) {
     return (
       <ErrorMessage 
         title={error ? "Error loading results" : "No results found"}

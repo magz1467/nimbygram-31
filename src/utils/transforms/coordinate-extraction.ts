@@ -2,6 +2,11 @@
 import { LatLngTuple } from 'leaflet';
 
 export const extractCoordinates = (app: any, center: LatLngTuple): [number, number] | null => {
+  if (!app || app === null) {
+    console.warn('Null application object passed to extractCoordinates');
+    return null;
+  }
+  
   console.log('Extracting coordinates for:', app.id);
   
   let lat: number | null = null;
@@ -9,17 +14,30 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
 
   // Try direct lat/lng fields first as they're most reliable
   if (app.latitude && app.longitude) {
-    lat = parseFloat(app.latitude);
-    lng = parseFloat(app.longitude);
-    console.log(`Extracted from direct fields: [${lat}, ${lng}]`);
+    lat = typeof app.latitude === 'string' ? parseFloat(app.latitude) : app.latitude;
+    lng = typeof app.longitude === 'string' ? parseFloat(app.longitude) : app.longitude;
+    
+    // Validate the parsed values
+    if (!isNaN(lat) && !isNaN(lng)) {
+      console.log(`Extracted from direct fields: [${lat}, ${lng}]`);
+    } else {
+      lat = null;
+      lng = null;
+    }
   }
   
   // If direct fields didn't work, try lat/lng
   if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
       app.lat && app.lng) {
-    lat = parseFloat(app.lat);
-    lng = parseFloat(app.lng);
-    console.log(`Extracted from lat/lng fields: [${lat}, ${lng}]`);
+    lat = typeof app.lat === 'string' ? parseFloat(app.lat) : app.lat;
+    lng = typeof app.lng === 'string' ? parseFloat(app.lng) : app.lng;
+    
+    if (!isNaN(lat) && !isNaN(lng)) {
+      console.log(`Extracted from lat/lng fields: [${lat}, ${lng}]`);
+    } else {
+      lat = null;
+      lng = null;
+    }
   }
   
   // Try WKT POINT format if direct fields failed
@@ -30,7 +48,13 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
       // WKT is in longitude, latitude order - swap them to get [lat, lng]
       lng = parseFloat(match[1]);
       lat = parseFloat(match[2]);
-      console.log(`Extracted from WKT: [${lat}, ${lng}]`);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        console.log(`Extracted from WKT: [${lat}, ${lng}]`);
+      } else {
+        lat = null;
+        lng = null;
+      }
     }
   }
   
@@ -42,18 +66,13 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
     // GeoJSON is in [longitude, latitude] order - swap them
     lng = parseFloat(app.geometry.coordinates[0]);
     lat = parseFloat(app.geometry.coordinates[1]);
-    console.log(`Extracted from geometry.coordinates: [${lat}, ${lng}]`);
-  }
-  
-  // Try centroid if all else fails
-  if ((!lat || !lng || isNaN(lat) || isNaN(lng)) && 
-      app.centroid && app.centroid.coordinates && 
-      Array.isArray(app.centroid.coordinates) && 
-      app.centroid.coordinates.length >= 2) {
-    // GeoJSON centroid is also in [longitude, latitude] order
-    lng = parseFloat(app.centroid.coordinates[0]);
-    lat = parseFloat(app.centroid.coordinates[1]);
-    console.log(`Extracted from centroid.coordinates: [${lat}, ${lng}]`);
+    
+    if (!isNaN(lat) && !isNaN(lng)) {
+      console.log(`Extracted from geometry.coordinates: [${lat}, ${lng}]`);
+    } else {
+      lat = null;
+      lng = null;
+    }
   }
   
   // Try geom if it contains coordinates and is an object
@@ -64,7 +83,13 @@ export const extractCoordinates = (app: any, center: LatLngTuple): [number, numb
     // GeoJSON geom is in [longitude, latitude] order
     lng = parseFloat(app.geom.coordinates[0]);
     lat = parseFloat(app.geom.coordinates[1]);
-    console.log(`Extracted from geom object coordinates: [${lat}, ${lng}]`);
+    
+    if (!isNaN(lat) && !isNaN(lng)) {
+      console.log(`Extracted from geom object coordinates: [${lat}, ${lng}]`);
+    } else {
+      lat = null;
+      lng = null;
+    }
   }
   
   // Validate coordinates more strictly
