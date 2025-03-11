@@ -113,13 +113,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           query = query.ilike('class_3', `%${filters.classification}%`);
         }
         
-        // Add a timeout hint to the query
-        query = query.options({ 
-          count: 'exact',
-          head: false
-        });
+        // Remove the problematic options() call that doesn't exist on PostgrestFilterBuilder
+        // Instead of:
+        // query = query.options({ 
+        //   count: 'exact',
+        //   head: false
+        // });
         
-        // Limit the query to improve performance
+        // Directly add the limit to improve performance
         const { data, error, count } = await query.limit(500);
         
         if (error) {
