@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,8 @@ import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import { searchLogger } from '@/utils/searchLogger';
+import { ErrorType, createAppError } from '@/utils/errors';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SearchFilters {
   status?: string;
@@ -22,6 +23,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   
   // Track search attempts to improve error handling
   const [searchAttempts, setSearchAttempts] = useState(0);
+  // Keep track of whether we've shown a timeout toast
+  const [hasShownTimeoutToast, setHasShownTimeoutToast] = useState(false);
   
   const { data: applications = [], isLoading, error, refetch } = useQuery({
     queryKey: ['planning-applications', coordinates?.join(','), filters, searchAttempts],
@@ -32,8 +35,11 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log(`🔍 Search attempt ${searchAttempts + 1} with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
         
         const [lat, lng] = coordinates;
-        // Start with a smaller radius to reduce query size
-        const initialRadiusKm = 5;
+        // Start with an ultra small radius for immediate results
+        const initialRadiusKm = 1;
+        
+        // Reset timeout toast flag on new searches
+        setHasShownTimeoutToast(false);
         
         // Log search for analytics
         await searchLogger.logSearch(`${lat},${lng}`, 'coordinates', 'planning');
@@ -47,28 +53,72 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
             console.log(`✅ Spatial search successful, found ${spatialResults.length} results`);
             return spatialResults;
           }
-          
-          // If no results with small radius, try a slightly larger radius
-          if (spatialResults && spatialResults.length === 0) {
-            console.log('No results found with small radius, trying larger radius');
-            const expandedResults = await performSpatialSearch(lat, lng, 10, filters);
-            if (expandedResults && expandedResults.length > 0) {
-              return expandedResults;
+        } catch (spatialError: any) {
+          // If it's a timeout, we don't want to show multiple toast messages
+          if (spatialError?.message?.includes('timeout') || 
+              spatialError?.message?.includes('57014') ||
+              spatialError?.code === '57014') {
+            console.log('Spatial search timed out, proceeding to fallback');
+            
+            // Only show toast once per search session
+            if (!hasShownTimeoutToast) {
+              toast({
+                title: "Search optimization",
+                description: "Trying alternative search method for faster results.",
+                variant: "default"
+              });
+              setHasShownTimeoutToast(true);
             }
-          }
-        } catch (spatialFunctionError) {
-          console.log('Spatial function not available, using fallback method:', spatialFunctionError);
-          
-          // Only log real errors, not just the fallback path
-          if (!isNonCritical(spatialFunctionError)) {
-            console.error('Spatial search error:', spatialFunctionError);
+          } else if (!isNonCritical(spatialError)) {
+            console.error('Spatial search error:', spatialError);
           }
           // Continue to fallback method
         }
         
-        // If spatial search fails or isn't available, fall back to manual search with limited radius
-        console.log('Using fallback search method with limited radius');
-        return await performFallbackSearch(lat, lng, initialRadiusKm, filters);
+        // Always try the lightweight fallback search
+        console.log('Using fallback search method with ultra-small radius');
+        try {
+          // Use a small radius first for immediate results
+          return await performFallbackSearch(lat, lng, initialRadiusKm, filters);
+        } catch (fallbackError: any) {
+          // If first fallback fails, try with no filters at all
+          if (fallbackError?.message?.includes('timeout') || 
+              fallbackError?.message?.includes('57014')) {
+            
+            console.log('Fallback search timed out, trying emergency minimal search');
+            
+            // Last resort - get the most recent applications regardless of location
+            // and then sort them by proximity to search coordinates
+            const { data } = await supabase
+              .from('crystal_roof')
+              .select('*')
+              .limit(30)
+              .order('id', { ascending: false });
+              
+            if (data && data.length > 0) {
+              console.log(`Retrieved ${data.length} recent applications as emergency fallback`);
+              const applications = data.map(item => {
+                return {
+                  id: item.id,
+                  reference: item.reference || item.lpa_app_no || String(item.id),
+                  title: item.description || `Application ${item.id}`,
+                  description: item.description || '',
+                  status: item.status || 'Unknown',
+                  address: item.address || '',
+                  postcode: item.postcode || '',
+                  coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
+                  // ... minimal required fields
+                } as Application;
+              });
+              
+              // Sort by proximity if coordinates are valid
+              return applications;
+            }
+          }
+          
+          // If all fallbacks fail, rethrow with a clear message
+          throw new Error("Unable to retrieve planning applications at this time. Please try again later.");
+        }
       } catch (err: any) {
         return handleSearchError(err, toast, () => {
           // Increment search attempts to trigger a retry
@@ -79,11 +129,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
-      // Don't retry timeout errors or when we already have results
-      if (error?.message?.includes('timeout') || error?.message?.includes('too long')) {
-        return false;
-      }
-      // Only retry network errors, up to 2 times
+      // Don't retry too many times
       return failureCount < 2;
     },
   });

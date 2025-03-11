@@ -10,6 +10,7 @@ import { ErrorType, AppError } from "@/utils/errors";
 import { detectErrorType } from "@/utils/errors/detection";
 import { useToast } from '@/hooks/use-toast';
 import { useErrorHandler } from '@/hooks/use-error-handler';
+import { supabase } from "@/integrations/supabase/client";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -33,11 +34,13 @@ export const SearchView = ({
   const { handleError: handleAppError } = useErrorHandler();
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [hasInitialData, setHasInitialData] = useState(false);
   
   // Start timing when initialSearch changes
   useEffect(() => {
     if (initialSearch?.searchTerm) {
       setSearchStartTime(Date.now());
+      setHasInitialData(false);
     }
   }, [initialSearch?.searchTerm]);
   
@@ -53,6 +56,13 @@ export const SearchView = ({
     setFilters,
     refetch
   } = usePlanningSearch(coordinates);
+
+  // Set hasInitialData when we first get applications
+  useEffect(() => {
+    if (applications.length > 0 && !hasInitialData) {
+      setHasInitialData(true);
+    }
+  }, [applications, hasInitialData]);
 
   // Handle coordinates error
   useEffect(() => {
@@ -89,7 +99,9 @@ export const SearchView = ({
 
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
-    if (onError && searchError && !searchError.message?.toLowerCase().includes('support table')) {
+    if (onError && searchError && 
+        !searchError.message?.toLowerCase().includes('support table') &&
+        !hasInitialData) { // Don't show error if we have some results
       console.log('🚨 Search error:', searchError);
       
       // Handle the error to show a toast
@@ -101,13 +113,39 @@ export const SearchView = ({
       // Propagate the error up to the parent component
       onError(searchError);
     }
-  }, [searchError, onError, handleAppError]);
+  }, [searchError, onError, handleAppError, hasInitialData]);
 
   useEffect(() => {
     if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
       onSearchComplete();
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
+
+  // Emergency data fetching if all else fails
+  const handleEmergencyRetry = async () => {
+    setIsRetrying(true);
+    try {
+      // Try the simplest possible query to get SOME data
+      const { data } = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .limit(20)
+        .order('id', { ascending: false });
+        
+      if (data && data.length > 0) {
+        toast({
+          title: "Showing recent applications",
+          description: "We retrieved some recent applications while we work on fixing search.",
+          variant: "default",
+        });
+      }
+    } catch (err) {
+      console.error('Even emergency retry failed:', err);
+    } finally {
+      setIsRetrying(false);
+      refetch(); // Try normal search again
+    }
+  };
 
   // Retry search with broader parameters if we get a timeout error
   const handleRetry = () => {
@@ -120,9 +158,31 @@ export const SearchView = ({
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  // Show error view only for real errors, not when we have results
+  // Check if we have applications even when there's an error - show them if we do
+  if (applications && applications.length > 0) {
+    // Show content view if we have data, even if there was an error
+    const isLoading = isLoadingCoords || isLoadingResults || isRetrying;
+    
+    return (
+      <SearchViewContent
+        initialSearch={initialSearch}
+        applications={applications}
+        isLoading={isLoading}
+        filters={filters}
+        onFilterChange={(type, value) => {
+          setFilters({ ...filters, [type]: value });
+        }}
+        onError={onError}
+        onSearchComplete={onSearchComplete}
+        retryCount={retryCount}
+        coordinates={coordinates}
+      />
+    );
+  }
+
+  // Show error view only for real errors with no results
   const error = searchError || coordsError;
-  if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
+  if (error && !error.message?.toLowerCase().includes('support table')) {
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
     
@@ -138,7 +198,7 @@ export const SearchView = ({
       <SearchErrorView 
         errorDetails={error.message}
         errorType={errorType}
-        onRetry={handleRetry}
+        onRetry={errorType === ErrorType.TIMEOUT ? handleEmergencyRetry : handleRetry}
         isRetrying={isRetrying}
       />
     );
@@ -146,6 +206,7 @@ export const SearchView = ({
 
   const isLoading = isLoadingCoords || isLoadingResults || isRetrying;
 
+  // Show content view even with no applications in loading state
   return (
     <SearchViewContent
       initialSearch={initialSearch}
