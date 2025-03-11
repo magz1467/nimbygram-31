@@ -39,9 +39,9 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         // Keep track of coordinates we're searching
         setLastSearchedCoords(coordinates);
 
-        // Try with progressively smaller radius on retries
-        const radius = Math.max(10 - (retryCount * 2), 3); // Decrease radius with each retry, min 3km
-        console.log(`🔍 Searching with ${radius}km radius (retry ${retryCount})`);
+        // Fixed 10km radius
+        const radius = 10;
+        console.log(`🔍 Searching with ${radius}km radius`);
         
         // Fetch nearby applications with reduced radius
         const properties = await fetchNearbyApplications(coordinates, radius);
@@ -52,8 +52,8 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
           setIsLoading(false);
           
           if (retryCount < 2) {
-            // Auto-retry once with a smaller radius
-            console.log(`Auto-retrying with smaller radius (attempt ${retryCount + 1}/2)`);
+            // Auto-retry once
+            console.log(`Auto-retrying (attempt ${retryCount + 1}/2)`);
             setRetryCount(prev => prev + 1);
           } else {
             toast({
@@ -73,7 +73,7 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
         if (sortedData.length === 0) {
           toast({
             title: "No properties found",
-            description: "No properties found near this location. Try searching for a different area.",
+            description: "No properties found within 10km of this location. Try searching for a different area.",
             variant: "destructive"
           });
         }

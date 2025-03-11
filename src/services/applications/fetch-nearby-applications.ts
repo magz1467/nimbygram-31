@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/use-toast";
  */
 export const fetchNearbyApplications = async (
   coordinates: [number, number] | null,
-  radius: number = 40
+  radius: number = 10
 ): Promise<any[] | null> => {
   console.log('🔍 Starting to fetch applications near coordinates:', coordinates);
   

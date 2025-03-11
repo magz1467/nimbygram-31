@@ -1,22 +1,36 @@
+
 export interface Application {
   id: number;
-  ref: string;
+  title: string;
   address: string;
-  description: string;
   status: string;
+  distance: string;
+  reference?: string;
+  description?: string;
+  applicant?: string;
+  submissionDate?: string;
+  submittedDate?: string | Date | null;
+  decisionDue?: string;
   type?: string;
-  application_type?: string;
-  application_type_full?: string;
-  date?: string;
-  distance?: string;
-  coordinates?: [number, number];
-  image_urls?: string[];
-  decision_date?: string;
-  url?: string;
-  thumbnail?: string;
-  documents?: string[];
-  document_link?: string;
-  agent?: string;
-  notes?: string; // Add notes field for system messages
-  class_3?: string;
+  ward?: string;
+  officer?: string;
+  consultationEnd?: string;
+  image?: string;
+  streetview_url?: string;
+  image_map_url?: string;
+  coordinates?: [number, number] | null;
+  ai_title?: string;
+  postcode?: string;
+  impact_score?: number | null;
+  impact_score_details?: any;
+  last_date_consultation_comments?: string | null;
+  valid_date?: string | null;
+  centroid?: any;
+  class_3?: string | null;
+  final_impact_score?: number | null;
+  engaging_title?: string | null;
+  storybook?: any;
+  storybook_header?: any;
+  received_date?: string | null;
+  notes?: string;
 }

@@ -14,7 +14,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   
   try {
     // Get distance-filtered results from the database with a reasonable radius
-    const maxDistanceKm = 20; // Restrict to 20km radius for more relevant results
+    const maxDistanceKm = 10; // Restrict to 10km radius for more relevant results
     console.log(`Using search radius of ${maxDistanceKm}km to find relevant applications`);
     
     // Try database query first with distance filtering
@@ -46,41 +46,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       }
     }
     
-    // If we have no results with the initial radius, try gradually increasing it
+    // If we have no results with the initial radius, show appropriate message
     if (results.length === 0) {
-      console.log('No results found within initial radius, expanding search');
-      
-      const expandedRadii = [30, 50, 100]; // Try increasingly larger radii
-      
-      for (const radius of expandedRadii) {
-        console.log(`Expanding search radius to ${radius}km`);
-        
-        try {
-          const expandedResults = await fetchApplicationsFromDatabase(coordinates, radius);
-          
-          if (expandedResults.length > 0) {
-            console.log(`Found ${expandedResults.length} results within ${radius}km`);
-            results = expandedResults;
-            
-            // Add a note to the first result
-            if (results[0]) {
-              results[0].notes = `Showing results up to ${radius}km away because no applications were found closer to your search location.`;
-            }
-            
-            break;
-          }
-        } catch (err) {
-          console.warn(`Failed to get results with expanded radius ${radius}km:`, err);
-        }
-      }
-    }
-    
-    // If still no results, show appropriate message
-    if (results.length === 0) {
-      console.warn('⚠️ No applications found even with expanded radius');
+      console.warn('⚠️ No applications found within 10km radius');
       toast({
         title: "No Nearby Results",
-        description: "We couldn't find any planning applications near this location. It may be outside our coverage area or have no recent planning activity.",
+        description: "We couldn't find any planning applications within 10km of this location. It may be outside our coverage area or have no recent planning activity.",
         variant: "destructive",
       });
     }
