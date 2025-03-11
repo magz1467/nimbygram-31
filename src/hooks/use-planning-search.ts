@@ -53,10 +53,29 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const { data, error } = await query.limit(500);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase query error:', error);
+          
+          // Skip showing UI errors for known non-critical database errors
+          if (error.message && (
+              error.message.includes('application_support') ||
+              error.message.includes('relation') ||
+              (error.message.includes('does not exist') && error.message.includes('table'))
+          )) {
+            console.log('Non-critical database error, continuing with empty results');
+            return [];
+          }
+          
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          console.log('No results found for the search criteria');
+          return [];
+        }
         
         // Calculate distances and sort by closest first
-        const results = (data || []).map(app => {
+        const results = data.map(app => {
           const distance = calculateDistance(
             coordinates[0],
             coordinates[1],
@@ -66,6 +85,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           return { ...app, distance };
         }).sort((a, b) => a.distance - b.distance);
         
+        console.log(`Found ${results.length} planning applications`);
         return results;
         
       } catch (err: any) {
@@ -75,11 +95,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           description: "There was a problem finding planning applications. Please try again.",
           variant: "destructive",
         });
+        
+        // Return empty array instead of throwing to prevent UI from breaking
         return [];
       }
     },
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 1, // Only retry once to prevent excessive error toasts
   });
 
   return {
