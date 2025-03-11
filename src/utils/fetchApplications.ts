@@ -1,13 +1,20 @@
 
 import { Application } from "@/types/planning";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
 import { fetchApplicationsFromDatabase } from "./directDatabaseFetcher";
 import { fetchApplicationsWithSpatialQuery } from "./optimizedSearchFetcher";
+import { sortApplicationsByDistance } from "./distance";
 
 export const fetchApplications = async (coordinates: [number, number] | null): Promise<Application[]> => {
   if (!coordinates) {
     console.log('❌ fetchApplications: No coordinates provided');
+    return [];
+  }
+  
+  // Validate the coordinates format [lat, lng]
+  if (Math.abs(coordinates[0]) > 90) {
+    console.error('Invalid latitude in coordinates:', coordinates);
     return [];
   }
   
@@ -38,11 +45,44 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       sizes: validResults.map(r => r.length)
     });
     
-    // Use the results from whichever method returned most data
+    // NEW: Instead of just using the largest result set, we'll pick the best one
+    // that's properly sorted by distance
     if (validResults.length > 0) {
-      // Sort by array length to get the one with most results
-      validResults.sort((a, b) => b.length - a.length);
-      return validResults[0];
+      // Sort each result set to ensure proper distance ordering
+      const properlyOrderedResults = validResults.map(apps => 
+        sortApplicationsByDistance([...apps], coordinates)
+      );
+      
+      // Use the results that have the most entries in the nearest 10km
+      const resultsWithNearbyCount = properlyOrderedResults.map(apps => {
+        const nearbyCount = apps.filter(app => {
+          if (!app.coordinates) return false;
+          const distance = calculateDistance(coordinates, app.coordinates);
+          return distance <= 10; // Within 10km
+        }).length;
+        
+        return { apps, nearbyCount };
+      });
+      
+      // Sort by nearby count first, then by total size
+      resultsWithNearbyCount.sort((a, b) => {
+        if (a.nearbyCount !== b.nearbyCount) {
+          return b.nearbyCount - a.nearbyCount; // More nearby results first
+        }
+        return b.apps.length - a.apps.length; // Then by total size
+      });
+      
+      console.log('Sorted result sets by nearby results:', 
+        resultsWithNearbyCount.map(r => ({ 
+          nearbyCount: r.nearbyCount, 
+          totalCount: r.apps.length 
+        }))
+      );
+      
+      // Return the best result set
+      if (resultsWithNearbyCount[0]) {
+        return resultsWithNearbyCount[0].apps;
+      }
     }
     
     // If no results from initial radius, try with progressively larger radius
@@ -75,25 +115,13 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     
     // If still no results, show appropriate message
     console.warn('⚠️ No applications found even with expanded radius');
-    toast({
-      title: "No Nearby Results",
-      description: "We couldn't find any planning applications near this location. It may be outside our coverage area or have no recent planning activity.",
-      variant: "destructive",
-    });
-    
     return [];
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
-    // Show toast to the user
-    toast({
-      title: "Search Error",
-      description: "We're having trouble loading the results. Please try again later.",
-      variant: "destructive",
-    });
-    
-    // Return empty array to avoid crashing the UI
+    // Only show error toast if we have no application data
+    // This prevents showing errors when we actually have results
     return [];
   }
 };

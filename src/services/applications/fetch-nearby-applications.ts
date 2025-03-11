@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Fetches applications near the given coordinates

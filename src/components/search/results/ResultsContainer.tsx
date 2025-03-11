@@ -51,7 +51,14 @@ export const ResultsContainer = ({
   const isMobile = useIsMobile();
   const { toast } = useToast();
   
-  const hasCoordinates = Boolean(coordinates);
+  // Validate coordinates are in the correct format [lat, lng]
+  const validCoordinates = coordinates && 
+    Array.isArray(coordinates) && 
+    coordinates.length === 2 &&
+    Math.abs(coordinates[0]) <= 90 && // latitude
+    Math.abs(coordinates[1]) <= 180;  // longitude
+  
+  const hasCoordinates = Boolean(validCoordinates);
   const hasApplications = applications.length > 0;
   const shouldShowMap = showMap && hasCoordinates && hasApplications;
   
@@ -92,7 +99,7 @@ export const ResultsContainer = ({
           displayTerm={displayTerm}
           onRetry={onRetry}
           selectedId={selectedId}
-          coordinates={coordinates}
+          coordinates={validCoordinates ? coordinates : null}
           handleMarkerClick={handleMarkerClick}
           allApplications={applications}
           postcode={searchTerm}
@@ -105,11 +112,11 @@ export const ResultsContainer = ({
       </div>
       
       {/* Mobile map overlay */}
-      {isMobile && shouldShowMap && coordinates && (
+      {isMobile && shouldShowMap && validCoordinates && (
         <MobileMapView 
           applications={applications}
           selectedId={selectedId}
-          coordinates={coordinates}
+          coordinates={coordinates as [number, number]}
           handleMarkerClick={handleMarkerClick}
           handleCloseMap={handleCloseMap}
           isLoading={isLoading}
@@ -118,12 +125,12 @@ export const ResultsContainer = ({
       )}
       
       {/* Desktop map layout */}
-      {!isMobile && shouldShowMap && coordinates && (
+      {!isMobile && shouldShowMap && validCoordinates && (
         <div className="lg:col-span-1">
           <DesktopMapView
             applications={applications}
             selectedId={selectedId}
-            coordinates={coordinates}
+            coordinates={coordinates as [number, number]}
             handleMarkerClick={handleMarkerClick}
             handleCloseMap={handleCloseMap}
             isLoading={isLoading}

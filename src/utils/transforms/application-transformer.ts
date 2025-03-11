@@ -9,7 +9,7 @@ import { calculateFormattedDistance } from './distance-calculator';
 /**
  * Transforms raw application data into standardized Application format
  * @param app Raw application data
- * @param center Center coordinates for distance calculation
+ * @param center Center coordinates for distance calculation [latitude, longitude]
  * @param imageUrl Default image URL
  * @returns Transformed Application object
  */

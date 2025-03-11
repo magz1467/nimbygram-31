@@ -30,6 +30,7 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
 
+  // Log for debugging
   console.log(`Distance calculation: From [${lat1.toFixed(6)}, ${lon1.toFixed(6)}] to [${lat2.toFixed(6)}, ${lon2.toFixed(6)}] = ${distance.toFixed(2)}km`);
   
   return distance;

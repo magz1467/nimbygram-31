@@ -1,3 +1,4 @@
+
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
@@ -26,9 +27,19 @@ export const MapContainer = memo(({
   const mapRef = useRef<LeafletMap | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Validate coordinates are in correct format [lat, lng]
+  const validCoordinates = Array.isArray(coordinates) && 
+                          coordinates.length === 2 && 
+                          Math.abs(coordinates[0]) <= 90 && 
+                          Math.abs(coordinates[1]) <= 180;
+  
+  if (!validCoordinates) {
+    console.error('Invalid coordinates provided to MapContainer:', coordinates);
+  }
+
   // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !validCoordinates) return;
     
     const map = mapRef.current;
     
@@ -56,7 +67,7 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [coordinates, selectedId, applications]);
+  }, [coordinates, selectedId, applications, validCoordinates]);
 
   // Handle first mount of the map
   useEffect(() => {
@@ -112,11 +123,14 @@ export const MapContainer = memo(({
     };
   }, []);
 
+  // Use a fallback center if coordinates are invalid
+  const centerPoint: [number, number] = validCoordinates ? coordinates : [51.5074, -0.1278]; // London fallback
+
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
-        center={coordinates}
+        center={centerPoint}
         zoom={14}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
@@ -131,10 +145,10 @@ export const MapContainer = memo(({
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           maxZoom={19}
         />
-        <SearchLocationPin position={coordinates} />
+        <SearchLocationPin position={centerPoint} />
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={coordinates}
+          baseCoordinates={centerPoint}
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
         />
