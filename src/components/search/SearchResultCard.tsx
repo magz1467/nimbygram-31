@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Application } from "@/types/planning";
 import { useState } from "react";
 import { CardHeader } from "./card/CardHeader";
@@ -11,7 +11,7 @@ import { getImageUrl } from "@/utils/imageUtils";
 
 interface SearchResultCardProps {
   application: Application;
-  onSeeOnMap?: (id: number) => void;
+  onSeeOnMap: (id: number) => void;
   applications?: Application[];
   selectedId?: number | null;
   coordinates?: [number, number] | null;
@@ -45,17 +45,14 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Format the submitted date
   const formattedSubmittedDate = application.submittedDate || application.received_date
     ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
       ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
       : null
     : null;
 
-  // Determine the best image URL to use and run it through the getImageUrl helper
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
-  // Handle see on map button click
   const handleSeeOnMap = () => {
     if (onSeeOnMap && application.id) {
       console.log('📍 See on map clicked for application:', application.id);
@@ -64,7 +61,7 @@ export const SearchResultCard = ({
   };
 
   return (
-    <article id={`application-${application.id}`} className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto mb-8">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader 
         title={application.title || ''} 
         address={application.address} 
@@ -84,10 +81,10 @@ export const SearchResultCard = ({
         />
       </div>
 
-      <div className="px-8 py-4">
-        {formattedSubmittedDate && (
-          <div className="text-sm text-gray-500 mb-3">
-            <span className="font-medium">Submitted date:</span> {formattedSubmittedDate}
+      <div className="p-4">
+        {application.notes && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+            {application.notes}
           </div>
         )}
         
@@ -110,6 +107,6 @@ export const SearchResultCard = ({
           </div>
         )}
       </div>
-    </article>
+    </div>
   );
 };

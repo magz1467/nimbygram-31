@@ -69,6 +69,8 @@ export const sortApplicationsByDistance = (
     return [...applications];
   }
 
+  console.log(`Sorting ${applications.length} applications from [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
+  
   // Create a copy of applications with calculated distances
   const appsWithDistance = applications.map(app => {
     if (!app.coordinates) {
@@ -87,6 +89,14 @@ export const sortApplicationsByDistance = (
     const distA = (a as any)._distanceValue;
     const distB = (b as any)._distanceValue;
     return distA - distB;
+  });
+  
+  // Log the first few results for debugging
+  console.log("\nSorted applications (first 10):");
+  sortedApps.slice(0, 10).forEach((app, index) => {
+    // Safely access _distanceValue which we just added
+    const dist = (app as any)._distanceValue;
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}, Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
   });
   
   // Return sorted applications without the temporary _distanceValue property
