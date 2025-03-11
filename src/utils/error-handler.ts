@@ -204,7 +204,9 @@ export function handleError(
       description: appError.message,
       variant: "destructive",
       action: retry ? (
-        React.createElement(ToastAction, { onClick: retry }, "Retry")
+        <ToastAction altText="Retry" onClick={retry}>
+          Retry
+        </ToastAction>
       ) : undefined
     });
   }
