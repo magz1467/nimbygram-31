@@ -65,19 +65,17 @@ export const SearchView = ({
   const isLoading = isLoadingCoords || isLoadingResults;
 
   return (
-    <MobileDetector>
-      <SearchViewContent
-        initialSearch={initialSearch}
-        applications={applications}
-        isLoading={isLoading}
-        filters={filters}
-        onFilterChange={(type, value) => {
-          setFilters({ ...filters, [type]: value });
-        }}
-        onError={onError}
-        onSearchComplete={onSearchComplete}
-        retryCount={retryCount}
-      />
-    </MobileDetector>
+    <SearchViewContent
+      initialSearch={initialSearch}
+      applications={applications}
+      isLoading={isLoading}
+      filters={filters}
+      onFilterChange={(type, value) => {
+        setFilters({ ...filters, [type]: value });
+      }}
+      onError={onError}
+      onSearchComplete={onSearchComplete}
+      retryCount={retryCount}
+    />
   );
 };
