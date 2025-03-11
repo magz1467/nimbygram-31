@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationData } from "./transforms/application-transformer";
@@ -9,10 +8,12 @@ import { toast } from "@/hooks/use-toast";
  * Fetches applications directly from the database with pagination to prevent timeouts
  */
 export const fetchApplicationsFromDatabase = async (
-  coordinates: [number, number]
+  coordinates: [number, number],
+  maxDistanceKm: number = 20 // Add a max distance parameter (20km default)
 ): Promise<Application[]> => {
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates for distance calculation:', coordinates);
+  console.log('🔍 Using max search radius of', maxDistanceKm, 'km');
   
   const pageSize = 250; // Smaller batch size for better performance
   const allApplications: Application[] = [];
@@ -63,15 +64,40 @@ export const fetchApplicationsFromDatabase = async (
         .map(app => transformApplicationData(app, coordinates))
         .filter((app): app is Application => app !== null);
       
-      // Add to our results array
-      allApplications.push(...transformedApps);
+      // Filter by maximum distance (important to avoid returning distant results)
+      const nearbyApps = transformedApps.filter(app => {
+        if (!app.coordinates) return false;
+        const distKm = calculateDistance(coordinates, app.coordinates);
+        // Store the raw distance value for sorting
+        (app as any)._distanceValue = distKm;
+        // Only keep applications within the max distance
+        return distKm <= maxDistanceKm;
+      });
+      
+      // Log distance information for debugging
+      if (transformedApps.length > 0) {
+        console.log(`Found ${transformedApps.length} applications with coordinates, ${nearbyApps.length} within ${maxDistanceKm}km`);
+        
+        // Log a few examples of distances
+        const samples = Math.min(5, transformedApps.length);
+        console.log(`Distance samples of ${samples} applications:`);
+        transformedApps.slice(0, samples).forEach(app => {
+          if (app.coordinates) {
+            const dist = calculateDistance(coordinates, app.coordinates);
+            console.log(`ID: ${app.id}, Distance: ${dist.toFixed(2)}km, Address: ${app.address}`);
+          }
+        });
+      }
+      
+      // Add to our results array - only include nearby applications
+      allApplications.push(...nearbyApps);
       
       // Increment page counter
       page++;
       
-      // If we have a reasonable number of results already, let's return them
-      if (allApplications.length > 0) {
-        console.log(`Have ${allApplications.length} applications, breaking pagination loop early`);
+      // If we have enough nearby results already, break the loop
+      if (allApplications.length >= 100) {
+        console.log(`Have ${allApplications.length} nearby applications, breaking pagination loop early`);
         break;
       }
     }
@@ -79,7 +105,7 @@ export const fetchApplicationsFromDatabase = async (
     // Sort all applications by distance
     const sortedApplications = sortApplicationsByDistance(allApplications, coordinates);
     
-    console.log(`✅ Total transformed and sorted applications: ${sortedApplications.length}`);
+    console.log(`✅ Total transformed and sorted applications within ${maxDistanceKm}km: ${sortedApplications.length}`);
     
     // Log sorted results for debugging
     if (sortedApplications.length > 0) {

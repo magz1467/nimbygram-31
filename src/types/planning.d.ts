@@ -1,33 +1,22 @@
 export interface Application {
   id: number;
-  title?: string;
+  ref: string;
+  address: string;
   description: string;
   status: string;
-  reference?: string;
-  submissionDate?: string;
-  coordinates: [number, number];
-  postcode: string;
-  applicant?: string;
-  decisionDue?: string;
   type?: string;
-  ward?: string;
-  officer?: string;
-  consultationEnd?: string;
-  address: string;
-  image?: string;
-  image_map_url?: string;
-  ai_title?: string;
-  last_date_consultation_comments?: string;
-  valid_date?: string;
-  centroid?: any;
-  impact_score?: number | null;
-  impact_score_details?: any;
-  impacted_services?: any;
+  application_type?: string;
+  application_type_full?: string;
+  date?: string;
   distance?: string;
-  final_impact_score?: number;
-  engaging_title?: string;
-  feedback_stats?: {
-    yimby?: number;
-    nimby?: number;
-  };
+  coordinates?: [number, number];
+  image_urls?: string[];
+  decision_date?: string;
+  url?: string;
+  thumbnail?: string;
+  documents?: string[];
+  document_link?: string;
+  agent?: string;
+  notes?: string; // Add notes field for system messages
+  class_3?: string;
 }
