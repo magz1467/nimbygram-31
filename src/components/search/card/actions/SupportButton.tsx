@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useErrorHandler } from "@/hooks/use-error-handler";
 
 export interface SupportButtonProps {
   applicationId: number;
@@ -22,6 +23,7 @@ export const SupportButton = ({
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
   
   const handleSupport = async () => {
     const canProceed = checkAuth(() => setShowAuthDialog(true));
@@ -52,11 +54,9 @@ export const SupportButton = ({
       });
       
     } catch (error) {
-      console.error('Error toggling support:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update support status. Please try again.",
-        variant: "destructive"
+      handleError(error, {
+        context: 'support button',
+        retry: () => handleSupport()
       });
     } finally {
       setIsSubmitting(false);
