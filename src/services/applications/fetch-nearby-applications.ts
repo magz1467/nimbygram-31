@@ -22,10 +22,6 @@ export const fetchNearbyApplications = async (
   const [lat, lng] = coordinates;
   console.log(`📍 Fetching applications within ${radius}km of [${lat}, ${lng}]`);
   
-  // Try using the RPC function first
-  let properties;
-  let error;
-  
   try {
     // Calculate bounds for a radius search
     const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
@@ -38,13 +34,18 @@ export const fetchNearbyApplications = async (
     
     console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
-    // Select all applications
+    // Select all applications within the bounding box
     const queryResult = await supabase
       .from('crystal_roof')
-      .select('*');
+      .select('*')
+      .gte('latitude', latMin)
+      .lte('latitude', latMax)
+      .gte('longitude', lngMin)
+      .lte('longitude', lngMax)
+      .limit(500);
         
-    properties = queryResult.data;
-    error = queryResult.error;
+    const properties = queryResult.data;
+    const error = queryResult.error;
     
     console.log('🔍 Query result:', { 
       success: !error, 
@@ -52,55 +53,47 @@ export const fetchNearbyApplications = async (
       searchCenter: [lat, lng]
     });
     
-    // Filter the results in JavaScript based on approximate distance
-    if (properties && properties.length > 0) {
-      console.log('Raw properties before filtering:', properties.slice(0, 3));
-      
-      properties = properties.filter(property => {
-        try {
-          // Extract coordinates - check both geom and geometry
-          let propLat, propLng;
-          
-          if (property.geom?.coordinates) {
-            // CRITICAL: Check coordinate order in geom - ensure [lng, lat] is converted to [lat, lng]
-            propLng = parseFloat(property.geom.coordinates[0]);
-            propLat = parseFloat(property.geom.coordinates[1]);
-          } else if (property.geometry?.coordinates) {
-            propLng = parseFloat(property.geometry.coordinates[0]);
-            propLat = parseFloat(property.geometry.coordinates[1]);
-          } else if (property.latitude && property.longitude) {
-            // Use direct lat/lng properties if available
-            propLat = parseFloat(property.latitude);
-            propLng = parseFloat(property.longitude);
-          } else {
-            return false; // Skip if no coordinates
-          }
-          
-          // Check if within extended bounds
-          return (
-            propLat >= latMin && 
-            propLat <= latMax && 
-            propLng >= lngMin && 
-            propLng <= lngMax
-          );
-        } catch (err) {
-          console.error(`Error filtering property ${property.id}:`, err);
-          return false;
-        }
-      });
-      
-      console.log(`✅ Filtered to ${properties.length} applications within radius`);
+    if (error) {
+      console.error('❌ Error fetching application data:', error);
+      return null;
     }
+    
+    if (!properties || properties.length === 0) {
+      console.log('⚠️ No properties found in the bounding box');
+      
+      // Try one more time with a wider search
+      const widerRadius = radius * 2;
+      console.log(`Trying wider search with ${widerRadius}km radius`);
+      
+      const widerLatDiff = widerRadius / 111.32;
+      const widerLngDiff = widerRadius / (111.32 * Math.cos(lat * Math.PI / 180));
+      
+      const widerQueryResult = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .gte('latitude', lat - widerLatDiff)
+        .lte('latitude', lat + widerLatDiff)
+        .gte('longitude', lng - widerLngDiff)
+        .lte('longitude', lng + widerLngDiff)
+        .limit(500);
+      
+      if (widerQueryResult.error) {
+        console.error('❌ Error in wider search:', widerQueryResult.error);
+        return null;
+      }
+      
+      if (widerQueryResult.data && widerQueryResult.data.length > 0) {
+        console.log(`✅ Wider search found ${widerQueryResult.data.length} properties`);
+        return widerQueryResult.data;
+      }
+      
+      return [];
+    }
+
+    console.log(`✨ Received ${properties.length} applications from database`);
+    return properties;
   } catch (error) {
     console.error('❌ Error fetching application data:', error);
     return null;
   }
-
-  if (error) {
-    console.error('❌ Error fetching application data:', error);
-    return null;
-  }
-
-  console.log(`✨ Received ${properties?.length || 0} applications from database`);
-  return properties || [];
 };

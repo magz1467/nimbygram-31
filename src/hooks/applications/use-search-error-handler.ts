@@ -19,6 +19,25 @@ export const useSearchErrorHandler = (
       return true;
     }
     
+    // Error messages to always filter out (even if no results)
+    const nonCriticalErrorMessages = [
+      'application_support',
+      'get_nearby_applications',
+      'application_support',
+      'could not find the function',
+      'in the schema cache',
+      'relation',
+      'does not exist'
+    ];
+    
+    // Check if the error message contains any of the non-critical error messages
+    for (const message of nonCriticalErrorMessages) {
+      if (error.message.toLowerCase().includes(message.toLowerCase())) {
+        console.log(`Suppressing non-critical error with message containing "${message}":`, error.message);
+        return true;
+      }
+    }
+    
     return false;
   }, [hasResultsRef]);
 
