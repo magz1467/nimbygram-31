@@ -42,6 +42,9 @@ export const ErrorMessage = ({ title, message, onRetry }: ErrorMessageProps) => 
           Our planning application database currently has the best coverage in Greater London and the South East of England. 
           We're working to expand our coverage to more areas of the UK.
         </p>
+        <p className="text-sm text-gray-600 mt-2">
+          We only show results within 10km of your search location. Try searching for a different nearby area or postcode.
+        </p>
       </div>
     </div>
   );
