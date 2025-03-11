@@ -1,81 +1,96 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { SearchFilters } from "../use-planning-search";
-import { calculateDistance } from "../utils/distance-calculator";
+import { sortApplicationsByDistance } from "@/utils/distance";
 
 /**
- * Performs a manual bounding box search as a fallback when spatial search is unavailable
+ * Performs a fallback search for applications when the spatial search is not available
+ * @param lat Latitude of search point
+ * @param lng Longitude of search point
+ * @param radiusKm Radius to search in kilometers
+ * @param filters Optional filters to apply
+ * @returns Array of applications
  */
 export async function performFallbackSearch(
-  lat: number, 
-  lng: number, 
+  lat: number,
+  lng: number,
   radiusKm: number,
-  filters: SearchFilters
+  filters: any = {}
 ): Promise<Application[]> {
-  console.log('Falling back to manual bounding box search');
+  // Start with a small limit to prevent timeouts
+  const initialLimit = 500;
   
-  let query = supabase
-    .from('crystal_roof')
-    .select('*')
-    .not('latitude', 'is', null)
-    .not('longitude', 'is', null);
+  console.log(`🔍 Fallback search at [${lat}, ${lng}] with radius ${radiusKm}km and limit ${initialLimit}`);
   
-  const latDegPerKm = 1 / 111;
-  const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180));
+  // Calculate bounding box for more efficient querying (uses approximately km to degrees conversion)
+  const latDegPerKm = 1/111; // 1 degree latitude is approximately 111km
+  const lngDegPerKm = 1/(111 * Math.cos(lat * Math.PI/180)); // Adjust for longitude at this latitude
   
   const latMin = lat - (radiusKm * latDegPerKm);
   const latMax = lat + (radiusKm * latDegPerKm);
   const lngMin = lng - (radiusKm * lngDegPerKm);
   const lngMax = lng + (radiusKm * lngDegPerKm);
   
-  query = query
+  let query = supabase
+    .from('crystal_roof')
+    .select('*')
     .gte('latitude', latMin)
     .lte('latitude', latMax)
     .gte('longitude', lngMin)
-    .lte('longitude', lngMax);
+    .lte('longitude', lngMax)
+    .limit(initialLimit);
   
+  // Apply filters if provided
   if (filters.status) {
     query = query.ilike('status', `%${filters.status}%`);
   }
-  
   if (filters.type) {
-    query = query.or(`type.ilike.%${filters.type}%,application_type_full.ilike.%${filters.type}%`);
+    query = query.ilike('type', `%${filters.type}%`);
   }
-  
   if (filters.classification) {
     query = query.ilike('class_3', `%${filters.classification}%`);
   }
   
-  // Add a limit to prevent timeouts
-  const { data, error } = await query.limit(200);
+  const { data, error } = await query;
   
   if (error) {
-    console.error('Supabase query error:', error);
-    
-    // If it's a timeout error, return a more specific error message
-    if (error.code === '57014' || error.message.includes('timeout')) {
-      throw new Error('The search took too long to complete. Please try a more specific location or different filters.');
-    }
-    
+    console.error('❌ Fallback search error:', error);
     throw error;
   }
   
+  console.log(`✅ Fallback search returned ${data?.length || 0} results`);
+  
   if (!data || data.length === 0) {
-    console.log('No results found for the search criteria');
     return [];
   }
   
-  const results = data.map(app => {
-    const distance = calculateDistance(
-      lat,
-      lng,
-      Number(app.latitude),
-      Number(app.longitude)
-    );
-    return { ...app, distance };
-  }).sort((a, b) => a.distance - b.distance);
+  // Process results into Application objects
+  const applications = data.map(item => {
+    return {
+      id: item.id,
+      reference: item.reference || item.lpa_app_no,
+      title: item.description || `Application ${item.id}`,
+      description: item.description || '',
+      status: item.status || 'Unknown',
+      address: item.address || '',
+      postcode: item.postcode || '',
+      coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
+      application_type: item.application_type || '',
+      application_type_full: item.type || '',
+      decision: item.decision || '',
+      appeal_status: item.appeal_status || '',
+      lpa_code: item.lpa_code || '',
+      documents_url: item.documents_url || '',
+      comment_url: item.comment_url || '',
+      published_date: item.date_published || null,
+      received_date: item.valid_date || item.date_received || null,
+      decision_date: item.decision_date || null,
+      class_3: item.class_3 || '',
+      consultationEnd: item.consultation_end || null,
+      type: item.type || '',
+    } as Application;
+  });
   
-  console.log(`✅ Found ${results.length} planning applications with fallback query`);
-  return results;
+  // Sort by distance from search point
+  return sortApplicationsByDistance(applications, [lat, lng]);
 }

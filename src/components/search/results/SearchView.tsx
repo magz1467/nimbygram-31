@@ -32,6 +32,7 @@ export const SearchView = ({
   const { toast } = useToast();
   const { handleError: handleAppError } = useErrorHandler();
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   
   // Start timing when initialSearch changes
   useEffect(() => {
@@ -40,17 +41,30 @@ export const SearchView = ({
     }
   }, [initialSearch?.searchTerm]);
   
-  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
+  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
 
   const { 
     applications, 
     isLoading: isLoadingResults,
-    error,
+    error: searchError,
     filters,
-    setFilters
+    setFilters,
+    refetch
   } = usePlanningSearch(coordinates);
+
+  // Handle coordinates error
+  useEffect(() => {
+    if (coordsError && onError) {
+      console.error('Coordinates error:', coordsError);
+      handleAppError(coordsError, {
+        context: 'location',
+        silent: false,
+      });
+      onError(coordsError);
+    }
+  }, [coordsError, onError, handleAppError]);
 
   // Log search performance metrics when search completes
   useEffect(() => {
@@ -75,19 +89,19 @@ export const SearchView = ({
 
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
-    if (onError && error && !error.message?.toLowerCase().includes('support table')) {
-      console.log('🚨 Search error:', error);
+    if (onError && searchError && !searchError.message?.toLowerCase().includes('support table')) {
+      console.log('🚨 Search error:', searchError);
       
       // Handle the error to show a toast
-      handleAppError(error, {
+      handleAppError(searchError, {
         context: 'search',
         silent: true // Don't show duplicate toast, SearchErrorView will handle display
       });
       
       // Propagate the error up to the parent component
-      onError(error);
+      onError(searchError);
     }
-  }, [error, onError, handleAppError]);
+  }, [searchError, onError, handleAppError]);
 
   useEffect(() => {
     if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
@@ -95,11 +109,19 @@ export const SearchView = ({
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
 
+  // Retry search with broader parameters if we get a timeout error
+  const handleRetry = () => {
+    setIsRetrying(true);
+    console.log('Retrying search...');
+    refetch().finally(() => setIsRetrying(false));
+  };
+
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  // Only show error view for real errors, not infrastructure messages
+  // Show error view only for real errors, not when we have results
+  const error = searchError || coordsError;
   if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
@@ -116,12 +138,13 @@ export const SearchView = ({
       <SearchErrorView 
         errorDetails={error.message}
         errorType={errorType}
-        onRetry={() => window.location.reload()}
+        onRetry={handleRetry}
+        isRetrying={isRetrying}
       />
     );
   }
 
-  const isLoading = isLoadingCoords || isLoadingResults;
+  const isLoading = isLoadingCoords || isLoadingResults || isRetrying;
 
   return (
     <SearchViewContent
@@ -135,6 +158,7 @@ export const SearchView = ({
       onError={onError}
       onSearchComplete={onSearchComplete}
       retryCount={retryCount}
+      coordinates={coordinates}
     />
   );
 };

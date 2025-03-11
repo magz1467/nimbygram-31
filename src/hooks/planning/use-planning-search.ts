@@ -32,19 +32,32 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log(`🔍 Search attempt ${searchAttempts + 1} with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
         
         const [lat, lng] = coordinates;
-        const radiusKm = 10;
+        // Start with a smaller radius to reduce query size
+        const initialRadiusKm = 5;
         
         // Log search for analytics
         await searchLogger.logSearch(`${lat},${lng}`, 'coordinates', 'planning');
         
-        // Try spatial search first
+        // Try spatial search first - with smaller radius to avoid timeouts
         try {
-          const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
-          if (spatialResults) {
+          console.log(`Attempting spatial search with ${initialRadiusKm}km radius`);
+          const spatialResults = await performSpatialSearch(lat, lng, initialRadiusKm, filters);
+          
+          if (spatialResults && spatialResults.length > 0) {
+            console.log(`✅ Spatial search successful, found ${spatialResults.length} results`);
             return spatialResults;
           }
+          
+          // If no results with small radius, try a slightly larger radius
+          if (spatialResults && spatialResults.length === 0) {
+            console.log('No results found with small radius, trying larger radius');
+            const expandedResults = await performSpatialSearch(lat, lng, 10, filters);
+            if (expandedResults && expandedResults.length > 0) {
+              return expandedResults;
+            }
+          }
         } catch (spatialFunctionError) {
-          console.log('Using spatial function not available, using fallback method');
+          console.log('Spatial function not available, using fallback method:', spatialFunctionError);
           
           // Only log real errors, not just the fallback path
           if (!isNonCritical(spatialFunctionError)) {
@@ -53,8 +66,9 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           // Continue to fallback method
         }
         
-        // If spatial search fails or isn't available, fall back to manual search
-        return await performFallbackSearch(lat, lng, radiusKm, filters);
+        // If spatial search fails or isn't available, fall back to manual search with limited radius
+        console.log('Using fallback search method with limited radius');
+        return await performFallbackSearch(lat, lng, initialRadiusKm, filters);
       } catch (err: any) {
         return handleSearchError(err, toast, () => {
           // Increment search attempts to trigger a retry

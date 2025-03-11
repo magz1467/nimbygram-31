@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -21,6 +22,7 @@ interface SearchViewContentProps {
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
   retryCount?: number;
+  coordinates?: [number, number] | null;
 }
 
 export const SearchViewContent = ({
@@ -31,7 +33,8 @@ export const SearchViewContent = ({
   onFilterChange,
   onError,
   onSearchComplete,
-  retryCount = 0
+  retryCount = 0,
+  coordinates
 }: SearchViewContentProps) => {
   const hasResultsRef = useRef(false);
   const [showMap, setShowMap] = useState(false);
@@ -75,7 +78,7 @@ export const SearchViewContent = ({
           searchTerm={initialSearch.searchTerm}
           displayTerm={initialSearch.displayTerm}
           displayApplications={applications}
-          coordinates={null}
+          coordinates={coordinates}
           showMap={showMap}
           setShowMap={setShowMap}
           selectedId={selectedId}
