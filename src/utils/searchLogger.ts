@@ -1,36 +1,24 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export const logSearch = async (
-  searchTerm: string,
-  type: 'postcode' | 'location',
-  status?: string
-) => {
+export const logSearch = async (searchTerm: string, type: string, tab?: string) => {
   try {
-    console.log('🔍 Logging search:', {
-      searchTerm,
-      type,
-      status,
-      timestamp: new Date().toISOString()
-    });
-
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const { error } = await supabase.from('Searches').insert({
-      'Post Code': type === 'postcode' ? searchTerm : null,
-      'Location': type === 'location' ? searchTerm : null,
-      'Status': status,
-      'User_logged_in': !!session?.user
+    const { data, error } = await supabase.from('Searches').insert({
+      'Post Code': searchTerm,
+      'Location': searchTerm, // Add Location field
+      'User_logged_in': true,
+      'Type': type,
+      'Tab': tab
     });
 
     if (error) {
       console.error('Error logging search:', error);
-      return { success: false, error };
     }
 
-    return { success: true };
-  } catch (error) {
-    console.error('Error logging search:', error);
-    return { success: false, error };
+    return data;
+  } catch (err) {
+    console.error('Failed to log search:', err);
+    // Don't throw - we don't want to break the app if logging fails
+    return null;
   }
 };
