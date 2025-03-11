@@ -69,9 +69,9 @@ export const SearchView = ({
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
     
-    if (error.type) {
+    if ('type' in error && error.type) {
       // If the error already has a type property, use it
-      errorType = error.type;
+      errorType = error.type as ErrorType;
     } else if (
       error.message?.includes('timeout') || 
       error.message?.includes('too long') ||

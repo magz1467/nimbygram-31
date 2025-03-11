@@ -6,6 +6,7 @@ import { Application } from "@/types/planning";
 import { performSpatialSearch } from './search/spatial-search';
 import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
+import { ErrorType } from '@/utils/errors';
 
 export interface SearchFilters {
   status?: string;
@@ -31,23 +32,29 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         // Try spatial search first
         try {
           const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
-          if (spatialResults) {
+          console.log('Spatial search results:', spatialResults?.length || 0);
+          if (spatialResults && spatialResults.length > 0) {
             return spatialResults;
           }
         } catch (spatialFunctionError) {
-          console.log('Using spatial function not available, using fallback method');
+          console.log('Spatial function not available, using fallback method:', spatialFunctionError);
           // Continue to fallback method
         }
         
         // If spatial search fails or isn't available, fall back to manual search
-        return await performFallbackSearch(lat, lng, radiusKm, filters);
+        console.log('Falling back to standard bounding box search');
+        const fallbackResults = await performFallbackSearch(lat, lng, radiusKm, filters);
+        console.log('Fallback search results:', fallbackResults.length);
+        return fallbackResults;
       } catch (err: any) {
+        console.error('Search error occurred:', err);
         return handleSearchError(err, toast);
       }
     },
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    retryDelay: 1000,
   });
 
   return {

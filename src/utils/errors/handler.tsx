@@ -9,15 +9,15 @@ import React from 'react';
 /**
  * Create a standardized AppError from any error
  */
-export function createAppError(error: any, context?: string): AppError {
+export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
   if (error instanceof AppError) {
     return error;
   }
   
-  const errorType = detectErrorType(error);
+  const detectedType = errorType || detectErrorType(error);
   const message = formatErrorMessage(error, context);
   
-  return new AppError(message, errorType, error, context);
+  return new AppError(message, detectedType, error, context);
 }
 
 /**
@@ -28,14 +28,14 @@ export function handleError(
   toast: ReturnType<typeof useToast>["toast"],
   options: ErrorOptions = {}
 ): AppError {
-  const { type, context, retry, silent = false, logToServer = false } = options;
+  const { context, retry, silent = false, logToServer = false } = options;
   
   // Create standardized app error
   const appError = error instanceof AppError 
     ? error 
     : new AppError(
         formatErrorMessage(error, context), 
-        type || detectErrorType(error), 
+        detectErrorType(error), 
         error, 
         context
       );

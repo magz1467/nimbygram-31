@@ -11,8 +11,7 @@ import { AppError, ErrorType, createAppError, handleError, isNonCriticalError } 
  */
 export function handleSearchError(
   err: any, 
-  toast: ReturnType<typeof useToast>["toast"],
-  retry?: () => void
+  toast: ReturnType<typeof useToast>["toast"]
 ) {
   // Don't treat missing support table or functions as real errors
   if (isNonCriticalError(err)) {
@@ -33,19 +32,19 @@ export function handleSearchError(
   // Get the properly formatted app error
   const appError = createAppError(
     err, 
-    'search',
-    isTimeoutError ? ErrorType.TIMEOUT : undefined
+    'search'
   );
   
   // For timeout errors, provide a more user-friendly message
-  if (isTimeoutError && appError.type === ErrorType.TIMEOUT) {
+  if (isTimeoutError) {
     appError.message = "The search took too long to complete. Please try a more specific location or different filters.";
+    // Set the error type to TIMEOUT
+    appError.type = ErrorType.TIMEOUT;
   }
   
   // Use centralized error handler
   handleError(appError, toast, {
-    context: 'search',
-    retry: retry
+    context: 'search'
   });
   
   throw appError; // Re-throw to let the error handling in the component deal with it
