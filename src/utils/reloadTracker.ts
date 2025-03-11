@@ -73,11 +73,11 @@ export const initReloadTracker = () => {
 /**
  * Log route changes between components
  */
-export const logRouteChange = (previousPath: string, currentPath: string) => {
+export const logRouteChange = (previousPath: string, currentPath: string, navigationType?: string) => {
   console.log('🧭 Route Change:', {
     from: previousPath,
     to: currentPath,
+    navigationType: navigationType || 'unknown',
     timestamp: new Date().toISOString(),
   });
 };
-
