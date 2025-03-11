@@ -29,6 +29,16 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         // Try to use the optimized PostGIS function first
         try {
           console.log('Using PostGIS spatial function for efficient search');
+          
+          // First check if the function exists to avoid unnecessary error logs
+          const { data: functionExists, error: checkError } = await supabase
+            .rpc('check_table_exists', { table_name: 'get_nearby_applications' });
+            
+          if (checkError || !functionExists) {
+            console.log('PostGIS function not available, skipping spatial search');
+            throw new Error('Function not available');
+          }
+          
           const { data: spatialData, error: spatialError } = await supabase
             .rpc('get_nearby_applications', { 
               center_lat: lat,
@@ -79,7 +89,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
             return results;
           }
         } catch (spatialFunctionError) {
-          console.warn('Error using spatial function:', spatialFunctionError);
+          console.log('Using spatial function not available, using fallback method');
           // Continue to fallback method
         }
         
@@ -153,6 +163,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         // Provide specific error messages for common issues
         const errorMessage = err.message || String(err);
+        
+        // Don't treat missing support table or functions as real errors
+        if (errorMessage.toLowerCase().includes('support table') ||
+            errorMessage.toLowerCase().includes('function not available')) {
+          console.log('Non-critical error (missing tables/functions):', errorMessage);
+          return [];
+        }
+        
         const isTimeoutError = errorMessage.includes('timeout') || errorMessage.includes('57014');
         const userMessage = isTimeoutError 
           ? "The search took too long to complete. Please try a more specific location or different filters."
