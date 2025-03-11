@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationData } from "./transforms/application-transformer";
@@ -10,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
  */
 export const fetchApplicationsFromDatabase = async (
   coordinates: [number, number],
-  maxDistanceKm: number = 10 // Change default to 10km
+  maxDistanceKm: number = 10
 ): Promise<Application[]> => {
   console.log('📊 Fetching applications directly from database with pagination');
   console.log('🌍 Search coordinates for distance calculation:', coordinates);
