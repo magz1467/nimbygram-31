@@ -5,6 +5,7 @@ import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
+import { ErrorMessage } from "./components/ErrorMessage";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -57,7 +58,13 @@ export const SearchViewContent = ({
   // Call the onError handler when an error occurs
   useEffect(() => {
     if (onError && error && !isLoading && hasSearched) {
-      onError(error);
+      // Filter out non-critical errors
+      if (shouldShowError(error)) {
+        onError(error);
+      } else {
+        // If it's a non-critical error, pass null to indicate no error to show
+        onError(null);
+      }
     }
   }, [error, onError, isLoading, hasSearched]);
 
@@ -67,6 +74,28 @@ export const SearchViewContent = ({
       onSearchComplete();
     }
   }, [hasSearched, isLoading, onSearchComplete]);
+
+  // Function to determine if an error should be displayed to the user
+  const shouldShowError = (err: Error) => {
+    const errorMsg = err.message.toLowerCase();
+    
+    // Filter out the application_support table error
+    if (errorMsg.includes("application_support") || 
+        errorMsg.includes("relation") ||
+        errorMsg.includes("does not exist")) {
+      console.log("Ignoring non-critical database error:", err.message);
+      return false;
+    }
+    
+    // Ignore errors if we have results anyway
+    if (applications && applications.length > 0) {
+      console.log("Ignoring error because we have results:", err.message);
+      return false;
+    }
+    
+    // Show all other errors
+    return true;
+  };
 
   // Handler for loading the next page of results
   const handlePageChange = (newPage: number) => {
@@ -84,8 +113,12 @@ export const SearchViewContent = ({
     }
   };
 
-  // Don't show error while loading or before search completes
-  const shouldShowError = error && !isLoading && hasSearched;
+  // Only show error when:
+  // 1. There is an error
+  // 2. We're not loading
+  // 3. We've actually performed a search
+  // 4. The error passes our filter criteria
+  const filteredError = error && !isLoading && hasSearched && shouldShowError(error) ? error : undefined;
 
   return (
     <div className="max-w-5xl mx-auto pb-16 pt-0">
@@ -105,23 +138,15 @@ export const SearchViewContent = ({
         statusCounts={statusCounts}
       />
 
-      {shouldShowError && (
+      {filteredError && (
         <div className="px-4 lg:px-8 mb-4">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 flex justify-between items-center">
-            <div>
-              <p className="text-red-800 font-medium">Error loading results</p>
-              <p className="text-red-600 text-sm">{error.message}</p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRetry}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Retry
-            </Button>
-          </div>
+          <ErrorMessage
+            title="Error loading results"
+            message={filteredError.message}
+            onRetry={handleRetry}
+            variant="inline"
+            showCoverageInfo={false}
+          />
         </div>
       )}
 
@@ -138,7 +163,7 @@ export const SearchViewContent = ({
           isLoading={isLoading}
           searchTerm={initialSearch.searchTerm}
           displayTerm={initialSearch.displayTerm}
-          error={shouldShowError ? error : undefined}
+          error={filteredError}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}

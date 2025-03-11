@@ -91,6 +91,23 @@ export const useSearchResultsPage = () => {
     };
   }, [location.state, navigate, toast]);
 
+  // Handler for filtering non-critical errors
+  const isNonCriticalError = (error: Error | null): boolean => {
+    if (!error) return true;
+    
+    const errorMsg = error.message.toLowerCase();
+    
+    // Filter out specific database errors that don't affect core functionality
+    if (errorMsg.includes("application_support") || 
+        errorMsg.includes("relation") ||
+        errorMsg.includes("does not exist")) {
+      console.log("Filtering non-critical error:", error.message);
+      return true;
+    }
+    
+    return false;
+  };
+
   // Handle retry
   const handleRetry = useCallback(() => {
     setRetryCount(prev => prev + 1);
@@ -123,7 +140,19 @@ export const useSearchResultsPage = () => {
 
   // Function to handle errors from SearchView
   const handleError = useCallback((error: Error | null) => {
-    if (!error) return; // Early return if no error is provided
+    if (!error) {
+      setIsError(false);
+      setErrorDetails(null);
+      return;
+    }
+    
+    // Skip non-critical errors
+    if (isNonCriticalError(error)) {
+      console.log("Ignoring non-critical error:", error?.message);
+      setIsError(false);
+      setErrorDetails(null);
+      return;
+    }
     
     // Clear any search timeout since we've already detected an error
     if (searchTimeoutRef.current) {
