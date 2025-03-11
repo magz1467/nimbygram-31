@@ -94,7 +94,7 @@ export const fetchNearbyApplications = async (
           const distance = calculateDistance(lat, lng, propLat, propLng);
           
           // Add distance to property for sorting later
-          property.distanceKm = distance;
+          property._distanceKm = distance; // Use a temporary property with underscore prefix
           
           // Only include properties within the radius
           return distance <= radius;
@@ -117,8 +117,8 @@ export const fetchNearbyApplications = async (
           coordinates: prop.latitude && prop.longitude 
             ? [parseFloat(prop.latitude), parseFloat(prop.longitude)] 
             : null,
-          distance: prop.distanceKm ? `${prop.distanceKm.toFixed(1)} km` : undefined,
-          distanceKm: prop.distanceKm,
+          distance: prop._distanceKm ? `${prop._distanceKm.toFixed(1)} km` : undefined, // Use the temporary property for the distance string
+          // Don't add distanceKm as a property since it's not in the Application type
           submittedDate: prop.received_date || prop.submittedDate,
           councilReference: prop.reference || prop.councilReference,
           applicationType: prop.type || prop.applicationType,
@@ -129,8 +129,8 @@ export const fetchNearbyApplications = async (
       
       // Sort applications by distance
       applications.sort((a, b) => {
-        const distA = a.distanceKm || Infinity;
-        const distB = b.distanceKm || Infinity;
+        const distA = parseFloat((a.distance || '').replace(' km', '')) || Infinity;
+        const distB = parseFloat((b.distance || '').replace(' km', '')) || Infinity;
         return distA - distB;
       });
       
@@ -140,7 +140,7 @@ export const fetchNearbyApplications = async (
       if (applications.length > 0) {
         console.log("Sample applications with distances:");
         applications.slice(0, 5).forEach(p => {
-          console.log(`ID: ${p.id}, Distance: ${p.distanceKm?.toFixed(2)}km, Address: ${p.address || 'unknown'}`);
+          console.log(`ID: ${p.id}, Distance: ${p.distance || 'unknown'}, Address: ${p.address || 'unknown'}`);
         });
 
         // Return the properly formatted applications
