@@ -3,7 +3,22 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { AppError, ErrorOptions, ErrorType } from './types';
 import { detectErrorType } from './detection';
-import { formatErrorMessage, logError, createAppError } from './formatting';
+import { formatErrorMessage, logError } from './formatting';
+import React from 'react';
+
+/**
+ * Create a standardized AppError from any error
+ */
+export function createAppError(error: any, context?: string): AppError {
+  if (error instanceof AppError) {
+    return error;
+  }
+  
+  const errorType = detectErrorType(error);
+  const message = formatErrorMessage(error, context);
+  
+  return new AppError(message, errorType, error, context);
+}
 
 /**
  * Handle errors in a standardized way across the application
@@ -35,10 +50,9 @@ export function handleError(
       description: appError.message,
       variant: "destructive",
       action: retry ? 
-        React.createElement(ToastAction, {
-          onClick: retry,
-          children: "Retry"
-        }) : undefined
+        <ToastAction altText="Retry" onClick={retry}>
+          Retry
+        </ToastAction> : undefined
     });
   }
   
