@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
-import { usePlanningSearch } from "@/hooks/planning/use-planning-search";
+import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
@@ -71,9 +71,9 @@ export const SearchView = ({
         applications={applications}
         isLoading={isLoading}
         filters={filters}
-        onFilterChange={(type, value) => 
-          setFilters(prev => ({ ...prev, [type]: value }))
-        }
+        onFilterChange={(type, value) => {
+          setFilters((prev: SearchFilters) => ({ ...prev, [type]: value }));
+        }}
         onError={onError}
         onSearchComplete={onSearchComplete}
         retryCount={retryCount}
