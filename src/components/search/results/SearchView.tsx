@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
-import { usePlanningSearch } from "@/hooks/use-planning-search";
+import { usePlanningSearch } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
