@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { Application } from "@/types/planning";
 
 /**
  * Fetches applications near the given coordinates
@@ -11,8 +10,8 @@ import { Application } from "@/types/planning";
  */
 export const fetchNearbyApplications = async (
   coordinates: [number, number] | null,
-  radius: number = 10
-): Promise<Application[] | null> => {
+  radius: number = 40
+): Promise<any[] | null> => {
   console.log('🔍 Starting to fetch applications near coordinates:', coordinates);
   
   if (!coordinates) {
@@ -23,12 +22,12 @@ export const fetchNearbyApplications = async (
   const [lat, lng] = coordinates;
   console.log(`📍 Fetching applications within ${radius}km of [${lat}, ${lng}]`);
   
+  // Try using the RPC function first
   let properties;
   let error;
   
   try {
-    // Calculate bounds for a radius search - approximately convert km to degrees
-    // This is an approximation that works reasonably well for small distances
+    // Calculate bounds for a radius search
     const latDiff = radius / 111.32; // 1 degree of latitude is approximately 111.32 km
     const lngDiff = radius / (111.32 * Math.cos(lat * Math.PI / 180));
     
@@ -37,7 +36,7 @@ export const fetchNearbyApplications = async (
     const lngMin = lng - lngDiff;
     const lngMax = lng + lngDiff;
     
-    console.log('Using bounding box for initial filtering:', { latMin, latMax, lngMin, lngMax });
+    console.log('Using bounding box:', { latMin, latMax, lngMin, lngMax });
     
     // Select all applications
     const queryResult = await supabase
@@ -53,26 +52,13 @@ export const fetchNearbyApplications = async (
       searchCenter: [lat, lng]
     });
     
-    // Filter the results based on coordinates and distance
+    // Filter the results in JavaScript based on approximate distance
     if (properties && properties.length > 0) {
-      console.log(`Raw properties count before filtering: ${properties.length}`);
+      console.log('Raw properties before filtering:', properties.slice(0, 3));
       
-      // Function to calculate distance between two points (haversine formula)
-      const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-        const R = 6371; // Earth's radius in km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                 Math.sin(dLng/2) * Math.sin(dLng/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-      };
-      
-      // Filter properties by distance
       properties = properties.filter(property => {
         try {
-          // Extract coordinates - check both geom and geometry fields
+          // Extract coordinates - check both geom and geometry
           let propLat, propLng;
           
           if (property.geom?.coordinates) {
@@ -90,65 +76,20 @@ export const fetchNearbyApplications = async (
             return false; // Skip if no coordinates
           }
           
-          // Calculate actual distance
-          const distance = calculateDistance(lat, lng, propLat, propLng);
-          
-          // Add distance to property for sorting later
-          property._distanceKm = distance; // Use a temporary property with underscore prefix
-          
-          // Only include properties within the radius
-          return distance <= radius;
-          
+          // Check if within extended bounds
+          return (
+            propLat >= latMin && 
+            propLat <= latMax && 
+            propLng >= lngMin && 
+            propLng <= lngMax
+          );
         } catch (err) {
           console.error(`Error filtering property ${property.id}:`, err);
           return false;
         }
       });
       
-      // Transform the data into the Application type format before returning
-      const applications = properties.map(prop => {
-        // Create a proper Application object from the raw data
-        const app: Application = {
-          id: prop.id,
-          title: prop.title || prop.description || `Application at ${prop.address}`,
-          address: prop.address || '',
-          status: prop.status || 'Under Review',
-          coordinates: prop.latitude && prop.longitude 
-            ? [parseFloat(prop.latitude), parseFloat(prop.longitude)] 
-            : null,
-          distance: prop._distanceKm ? `${prop._distanceKm.toFixed(1)} km` : undefined, // Use the temporary property for the distance string
-          // Don't add distanceKm as a property since it's not in the Application type
-          submittedDate: prop.received_date || prop.submittedDate,
-          reference: prop.reference || '', // Change councilReference to reference which exists in Application type
-          description: prop.description || '',
-          // Add any other properties needed by the UI
-          type: prop.type || prop.applicationType,
-        };
-        return app;
-      });
-      
-      // Sort applications by distance
-      applications.sort((a, b) => {
-        const distA = parseFloat((a.distance || '').replace(' km', '')) || Infinity;
-        const distB = parseFloat((b.distance || '').replace(' km', '')) || Infinity;
-        return distA - distB;
-      });
-      
-      console.log(`✅ Filtered to ${applications.length} applications within ${radius}km radius`);
-      
-      // Log some examples
-      if (applications.length > 0) {
-        console.log("Sample applications with distances:");
-        applications.slice(0, 5).forEach(p => {
-          console.log(`ID: ${p.id}, Distance: ${p.distance || 'unknown'}, Address: ${p.address || 'unknown'}`);
-        });
-
-        // Return the properly formatted applications
-        return applications;
-      } else {
-        console.log(`⚠️ No applications found within ${radius}km of [${lat}, ${lng}]`);
-        return [];
-      }
+      console.log(`✅ Filtered to ${properties.length} applications within radius`);
     }
   } catch (error) {
     console.error('❌ Error fetching application data:', error);
@@ -156,10 +97,10 @@ export const fetchNearbyApplications = async (
   }
 
   if (error) {
-    console.error('❌ Error from database query:', error);
+    console.error('❌ Error fetching application data:', error);
     return null;
   }
 
-  console.log(`✨ Returning ${properties?.length || 0} applications within ${radius}km`);
-  return [];
+  console.log(`✨ Received ${properties?.length || 0} applications from database`);
+  return properties || [];
 };

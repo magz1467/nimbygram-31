@@ -27,7 +27,6 @@ interface ResultsContainerProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   totalCount?: number;
-  isLongSearch?: boolean; // Add the missing property
 }
 
 export const ResultsContainer = ({
@@ -47,8 +46,7 @@ export const ResultsContainer = ({
   currentPage = 0,
   totalPages = 1,
   onPageChange,
-  totalCount = 0,
-  isLongSearch = false // Add with default value
+  totalCount = 0
 }: ResultsContainerProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -120,7 +118,6 @@ export const ResultsContainer = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
         totalCount={totalCount}
-        isLongSearch={isLongSearch} // Pass the property
       />
       
       {/* Mobile map overlay */}

@@ -23,7 +23,6 @@ interface ResultsListViewProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   totalCount?: number;
-  isLongSearch?: boolean;
 }
 
 export const ResultsListView = ({ 
@@ -42,11 +41,27 @@ export const ResultsListView = ({
   currentPage = 0,
   totalPages = 1,
   onPageChange,
-  totalCount = 0,
-  isLongSearch = false
+  totalCount = 0
 }: ResultsListViewProps) => {
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
+  const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
+
+  // Effect to detect long-running searches
+  useEffect(() => {
+    if (isLoading) {
+      // Set a timeout to detect long-running searches (more than 5 seconds)
+      const timeoutId = setTimeout(() => {
+        setIsLongSearchDetected(true);
+      }, 5000);
+      
+      // Clean up the timeout if the loading state changes before the timeout
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Reset the long search state when loading is complete
+      setIsLongSearchDetected(false);
+    }
+  }, [isLoading]);
 
   // Update loaded applications when new applications come in
   useEffect(() => {
@@ -65,18 +80,6 @@ export const ResultsListView = ({
     }
   }, [applications, currentPage, isLoading]);
 
-  // For debugging purposes
-  useEffect(() => {
-    console.log('ResultsListView state:', {
-      applicationsCount: applications.length,
-      loadedApplicationsCount: loadedApplications.length,
-      isLoading,
-      currentPage,
-      totalPages,
-      isLongSearch
-    });
-  }, [applications, loadedApplications, isLoading, currentPage, totalPages, isLongSearch]);
-
   // Function to handle loading more results
   const handleLoadMore = async () => {
     if (onPageChange && currentPage < totalPages - 1) {
@@ -85,12 +88,12 @@ export const ResultsListView = ({
   };
 
   // If initial loading, show skeleton cards
-  if (isLoading && currentPage === 0 && loadedApplications.length === 0) {
-    return <LoadingSkeletons isLongSearch={isLongSearch} onRetry={onRetry} />;
+  if (isLoading && currentPage === 0) {
+    return <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />;
   }
 
   // If error or no applications found, show empty state
-  if (error || (!isLoading && loadedApplications.length === 0)) {
+  if (error || (!applications.length && !loadedApplications.length)) {
     return (
       <ErrorMessage 
         title={error ? "Error loading results" : "No results found"}
@@ -123,22 +126,13 @@ export const ResultsListView = ({
         ))}
       </div>
 
-      {/* Loading state for pagination */}
-      {isLoading && currentPage > 0 && (
-        <div className="flex justify-center py-4">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
       {/* Load More Button */}
-      {!isLoading && loadedApplications.length > 0 && (
-        <LoadMoreButton 
-          onLoadMore={handleLoadMore}
-          loadedCount={loadedApplications.length}
-          totalCount={totalCount}
-          isLastPage={currentPage >= totalPages - 1}
-        />
-      )}
+      <LoadMoreButton 
+        onLoadMore={handleLoadMore}
+        loadedCount={loadedApplications.length}
+        totalCount={totalCount}
+        isLastPage={currentPage >= totalPages - 1}
+      />
     </div>
   );
 };

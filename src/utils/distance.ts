@@ -30,8 +30,7 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
 
-  // Add more verbose debugging for distance calculations
-  console.log(`From ${point1[0].toFixed(6)},${point1[1].toFixed(6)} to ${point2[0].toFixed(6)},${point2[1].toFixed(6)} = ${distance.toFixed(2)}km`);
+  console.log(`Distance calculation: From [${lat1.toFixed(6)}, ${lon1.toFixed(6)}] to [${lat2.toFixed(6)}, ${lon2.toFixed(6)}] = ${distance.toFixed(2)}km`);
   
   return distance;
 };
@@ -70,7 +69,7 @@ export const sortApplicationsByDistance = (
     return [...applications];
   }
 
-  console.log(`Sorting ${applications.length} applications by distance from [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
+  console.log(`Sorting ${applications.length} applications from [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
   
   // Create a copy of applications with calculated distances
   const appsWithDistance = applications.map(app => {
@@ -93,11 +92,11 @@ export const sortApplicationsByDistance = (
   });
   
   // Log the first few results for debugging
-  console.log("\nTop 10 applications by distance:");
+  console.log("\nSorted applications (first 10):");
   sortedApps.slice(0, 10).forEach((app, index) => {
     // Safely access _distanceValue which we just added
     const dist = (app as any)._distanceValue;
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance || 'unknown'}), Address: ${app.address || 'no address'}`);
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}, Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
   });
   
   // Return sorted applications without the temporary _distanceValue property

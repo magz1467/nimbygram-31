@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
 import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
@@ -10,53 +9,123 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     return [];
   }
   
-  console.log('🔍 Fetching applications near coordinates:', coordinates);
+  console.log('🔍 Fetching ALL applications to find closest ones to coordinates:', coordinates);
   
   try {
-    // Get distance-filtered results from the database with a reasonable radius
-    const maxDistanceKm = 10; // Restrict to 10km radius for more relevant results
-    console.log(`Using search radius of ${maxDistanceKm}km to find relevant applications`);
+    // Try both fetching methods simultaneously to maximize results
+    console.log('Starting both edge function and direct database queries in parallel to get ALL records...');
     
-    // Try database query first with distance filtering
-    let results: Application[] = [];
+    // Use Promise.race to get results from whichever source responds first
+    const firstResultsPromise = Promise.race([
+      fetchApplicationsFromEdge(coordinates).catch(err => {
+        console.warn('⚠️ Edge function failed:', err);
+        return null;
+      }),
+      fetchApplicationsFromDatabase(coordinates).catch(err => {
+        console.warn('⚠️ Direct database query failed:', err);
+        return [];
+      })
+    ]);
     
-    try {
-      results = await fetchApplicationsFromDatabase(coordinates, maxDistanceKm);
-      console.log(`Direct database query returned ${results.length} applications within ${maxDistanceKm}km`);
-    } catch (err) {
-      console.warn('⚠️ Direct database query failed:', err);
-      
-      // Fallback to edge function
-      try {
-        const edgeResults = await fetchApplicationsFromEdge(coordinates);
-        if (edgeResults) {
-          console.log(`Edge function returned ${edgeResults.length} results`);
+    // Wait for the first results to come in
+    const firstResults = await firstResultsPromise;
+    let combinedResults: Application[] = firstResults ? [...firstResults] : [];
+    
+    console.log(`First source returned ${combinedResults.length} results`);
+    
+    // If we got results from one source, try to get more from the other source in the background
+    if (combinedResults.length > 0) {
+      // Return the first results immediately to improve perceived performance
+      setTimeout(async () => {
+        try {
+          // Try the other method in the background using Promise.race instead of Promise.any
+          const secondResults = await Promise.race([
+            fetchApplicationsFromEdge(coordinates).catch(() => null),
+            fetchApplicationsFromDatabase(coordinates).catch(() => [])
+          ]);
           
-          // Filter by distance
-          results = edgeResults.filter(app => {
-            if (!app.coordinates) return false;
-            const distKm = calculateDistance(coordinates, app.coordinates);
-            return distKm <= maxDistanceKm;
-          });
-          
-          console.log(`Filtered to ${results.length} results within ${maxDistanceKm}km`);
+          if (secondResults && secondResults.length > 0) {
+            console.log(`Background fetch found ${secondResults.length} additional results`);
+          }
+        } catch (err) {
+          console.warn('Background fetch failed:', err);
         }
-      } catch (edgeErr) {
-        console.warn('⚠️ Edge function also failed:', edgeErr);
+      }, 0);
+      
+      if (combinedResults.length === 0) {
+        console.warn('⚠️ No applications found after combining results');
+        toast({
+          title: "No Results Found",
+          description: "We couldn't find any planning applications in this area. Please try searching for a different location.",
+          variant: "destructive",
+        });
       }
+      
+      return combinedResults;
     }
     
-    // If we have no results with the initial radius, show appropriate message
-    if (results.length === 0) {
-      console.warn('⚠️ No applications found within 10km radius');
+    // If first attempt didn't return results, wait for both methods to complete
+    const [edgeResults, dbResults] = await Promise.all([
+      fetchApplicationsFromEdge(coordinates).catch(err => {
+        console.warn('⚠️ Edge function failed:', err);
+        return null;
+      }),
+      fetchApplicationsFromDatabase(coordinates).catch(err => {
+        console.warn('⚠️ Direct database query failed:', err);
+        return [];
+      })
+    ]);
+    
+    console.log(`Edge function returned ${edgeResults?.length || 0} results`);
+    console.log(`Direct database query returned ${dbResults.length} results`);
+    
+    // Combine results from both sources, ensuring we eliminate duplicates
+    combinedResults = [];
+    
+    // Start with edge results if we have them
+    if (edgeResults && edgeResults.length > 0) {
+      combinedResults = [...edgeResults];
+      console.log(`Added ${edgeResults.length} applications from edge function`);
+    }
+    
+    // Add unique results from the direct database query
+    if (dbResults.length > 0) {
+      // Create a Set of IDs from the combined results so far
+      const existingIds = new Set(combinedResults.map(app => app.id));
+      
+      // Add only unique applications from dbResults
+      const uniqueDbResults = dbResults.filter(app => !existingIds.has(app.id));
+      console.log(`Found ${uniqueDbResults.length} unique applications from direct query`);
+      
+      // Add the unique results to our combined results
+      combinedResults = [...combinedResults, ...uniqueDbResults];
+    }
+    
+    console.log(`Total combined results: ${combinedResults.length}`);
+    
+    // If we have no results at all, show an error
+    if (combinedResults.length === 0) {
+      console.warn('⚠️ No applications found after combining results');
       toast({
-        title: "No Nearby Results",
-        description: "We couldn't find any planning applications within 10km of this location. It may be outside our coverage area or have no recent planning activity.",
+        title: "No Results Found",
+        description: "We couldn't find any planning applications in this area. Please try searching for a different location.",
         variant: "destructive",
+      });
+    } else {
+      // Re-sort ALL combined results by distance to ensure the closest applications are first
+      combinedResults.sort((a, b) => {
+        // Parse distance values to numbers for comparison
+        const distA = typeof a.distance === 'string' ? 
+                      parseFloat(a.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER : 
+                      Number.MAX_SAFE_INTEGER;
+        const distB = typeof b.distance === 'string' ? 
+                      parseFloat(b.distance?.split(' ')[0]) || Number.MAX_SAFE_INTEGER : 
+                      Number.MAX_SAFE_INTEGER;
+        return distA - distB;
       });
     }
     
-    return results;
+    return combinedResults;
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
@@ -96,6 +165,3 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     return [];
   }
 };
-
-// Import the distance calculation function for filtering
-import { calculateDistance } from "./distance";
