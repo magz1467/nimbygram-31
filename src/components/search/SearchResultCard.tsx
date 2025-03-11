@@ -82,11 +82,6 @@ export const SearchResultCard = ({
       </div>
 
       <div className="p-4">
-        {application.notes && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-            {application.notes}
-          </div>
-        )}
         
         <CardContent 
           storybook={application.storybook} 
