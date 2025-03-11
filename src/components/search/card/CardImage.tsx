@@ -5,16 +5,18 @@ import { getImageUrl } from "@/utils/imageUtils";
 interface CardImageProps {
   imageUrl?: string | null;
   title: string;
+  className?: string;
 }
 
-export const CardImage = ({ imageUrl, title }: CardImageProps) => {
-  if (!imageUrl) return null;
-  
-  // Process the image URL through our utility function
-  const processedImageUrl = getImageUrl(imageUrl);
+export const CardImage = ({ imageUrl, title, className = "" }: CardImageProps) => {
+  const processedImageUrl = imageUrl ? getImageUrl(imageUrl) : null;
 
+  if (!processedImageUrl) {
+    return null;
+  }
+  
   return (
-    <div className="relative w-full aspect-[4/3]">
+    <div className={`relative w-full aspect-[4/3] ${className}`}>
       <ImageWithFallback
         src={processedImageUrl}
         alt={title}

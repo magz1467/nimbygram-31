@@ -10,17 +10,21 @@ interface SearchErrorViewProps {
   errorType?: ErrorType;
   onRetry?: () => void;
   isRetrying?: boolean;
+  searchTerm?: string;
 }
 
 export const SearchErrorView = ({ 
   errorDetails, 
   errorType = ErrorType.UNKNOWN, 
   onRetry,
-  isRetrying = false
+  isRetrying = false,
+  searchTerm
 }: SearchErrorViewProps) => {
   const isTimeoutError = errorType === ErrorType.TIMEOUT || 
     errorDetails.includes('timeout') || 
-    errorDetails.includes('too long');
+    errorDetails.includes('too long') || 
+    errorDetails.includes('57014') ||
+    errorDetails.includes('canceling statement');
   
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 flex flex-col items-center justify-center">
@@ -37,7 +41,7 @@ export const SearchErrorView = ({
         
         <p className="text-gray-600 max-w-md mx-auto mb-6">
           {isTimeoutError 
-            ? "We're having trouble searching this large area. Please try a more specific location or use filters to narrow your search." 
+            ? `We're having trouble searching ${searchTerm ? `for "${searchTerm}"` : 'this area'}. Please try a more specific location or use filters to narrow your search.` 
             : errorDetails}
         </p>
       </div>

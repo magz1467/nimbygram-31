@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { FALLBACK_IMAGE } from "@/utils/imageUtils";
 
 interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -12,14 +13,42 @@ export const ImageWithFallback = ({
   className = '',
   ...props 
 }: ImageWithFallbackProps) => {
-  const [error, setError] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(src);
+  const [hasError, setHasError] = useState(false);
+  
+  // Reset error state when src changes
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+  }, [src]);
+
+  // Handle image error
+  const handleError = () => {
+    if (!hasError) {
+      console.log(`⚠️ Image failed to load: ${src}, using fallback`);
+      setImgSrc(fallbackSrc);
+      setHasError(true);
+    }
+  };
+  
+  // If src is undefined or empty, use fallback
+  if (!imgSrc || imgSrc === 'undefined' || imgSrc === 'null' || imgSrc.trim() === '') {
+    return (
+      <img
+        src={fallbackSrc}
+        alt={alt}
+        className={className}
+        {...props}
+      />
+    );
+  }
   
   return (
     <img
-      src={error || !src ? fallbackSrc : src}
+      src={imgSrc}
       alt={alt}
       className={className}
-      onError={() => setError(true)}
+      onError={handleError}
       {...props}
     />
   );

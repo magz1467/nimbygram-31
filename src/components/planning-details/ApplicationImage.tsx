@@ -29,16 +29,19 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
   useEffect(() => {
     // Priority order: streetview_url > image > image_map_url > category image > fallback
     if (application.streetview_url) {
+      console.log(`Using streetview_url for application ${application.id}`);
       setImageSource(application.streetview_url);
       return;
     }
     
     if (application.image) {
+      console.log(`Using image for application ${application.id}`);
       setImageSource(application.image);
       return;
     }
     
     if (application.image_map_url) {
+      console.log(`Using image_map_url for application ${application.id}`);
       setImageSource(application.image_map_url);
       return;
     }
@@ -62,11 +65,13 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
     
     // Use category image if available
     if (detectedCategory && CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]) {
+      console.log(`Using category image for application ${application.id}: ${detectedCategory}`);
       setImageSource(CATEGORY_IMAGES[detectedCategory as keyof typeof CATEGORY_IMAGES]);
       return;
     }
 
     // Finally use miscellaneous category image as fallback
+    console.log(`Using fallback image for application ${application.id}`);
     setImageSource(CATEGORY_IMAGES['Miscellaneous']);
   }, [application]);
 

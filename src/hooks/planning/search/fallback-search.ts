@@ -44,8 +44,7 @@ export async function performFallbackSearch(
       .gte('longitude', lngMin)
       .lte('longitude', lngMax)
       .limit(initialLimit)
-      .order('id', { ascending: false }) // Get newest first
-      .timeout(5); // Short timeout
+      .order('id', { ascending: false }); // Get newest first
     
     // Apply minimal filters if provided
     if (filters.status) {
@@ -73,8 +72,7 @@ export async function performFallbackSearch(
       .from('crystal_roof')
       .select('*')
       .order('id', { ascending: false })
-      .limit(50)
-      .timeout(3);
+      .limit(50);
     
     if (recentError) {
       console.warn('Recent records query failed:', recentError);
@@ -126,5 +124,8 @@ function mapDatabaseRecordToApplication(item: any): Application {
     class_3: item.class_3 || '',
     consultationEnd: item.consultation_end || null,
     type: item.type || '',
+    image: item.image || null,
+    image_map_url: item.image_map_url || null,
+    streetview_url: item.streetview_url || null,
   } as Application;
 }

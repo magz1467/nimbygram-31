@@ -35,21 +35,18 @@ export const ImageResolver = ({
   class_3,
   className = ''
 }: ImageResolverProps) => {
-  console.log('🖼️ ImageResolver rendering for:', {
-    applicationId,
-    hasImageMapUrl: !!imageMapUrl,
-    hasImage: !!image,
-    class_3,
-    coordinates
-  });
-
   // Determine the best image to show
-  let imageSource = imageMapUrl || image;
+  let imageSource: string | undefined;
   
-  // If no direct image is available, try to use category image
-  if (!imageSource && class_3 && CATEGORY_IMAGES[class_3 as keyof typeof CATEGORY_IMAGES]) {
+  // Priority: direct image > image_map_url > category image > fallback
+  if (image && image !== 'null' && image !== 'undefined') {
+    imageSource = image;
+  } else if (imageMapUrl && imageMapUrl !== 'null' && imageMapUrl !== 'undefined') {
+    imageSource = imageMapUrl;
+  } else if (class_3 && Object.keys(CATEGORY_IMAGES).includes(class_3)) {
+    // If class_3 is a valid category key, use it
     imageSource = CATEGORY_IMAGES[class_3 as keyof typeof CATEGORY_IMAGES];
-  } else if (!imageSource) {
+  } else {
     // Default to miscellaneous if no category is matched
     imageSource = CATEGORY_IMAGES['Miscellaneous'];
   }
