@@ -26,12 +26,10 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
-  // Get coordinates for the search location
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
 
-  // Use our simplified search hook
   const { 
     applications, 
     isLoading: isLoadingResults,
@@ -40,7 +38,6 @@ export const SearchView = ({
     setFilters
   } = usePlanningSearch(coordinates);
 
-  // Notify parent of errors/completion
   useEffect(() => {
     if (onError) {
       onError(error || null);
@@ -53,7 +50,6 @@ export const SearchView = ({
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
 
-  // Show appropriate view based on state
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
@@ -78,6 +74,9 @@ export const SearchView = ({
       onFilterChange={(type, value) => 
         setFilters(prev => ({ ...prev, [type]: value }))
       }
+      onError={onError}
+      onSearchComplete={onSearchComplete}
+      retryCount={retryCount}
     />
   );
 };

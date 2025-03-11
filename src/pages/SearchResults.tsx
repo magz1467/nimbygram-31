@@ -1,38 +1,28 @@
+
 import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
-import { useSearchResultsPage } from "@/hooks/applications/use-search-results-page";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const SearchResultsPage = () => {
-  const {
-    searchState,
-    retryCount,
-    isError,
-    errorDetails,
-    handleRetry,
-    handleError,
-    handleSearchComplete,
-    handlePostcodeSelect,
-    updateResultsStatus
-  } = useSearchResultsPage();
+  const location = useLocation();
+  const [error, setError] = useState<Error | null>(null);
+  const searchState = location.state;
 
-  // If no search state, show the no results view
   if (!searchState?.searchTerm) {
-    return <NoSearchStateView onPostcodeSelect={handlePostcodeSelect} />;
+    return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  // If error, show the error view
-  if (isError) {
-    return <SearchErrorView errorDetails={errorDetails} onRetry={handleRetry} />;
+  if (error) {
+    return <SearchErrorView errorDetails={error.message} onRetry={() => window.location.reload()} />;
   }
 
-  // Otherwise, show the search view
   return (
     <SearchView 
-      initialSearch={searchState} 
-      retryCount={retryCount}
-      onError={handleError}
-      onSearchComplete={handleSearchComplete}
+      initialSearch={searchState}
+      onError={setError}
+      onSearchComplete={() => console.log('Search complete')}
     />
   );
 };
