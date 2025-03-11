@@ -29,22 +29,19 @@ export const DesktopMapDialog = ({
 }: DesktopMapDialogProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
-  // Force map to render correctly when dialog opens
   useEffect(() => {
     if (isOpen && mapContainerRef.current) {
       console.log('🗺️ Desktop map dialog opened - forcing resize');
       
-      // Allow the component to mount before triggering resize events
-      const resizeEvents = [50, 200, 500, 1000].map(delay => 
+      // Force map to render correctly when dialog opens
+      const resizeEvents = [50, 200, 500].map(delay => 
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
           console.log(`🗺️ Dispatched resize event after ${delay}ms`);
         }, delay)
       );
       
-      return () => {
-        resizeEvents.forEach(clearTimeout);
-      };
+      return () => resizeEvents.forEach(clearTimeout);
     }
   }, [isOpen]);
 
@@ -52,7 +49,7 @@ export const DesktopMapDialog = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
         className="max-w-[90vw] w-[900px] h-[80vh] p-0 overflow-hidden"
-        onInteractOutside={(e) => e.preventDefault()} // Prevent closing when clicking map
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <div className="absolute top-2 right-2 z-50">
           <Button 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Application } from "@/types/planning";
 import { useState } from "react";
@@ -10,6 +9,7 @@ import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
 import { getImageUrl } from "@/utils/imageUtils";
 import { CalendarDays } from "lucide-react";
+import { DesktopMapDialog } from "../search/results/DesktopMapDialog";
 
 interface SearchResultCardProps {
   application: Application;
@@ -33,6 +33,7 @@ export const SearchResultCard = ({
   postcode = ""
 }: SearchResultCardProps) => {
   const [showComments, setShowComments] = useState(false);
+  const [showMapDialog, setShowMapDialog] = useState(false);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -62,70 +63,87 @@ export const SearchResultCard = ({
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   const handleSeeOnMap = () => {
-    if (onSeeOnMap && application.id) {
-      console.log('📍 See on map clicked for application:', application.id);
-      onSeeOnMap(application.id);
+    console.log('📍 See on map clicked for application:', application.id);
+    if (application.id) {
+      setShowMapDialog(true);
+      if (onSeeOnMap) {
+        onSeeOnMap(application.id);
+      }
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <CardHeader 
-        title={application.title || ''} 
-        address={application.address} 
-        storybook={application.storybook} 
-      />
-
-      <CardImage 
-        imageUrl={imageUrl} 
-        title={application.title || ''} 
-      />
-
-      {/* Application dates section */}
-      {(formattedReceivedDate || formattedSubmittedDate) && (
-        <div className="px-4 py-2 bg-gray-50 border-y border-gray-100">
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
-            <span className="font-medium">Received:</span>
-            <span>{formattedReceivedDate || formattedSubmittedDate || 'Date not available'}</span>
-          </div>
-        </div>
-      )}
-
-      <div className="border-y border-gray-100 py-3 px-4">
-        <CardActions
-          applicationId={application.id}
-          onShowComments={handleToggleComments}
-          onShare={handleShare}
+    <>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+        <CardHeader 
+          title={application.title || ''} 
+          address={application.address} 
+          storybook={application.storybook} 
         />
-      </div>
 
-      <div className="p-4">
-        {application.notes && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-            {application.notes}
+        <CardImage 
+          imageUrl={imageUrl} 
+          title={application.title || ''} 
+        />
+
+        {(formattedReceivedDate || formattedSubmittedDate) && (
+          <div className="px-4 py-2 bg-gray-50 border-y border-gray-100">
+            <div className="flex items-center gap-1.5 text-sm text-gray-600">
+              <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
+              <span className="font-medium">Received:</span>
+              <span>{formattedReceivedDate || formattedSubmittedDate || 'Date not available'}</span>
+            </div>
           </div>
         )}
-        
-        <CardContent 
-          storybook={application.storybook} 
-          onSeeOnMap={handleSeeOnMap}
-          applicationId={application.id}
+
+        <div className="border-y border-gray-100 py-3 px-4">
+          <CardActions
+            applicationId={application.id}
+            onShowComments={handleToggleComments}
+            onShare={handleShare}
+          />
+        </div>
+
+        <div className="p-4">
+          {application.notes && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+              {application.notes}
+            </div>
+          )}
+          
+          <CardContent 
+            storybook={application.storybook} 
+            onSeeOnMap={handleSeeOnMap}
+            applicationId={application.id}
+            applications={applications}
+            selectedId={selectedId}
+            coordinates={coordinates}
+            handleMarkerClick={handleMarkerClick}
+            isLoading={isLoading}
+            postcode={postcode}
+          />
+
+          {showComments && (
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <h3 className="text-sm font-medium mb-2">Comments</h3>
+              <CommentList applicationId={application.id} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {application.coordinates && (
+        <DesktopMapDialog
           applications={applications}
-          selectedId={selectedId}
-          coordinates={coordinates}
-          handleMarkerClick={handleMarkerClick}
+          selectedId={application.id}
+          coordinates={application.coordinates as [number, number]}
+          handleMarkerClick={handleMarkerClick || (() => {})}
+          isOpen={showMapDialog}
+          onClose={() => setShowMapDialog(false)}
           isLoading={isLoading}
           postcode={postcode}
         />
-
-        {showComments && (
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-medium mb-2">Comments</h3>
-            <CommentList applicationId={application.id} />
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
