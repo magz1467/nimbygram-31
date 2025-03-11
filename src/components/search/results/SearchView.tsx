@@ -1,16 +1,18 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useCoordinates } from "@/hooks/use-coordinates";
+import { usePlanningSearch } from "@/hooks/use-planning-search";
 import { ResultsHeader } from "./ResultsHeader";
 import { SearchViewContent } from "./SearchViewContent";
 import { NoResultsView } from "./NoResultsView";
-import { useSearchResults } from "@/hooks/applications/use-search-results";
-import { useSearchViewFilters } from "@/hooks/search/useSearchViewFilters";
+import { NoSearchStateView } from "./NoSearchStateView";
+import { SearchErrorView } from "./SearchErrorView";
 
 interface SearchViewProps {
   initialSearch?: {
     searchType: 'postcode' | 'location';
     searchTerm: string;
-    displayTerm?: string; 
+    displayTerm?: string;
     timestamp?: number;
   };
   retryCount?: number;
@@ -18,27 +20,64 @@ interface SearchViewProps {
   onSearchComplete?: () => void;
 }
 
-export const SearchView = ({ 
-  initialSearch, 
-  retryCount = 0, 
+export const SearchView = ({
+  initialSearch,
+  retryCount = 0,
   onError,
   onSearchComplete
 }: SearchViewProps) => {
-  console.log('🔄 SearchView rendering with initialSearch:', initialSearch);
+  // Get coordinates for the search location
+  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
+    initialSearch?.searchTerm || ''
+  );
 
-  // If not provided, use a valid but empty search
-  const defaultSearch = initialSearch || {
-    searchType: 'postcode' as const,
-    searchTerm: '',
-  };
+  // Use our simplified search hook
+  const { 
+    applications, 
+    isLoading: isLoadingResults,
+    error,
+    filters,
+    setFilters
+  } = usePlanningSearch(coordinates);
 
-  // Pass the search to our component
+  // Notify parent of errors/completion
+  useEffect(() => {
+    if (onError) {
+      onError(error || null);
+    }
+  }, [error, onError]);
+
+  useEffect(() => {
+    if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
+      onSearchComplete();
+    }
+  }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
+
+  // Show appropriate view based on state
+  if (!initialSearch?.searchTerm) {
+    return <NoSearchStateView onPostcodeSelect={() => {}} />;
+  }
+
+  if (error && !applications.length) {
+    return (
+      <SearchErrorView 
+        errorDetails={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  const isLoading = isLoadingCoords || isLoadingResults;
+
   return (
     <SearchViewContent
-      initialSearch={defaultSearch}
-      onError={onError}
-      onSearchComplete={onSearchComplete}
-      retryCount={retryCount}
+      initialSearch={initialSearch}
+      applications={applications}
+      isLoading={isLoading}
+      filters={filters}
+      onFilterChange={(type, value) => 
+        setFilters(prev => ({ ...prev, [type]: value }))
+      }
     />
   );
 };
