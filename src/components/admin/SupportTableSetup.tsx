@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -13,28 +13,29 @@ export const SupportTableSetup = () => {
 
   const checkTableExists = async () => {
     try {
-      const { error } = await supabase
-        .from('application_support')
-        .select('count')
-        .limit(1);
+      // Try to check if the table exists using our RPC function
+      const { data, error } = await supabase
+        .rpc('check_table_exists', { table_name: 'application_support' });
       
-      if (error && error.code === '42P01') {
-        // Table doesn't exist
+      if (error) {
+        console.error('Error checking if table exists:', error);
         setTableExists(false);
         return false;
       }
-      setTableExists(true);
-      return true;
+      
+      setTableExists(!!data);
+      return !!data;
     } catch (error) {
       console.error('Error checking if table exists:', error);
+      setTableExists(false);
       return false;
     }
   };
 
   // Check if table exists on component mount
-  useState(() => {
+  useEffect(() => {
     checkTableExists();
-  });
+  }, []);
 
   const createSupportTable = async () => {
     setIsLoading(true);
@@ -106,6 +107,28 @@ export const SupportTableSetup = () => {
       });
       
       setTableExists(true);
+      
+      // Create the RPC function to check if tables exist if it doesn't already exist
+      const createRpcFunction = `
+        CREATE OR REPLACE FUNCTION check_table_exists(table_name text)
+        RETURNS boolean
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+          table_exists boolean;
+        BEGIN
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            AND table_name = check_table_exists.table_name
+          ) INTO table_exists;
+          
+          RETURN table_exists;
+        END;
+        $$;
+      `;
+      
+      await supabase.rpc('exec_sql', { query: createRpcFunction });
       
       // Refresh the page to apply changes
       setTimeout(() => {

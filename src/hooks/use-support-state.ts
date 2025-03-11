@@ -7,20 +7,33 @@ export const useSupportState = (applicationId: number, user: any) => {
   const [supportCount, setSupportCount] = useState(0);
   const [isSupportedByUser, setIsSupportedByUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [tableExists, setTableExists] = useState(false);
   const { toast } = useToast();
   
   // Check if application_support table exists
   const checkTableExists = async () => {
     try {
       const { error } = await supabase
-        .from('application_support')
+        .from('saved_applications') // Use a table we know exists to verify connection
         .select('count')
         .limit(1);
         
-      if (error && error.code === '42P01') {
-        console.error('The application_support table does not exist in the database', error);
+      if (error) {
+        console.error('Error checking database connection:', error);
         return false;
       }
+      
+      // Now try to check the application_support table
+      const { error: supportTableError } = await supabase
+        .rpc('check_table_exists', { table_name: 'application_support' });
+      
+      if (supportTableError) {
+        console.log('Application support table does not exist yet');
+        setTableExists(false);
+        return false;
+      }
+      
+      setTableExists(true);
       return true;
     } catch (error) {
       console.error('Error checking if table exists:', error);
@@ -34,24 +47,34 @@ export const useSupportState = (applicationId: number, user: any) => {
       setIsLoading(true);
       
       try {
-        const tableExists = await checkTableExists();
+        const exists = await checkTableExists();
         
-        if (!tableExists) {
+        if (!exists) {
           setSupportCount(0);
           setIsLoading(false);
           return;
         }
         
-        const { count, error } = await supabase
+        const { data, error } = await supabase
           .from('application_support')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact' })
           .eq('application_id', applicationId);
 
-        if (error) throw error;
-        setSupportCount(count || 0);
+        if (error) {
+          // If error is because table doesn't exist, don't show error
+          if (error.code === '42P01') {
+            console.log('Support table not created yet - no support data available');
+            setTableExists(false);
+          } else {
+            console.error('Error fetching support count:', error);
+          }
+          setSupportCount(0);
+        } else {
+          setSupportCount(data?.length || 0);
+        }
       } catch (error) {
         console.error('Error fetching support count:', error);
-        // Don't show the error toast here to avoid too many error notifications
+        setSupportCount(0);
       } finally {
         setIsLoading(false);
       }
@@ -59,8 +82,8 @@ export const useSupportState = (applicationId: number, user: any) => {
 
     getSupportCount();
 
-    // Only set up subscription if we have application ID
-    if (applicationId) {
+    // Only set up subscription if we have application ID and the table exists
+    if (applicationId && tableExists) {
       const supportSubscription = supabase
         .channel('support-changes')
         .on('postgres_changes', {
@@ -74,6 +97,7 @@ export const useSupportState = (applicationId: number, user: any) => {
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR') {
             console.log('Support subscription error, table might not exist yet');
+            setTableExists(false);
           }
         });
 
@@ -83,24 +107,17 @@ export const useSupportState = (applicationId: number, user: any) => {
     }
     
     return () => {};
-  }, [applicationId]);
+  }, [applicationId, tableExists]);
 
   // Fetch user's support status
   useEffect(() => {
     const getSupportStatus = async () => {
-      if (!user) {
+      if (!user || !tableExists) {
         setIsSupportedByUser(false);
         return;
       }
       
       try {
-        const tableExists = await checkTableExists();
-        
-        if (!tableExists) {
-          setIsSupportedByUser(false);
-          return;
-        }
-        
         const { data, error } = await supabase
           .from('application_support')
           .select('id')
@@ -108,8 +125,17 @@ export const useSupportState = (applicationId: number, user: any) => {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (error) throw error;
-        setIsSupportedByUser(!!data);
+        if (error) {
+          if (error.code === '42P01') {
+            // Table doesn't exist, silently handle
+            setTableExists(false);
+          } else {
+            console.error('Error fetching user support status:', error);
+          }
+          setIsSupportedByUser(false);
+        } else {
+          setIsSupportedByUser(!!data);
+        }
       } catch (error) {
         console.error('Error fetching user support status:', error);
         setIsSupportedByUser(false);
@@ -117,11 +143,12 @@ export const useSupportState = (applicationId: number, user: any) => {
     };
 
     getSupportStatus();
-  }, [applicationId, user]);
+  }, [applicationId, user, tableExists]);
 
   return {
     supportCount,
     isSupportedByUser,
-    isLoading
+    isLoading,
+    tableExists
   };
 };

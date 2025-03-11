@@ -27,11 +27,24 @@ export const SupportButton = ({
     if (!checkAuth(() => {})) return;
     if (isSubmitting) return;
 
-    // Store previous state to revert in case of error
-    const prevIsSupported = localIsSupported;
-    const prevSupportCount = localSupportCount;
-
     try {
+      // Check if table exists first
+      const { error: checkError } = await supabase
+        .rpc('check_table_exists', { table_name: 'application_support' });
+      
+      if (checkError) {
+        toast({
+          title: "Feature unavailable",
+          description: "The support feature is not set up yet. Please visit the Admin page.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Store previous state to revert in case of error
+      const prevIsSupported = localIsSupported;
+      const prevSupportCount = localSupportCount;
+      
       setIsSubmitting(true);
       
       // Optimistic UI update
@@ -100,9 +113,9 @@ export const SupportButton = ({
     } catch (error) {
       console.error('Error toggling support:', error);
       
-      // Revert to previous state on error
-      setLocalIsSupported(prevIsSupported);
-      setLocalSupportCount(prevSupportCount);
+      // Revert to server state on error
+      setLocalSupportCount(supportCount);
+      setLocalIsSupported(isSupportedByUser);
       
       let errorMessage = "Failed to update support. Please try again.";
       if (error instanceof Error && error.message.includes('application_support table does not exist')) {
