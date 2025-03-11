@@ -1,113 +1,103 @@
 
 import { useState, useEffect } from "react";
 import { Application } from "@/types/planning";
-import { toast } from "@/hooks/use-toast";
-import { fetchNearbyApplications } from "@/services/applications/fetch-nearby-applications";
-import { transformAndSortApplications } from "@/services/applications/transforms";
+import { useToast } from "@/hooks/use-toast";
+import { calculateDistance } from "@/utils/distance";
+import { supabase } from "@/integrations/supabase/client";
+
+// Simple function to fetch applications from the database
+async function fetchNearbyApplications(
+  coordinates: [number, number], 
+  radiusKm: number = 10
+): Promise<any[]> {
+  const [lat, lng] = coordinates;
+  
+  // Calculate bounding box for the search area
+  const kmPerDegree = 111.32;
+  const latDiff = radiusKm / kmPerDegree;
+  const lngDiff = radiusKm / (kmPerDegree * Math.cos(lat * Math.PI / 180));
+  
+  // Query with geographic bounds
+  const { data, error } = await supabase
+    .from('crystal_roof')
+    .select('*')
+    .gte('latitude', lat - latDiff)
+    .lte('latitude', lat + latDiff)
+    .gte('longitude', lng - lngDiff)
+    .lte('longitude', lng + lngDiff)
+    .limit(500);
+    
+  if (error) throw error;
+  return data || [];
+}
+
+// Simple function to transform raw data into Application objects
+function transformAndSortApplications(
+  rawData: any[],
+  coordinates: [number, number]
+): Application[] {
+  return rawData
+    .filter(item => item.latitude && item.longitude)
+    .map(item => {
+      const dist = calculateDistance(
+        coordinates,
+        [Number(item.latitude), Number(item.longitude)]
+      );
+      
+      return {
+        id: item.id,
+        title: item.description || `Application ${item.id}`,
+        address: item.address || '',
+        status: item.status || 'unknown',
+        coordinates: [Number(item.latitude), Number(item.longitude)],
+        distance: `${(dist * 0.621371).toFixed(1)} mi`, // Convert km to miles
+        // Include other fields as needed
+      } as Application;
+    })
+    .sort((a, b) => {
+      const distA = calculateDistance(coordinates, a.coordinates as [number, number]);
+      const distB = calculateDistance(coordinates, b.coordinates as [number, number]);
+      return distA - distB;
+    });
+}
 
 export const useMapApplications = (coordinates?: [number, number] | null) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [lastSearchedCoords, setLastSearchedCoords] = useState<[number, number] | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchPropertyData = async () => {
-      // Skip if coordinates haven't changed from last search
-      if (lastSearchedCoords && coordinates && 
-          lastSearchedCoords[0] === coordinates[0] && 
-          lastSearchedCoords[1] === coordinates[1] &&
-          applications.length > 0 && !error) {
-        console.log('🔍 Skipping fetch - using cached results for same coordinates');
+    const fetchApplications = async () => {
+      if (!coordinates) {
+        setApplications([]);
+        setIsLoading(false);
         return;
       }
-      
-      console.log('🔍 Starting to fetch property data...');
-      console.log('🌍 Search coordinates:', coordinates);
+
       setIsLoading(true);
       setError(null);
       
       try {
-        if (!coordinates) {
-          console.log('⚠️ No coordinates provided, skipping fetch');
-          setApplications([]);
-          setIsLoading(false);
-          return;
-        }
-
-        // Keep track of coordinates we're searching
-        setLastSearchedCoords(coordinates);
-
-        // Try with progressively smaller radius on retries
-        const radius = Math.max(10 - (retryCount * 2), 3); // Decrease radius with each retry, min 3km
-        console.log(`🔍 Searching with ${radius}km radius (retry ${retryCount})`);
-        
-        // Fetch nearby applications with reduced radius
-        const properties = await fetchNearbyApplications(coordinates, radius);
-        
-        if (!properties) {
-          setError(new Error("Failed to fetch properties"));
-          setApplications([]);
-          setIsLoading(false);
-          
-          if (retryCount < 2) {
-            // Auto-retry once with a smaller radius
-            console.log(`Auto-retrying with smaller radius (attempt ${retryCount + 1}/2)`);
-            setRetryCount(prev => prev + 1);
-          } else {
-            toast({
-              title: "Error loading properties",
-              description: "Please try again later or search for a different location",
-              variant: "destructive"
-            });
-          }
-          return;
-        }
-
-        // Transform and sort applications
-        const sortedData = transformAndSortApplications(properties, coordinates);
-        setApplications(sortedData);
-        setRetryCount(0); // Reset retry count on success
-
-        if (sortedData.length === 0) {
-          toast({
-            title: "No properties found",
-            description: "No properties found near this location. Try searching for a different area.",
-            variant: "destructive"
-          });
-        }
-
-      } catch (error) {
-        console.error('💥 Error in fetchPropertyData:', error);
-        const errorInstance = error instanceof Error ? error : new Error(String(error));
-        
-        // Add more specific error message for timeouts
-        if (String(error).includes('timeout') || String(error).includes('57014')) {
-          errorInstance.message = "Search timed out. Try a more specific location or try again later.";
-        }
-        
-        setError(errorInstance);
-        setApplications([]);
-        
+        console.log('Fetching applications near', coordinates);
+        const data = await fetchNearbyApplications(coordinates, 10);
+        const transformed = transformAndSortApplications(data, coordinates);
+        setApplications(transformed);
+      } catch (err) {
+        console.error('Error fetching applications:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
         toast({
-          title: "Error loading properties",
-          description: errorInstance.message || "Please try again later or search for a different location",
+          title: "Error loading applications",
+          description: "There was a problem loading planning applications. Please try again.",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
-        console.log('🏁 Property fetch completed');
       }
     };
 
-    fetchPropertyData();
-  }, [coordinates, retryCount]);
+    fetchApplications();
+  }, [coordinates, toast]);
 
-  // Expose retry functionality
-  const retry = () => {
-    setRetryCount(prev => prev + 1);
-  };
-
-  return { applications, isLoading, error, retry };
+  return { applications, isLoading, error };
 };

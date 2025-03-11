@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
 
-interface SearchFilters {
+// Simple filter type definition
+export interface SearchFilters {
   status?: string;
   type?: string;
   classification?: string;
@@ -21,13 +22,16 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       if (!coordinates) return [];
       
       try {
-        // Calculate bounds for the search area (20km radius)
+        // Get coordinates with 10km radius (fixed radius as requested)
         const [lat, lng] = coordinates;
-        const kmPerDegree = 111.32; // Approximate km per degree of latitude
-        const latDiff = 20 / kmPerDegree;
-        const lngDiff = 20 / (kmPerDegree * Math.cos(lat * Math.PI / 180));
+        const radiusKm = 10; // Fixed 10km radius
+        const kmPerDegree = 111.32;
+        const latDiff = radiusKm / kmPerDegree;
+        const lngDiff = radiusKm / (kmPerDegree * Math.cos(lat * Math.PI / 180));
         
-        // Query the crystal_roof table directly with bounds
+        console.log(`Searching within ${radiusKm}km radius of [${lat}, ${lng}]`);
+        
+        // Query with geographic bounds
         let query = supabase
           .from('crystal_roof')
           .select('*')
@@ -36,7 +40,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           .gte('longitude', lng - lngDiff)
           .lte('longitude', lng + lngDiff);
           
-        // Apply any active filters
+        // Apply any filters if present
         if (filters.status) {
           query = query.ilike('status', `%${filters.status}%`);
         }
@@ -51,7 +55,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         if (error) throw error;
         
-        // Calculate distances and sort
+        // Calculate distances and sort by closest first
         const results = (data || []).map(app => {
           const distance = calculateDistance(
             coordinates[0],
@@ -87,7 +91,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   };
 };
 
-// Helper function to calculate distance between coordinates
+// Simple distance calculation function
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;

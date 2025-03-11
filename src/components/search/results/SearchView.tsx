@@ -2,9 +2,7 @@
 import { useEffect } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch } from "@/hooks/use-planning-search";
-import { ResultsHeader } from "./ResultsHeader";
 import { SearchViewContent } from "./SearchViewContent";
-import { NoResultsView } from "./NoResultsView";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
 

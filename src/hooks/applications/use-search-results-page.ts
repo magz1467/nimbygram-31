@@ -1,75 +1,41 @@
 
-import { useEffect } from 'react';
-import { useSearchPageState } from './use-search-page-state';
-import { useSearchErrorHandler } from './use-search-error-handler';
-import { useSearchTimeout } from './use-search-timeout';
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { useCoordinates } from "@/hooks/use-coordinates";
+import { usePlanningSearch } from "@/hooks/use-planning-search";
 
 export const useSearchResultsPage = () => {
-  const {
-    searchState,
-    retryCount,
-    searchComplete,
-    setSearchComplete,
-    hasResultsRef,
-    handleSearchComplete,
-    handleRetry,
-    prepareForSearch,
-    handlePostcodeSelect,
-    updateResultsStatus
-  } = useSearchPageState();
-
-  const {
-    isError,
-    errorDetails,
-    handleError,
-    resetErrors,
-    isNonCriticalError
-  } = useSearchErrorHandler(hasResultsRef);
-
-  const {
-    setupSearchTimeout,
-    clearSearchTimeout
-  } = useSearchTimeout(
-    searchComplete,
-    setSearchComplete,
-    resetErrors ? () => {
-      resetErrors();
-      return false;
-    } : () => false,
-    errorDetails !== null ? () => errorDetails : () => null
+  const location = useLocation();
+  const [error, setError] = useState<Error | null>(null);
+  const searchState = location.state;
+  
+  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
+    searchState?.searchTerm || ''
   );
 
-  // Update search state when location.state changes
-  useEffect(() => {
-    if (!searchState?.searchTerm) {
-      return;
-    }
+  const { 
+    applications, 
+    isLoading: isLoadingResults,
+    error: searchError,
+    filters,
+    setFilters
+  } = usePlanningSearch(coordinates);
 
-    console.log('📍 Processing search:', {
-      type: searchState.searchType,
-      term: searchState.searchTerm,
-      timestamp: searchState.timestamp
-    });
-    
-    // Prepare for the new search
-    prepareForSearch();
-    
-    // Reset error state
-    resetErrors();
-    
-    // Set up timeout for the search
-    setupSearchTimeout();
-  }, [searchState, prepareForSearch, resetErrors, setupSearchTimeout]);
+  useEffect(() => {
+    if (searchError) {
+      setError(searchError);
+    }
+  }, [searchError]);
+
+  const isLoading = isLoadingCoords || isLoadingResults;
 
   return {
     searchState,
-    retryCount,
-    isError,
-    errorDetails,
-    handleRetry,
-    handleError,
-    handleSearchComplete,
-    handlePostcodeSelect,
-    updateResultsStatus
+    applications,
+    isLoading,
+    error,
+    setError,
+    filters,
+    setFilters
   };
 };
