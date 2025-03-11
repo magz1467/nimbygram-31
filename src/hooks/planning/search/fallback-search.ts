@@ -94,7 +94,7 @@ export async function performFallbackSearch(
         address: item.address || '',
         postcode: item.postcode || '',
         coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
-        distance: distanceFormatted, // Use string format for distance
+        distance: distanceFormatted, // Use string format for distance as expected by the interface
         application_type: item.application_type || '',
         application_type_full: item.type || '',
         decision: item.decision || '',
@@ -205,7 +205,7 @@ async function performFallbackSearchLargerRadius(
         address: item.address || '',
         postcode: item.postcode || '',
         coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
-        distance: distanceFormatted, // Use string format for distance
+        distance: distanceFormatted, // Use string format for distance as expected
         application_type: item.application_type || '',
         application_type_full: item.type || '',
         decision: item.decision || '',
