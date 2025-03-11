@@ -34,7 +34,7 @@ export const DesktopMapDialog = ({
       console.log('🗺️ Desktop map dialog opened - forcing resize');
       
       // Force map to render correctly when dialog opens
-      const resizeEvents = [50, 200, 500].map(delay => 
+      const resizeEvents = [50, 200, 500, 1000].map(delay => 
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
           console.log(`🗺️ Dispatched resize event after ${delay}ms`);
@@ -44,6 +44,13 @@ export const DesktopMapDialog = ({
       return () => resizeEvents.forEach(clearTimeout);
     }
   }, [isOpen]);
+
+  console.log('📍 DesktopMapDialog rendering:', { 
+    isOpen, 
+    selectedId, 
+    coordinatesProvided: !!coordinates,
+    applicationCount: applications.length 
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -67,16 +74,18 @@ export const DesktopMapDialog = ({
           ref={mapContainerRef} 
           className="w-full h-full"
         >
-          <MapContent 
-            applications={applications}
-            selectedId={selectedId}
-            coordinates={coordinates}
-            isMobile={false}
-            isMapView={true}
-            onMarkerClick={handleMarkerClick}
-            isLoading={isLoading}
-            postcode={postcode}
-          />
+          {isOpen && (
+            <MapContent 
+              applications={applications}
+              selectedId={selectedId}
+              coordinates={coordinates}
+              isMobile={false}
+              isMapView={true}
+              onMarkerClick={handleMarkerClick}
+              isLoading={isLoading}
+              postcode={postcode}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

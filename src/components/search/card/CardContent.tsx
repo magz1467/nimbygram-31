@@ -44,10 +44,10 @@ export const CardContent = ({
       onSeeOnMap();
     } else {
       // On desktop, open the map dialog
-      if (coordinates && applicationId) {
+      if (applicationId) {
         setShowMapDialog(true);
         // Ensure this application is selected
-        if (handleMarkerClick) {
+        if (handleMarkerClick && applicationId) {
           handleMarkerClick(applicationId);
         }
       }
@@ -142,11 +142,11 @@ export const CardContent = ({
       )}
 
       {/* Map Dialog for Desktop */}
-      {!isMobile && applicationId && coordinates && (
+      {!isMobile && applicationId && (
         <DesktopMapDialog
           applications={applications}
-          selectedId={selectedId}
-          coordinates={coordinates}
+          selectedId={applicationId}
+          coordinates={coordinates || (applications.find(app => app.id === applicationId)?.coordinates as [number, number]) || [51.5074, -0.1278]}
           handleMarkerClick={handleMarkerClick}
           isOpen={showMapDialog}
           onClose={() => setShowMapDialog(false)}
