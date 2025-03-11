@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -9,22 +10,19 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
   const isMobile = useIsMobile();
   
   useEffect(() => {
-    // Only force reload on first visit, not during normal navigation
-    if (isMobile && window.performance) {
+    // Prevent reloads on search results page
+    const isSearchResultsPage = window.location.pathname.includes('search-results');
+    
+    if (isMobile && window.performance && !isSearchResultsPage) {
       const isFirstLoad = (
         performance.navigation.type === 0 && 
         document.referrer === '' && 
-        sessionStorage.getItem('initialLoadDone') !== 'true' &&
-        !sessionStorage.getItem('searchInProgress')
+        !sessionStorage.getItem('initialLoadDone')
       );
       
-      const forceRefresh = sessionStorage.getItem('forceRefresh') === 'true' && 
-                          !sessionStorage.getItem('searchInProgress');
-      
-      if (isFirstLoad || forceRefresh) {
+      if (isFirstLoad) {
         // Set flag to prevent infinite reload
         sessionStorage.setItem('initialLoadDone', 'true');
-        sessionStorage.removeItem('forceRefresh');
         
         // Add timestamp to force cache bust
         const cacheBustUrl = new URL(window.location.href);
@@ -48,28 +46,11 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
       }
     }
     
-    // During search or results loading, set a flag to prevent page refreshes
-    const setSearchInProgress = () => {
-      sessionStorage.setItem('searchInProgress', 'true');
-    };
-    
-    const clearSearchInProgress = () => {
-      sessionStorage.removeItem('searchInProgress');
-    };
-    
-    // Listen for search events
-    window.addEventListener('searchstart', setSearchInProgress);
-    window.addEventListener('searchcomplete', clearSearchInProgress);
-    window.addEventListener('searcherror', clearSearchInProgress);
-    
     return () => {
-      // Cleanup event listeners
-      window.removeEventListener('searchstart', setSearchInProgress);
-      window.removeEventListener('searchcomplete', clearSearchInProgress);
-      window.removeEventListener('searcherror', clearSearchInProgress);
-      
-      // Only remove initialLoadDone, keep other storage flags
-      sessionStorage.removeItem('initialLoadDone');
+      // Only remove initialLoadDone on component unmount if not on search results
+      if (!isSearchResultsPage) {
+        sessionStorage.removeItem('initialLoadDone');
+      }
     };
   }, [isMobile]);
 
