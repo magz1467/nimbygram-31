@@ -54,8 +54,8 @@ export async function performFallbackSearch(
   }
   
   try {
-    // Add a strict limit to prevent timeouts
-    const { data, error } = await query.limit(100).timeout(10000);
+    // Add a strict limit to prevent timeouts - removed the .timeout() call that was causing the error
+    const { data, error } = await query.limit(100);
     
     if (error) {
       console.error('Supabase query error:', error);

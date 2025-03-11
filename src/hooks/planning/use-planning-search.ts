@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +5,7 @@ import { Application } from "@/types/planning";
 import { performSpatialSearch } from './search/spatial-search';
 import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
-import { ErrorType } from '@/utils/errors';
+import { ErrorType, AppError } from '@/utils/errors';
 
 export interface SearchFilters {
   status?: string;
@@ -59,7 +58,24 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     retry: (failureCount, error) => {
       // Only retry once, and don't retry timeouts
       if (failureCount >= 1) return false;
-      if (error?.type === ErrorType.TIMEOUT) return false;
+      
+      // Check if error is an AppError with type property
+      const isTimeoutError = error instanceof AppError && error.type === ErrorType.TIMEOUT;
+      
+      // Otherwise check error message (fallback)
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = String(error.message).toLowerCase();
+        if (
+          errorMessage.includes('timeout') || 
+          errorMessage.includes('timed out') ||
+          errorMessage.includes('too long')
+        ) {
+          return false;
+        }
+      }
+      
+      // Don't retry timeout errors
+      if (isTimeoutError) return false;
       
       return true;
     },
