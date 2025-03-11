@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 
 interface LoadMoreButtonProps {
