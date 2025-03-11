@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { Application } from "@/types/planning";
 
 /**
  * Fetches applications near the given coordinates
@@ -11,7 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 export const fetchNearbyApplications = async (
   coordinates: [number, number] | null,
   radius: number = 10
-): Promise<any[] | null> => {
+): Promise<Application[] | null> => {
   console.log('🔍 Starting to fetch applications near coordinates:', coordinates);
   
   if (!coordinates) {
@@ -104,19 +105,49 @@ export const fetchNearbyApplications = async (
         }
       });
       
-      // Sort properties by distance
-      properties.sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity));
+      // Transform the data into the Application type format before returning
+      const applications = properties.map(prop => {
+        // Create a proper Application object from the raw data
+        const app: Application = {
+          id: prop.id,
+          title: prop.title || prop.description || `Application at ${prop.address}`,
+          address: prop.address || '',
+          description: prop.description || '',
+          status: prop.status || 'Under Review',
+          coordinates: prop.latitude && prop.longitude 
+            ? [parseFloat(prop.latitude), parseFloat(prop.longitude)] 
+            : null,
+          distance: prop.distanceKm ? `${prop.distanceKm.toFixed(1)} km` : undefined,
+          distanceKm: prop.distanceKm,
+          submittedDate: prop.received_date || prop.submittedDate,
+          councilReference: prop.reference || prop.councilReference,
+          applicationType: prop.type || prop.applicationType,
+          // Add any other properties needed by the UI
+        };
+        return app;
+      });
       
-      console.log(`✅ Filtered to ${properties.length} applications within ${radius}km radius`);
+      // Sort applications by distance
+      applications.sort((a, b) => {
+        const distA = a.distanceKm || Infinity;
+        const distB = b.distanceKm || Infinity;
+        return distA - distB;
+      });
+      
+      console.log(`✅ Filtered to ${applications.length} applications within ${radius}km radius`);
       
       // Log some examples
-      if (properties.length > 0) {
+      if (applications.length > 0) {
         console.log("Sample applications with distances:");
-        properties.slice(0, 5).forEach(p => {
+        applications.slice(0, 5).forEach(p => {
           console.log(`ID: ${p.id}, Distance: ${p.distanceKm?.toFixed(2)}km, Address: ${p.address || 'unknown'}`);
         });
+
+        // Return the properly formatted applications
+        return applications;
       } else {
         console.log(`⚠️ No applications found within ${radius}km of [${lat}, ${lng}]`);
+        return [];
       }
     }
   } catch (error) {
@@ -130,5 +161,5 @@ export const fetchNearbyApplications = async (
   }
 
   console.log(`✨ Returning ${properties?.length || 0} applications within ${radius}km`);
-  return properties || [];
+  return [];
 };

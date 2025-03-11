@@ -1,9 +1,10 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
 import { StatusCounts } from "@/types/application-types";
+import { LoadingSkeletons } from "./components/LoadingSkeletons";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -23,6 +24,8 @@ export const SearchViewContent = ({
   onSearchComplete,
   retryCount = 0
 }: SearchViewContentProps) => {
+  const [isLongSearch, setIsLongSearch] = useState(false);
+  
   const {
     postcode,
     coordinates,
@@ -46,11 +49,29 @@ export const SearchViewContent = ({
     totalPages,
     totalCount,
     statusCounts,
-    loadNextPage
+    loadNextPage,
+    refetch
   } = useUnifiedSearch({ 
     initialSearch, 
     retryCount 
   });
+
+  // Set a timeout to detect long searches (> 5 seconds)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (isLoading) {
+      timeoutId = setTimeout(() => {
+        setIsLongSearch(true);
+      }, 5000);
+    } else {
+      setIsLongSearch(false);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isLoading]);
 
   // Call the onError handler when an error occurs
   useEffect(() => {
@@ -74,6 +95,18 @@ export const SearchViewContent = ({
       setCurrentPage(newPage);
     }
   };
+
+  // If loading and no results yet, show loading skeletons
+  if (isLoading && (!displayApplications || displayApplications.length === 0)) {
+    return (
+      <div className="max-w-7xl mx-auto pb-16 pt-4 px-4">
+        <LoadingSkeletons 
+          isLongSearch={isLongSearch} 
+          onRetry={() => refetch && refetch()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto pb-16 pt-0">
@@ -111,6 +144,8 @@ export const SearchViewContent = ({
           totalPages={totalPages}
           onPageChange={handlePageChange}
           totalCount={totalCount}
+          isLongSearch={isLongSearch}
+          onRetry={() => refetch && refetch()}
         />
       </div>
     </div>

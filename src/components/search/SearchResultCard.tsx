@@ -61,6 +61,9 @@ export const SearchResultCard = ({
     }
   };
 
+  // Extract any description text (removing notes reference)
+  const descriptionText = application.description || '';
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader 
