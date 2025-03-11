@@ -35,8 +35,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
               center_lng: lng,
               radius_km: radiusKm,
               result_limit: 500
-            })
-            .timeout(30);
+            });
             
           if (spatialError) {
             // If the function doesn't exist or there's an error, log it and fall back to manual search
@@ -84,14 +83,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           // Continue to fallback method
         }
         
-        // Fallback to manual bounding box search with shorter timeout
+        // Fallback to manual bounding box search
         console.log('Falling back to manual bounding box search');
         let query = supabase
           .from('crystal_roof')
           .select('*')
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .timeout(15); // Shorter timeout for fallback
+          .not('longitude', 'is', null);
         
         const latDegPerKm = 1 / 111;
         const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180));
@@ -119,13 +117,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           query = query.ilike('class_3', `%${filters.classification}%`);
         }
         
-        const { data, error } = await query.limit(200); // Reduce limit to 200 for faster queries
+        // Add a limit to prevent timeouts
+        const { data, error } = await query.limit(200);
         
         if (error) {
           console.error('Supabase query error:', error);
           
           // If it's a timeout error, return a more specific error message
-          if (error.code === '57014') {
+          if (error.code === '57014' || error.message.includes('timeout')) {
             throw new Error('The search took too long to complete. Please try a more specific location or different filters.');
           }
           
