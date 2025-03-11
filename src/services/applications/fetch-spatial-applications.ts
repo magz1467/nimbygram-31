@@ -37,22 +37,14 @@ export const fetchSpatialApplications = async ({
   console.log(`🔍 Fetching applications within ${radiusKm}km of [${lat}, ${lng}]`);
   
   try {
-    // IMPORTANT: PostGIS expects POINT(longitude latitude)
-    const searchPoint = `POINT(${lng} ${lat})`;
-    
     // Calculate pagination
     const from = page * pageSize;
     const to = from + pageSize - 1;
     
-    // Build the query with proper spatial filtering using ST_DWithin
+    // Build the query with simpler filtering approach
     let query = supabase
       .from('crystal_roof')
-      .select('*, ST_Distance(geom, ST_SetSRID(ST_GeomFromText($1), 4326)) as distance', { 
-        count: 'exact',
-        prepare: true 
-      })
-      .lt('ST_Distance(geom, ST_SetSRID(ST_GeomFromText($1), 4326))', radiusKm * 1000) // Convert km to meters
-      .bind([searchPoint]);
+      .select('*', { count: 'exact' });
     
     // Add filters if provided
     if (status) {
@@ -66,9 +58,6 @@ export const fetchSpatialApplications = async ({
     if (classification) {
       query = query.ilike('class_3', `%${classification}%`);
     }
-    
-    // Order by distance
-    query = query.order('distance', { ascending: true });
     
     // Apply pagination
     query = query.range(from, to);
@@ -85,14 +74,20 @@ export const fetchSpatialApplications = async ({
       .map(app => transformApplicationData(app, coordinates))
       .filter((app): app is Application => app !== null);
     
+    // Sort applications by distance (since we're not doing it in the query)
+    const sortedApplications = applications.sort((a, b) => {
+      if (!a.distance || !b.distance) return 0;
+      return a.distance - b.distance;
+    });
+    
     // Calculate total pages
-    const totalCount = count || applications.length;
+    const totalCount = count || sortedApplications.length;
     const totalPages = Math.ceil(totalCount / pageSize);
     
-    console.log(`✅ Retrieved ${applications.length} applications from database (page ${page + 1}/${totalPages})`);
+    console.log(`✅ Retrieved ${sortedApplications.length} applications from database (page ${page + 1}/${totalPages})`);
     
     return {
-      applications,
+      applications: sortedApplications,
       totalCount,
       currentPage: page,
       totalPages
