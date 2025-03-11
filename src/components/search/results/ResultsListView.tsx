@@ -46,10 +46,11 @@ export const ResultsListView = ({
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Effect to detect long-running searches
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading && initialLoad) {
       // Set a timeout to detect long-running searches (more than 5 seconds)
       const timeoutId = setTimeout(() => {
         setIsLongSearchDetected(true);
@@ -60,17 +61,22 @@ export const ResultsListView = ({
     } else {
       // Reset the long search state when loading is complete
       setIsLongSearchDetected(false);
+      
+      // If we've loaded data, mark initial load as complete
+      if (!isLoading && applications.length > 0) {
+        setInitialLoad(false);
+      }
     }
-  }, [isLoading]);
+  }, [isLoading, applications.length, initialLoad]);
 
   // Update loaded applications when new applications come in
   useEffect(() => {
-    if (applications.length > 0 && !isLoading) {
+    if (applications.length > 0) {
       if (currentPage === 0) {
         // Reset for new search
         setLoadedApplications(applications);
       } else {
-        // Append new results
+        // Append new results, avoiding duplicates
         setLoadedApplications(prev => {
           const existingIds = new Set(prev.map(app => app.id));
           const uniqueNewApps = applications.filter(app => !existingIds.has(app.id));
@@ -78,17 +84,17 @@ export const ResultsListView = ({
         });
       }
     }
-  }, [applications, currentPage, isLoading]);
+  }, [applications, currentPage]);
 
   // Function to handle loading more results
   const handleLoadMore = async () => {
-    if (onPageChange && currentPage < totalPages - 1) {
+    if (onPageChange && currentPage < (totalPages - 1)) {
       onPageChange(currentPage + 1);
     }
   };
 
   // If initial loading, show skeleton cards
-  if (isLoading && currentPage === 0) {
+  if (isLoading && initialLoad) {
     return <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />;
   }
 
@@ -126,13 +132,16 @@ export const ResultsListView = ({
         ))}
       </div>
 
-      {/* Load More Button */}
-      <LoadMoreButton 
-        onLoadMore={handleLoadMore}
-        loadedCount={loadedApplications.length}
-        totalCount={totalCount}
-        isLastPage={currentPage >= totalPages - 1}
-      />
+      {/* Load More Button with improved loading state */}
+      {loadedApplications.length > 0 && totalCount > loadedApplications.length && (
+        <LoadMoreButton 
+          onLoadMore={handleLoadMore}
+          loadedCount={loadedApplications.length}
+          totalCount={totalCount}
+          isLastPage={currentPage >= totalPages - 1}
+          isLoading={isLoading && !initialLoad}
+        />
+      )}
     </div>
   );
 };

@@ -1,9 +1,12 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
 import { StatusCounts } from "@/types/application-types";
+import { fetchSpatialApplications } from "@/services/applications/fetch-spatial-applications";
+import { Application } from "@/types/planning";
+import { sortApplicationsByDistance } from "@/utils/distance";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -23,6 +26,8 @@ export const SearchViewContent = ({
   onSearchComplete,
   retryCount = 0
 }: SearchViewContentProps) => {
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
   const {
     postcode,
     coordinates,
@@ -45,8 +50,7 @@ export const SearchViewContent = ({
     setCurrentPage,
     totalPages,
     totalCount,
-    statusCounts,
-    loadNextPage
+    statusCounts
   } = useUnifiedSearch({ 
     initialSearch, 
     retryCount 
@@ -67,11 +71,29 @@ export const SearchViewContent = ({
   }, [hasSearched, isLoading, onSearchComplete]);
 
   // Handler for loading the next page of results
-  const handlePageChange = (newPage: number) => {
-    if (loadNextPage) {
-      loadNextPage(newPage);
-    } else {
+  const handlePageChange = async (newPage: number) => {
+    if (!coordinates) return;
+    
+    try {
+      setIsLoadingMore(true);
+      
+      // Fetch the next page of results
+      const { applications: newApplications } = await fetchSpatialApplications({
+        coordinates,
+        page: newPage,
+        pageSize: 25,
+        status: activeFilters.status,
+        type: activeFilters.type,
+        classification: activeFilters.classification
+      });
+      
+      // Update the current page
       setCurrentPage(newPage);
+      
+    } catch (err) {
+      console.error('Error loading more results:', err);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -103,7 +125,7 @@ export const SearchViewContent = ({
           selectedId={selectedId}
           setSelectedId={setSelectedId}
           handleMarkerClick={handleMarkerClick}
-          isLoading={isLoading}
+          isLoading={isLoading || isLoadingMore}
           searchTerm={initialSearch.searchTerm}
           displayTerm={initialSearch.displayTerm}
           error={error}
