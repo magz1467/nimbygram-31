@@ -1,10 +1,9 @@
-
 import { Application } from "@/types/planning";
 import { useToast } from "@/hooks/use-toast";
 import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
 import { fetchApplicationsFromDatabase } from "./directDatabaseFetcher";
 import { fetchApplicationsWithSpatialQuery } from "./optimizedSearchFetcher";
-import { sortApplicationsByDistance } from "./distance";
+import { sortApplicationsByDistance, calculateDistance } from "./distance";
 
 export const fetchApplications = async (coordinates: [number, number] | null): Promise<Application[]> => {
   if (!coordinates) {
