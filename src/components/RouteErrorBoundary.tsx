@@ -1,8 +1,7 @@
-
 import { useRouteError, Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { HomeIcon, RefreshCw, AlertTriangle, WifiOff, FileX } from "lucide-react";
-import { ErrorType, detectErrorType } from "@/utils/error-handler";
+import { ErrorType, detectErrorType } from "@/utils/errors";
 
 export function RouteErrorBoundary() {
   const error = useRouteError();

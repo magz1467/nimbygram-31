@@ -1,9 +1,8 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { ErrorType, detectErrorType, formatErrorMessage } from '@/utils/error-handler';
+import { ErrorType, detectErrorType, formatErrorMessage } from '@/utils/errors';
 
 interface Props {
   children: ReactNode;

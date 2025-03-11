@@ -1,6 +1,6 @@
 
 import { useToast } from "@/hooks/use-toast";
-import { createAppError, ErrorType, handleError, isNonCriticalError } from "@/utils/error-handler";
+import { createAppError, ErrorType, handleError, isNonCriticalError } from "@/utils/errors";
 
 /**
  * Handles map-related errors with appropriate user feedback

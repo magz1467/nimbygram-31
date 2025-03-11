@@ -7,7 +7,7 @@ import {
   ErrorType, 
   AppError,
   isNonCriticalError
-} from "@/utils/error-handler";
+} from "@/utils/errors";
 
 /**
  * Hook that provides access to error handling functionality
