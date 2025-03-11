@@ -14,122 +14,84 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Fetching applications near coordinates:', coordinates);
   
   try {
-    // Get distance-filtered results with a reasonable radius
-    const maxDistanceKm = 20; // Restrict to 20km radius for more relevant results
-    console.log(`Using search radius of ${maxDistanceKm}km to find relevant applications`);
-    
-    // Try optimized spatial query first (new approach)
-    let results: Application[] = [];
-    
-    try {
-      // Use our new optimized spatial query
-      results = await fetchApplicationsWithSpatialQuery(coordinates, maxDistanceKm);
-      console.log(`Optimized spatial query returned ${results.length} applications within ${maxDistanceKm}km`);
+    // Try multiple approaches in parallel to ensure we get results
+    const [spatialResults, directResults, edgeResults] = await Promise.allSettled([
+      // Try the optimized spatial query first
+      fetchApplicationsWithSpatialQuery(coordinates, 20),
       
-      if (results.length > 0) {
-        return results;
-      }
-    } catch (err) {
-      console.warn('⚠️ Optimized spatial query failed:', err);
+      // Also try direct database query as backup
+      fetchApplicationsFromDatabase(coordinates, 30),
       
-      // Fall back to direct database query
-      try {
-        results = await fetchApplicationsFromDatabase(coordinates, maxDistanceKm);
-        console.log(`Direct database query returned ${results.length} applications within ${maxDistanceKm}km`);
-        
-        if (results.length > 0) {
-          return results;
-        }
-      } catch (dbErr) {
-        console.warn('⚠️ Direct database query failed:', dbErr);
-        
-        // Last resort: edge function
-        try {
-          const edgeResults = await fetchApplicationsFromEdge(coordinates);
-          if (edgeResults && edgeResults.length > 0) {
-            console.log(`Edge function returned ${edgeResults.length} results`);
-            return edgeResults;
-          }
-        } catch (edgeErr) {
-          console.warn('⚠️ Edge function also failed:', edgeErr);
-        }
-      }
+      // And edge function as a third option
+      fetchApplicationsFromEdge(coordinates)
+    ]);
+    
+    console.log('Results from different query methods:', {
+      spatial: spatialResults.status === 'fulfilled' ? spatialResults.value.length : 'failed',
+      direct: directResults.status === 'fulfilled' ? directResults.value.length : 'failed',
+      edge: edgeResults.status === 'fulfilled' ? edgeResults.value.length : 'failed'
+    });
+    
+    // Use the results from whichever method returned data, prioritizing spatial
+    if (spatialResults.status === 'fulfilled' && spatialResults.value.length > 0) {
+      return spatialResults.value;
     }
     
-    // If we have no results with the initial attempts, try gradually increasing radius
-    if (results.length === 0) {
-      console.log('No results found within initial radius, expanding search');
+    if (directResults.status === 'fulfilled' && directResults.value.length > 0) {
+      return directResults.value;
+    }
+    
+    if (edgeResults.status === 'fulfilled' && edgeResults.value && edgeResults.value.length > 0) {
+      return edgeResults.value;
+    }
+    
+    // If no results from initial radius, try with progressively larger radius
+    console.log('No results found with initial queries, trying expanded radius');
+    
+    const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, 50);
+    if (expandedResults.length > 0) {
+      console.log(`Found ${expandedResults.length} results with expanded 50km radius`);
       
-      const expandedRadii = [30, 50, 100]; // Try increasingly larger radii
-      
-      for (const radius of expandedRadii) {
-        console.log(`Expanding search radius to ${radius}km`);
-        
-        try {
-          // Try optimized query with expanded radius
-          const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, radius);
-          
-          if (expandedResults.length > 0) {
-            console.log(`Found ${expandedResults.length} results within ${radius}km`);
-            
-            // Add a note to the first result
-            if (expandedResults[0]) {
-              expandedResults[0].notes = `Showing results up to ${radius}km away because no applications were found closer to your search location.`;
-            }
-            
-            return expandedResults;
-          }
-        } catch (err) {
-          console.warn(`Failed to get results with expanded radius ${radius}km:`, err);
-        }
+      // Add a note to the first result
+      if (expandedResults[0]) {
+        expandedResults[0].notes = `Showing results up to 50km away as no applications were found closer to your search location.`;
       }
+      
+      return expandedResults;
+    }
+    
+    // Last resort - try with very large radius
+    const wideResults = await fetchApplicationsWithSpatialQuery(coordinates, 100);
+    if (wideResults.length > 0) {
+      console.log(`Found ${wideResults.length} results with wide 100km radius`);
+      
+      // Add a note to the first result
+      if (wideResults[0]) {
+        wideResults[0].notes = `Showing results up to 100km away as no applications were found closer to your search location.`;
+      }
+      
+      return wideResults;
     }
     
     // If still no results, show appropriate message
-    if (results.length === 0) {
-      console.warn('⚠️ No applications found even with expanded radius');
-      toast({
-        title: "No Nearby Results",
-        description: "We couldn't find any planning applications near this location. It may be outside our coverage area or have no recent planning activity.",
-        variant: "destructive",
-      });
-    }
+    console.warn('⚠️ No applications found even with expanded radius');
+    toast({
+      title: "No Nearby Results",
+      description: "We couldn't find any planning applications near this location. It may be outside our coverage area or have no recent planning activity.",
+      variant: "destructive",
+    });
     
-    return results;
+    return [];
     
   } catch (err: any) {
     console.error('❌ Error in fetchApplications:', err);
     
-    // Add specific error handling for timeout errors
-    const errorStr = String(err);
-    if (errorStr.includes('timeout') || errorStr.includes('57014') || errorStr.includes('statement canceled')) {
-      const timeoutError = new Error("Search timed out. The area may have too many results or the database is busy. Try searching for a more specific location.");
-      
-      // Show toast to the user
-      toast({
-        title: "Search Timeout",
-        description: "The search took too long to complete. Please try a more specific location.",
-        variant: "destructive",
-      });
-      
-      throw timeoutError;
-    }
-    
-    // Show pagination error toast if that's the specific error
-    if (errorStr.includes('pagination') || errorStr.includes('Pagination')) {
-      toast({
-        title: "Search Pagination Error",
-        description: "We encountered an issue retrieving all results. Showing partial results.",
-        variant: "destructive",
-      });
-    } else {
-      // Show generic error toast for other errors
-      toast({
-        title: "Search Error",
-        description: err instanceof Error ? err.message : "We're having trouble loading the results. Please try again or search for a different location.",
-        variant: "destructive",
-      });
-    }
+    // Show toast to the user
+    toast({
+      title: "Search Error",
+      description: "We're having trouble loading the results. Please try again later.",
+      variant: "destructive",
+    });
     
     // Return empty array to avoid crashing the UI
     return [];

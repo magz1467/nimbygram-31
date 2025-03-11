@@ -1,23 +1,22 @@
 
-import { ReactNode } from "react";
+import React from "react";
 
 interface ContainerLayoutProps {
+  children: React.ReactNode;
   shouldShowMap: boolean;
   isMobile: boolean;
-  children: ReactNode;
 }
 
-export const ContainerLayout = ({
+export const ContainerLayout = ({ 
+  children, 
   shouldShowMap,
-  isMobile,
-  children,
+  isMobile
 }: ContainerLayoutProps) => {
-  // For mobile with map, we'll just use a standard container
-  // The map will be displayed as an overlay
-  const containerClass = "container mx-auto px-4 py-8";
-
   return (
-    <div className={containerClass}>
+    <div className={`
+      relative 
+      ${shouldShowMap && !isMobile ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'block'}
+    `}>
       {children}
     </div>
   );

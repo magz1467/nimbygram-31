@@ -104,9 +104,9 @@ export const ResultsListView = ({
   }
 
   return (
-    <div className="py-4 space-y-8">
-      {/* Display all loaded applications */}
-      <div className="space-y-8">
+    <div className="py-4">
+      {/* Display all loaded applications in a grid layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {loadedApplications.map((application) => (
           <div 
             key={application.id}
@@ -127,12 +127,14 @@ export const ResultsListView = ({
       </div>
 
       {/* Load More Button */}
-      <LoadMoreButton 
-        onLoadMore={handleLoadMore}
-        loadedCount={loadedApplications.length}
-        totalCount={totalCount}
-        isLastPage={currentPage >= totalPages - 1}
-      />
+      <div className="mt-8">
+        <LoadMoreButton 
+          onLoadMore={handleLoadMore}
+          loadedCount={loadedApplications.length}
+          totalCount={totalCount}
+          isLastPage={currentPage >= totalPages - 1}
+        />
+      </div>
     </div>
   );
 };

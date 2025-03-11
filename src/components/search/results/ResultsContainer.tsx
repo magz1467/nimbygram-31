@@ -101,24 +101,26 @@ export const ResultsContainer = ({
   return (
     <ContainerLayout shouldShowMap={shouldShowMap} isMobile={isMobile}>
       {/* Application list - Always show */}
-      <ResultsListView 
-        applications={displayApplications}
-        isLoading={isLoading}
-        onSeeOnMap={handleSeeOnMap}
-        searchTerm={searchTerm}
-        displayTerm={displayTerm}
-        onRetry={handleRetry}
-        selectedId={selectedId}
-        coordinates={coordinates}
-        handleMarkerClick={handleMarkerClick}
-        allApplications={applications}
-        postcode={searchTerm}
-        error={error}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-        totalCount={totalCount}
-      />
+      <div className={`${shouldShowMap && !isMobile ? 'lg:col-span-1' : 'w-full'}`}>
+        <ResultsListView 
+          applications={displayApplications}
+          isLoading={isLoading}
+          onSeeOnMap={handleSeeOnMap}
+          searchTerm={searchTerm}
+          displayTerm={displayTerm}
+          onRetry={handleRetry}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          allApplications={applications}
+          postcode={searchTerm}
+          error={error}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          totalCount={totalCount}
+        />
+      </div>
       
       {/* Mobile map overlay */}
       {isMobile && shouldShowMap && coordinates && (
@@ -135,14 +137,16 @@ export const ResultsContainer = ({
       
       {/* Desktop map layout */}
       {!isMobile && shouldShowMap && coordinates && (
-        <DesktopMapView
-          applications={applications}
-          selectedId={selectedId}
-          coordinates={coordinates}
-          handleMarkerClick={handleMarkerClick}
-          handleCloseMap={handleCloseMap}
-          isLoading={isLoading}
-        />
+        <div className="lg:col-span-1">
+          <DesktopMapView
+            applications={applications}
+            selectedId={selectedId}
+            coordinates={coordinates}
+            handleMarkerClick={handleMarkerClick}
+            handleCloseMap={handleCloseMap}
+            isLoading={isLoading}
+          />
+        </div>
       )}
     </ContainerLayout>
   );
