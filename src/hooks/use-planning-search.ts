@@ -34,7 +34,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         // Query with geographic bounds
         let query = supabase
           .from('crystal_roof')
-          .select('*')
+          .select('*, received') // Explicitly include the received column
           .gte('latitude', lat - latDiff)
           .lte('latitude', lat + latDiff)
           .gte('longitude', lng - lngDiff)

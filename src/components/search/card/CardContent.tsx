@@ -34,27 +34,6 @@ export const CardContent = ({
   const isMobile = useIsMobile();
   const [showMapDialog, setShowMapDialog] = useState(false);
   
-  if (!formattedStorybook?.content) return null;
-
-  const parseHtmlContent = (content: string) => {
-    return content
-      .replace(/<\/?strong>/g, '')
-      .replace(/<\/?p>/g, '')
-      .replace(/<br\/?>/g, '\n')
-      .trim();
-  };
-
-  const getKeyDetails = (content: string) => {
-    const detailsSection = content.split('The Details:')[1]?.split('Considerations:')[0];
-    if (!detailsSection) return [];
-    
-    return detailsSection
-      .split('•')
-      .slice(1)
-      .map(detail => detail.trim())
-      .filter(detail => detail.length > 0);
-  };
-
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -75,41 +54,10 @@ export const CardContent = ({
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="prose prose-sm max-w-none">
-        <div className="bg-primary/5 rounded-lg p-4">
-          {isMobile ? (
-            <>
-              <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
-              <div className="text-gray-700">
-                {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-primary font-semibold">What's the Deal</h3>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleSeeOnMapClick}
-                  className="text-primary flex items-center gap-1.5"
-                >
-                  <MapPin className="w-4 h-4" />
-                  See on map
-                </Button>
-              </div>
-              <div className="text-gray-700">
-                {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile-only map button as a separate row */}
-      {isMobile && (
+  if (!formattedStorybook?.content) {
+    // Even if no storybook content, still show the See on Map button
+    return (
+      <div className="mt-4">
         <Button 
           variant="outline" 
           onClick={handleSeeOnMapClick}
@@ -118,7 +66,49 @@ export const CardContent = ({
           <MapPin className="w-4 h-4" />
           See on map
         </Button>
-      )}
+      </div>
+    );
+  }
+
+  const parseHtmlContent = (content: string) => {
+    return content
+      .replace(/<\/?strong>/g, '')
+      .replace(/<\/?p>/g, '')
+      .replace(/<br\/?>/g, '\n')
+      .trim();
+  };
+
+  const getKeyDetails = (content: string) => {
+    const detailsSection = content.split('The Details:')[1]?.split('Considerations:')[0];
+    if (!detailsSection) return [];
+    
+    return detailsSection
+      .split('•')
+      .slice(1)
+      .map(detail => detail.trim())
+      .filter(detail => detail.length > 0);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* See on Map button - always visible as its own row */}
+      <Button 
+        variant="outline" 
+        onClick={handleSeeOnMapClick}
+        className="w-full text-primary flex items-center justify-center gap-1.5"
+      >
+        <MapPin className="w-4 h-4" />
+        See on map
+      </Button>
+
+      <div className="prose prose-sm max-w-none">
+        <div className="bg-primary/5 rounded-lg p-4">
+          <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+          <div className="text-gray-700">
+            {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <h3 className="font-semibold text-gray-900">Key Details</h3>
