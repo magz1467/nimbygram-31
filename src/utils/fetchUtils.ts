@@ -1,19 +1,24 @@
 
 /**
- * Helper function to implement timeout for promises
- * Works with any promise, ensuring proper type handling
+ * Utility functions for fetch operations
+ */
+
+/**
+ * Adds a timeout to a fetch promise
+ * @param promise The fetch promise
+ * @param timeoutMs Timeout in milliseconds
+ * @param timeoutMessage Error message to display on timeout
+ * @returns Promise with timeout
  */
 export const withTimeout = <T>(
   promise: Promise<T>,
   timeoutMs: number,
   timeoutMessage: string
 ): Promise<T> => {
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      reject(new Error(timeoutMessage));
-    }, timeoutMs);
-  });
-
-  return Promise.race([promise, timeoutPromise]);
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    )
+  ]) as Promise<T>;
 };
