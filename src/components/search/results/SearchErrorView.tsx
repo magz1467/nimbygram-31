@@ -2,7 +2,7 @@
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, WifiOff, Clock } from "lucide-react";
-import { ErrorType } from "@/utils/error-handler";
+import { ErrorType } from "@/utils/errors";
 
 interface SearchErrorViewProps {
   errorDetails: string | null;

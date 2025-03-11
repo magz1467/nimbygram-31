@@ -1,6 +1,6 @@
 
-// Re-export everything to maintain the same public API
-export * from './types';
-export * from './detection';
-export * from './formatting';
-export * from './handler';
+// Re-export specific items to avoid name conflicts
+export { ErrorType, AppError, type ErrorOptions } from './types';
+export { detectErrorType, isNonCriticalError } from './detection';
+export { formatErrorMessage, logError } from './formatting';
+export { createAppError, handleError } from './handler';
