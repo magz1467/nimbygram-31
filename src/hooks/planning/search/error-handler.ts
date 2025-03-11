@@ -1,6 +1,6 @@
 
 import { useToast } from "@/hooks/use-toast";
-import { createAppError, ErrorType, handleError, isNonCriticalError } from "@/utils/errors";
+import { AppError, ErrorType, createAppError, handleError, isNonCriticalError } from "@/utils/errors";
 
 /**
  * Handles search errors by determining error type and displaying appropriate messages
@@ -20,8 +20,27 @@ export function handleSearchError(
     return [];
   }
   
+  // Detect if this is a timeout error
+  const isTimeoutError = 
+    (err.code === '57014') || 
+    (err.message && (
+      err.message.includes('timeout') ||
+      err.message.includes('timed out') ||
+      err.message.includes('canceling statement') ||
+      err.message.toLowerCase().includes('too long')
+    ));
+  
   // Get the properly formatted app error
-  const appError = createAppError(err, 'search');
+  const appError = createAppError(
+    err, 
+    'search',
+    isTimeoutError ? ErrorType.TIMEOUT : undefined
+  );
+  
+  // For timeout errors, provide a more user-friendly message
+  if (isTimeoutError && appError.type === ErrorType.TIMEOUT) {
+    appError.message = "The search took too long to complete. Please try a more specific location or different filters.";
+  }
   
   // Use centralized error handler
   handleError(appError, toast, {

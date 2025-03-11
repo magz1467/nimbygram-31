@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Search, RotateCw, AlertTriangle, WifiOff, Clock } from "lucide-react";
 import { ErrorType, isNonCriticalError } from "@/utils/errors";
@@ -22,7 +23,7 @@ export const ErrorMessage = ({
   className = ''
 }: ErrorMessageProps) => {
   // Skip rendering if message contains known ignorable patterns
-  if (isNonCriticalError(message)) {
+  if (typeof message === 'string' && isNonCriticalError(message)) {
     console.log('Skipping error display for non-critical error:', message);
     return null;
   }
@@ -34,6 +35,8 @@ export const ErrorMessage = ({
         return <WifiOff className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-red-600"} />;
       case ErrorType.TIMEOUT:
         return <Clock className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-amber-600"} />;
+      case ErrorType.NOT_FOUND:
+        return <Search className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-blue-600"} />;
       default:
         return variant === 'default' 
           ? <Search className="h-12 w-12 text-gray-400 mb-4" /> 
@@ -41,15 +44,43 @@ export const ErrorMessage = ({
     }
   };
 
+  const getBackgroundColor = () => {
+    if (variant !== 'inline') return '';
+    
+    switch (errorType) {
+      case ErrorType.TIMEOUT:
+        return 'bg-amber-50 border-amber-200';
+      case ErrorType.NETWORK:
+        return 'bg-red-50 border-red-200';
+      case ErrorType.NOT_FOUND:
+        return 'bg-blue-50 border-blue-200';
+      default:
+        return 'bg-red-50 border-red-200';
+    }
+  };
+
+  const getTextColor = () => {
+    switch (errorType) {
+      case ErrorType.TIMEOUT:
+        return 'text-amber-800';
+      case ErrorType.NETWORK:
+        return 'text-red-800';
+      case ErrorType.NOT_FOUND:
+        return 'text-blue-800';
+      default:
+        return 'text-red-800';
+    }
+  };
+
   // For inline variants, use a more compact layout
   if (variant === 'inline') {
     return (
-      <div className={`my-4 p-4 bg-red-50 border border-red-200 rounded-md ${className}`}>
+      <div className={`my-4 p-4 border rounded-md ${getBackgroundColor()} ${className}`}>
         <div className="flex items-start">
           <Icon />
           <div className="ml-3">
-            <h3 className="text-base font-semibold text-red-800 mb-1">{title}</h3>
-            <p className="text-sm text-red-700 mb-2">{message}</p>
+            <h3 className={`text-base font-semibold ${getTextColor()} mb-1`}>{title}</h3>
+            <p className="text-sm text-gray-700 mb-2">{message}</p>
             {onRetry && (
               <Button 
                 variant="outline" 
@@ -69,8 +100,10 @@ export const ErrorMessage = ({
 
   // For toast-style errors, use a more prominent design
   if (variant === 'toast') {
+    const toastBgColor = errorType === ErrorType.TIMEOUT ? 'bg-amber-500' : 'bg-red-500';
+    
     return (
-      <div className={`p-4 bg-red-500 text-white rounded-md shadow-lg ${className}`}>
+      <div className={`p-4 ${toastBgColor} text-white rounded-md shadow-lg ${className}`}>
         <div className="flex items-start">
           <Icon />
           <div className="ml-3">
@@ -121,7 +154,7 @@ export const ErrorMessage = ({
         </Button>
       </div>
       
-      {showCoverageInfo && (
+      {showCoverageInfo && errorType !== ErrorType.NETWORK && (
         <div className="mt-6 p-4 bg-white rounded border border-amber-200 max-w-md">
           <h4 className="font-medium text-amber-800 mb-2">Coverage Information</h4>
           <p className="text-sm text-gray-600">

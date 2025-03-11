@@ -6,6 +6,7 @@ import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
+import { ErrorType } from "@/utils/errors";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -57,9 +58,28 @@ export const SearchView = ({
 
   // Only show error view for real errors, not infrastructure messages
   if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
+    // Determine error type for proper display
+    let errorType = ErrorType.UNKNOWN;
+    
+    if (error.type) {
+      // If the error already has a type property, use it
+      errorType = error.type;
+    } else if (
+      error.message?.includes('timeout') || 
+      error.message?.includes('too long') ||
+      error.message?.includes('canceling statement')
+    ) {
+      errorType = ErrorType.TIMEOUT;
+    } else if (error.message?.includes('network') || !navigator.onLine) {
+      errorType = ErrorType.NETWORK;
+    } else if (error.message?.includes('not found') || error.message?.includes('no results')) {
+      errorType = ErrorType.NOT_FOUND;
+    }
+    
     return (
       <SearchErrorView 
         errorDetails={error.message}
+        errorType={errorType}
         onRetry={() => window.location.reload()}
       />
     );
@@ -82,4 +102,3 @@ export const SearchView = ({
     />
   );
 };
-
