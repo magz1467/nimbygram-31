@@ -36,7 +36,8 @@ export const ErrorMessage = ({
   }
 
   // Check if this is a timeout error and provide more specific guidance
-  const isTimeoutError = message.includes('timeout') || message.includes('57014');
+  const isTimeoutError = message.includes('timeout') || message.includes('57014') || 
+                         message.includes('took too long');
   const errorMessage = isTimeoutError 
     ? "The search is taking too long. Please try a more specific location or different filters."
     : message;

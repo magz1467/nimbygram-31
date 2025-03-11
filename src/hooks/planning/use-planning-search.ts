@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -24,13 +25,73 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const [lat, lng] = coordinates;
         const radiusKm = 10;
-        const radiusMeters = radiusKm * 1000;
         
+        // Try to use the optimized PostGIS function first
+        try {
+          console.log('Using PostGIS spatial function for efficient search');
+          const { data: spatialData, error: spatialError } = await supabase
+            .rpc('get_nearby_applications', { 
+              center_lat: lat,
+              center_lng: lng,
+              radius_km: radiusKm,
+              result_limit: 500
+            })
+            .timeout(30);
+            
+          if (spatialError) {
+            // If the function doesn't exist or there's an error, log it and fall back to manual search
+            console.warn('PostGIS function failed, falling back to manual search:', spatialError);
+          } else if (spatialData && spatialData.length > 0) {
+            console.log(`✅ Found ${spatialData.length} planning applications using spatial query`);
+            
+            // Apply filters after getting the data
+            let filteredData = spatialData;
+            
+            if (filters.status) {
+              filteredData = filteredData.filter(app => 
+                app.status && app.status.toLowerCase().includes(filters.status!.toLowerCase())
+              );
+            }
+            
+            if (filters.type) {
+              filteredData = filteredData.filter(app => 
+                (app.type && app.type.toLowerCase().includes(filters.type!.toLowerCase())) ||
+                (app.application_type_full && app.application_type_full.toLowerCase().includes(filters.type!.toLowerCase()))
+              );
+            }
+            
+            if (filters.classification) {
+              filteredData = filteredData.filter(app => 
+                app.class_3 && app.class_3.toLowerCase().includes(filters.classification!.toLowerCase())
+              );
+            }
+            
+            // Calculate distance and add it to the results
+            const results = filteredData.map(app => {
+              const distance = calculateDistance(
+                lat,
+                lng,
+                Number(app.latitude),
+                Number(app.longitude)
+              );
+              return { ...app, distance };
+            });
+            
+            return results;
+          }
+        } catch (spatialFunctionError) {
+          console.warn('Error using spatial function:', spatialFunctionError);
+          // Continue to fallback method
+        }
+        
+        // Fallback to manual bounding box search with shorter timeout
+        console.log('Falling back to manual bounding box search');
         let query = supabase
           .from('crystal_roof')
           .select('*')
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null);
+          .not('longitude', 'is', null)
+          .timeout(15); // Shorter timeout for fallback
         
         const latDegPerKm = 1 / 111;
         const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180));
@@ -58,10 +119,16 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           query = query.ilike('class_3', `%${filters.classification}%`);
         }
         
-        const { data, error } = await query.limit(500);
+        const { data, error } = await query.limit(200); // Reduce limit to 200 for faster queries
         
         if (error) {
           console.error('Supabase query error:', error);
+          
+          // If it's a timeout error, return a more specific error message
+          if (error.code === '57014') {
+            throw new Error('The search took too long to complete. Please try a more specific location or different filters.');
+          }
+          
           throw error;
         }
         
@@ -80,18 +147,25 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           return { ...app, distance };
         }).sort((a, b) => a.distance - b.distance);
         
-        console.log(`✅ Found ${results.length} planning applications`);
+        console.log(`✅ Found ${results.length} planning applications with fallback query`);
         return results;
       } catch (err: any) {
         console.error('Search error:', err);
         
+        // Provide specific error messages for common issues
+        const errorMessage = err.message || String(err);
+        const isTimeoutError = errorMessage.includes('timeout') || errorMessage.includes('57014');
+        const userMessage = isTimeoutError 
+          ? "The search took too long to complete. Please try a more specific location or different filters."
+          : "There was a problem finding planning applications. Please try again.";
+        
         toast({
           title: "Search Error",
-          description: "There was a problem finding planning applications. Please try again.",
+          description: userMessage,
           variant: "destructive",
         });
         
-        return [];
+        throw err; // Re-throw to let the error handling in the component deal with it
       }
     },
     enabled: !!coordinates,
