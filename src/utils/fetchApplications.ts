@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
 import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
@@ -39,15 +38,14 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
       // Return the first results immediately to improve perceived performance
       setTimeout(async () => {
         try {
-          // Try the other method in the background
-          const secondResults = await Promise.any([
+          // Try the other method in the background using Promise.race instead of Promise.any
+          const secondResults = await Promise.race([
             fetchApplicationsFromEdge(coordinates).catch(() => null),
             fetchApplicationsFromDatabase(coordinates).catch(() => [])
           ]);
           
           if (secondResults && secondResults.length > 0) {
             console.log(`Background fetch found ${secondResults.length} additional results`);
-            // We could potentially update the UI here via a state update callback
           }
         } catch (err) {
           console.warn('Background fetch failed:', err);
