@@ -14,10 +14,6 @@ interface FetchSpatialApplicationsOptions {
   classification?: string;
 }
 
-/**
- * Fetches applications using a proper spatial query with PostGIS
- * This is the single source of truth for fetching applications by location
- */
 export const fetchSpatialApplications = async ({
   coordinates,
   radiusKm = 10,
@@ -41,17 +37,22 @@ export const fetchSpatialApplications = async ({
   console.log(`🔍 Fetching applications within ${radiusKm}km of [${lat}, ${lng}]`);
   
   try {
-    // Create the search point
+    // IMPORTANT: PostGIS expects POINT(longitude latitude)
     const searchPoint = `POINT(${lng} ${lat})`;
     
     // Calculate pagination
     const from = page * pageSize;
     const to = from + pageSize - 1;
     
-    // Build the query with proper spatial filtering
+    // Build the query with proper spatial filtering using ST_DWithin
     let query = supabase
       .from('crystal_roof')
-      .select('*', { count: 'exact' });
+      .select('*, ST_Distance(geom, ST_SetSRID(ST_GeomFromText($1), 4326)) as distance', { 
+        count: 'exact',
+        prepare: true 
+      })
+      .lt('ST_Distance(geom, ST_SetSRID(ST_GeomFromText($1), 4326))', radiusKm * 1000) // Convert km to meters
+      .bind([searchPoint]);
     
     // Add filters if provided
     if (status) {
@@ -65,6 +66,9 @@ export const fetchSpatialApplications = async ({
     if (classification) {
       query = query.ilike('class_3', `%${classification}%`);
     }
+    
+    // Order by distance
+    query = query.order('distance', { ascending: true });
     
     // Apply pagination
     query = query.range(from, to);
