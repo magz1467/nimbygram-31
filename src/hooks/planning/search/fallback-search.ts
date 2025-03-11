@@ -73,12 +73,17 @@ export async function performFallbackSearch(
     // Convert database records to Application objects
     const applications = data.map(item => {
       // Calculate distance from search point
-      const distance = calculateDistance(
+      const distanceInKm = calculateDistance(
         lat,
         lng,
         Number(item.latitude),
         Number(item.longitude)
       );
+      
+      // Convert to formatted string for display
+      const distanceFormatted = typeof distanceInKm === 'number' 
+        ? `${(distanceInKm * 0.621371).toFixed(1)} mi` 
+        : 'Unknown';
       
       return {
         id: item.id,
@@ -89,7 +94,7 @@ export async function performFallbackSearch(
         address: item.address || '',
         postcode: item.postcode || '',
         coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
-        distance: distance, // Add distance property
+        distance: distanceFormatted, // Use string format for distance
         application_type: item.application_type || '',
         application_type_full: item.type || '',
         decision: item.decision || '',
@@ -112,14 +117,32 @@ export async function performFallbackSearch(
     // Log the first few sorted applications for debugging
     console.log('\nSorted applications (first 10):');
     applications
-      .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+      .sort((a, b) => {
+        // Parse distance from strings like "1.2 mi" to get numeric values for sorting
+        const getDistanceValue = (distStr: string | undefined): number => {
+          if (!distStr) return Infinity;
+          const match = distStr.match(/^(\d+(\.\d+)?)/);
+          return match ? parseFloat(match[1]) : Infinity;
+        };
+        
+        return getDistanceValue(a.distance) - getDistanceValue(b.distance);
+      })
       .slice(0, 10)
       .forEach((app, i) => {
-        console.log(`${i+1}. ID: ${app.id}, Distance: ${app.distance?.toFixed(2)}km (${app.type}), Address: ${app.address}, Coordinates: ${app.coordinates}`);
+        console.log(`${i+1}. ID: ${app.id}, Distance: ${app.distance} (${app.type}), Address: ${app.address}, Coordinates: ${app.coordinates}`);
       });
     
     // Return applications sorted by distance
-    return applications.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    return applications.sort((a, b) => {
+      // Parse distance from strings like "1.2 mi" to get numeric values for sorting
+      const getDistanceValue = (distStr: string | undefined): number => {
+        if (!distStr) return Infinity;
+        const match = distStr.match(/^(\d+(\.\d+)?)/);
+        return match ? parseFloat(match[1]) : Infinity;
+      };
+      
+      return getDistanceValue(a.distance) - getDistanceValue(b.distance);
+    });
     
   } catch (error) {
     console.error('Error in fallback search:', error);
@@ -161,12 +184,17 @@ async function performFallbackSearchLargerRadius(
     // Convert and sort by distance
     const applications = data.map(item => {
       // Calculate distance from search point
-      const distance = calculateDistance(
+      const distanceInKm = calculateDistance(
         lat,
         lng,
         Number(item.latitude),
         Number(item.longitude)
       );
+      
+      // Convert to formatted string for display
+      const distanceFormatted = typeof distanceInKm === 'number' 
+        ? `${(distanceInKm * 0.621371).toFixed(1)} mi` 
+        : 'Unknown';
       
       return {
         id: item.id,
@@ -177,7 +205,7 @@ async function performFallbackSearchLargerRadius(
         address: item.address || '',
         postcode: item.postcode || '',
         coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
-        distance: distance,
+        distance: distanceFormatted, // Use string format for distance
         application_type: item.application_type || '',
         application_type_full: item.type || '',
         decision: item.decision || '',
@@ -200,7 +228,16 @@ async function performFallbackSearchLargerRadius(
     console.log('Search complete');
     
     // Return applications sorted by distance
-    return applications.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    return applications.sort((a, b) => {
+      // Parse distance from strings like "1.2 mi" to get numeric values for sorting
+      const getDistanceValue = (distStr: string | undefined): number => {
+        if (!distStr) return Infinity;
+        const match = distStr.match(/^(\d+(\.\d+)?)/);
+        return match ? parseFloat(match[1]) : Infinity;
+      };
+      
+      return getDistanceValue(a.distance) - getDistanceValue(b.distance);
+    });
     
   } catch (error) {
     console.error('Error in larger radius fallback search:', error);
