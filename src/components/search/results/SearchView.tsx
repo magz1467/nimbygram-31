@@ -72,7 +72,7 @@ export const SearchView = ({
         isLoading={isLoading}
         filters={filters}
         onFilterChange={(type, value) => {
-          setFilters((prev: SearchFilters) => ({ ...prev, [type]: value }));
+          setFilters({ ...filters, [type]: value });
         }}
         onError={onError}
         onSearchComplete={onSearchComplete}

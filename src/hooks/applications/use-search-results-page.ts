@@ -1,8 +1,8 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useCoordinates } from "@/hooks/use-coordinates";
-import { usePlanningSearch } from "@/hooks/use-planning-search";
+import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
+import { SortType } from "@/types/application-types";
 
 export const useSearchResultsPage = () => {
   const location = useLocation();

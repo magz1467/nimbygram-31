@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -6,7 +5,7 @@ import { ErrorMessage } from "./components/ErrorMessage";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
 import { Application } from "@/types/planning";
-import { SearchFilters } from "@/hooks/use-planning-search";
+import { SearchFilters } from "@/hooks/planning/use-planning-search";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -50,7 +49,6 @@ export const SearchViewContent = ({
     }
   }, [isLoading, onSearchComplete]);
 
-  // Reset pagination when new search results come in
   useEffect(() => {
     if (!isLoading && applications.length > 0) {
       setCurrentPage(0);
@@ -88,4 +86,3 @@ export const SearchViewContent = ({
     </div>
   );
 };
-
