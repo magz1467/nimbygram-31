@@ -1,5 +1,4 @@
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCw, AlertTriangle, WifiOff, Clock } from "lucide-react";
 import { ErrorType, isNonCriticalError } from "@/utils/errors";
@@ -72,19 +71,6 @@ export const ErrorMessage = ({
         return 'text-red-800';
     }
   };
-
-  // Log error for analytics
-  React.useEffect(() => {
-    if (errorType !== ErrorType.NOT_FOUND) {
-      console.info('UI Error displayed:', {
-        title,
-        message,
-        errorType,
-        timestamp: new Date().toISOString(),
-        url: window.location.href
-      });
-    }
-  }, [title, message, errorType]);
 
   // For inline variants, use a more compact layout
   if (variant === 'inline') {

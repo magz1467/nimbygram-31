@@ -23,18 +23,6 @@ export function useErrorHandler() {
   }, [toast]);
   
   const isNonCritical = useCallback((error: any): boolean => {
-    // Consider timeout errors and database constraint errors non-critical
-    if (!error) return true;
-    
-    // Check for timeout errors
-    if (error.message && (
-      error.message.includes('timeout') || 
-      error.message.includes('57014') ||
-      error.message.includes('canceling statement')
-    )) {
-      return true;
-    }
-    
     return isNonCriticalError(error);
   }, []);
   
