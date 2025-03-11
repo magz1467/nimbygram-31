@@ -112,7 +112,6 @@ export const fetchNearbyApplications = async (
           id: prop.id,
           title: prop.title || prop.description || `Application at ${prop.address}`,
           address: prop.address || '',
-          description: prop.description || '',
           status: prop.status || 'Under Review',
           coordinates: prop.latitude && prop.longitude 
             ? [parseFloat(prop.latitude), parseFloat(prop.longitude)] 
@@ -120,9 +119,10 @@ export const fetchNearbyApplications = async (
           distance: prop._distanceKm ? `${prop._distanceKm.toFixed(1)} km` : undefined, // Use the temporary property for the distance string
           // Don't add distanceKm as a property since it's not in the Application type
           submittedDate: prop.received_date || prop.submittedDate,
-          councilReference: prop.reference || prop.councilReference,
-          applicationType: prop.type || prop.applicationType,
+          reference: prop.reference || '', // Change councilReference to reference which exists in Application type
+          description: prop.description || '',
           // Add any other properties needed by the UI
+          type: prop.type || prop.applicationType,
         };
         return app;
       });
