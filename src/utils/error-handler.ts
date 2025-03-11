@@ -1,5 +1,7 @@
 
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import React from "react";
 
 /**
  * Types of errors for better categorization and handling
@@ -201,10 +203,9 @@ export function handleError(
       title: context ? `Error in ${context}` : "Error",
       description: appError.message,
       variant: "destructive",
-      action: retry ? {
-        label: "Retry",
-        onClick: retry
-      } : undefined
+      action: retry ? (
+        React.createElement(ToastAction, { onClick: retry }, "Retry")
+      ) : undefined
     });
   }
   
