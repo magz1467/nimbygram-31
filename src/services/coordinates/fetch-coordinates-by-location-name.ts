@@ -46,7 +46,18 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
             resolve(results);
           } else {
             console.error('❌ Geocoder failed:', status);
-            reject(new Error(`Geocoder failed: ${status}`));
+            
+            // More descriptive error message based on status
+            const errorMessages = {
+              [google.maps.GeocoderStatus.ZERO_RESULTS]: "We couldn't find this location in the UK",
+              [google.maps.GeocoderStatus.OVER_QUERY_LIMIT]: "Too many location searches, please try again later",
+              [google.maps.GeocoderStatus.REQUEST_DENIED]: "Location search request was denied",
+              [google.maps.GeocoderStatus.INVALID_REQUEST]: "Invalid location search request",
+              [google.maps.GeocoderStatus.UNKNOWN_ERROR]: "Unknown error while searching for location",
+            };
+            
+            const message = errorMessages[status] || `Geocoder failed: ${status}`;
+            reject(new Error(message));
           }
         }
       );
@@ -54,7 +65,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     if (response && response.length > 0) {
       const location = response[0].geometry.location;
-      // IMPORTANT: Get coordinates in correct order - lat first, then lng
+      // Get coordinates in correct order - lat first, then lng
       const lat = location.lat();
       const lng = location.lng();
       

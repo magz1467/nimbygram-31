@@ -26,21 +26,24 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
-  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
+  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
 
   const { 
     applications, 
     isLoading: isLoadingResults,
-    error,
+    error: searchError,
     filters,
     setFilters
   } = usePlanningSearch(coordinates);
 
+  // Combine errors from coordinates and search
+  const error = coordsError || searchError;
+
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
-    if (onError && error && !error.message?.toLowerCase().includes('support table')) {
+    if (onError && error && !isNonCriticalError(error)) {
       console.log('🚨 Search error:', error);
       onError(error);
     }
@@ -52,12 +55,17 @@ export const SearchView = ({
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
 
+  // Helper to check if the error is a non-critical infrastructure message
+  function isNonCriticalError(err: any): boolean {
+    return err?.message?.toLowerCase()?.includes('support table') || false;
+  }
+
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
   // Only show error view for real errors, not infrastructure messages
-  if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
+  if (error && !isNonCriticalError(error) && !applications.length) {
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
     

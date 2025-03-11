@@ -33,8 +33,8 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     console.log(`🔄 Starting search for location:`, searchTerm);
 
     try {
-      // Log search but don't wait for it to complete - this was causing issues
-      logSearch(searchTerm, 'postcode', activeTab).catch(logError => {
+      // Log search but don't wait for it to complete
+      logSearch(searchTerm, 'location', activeTab).catch(logError => {
         console.error('Error logging search:', logError);
         // Continue with search even if logging fails
       });
@@ -52,8 +52,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       });
       
       // Extract a readable name from the search term
-      // If it's a Place ID (starts with ChIJ), use just the first part of the term
-      // or the whole term if it doesn't contain a comma
       const displayTerm = searchTerm.startsWith('ChIJ') && searchTerm.includes(',')
         ? searchTerm.split(',')[0].trim()
         : searchTerm;
@@ -65,7 +63,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       }
 
       console.log('🧭 Navigating to search results with state:', {
-        searchType: 'postcode',
+        searchType: 'location',
         searchTerm,
         displayTerm,
         timestamp: Date.now()
@@ -74,9 +72,9 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
       // Navigate to search results with state
       navigate('/search-results', {
         state: {
-          searchType: 'postcode',
+          searchType: 'location',
           searchTerm,
-          displayTerm, // Add a more readable display term
+          displayTerm,
           timestamp: Date.now()
         },
         replace: false
