@@ -9,15 +9,16 @@ import React from 'react';
 /**
  * Create a standardized AppError from any error
  */
-export function createAppError(error: any, context?: string): AppError {
+export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
   if (error instanceof AppError) {
     return error;
   }
   
-  const errorType = detectErrorType(error);
+  // Use provided errorType if available, otherwise detect it
+  const type = errorType !== undefined ? errorType : detectErrorType(error);
   const message = formatErrorMessage(error, context);
   
-  return new AppError(message, errorType, error, context);
+  return new AppError(message, type, error, context);
 }
 
 /**

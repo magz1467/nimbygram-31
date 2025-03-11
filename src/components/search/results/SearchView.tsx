@@ -6,7 +6,8 @@ import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
-import { ErrorType } from "@/utils/errors";
+import { ErrorType, AppError } from "@/utils/errors";
+import { detectErrorType } from "@/utils/errors/detection";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -61,19 +62,12 @@ export const SearchView = ({
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
     
-    if (error.type) {
-      // If the error already has a type property, use it
-      errorType = error.type;
-    } else if (
-      error.message?.includes('timeout') || 
-      error.message?.includes('too long') ||
-      error.message?.includes('canceling statement')
-    ) {
-      errorType = ErrorType.TIMEOUT;
-    } else if (error.message?.includes('network') || !navigator.onLine) {
-      errorType = ErrorType.NETWORK;
-    } else if (error.message?.includes('not found') || error.message?.includes('no results')) {
-      errorType = ErrorType.NOT_FOUND;
+    // Check if error is an AppError type that has the type property
+    if ((error as AppError).type !== undefined) {
+      errorType = (error as AppError).type;
+    } else {
+      // Use the detectErrorType utility to determine the error type
+      errorType = detectErrorType(error);
     }
     
     return (
