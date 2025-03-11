@@ -1,10 +1,11 @@
+
 import Image from "@/components/ui/image";
 
 export const HeroImage = () => {
   return (
     <div className="hidden md:flex items-center">
       <Image 
-        src="/lovable-uploads/877d91fe-eb57-49a6-915a-a9d063ce98b1.png"
+        src="/lovable-uploads/26ba5eea-80ae-45a6-bd31-5afb74bbcc15.png"
         alt="Couple standing in front of a countryside house" 
         className="rounded-lg shadow-xl w-[90%] h-auto object-cover"
         loading="eager"
