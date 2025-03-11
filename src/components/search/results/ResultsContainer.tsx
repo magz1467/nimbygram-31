@@ -33,11 +33,15 @@ export const ResultsContainer = ({
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
 
-  // Simple implementation that focuses on showing the list view
   const onSeeOnMap = (id: number) => {
     setSelectedId(id);
-    // In a real implementation we might integrate with a map view here
     console.log(`See on map clicked for application: ${id}`);
+    
+    // Find the selected application to get its coordinates
+    const selectedApp = applications.find(app => app.id === id);
+    if (selectedApp) {
+      console.log('Found application with coordinates:', selectedApp.coordinates);
+    }
   };
 
   const handleRetry = () => {
