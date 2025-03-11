@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { useEffect, useState } from "react";
@@ -53,12 +54,13 @@ export const ResultsListView = ({
   // State to track loaded applications
   const [loadedApps, setLoadedApps] = useState<Application[]>([]);
   const [visiblePages, setVisiblePages] = useState<number>(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Set a timer to detect long-running searches
   useEffect(() => {
     let timer: number | null = null;
     
-    if (isLoading) {
+    if (isLoading && !isLoadingMore) {
       // After 10 seconds of loading, mark as a long search
       timer = window.setTimeout(() => {
         setIsLongSearch(true);
@@ -70,19 +72,19 @@ export const ResultsListView = ({
     return () => {
       if (timer) window.clearTimeout(timer);
     };
-  }, [isLoading]);
+  }, [isLoading, isLoadingMore]);
 
-  // Reset loaded apps when applications change
+  // Reset loaded apps when applications change completely (new search)
   useEffect(() => {
-    if (applications.length > 0) {
+    if (!isLoadingMore && applications.length > 0) {
       setLoadedApps(applications);
       setVisiblePages(1);
     }
-  }, [applications]);
+  }, [applications, isLoadingMore]);
 
   // When new results come in after a page change, add them to loadedApps
   useEffect(() => {
-    if (currentPage > 0 && applications.length > 0) {
+    if (currentPage > 0 && applications.length > 0 && isLoadingMore) {
       // Avoid duplicates by checking IDs
       const existingIds = new Set(loadedApps.map(app => app.id));
       const uniqueNewApps = applications.filter(app => !existingIds.has(app.id));
@@ -91,18 +93,26 @@ export const ResultsListView = ({
         setLoadedApps(prev => [...prev, ...uniqueNewApps]);
         setVisiblePages(currentPage + 1);
       }
+      
+      setIsLoadingMore(false);
     }
-  }, [applications, currentPage, loadedApps]);
+  }, [applications, currentPage, loadedApps, isLoadingMore]);
 
   // Function to load more results
-  const handleLoadMore = () => {
+  const handleLoadMore = async () => {
     if (onPageChange && currentPage < totalPages - 1) {
-      onPageChange(currentPage + 1);
+      setIsLoadingMore(true);
+      // Use setTimeout to prevent UI freeze
+      setTimeout(() => {
+        onPageChange(currentPage + 1);
+      }, 0);
+      return true; // Signal successful load initiation
     }
+    return false; // Signal no more pages to load
   };
 
-  // If loading, show skeleton cards
-  if (isLoading) {
+  // If initial loading, show skeleton cards
+  if (isLoading && !isLoadingMore) {
     return <LoadingSkeletons isLongSearch={isLongSearch} onRetry={onRetry} />;
   }
 
@@ -145,7 +155,7 @@ export const ResultsListView = ({
   };
 
   // If error or no applications found, show empty state
-  if (error || !applications.length) {
+  if (error || (!applications.length && !loadedApps.length)) {
     const { errorTitle, errorMessage } = getErrorInfo();
     return <ErrorMessage title={errorTitle} message={errorMessage} onRetry={onRetry} />;
   }

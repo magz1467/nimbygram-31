@@ -9,14 +9,17 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
   const isMobile = useIsMobile();
   
   useEffect(() => {
-    // Force page reload if coming from cache on mobile
+    // Only force reload on first visit, not during normal navigation
     if (isMobile && window.performance) {
-      const forceRefresh = sessionStorage.getItem('forceRefresh') === 'true';
       const isFirstLoad = (
         performance.navigation.type === 0 && 
         document.referrer === '' && 
-        sessionStorage.getItem('initialLoadDone') !== 'true'
+        sessionStorage.getItem('initialLoadDone') !== 'true' &&
+        !sessionStorage.getItem('searchInProgress')
       );
+      
+      const forceRefresh = sessionStorage.getItem('forceRefresh') === 'true' && 
+                          !sessionStorage.getItem('searchInProgress');
       
       if (isFirstLoad || forceRefresh) {
         // Set flag to prevent infinite reload
@@ -45,7 +48,26 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
       }
     }
     
+    // During search or results loading, set a flag to prevent page refreshes
+    const setSearchInProgress = () => {
+      sessionStorage.setItem('searchInProgress', 'true');
+    };
+    
+    const clearSearchInProgress = () => {
+      sessionStorage.removeItem('searchInProgress');
+    };
+    
+    // Listen for search events
+    window.addEventListener('searchstart', setSearchInProgress);
+    window.addEventListener('searchcomplete', clearSearchInProgress);
+    window.addEventListener('searcherror', clearSearchInProgress);
+    
     return () => {
+      // Cleanup event listeners
+      window.removeEventListener('searchstart', setSearchInProgress);
+      window.removeEventListener('searchcomplete', clearSearchInProgress);
+      window.removeEventListener('searcherror', clearSearchInProgress);
+      
       // Only remove initialLoadDone, keep other storage flags
       sessionStorage.removeItem('initialLoadDone');
     };

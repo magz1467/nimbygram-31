@@ -18,8 +18,14 @@ export const LoadMoreButton = ({
 }: LoadMoreButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = async (e: React.MouseEvent) => {
+    // Prevent default to avoid page navigation/refresh
+    e.preventDefault();
+    
+    if (isLoading) return;
+    
     setIsLoading(true);
+    
     try {
       await onLoadMore();
     } finally {
