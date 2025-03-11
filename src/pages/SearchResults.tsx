@@ -12,7 +12,8 @@ const SearchResultsPage = () => {
     handleRetry,
     handleError,
     handleSearchComplete,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    updateResultsStatus
   } = useSearchResultsPage();
 
   // If no search state, show the no results view
