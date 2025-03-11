@@ -1,42 +1,85 @@
 
-import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeartIcon } from "lucide-react";
 import { useState } from "react";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-interface SupportButtonProps {
+export interface SupportButtonProps {
   applicationId: number;
   supportCount: number;
+  isSupportedByUser: boolean;
   checkAuth: (callback: () => void) => boolean;
 }
 
 export const SupportButton = ({ 
   applicationId, 
   supportCount, 
+  isSupportedByUser, 
   checkAuth 
 }: SupportButtonProps) => {
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localSupportCount, setLocalSupportCount] = useState(supportCount);
-
+  const { toast } = useToast();
+  
   const handleSupport = async () => {
-    if (!checkAuth(() => {})) return;
-    // Support functionality not yet implemented
+    const canProceed = checkAuth(() => setShowAuthDialog(true));
+    if (!canProceed) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Toggle support status
+      const action = isSupportedByUser ? 'remove' : 'add';
+      
+      const { data, error } = await supabase
+        .from('crystal_roof')
+        .update({ 
+          support_count: isSupportedByUser 
+            ? supportCount - 1 
+            : supportCount + 1 
+        })
+        .eq('id', applicationId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: isSupportedByUser ? "Support removed" : "Application supported",
+        description: isSupportedByUser 
+          ? "You're no longer supporting this application" 
+          : "You're now supporting this application",
+      });
+      
+    } catch (error) {
+      console.error('Error toggling support:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update support status. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
+  
   return (
-    <Button 
-      variant="ghost" 
-      size="sm"
-      disabled={true} // Disabled until implemented
-      className="flex flex-col items-center gap-1 h-auto py-2 hover:[&_svg]:text-[#ea384c] hover:[&_svg]:fill-[#ea384c]"
-      onClick={() => checkAuth(() => handleSupport())}
-    >
-      <div className="relative">
-        <Heart className="h-5 w-5" />
-        <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-          {localSupportCount}
-        </span>
-      </div>
-      <span className="text-xs">Support</span>
-    </Button>
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleSupport}
+        disabled={isSubmitting}
+        className={`text-gray-700 hover:bg-gray-100 ${isSupportedByUser ? 'text-red-500' : ''}`}
+      >
+        <HeartIcon className={`mr-1 h-4 w-4 ${isSupportedByUser ? 'fill-red-500 text-red-500' : ''}`} />
+        <span>{supportCount}</span>
+      </Button>
+      
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+      />
+    </>
   );
 };

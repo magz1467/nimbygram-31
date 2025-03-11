@@ -1,10 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Search, RotateCw } from "lucide-react";
+import { Search, RotateCw, AlertTriangle, WifiOff, Clock } from "lucide-react";
+import { ErrorType, isNonCriticalError } from "@/utils/error-handler";
 
 interface ErrorMessageProps {
   title: string;
   message: string;
+  errorType?: ErrorType;
   onRetry?: () => void;
   showCoverageInfo?: boolean;
   variant?: 'default' | 'inline' | 'toast';
@@ -14,53 +16,54 @@ interface ErrorMessageProps {
 export const ErrorMessage = ({ 
   title, 
   message, 
+  errorType = ErrorType.UNKNOWN,
   onRetry,
   showCoverageInfo = true,
   variant = 'default',
   className = ''
 }: ErrorMessageProps) => {
   // Skip rendering if message contains known ignorable patterns
-  const shouldSkipRendering = () => {
-    const lowerMessage = message.toLowerCase();
-    return (
-      lowerMessage.includes('relation') && 
-      lowerMessage.includes('does not exist') && 
-      lowerMessage.includes('table')
-    );
-  };
-
-  // If this is a non-critical error we want to completely skip rendering
-  if (shouldSkipRendering()) {
+  if (isNonCriticalError(message)) {
     console.log('Skipping error display for non-critical error:', message);
     return null;
   }
-
-  // Check if this is a timeout error and provide more specific guidance
-  const isTimeoutError = message.includes('timeout') || message.includes('57014') || 
-                         message.includes('took too long');
-  const errorMessage = isTimeoutError 
-    ? "The search is taking too long. Please try a more specific location or different filters."
-    : message;
   
-  const errorTitle = isTimeoutError ? "Search Timeout" : title;
+  // Select appropriate icon based on error type
+  const Icon = () => {
+    switch (errorType) {
+      case ErrorType.NETWORK:
+        return <WifiOff className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-red-600"} />;
+      case ErrorType.TIMEOUT:
+        return <Clock className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-amber-600"} />;
+      default:
+        return variant === 'default' 
+          ? <Search className="h-12 w-12 text-gray-400 mb-4" /> 
+          : <AlertTriangle className="h-5 w-5 text-red-600" />;
+    }
+  };
 
   // For inline variants, use a more compact layout
   if (variant === 'inline') {
     return (
       <div className={`my-4 p-4 bg-red-50 border border-red-200 rounded-md ${className}`}>
-        <h3 className="text-base font-semibold text-red-800 mb-1">{errorTitle}</h3>
-        <p className="text-sm text-red-700 mb-2">{errorMessage}</p>
-        {onRetry && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onRetry}
-            className="mt-1 text-xs flex items-center gap-1"
-          >
-            <RotateCw className="h-3 w-3" />
-            Try Again
-          </Button>
-        )}
+        <div className="flex items-start">
+          <Icon />
+          <div className="ml-3">
+            <h3 className="text-base font-semibold text-red-800 mb-1">{title}</h3>
+            <p className="text-sm text-red-700 mb-2">{message}</p>
+            {onRetry && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onRetry}
+                className="mt-1 text-xs flex items-center gap-1"
+              >
+                <RotateCw className="h-3 w-3" />
+                Try Again
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -69,19 +72,24 @@ export const ErrorMessage = ({
   if (variant === 'toast') {
     return (
       <div className={`p-4 bg-red-500 text-white rounded-md shadow-lg ${className}`}>
-        <h3 className="font-semibold mb-1">{errorTitle}</h3>
-        <p className="text-sm opacity-90 mb-2">{errorMessage}</p>
-        {onRetry && (
-          <Button 
-            variant="secondary" 
-            size="sm"
-            onClick={onRetry}
-            className="mt-1 bg-white text-red-600 hover:bg-red-50 flex items-center gap-1"
-          >
-            <RotateCw className="h-3 w-3" />
-            Try Again
-          </Button>
-        )}
+        <div className="flex items-start">
+          <Icon />
+          <div className="ml-3">
+            <h3 className="font-semibold mb-1">{title}</h3>
+            <p className="text-sm opacity-90 mb-2">{message}</p>
+            {onRetry && (
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={onRetry}
+                className="mt-1 bg-white text-red-600 hover:bg-red-50 flex items-center gap-1"
+              >
+                <RotateCw className="h-3 w-3" />
+                Try Again
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -89,9 +97,9 @@ export const ErrorMessage = ({
   // Default full error display
   return (
     <div className={`mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200 max-w-2xl mx-auto ${className}`}>
-      <Search className="h-12 w-12 text-gray-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{errorTitle}</h3>
-      <p className="text-gray-600 mb-6 text-center max-w-md mx-auto">{errorMessage}</p>
+      <Icon />
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 mb-6 text-center max-w-md mx-auto">{message}</p>
       
       <div className="flex flex-col sm:flex-row gap-4">
         {onRetry && (
