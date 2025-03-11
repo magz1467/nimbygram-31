@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Search, RotateCcw } from "lucide-react";
+import { Search, RotateCw } from "lucide-react";
 
 interface ErrorMessageProps {
   title: string;
@@ -16,10 +16,10 @@ export const ErrorMessage = ({
   showCoverageInfo = true
 }: ErrorMessageProps) => {
   return (
-    <div className="mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+    <div className="mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200 max-w-2xl mx-auto">
       <Search className="h-12 w-12 text-gray-400 mb-4" />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-6 max-w-md mx-auto">{message}</p>
+      <p className="text-gray-600 mb-6 text-center max-w-md mx-auto">{message}</p>
       
       <div className="flex flex-col sm:flex-row gap-4">
         {onRetry && (
@@ -28,7 +28,7 @@ export const ErrorMessage = ({
             onClick={onRetry}
             className="flex items-center gap-2"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCw className="h-4 w-4" />
             Try Again
           </Button>
         )}

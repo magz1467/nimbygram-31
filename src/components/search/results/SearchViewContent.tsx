@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useUnifiedSearch } from "@/hooks/applications/use-unified-search";
 import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
-import { StatusCounts } from "@/types/application-types";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 
@@ -49,7 +48,7 @@ export const SearchViewContent = ({
     totalCount,
     statusCounts,
     loadNextPage,
-    refetch // Add this to get the refetch function
+    refetch
   } = useUnifiedSearch({ 
     initialSearch, 
     retryCount 
@@ -57,10 +56,10 @@ export const SearchViewContent = ({
 
   // Call the onError handler when an error occurs
   useEffect(() => {
-    if (onError) {
+    if (onError && error && !isLoading && hasSearched) {
       onError(error);
     }
-  }, [error, onError]);
+  }, [error, onError, isLoading, hasSearched]);
 
   // Call the onSearchComplete handler when search is done
   useEffect(() => {
@@ -85,8 +84,11 @@ export const SearchViewContent = ({
     }
   };
 
+  // Don't show error while loading or before search completes
+  const shouldShowError = error && !isLoading && hasSearched;
+
   return (
-    <div className="max-w-7xl mx-auto pb-16 pt-0">
+    <div className="max-w-5xl mx-auto pb-16 pt-0">
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
         displayTerm={initialSearch.displayTerm}
@@ -103,7 +105,7 @@ export const SearchViewContent = ({
         statusCounts={statusCounts}
       />
 
-      {error && !isLoading && (
+      {shouldShowError && (
         <div className="px-4 lg:px-8 mb-4">
           <div className="bg-red-50 border border-red-200 rounded-md p-4 flex justify-between items-center">
             <div>
@@ -136,11 +138,12 @@ export const SearchViewContent = ({
           isLoading={isLoading}
           searchTerm={initialSearch.searchTerm}
           displayTerm={initialSearch.displayTerm}
-          error={error}
+          error={shouldShowError ? error : undefined}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
           totalCount={totalCount}
+          onRetry={handleRetry}
         />
       </div>
     </div>

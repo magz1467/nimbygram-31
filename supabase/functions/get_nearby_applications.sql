@@ -3,7 +3,8 @@
 CREATE OR REPLACE FUNCTION get_nearby_applications(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
-  radius_km DOUBLE PRECISION DEFAULT 20
+  radius_km DOUBLE PRECISION DEFAULT 20,
+  result_limit INTEGER DEFAULT 500
 )
 RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
@@ -40,6 +41,17 @@ BEGIN
         CAST(latitude AS DOUBLE PRECISION)
       ), 4326))
     ) ASC
-  LIMIT 500;
+  LIMIT result_limit;
 END;
 $$;
+
+-- Add spatial index to improve performance
+CREATE INDEX IF NOT EXISTS crystal_roof_geo_idx 
+ON crystal_roof USING GIST (
+  ST_SetSRID(
+    ST_MakePoint(
+      CAST(longitude AS DOUBLE PRECISION),
+      CAST(latitude AS DOUBLE PRECISION)
+    ), 4326
+  )::geography
+);

@@ -55,17 +55,6 @@ export const ResultsContainer = ({
   const hasApplications = applications.length > 0;
   const shouldShowMap = showMap && hasCoordinates && hasApplications;
   
-  console.log("🌍 Map visibility state:", {
-    showMap,
-    hasCoordinates,
-    coordinates,
-    selectedId,
-    applications: applications.length,
-    isLoading,
-    isMobile,
-    shouldShowMap
-  });
-  
   // Helper function to handle "See on Map" clicks
   const handleSeeOnMap = (id: number) => {
     console.log('🗺️ See on Map clicked for ID:', id);
@@ -84,13 +73,6 @@ export const ResultsContainer = ({
     setSelectedId(id);
     handleMarkerClick(id);
   };
-  
-  // Handler for retrying the search
-  const handleRetry = () => {
-    if (onRetry) {
-      onRetry();
-    }
-  };
 
   // Handler to close the map and return to results list
   const handleCloseMap = () => {
@@ -108,7 +90,7 @@ export const ResultsContainer = ({
           onSeeOnMap={handleSeeOnMap}
           searchTerm={searchTerm}
           displayTerm={displayTerm}
-          onRetry={handleRetry}
+          onRetry={onRetry}
           selectedId={selectedId}
           coordinates={coordinates}
           handleMarkerClick={handleMarkerClick}

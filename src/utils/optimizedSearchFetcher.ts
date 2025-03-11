@@ -9,11 +9,13 @@ import { toast } from "@/hooks/use-toast";
  * Fetches applications using optimized spatial query
  * @param coordinates Search center coordinates [lat, lng]
  * @param maxDistanceKm Maximum distance in kilometers
+ * @param resultLimit Maximum number of results to return
  * @returns Array of Application objects
  */
 export const fetchApplicationsWithSpatialQuery = async (
   coordinates: [number, number],
-  maxDistanceKm: number = 20
+  maxDistanceKm: number = 20,
+  resultLimit: number = 100
 ): Promise<Application[]> => {
   if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
     console.error('❌ Invalid coordinates provided to spatial search', coordinates);
@@ -21,7 +23,7 @@ export const fetchApplicationsWithSpatialQuery = async (
   }
   
   const [lat, lng] = coordinates;
-  console.log(`🔍 Performing spatial search at [${lat}, ${lng}] with ${maxDistanceKm}km radius`);
+  console.log(`🔍 Performing spatial search at [${lat}, ${lng}] with ${maxDistanceKm}km radius, limited to ${resultLimit} results`);
   
   try {
     // Call our optimized RPC function
@@ -30,7 +32,8 @@ export const fetchApplicationsWithSpatialQuery = async (
       { 
         center_lat: lat,
         center_lng: lng,
-        radius_km: maxDistanceKm 
+        radius_km: maxDistanceKm,
+        result_limit: resultLimit || 100 // Default to 100 if not provided
       }
     );
     

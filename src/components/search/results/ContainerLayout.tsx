@@ -14,7 +14,7 @@ export const ContainerLayout = ({
 }: ContainerLayoutProps) => {
   return (
     <div className={`
-      relative max-w-6xl mx-auto px-4 
+      relative max-w-5xl mx-auto px-4 
       ${shouldShowMap && !isMobile ? 'lg:grid lg:grid-cols-2 lg:gap-6' : ''}
     `}>
       {children}

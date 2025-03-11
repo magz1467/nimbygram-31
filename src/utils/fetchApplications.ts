@@ -14,12 +14,12 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Fetching applications near coordinates:', coordinates);
   
   try {
-    // Try multiple approaches in parallel to ensure we get results
+    // Try multiple approaches in parallel with lower result limits for faster performance
     const results = await Promise.allSettled([
-      // Try the optimized spatial query first
-      fetchApplicationsWithSpatialQuery(coordinates, 20),
+      // Try the optimized spatial query first with smaller result set
+      fetchApplicationsWithSpatialQuery(coordinates, 20, 50),
       
-      // Also try direct database query as backup
+      // Also try direct database query as backup with smaller result set
       fetchApplicationsFromDatabase(coordinates, 30),
       
       // And edge function as a third option
@@ -48,7 +48,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     // If no results from initial radius, try with progressively larger radius
     console.log('No results found with initial queries, trying expanded radius');
     
-    const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, 50);
+    const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, 50, 75);
     if (expandedResults && expandedResults.length > 0) {
       console.log(`Found ${expandedResults.length} results with expanded 50km radius`);
       
@@ -61,7 +61,7 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     }
     
     // Last resort - try with very large radius
-    const wideResults = await fetchApplicationsWithSpatialQuery(coordinates, 100);
+    const wideResults = await fetchApplicationsWithSpatialQuery(coordinates, 100, 100);
     if (wideResults && wideResults.length > 0) {
       console.log(`Found ${wideResults.length} results with wide 100km radius`);
       

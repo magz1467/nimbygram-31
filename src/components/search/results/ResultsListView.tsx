@@ -106,7 +106,7 @@ export const ResultsListView = ({
   return (
     <div className="py-4">
       {/* Display all loaded applications in a single column layout */}
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         {loadedApplications.map((application) => (
           <div 
             key={application.id}
@@ -127,7 +127,7 @@ export const ResultsListView = ({
       </div>
 
       {/* Load More Button */}
-      <div className="mt-8 max-w-3xl mx-auto">
+      <div className="mt-8 max-w-2xl mx-auto">
         <LoadMoreButton 
           onLoadMore={handleLoadMore}
           loadedCount={loadedApplications.length}
