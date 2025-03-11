@@ -11,7 +11,7 @@ export const useCardActions = (applicationId: number) => {
   // Use our extracted hooks
   const { user, showAuthDialog, setShowAuthDialog, checkAuth } = useAuthState();
   const { voteStatus, hotCount, notCount, isLoading: voteLoading } = useVoteState(applicationId, user);
-  const { supportCount, isSupportedByUser } = useSupportState(applicationId, user);
+  const { supportCount } = useSupportState(applicationId, user);
   const commentsCount = useCommentsCount(applicationId);
 
   // Update loading state based on vote loading
@@ -28,7 +28,6 @@ export const useCardActions = (applicationId: number) => {
     supportCount,
     hotCount,
     notCount,
-    isSupportedByUser,
     showAuthDialog,
     setShowAuthDialog,
     isLoading,
