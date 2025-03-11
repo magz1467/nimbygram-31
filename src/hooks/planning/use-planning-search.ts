@@ -1,22 +1,15 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
 
-// Simple filter type definition
 export interface SearchFilters {
   status?: string;
   type?: string;
   classification?: string;
 }
 
-/**
- * Hook for searching planning applications near a location
- * @param coordinates [latitude, longitude] coordinates to search around
- * @returns Object containing applications, loading state, errors, and filter controls
- */
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const { toast } = useToast();
@@ -27,25 +20,20 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       if (!coordinates) return [];
       
       try {
-        console.log(`Searching with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
+        console.log(`🔍 Searching with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
         
         const [lat, lng] = coordinates;
-        const radiusKm = 10; // Fixed 10km radius
-        
-        // Convert to meters for database query
+        const radiusKm = 10;
         const radiusMeters = radiusKm * 1000;
         
-        // Use geographic coordinates to find nearby applications
         let query = supabase
           .from('crystal_roof')
           .select('*')
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
         
-        // Apply basic filtering with geographic bounds
-        // Calculate approximate lat/lng bounds (rough approximation)
-        const latDegPerKm = 1 / 111; // ~111km per degree of latitude
-        const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180)); // Adjust for longitude
+        const latDegPerKm = 1 / 111;
+        const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180));
         
         const latMin = lat - (radiusKm * latDegPerKm);
         const latMax = lat + (radiusKm * latDegPerKm);
@@ -58,7 +46,6 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           .gte('longitude', lngMin)
           .lte('longitude', lngMax);
         
-        // Apply additional filters if provided
         if (filters.status) {
           query = query.ilike('status', `%${filters.status}%`);
         }
@@ -83,7 +70,6 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           return [];
         }
         
-        // Calculate distance for each result and sort by closest
         const results = data.map(app => {
           const distance = calculateDistance(
             lat,
@@ -92,15 +78,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
             Number(app.longitude)
           );
           return { ...app, distance };
-        })
-        .sort((a, b) => a.distance - b.distance);
+        }).sort((a, b) => a.distance - b.distance);
         
-        console.log(`Found ${results.length} planning applications`);
+        console.log(`✅ Found ${results.length} planning applications`);
         return results;
       } catch (err: any) {
         console.error('Search error:', err);
         
-        // Display a user-friendly error message
         toast({
           title: "Search Error",
           description: "There was a problem finding planning applications. Please try again.",
@@ -111,8 +95,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       }
     },
     enabled: !!coordinates,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    retry: 1, // Only retry once
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   return {
@@ -124,11 +108,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   };
 };
 
-/**
- * Helper function to calculate distance between two points
- */
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
