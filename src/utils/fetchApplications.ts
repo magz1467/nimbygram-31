@@ -3,6 +3,7 @@ import { Application } from "@/types/planning";
 import { toast } from "@/hooks/use-toast";
 import { fetchApplicationsFromEdge } from "./edgeFunctionFetcher";
 import { fetchApplicationsFromDatabase } from "./directDatabaseFetcher";
+import { fetchApplicationsWithSpatialQuery } from "./optimizedSearchFetcher";
 
 export const fetchApplications = async (coordinates: [number, number] | null): Promise<Application[]> => {
   if (!coordinates) {
@@ -13,40 +14,49 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
   console.log('🔍 Fetching applications near coordinates:', coordinates);
   
   try {
-    // Get distance-filtered results from the database with a reasonable radius
+    // Get distance-filtered results with a reasonable radius
     const maxDistanceKm = 20; // Restrict to 20km radius for more relevant results
     console.log(`Using search radius of ${maxDistanceKm}km to find relevant applications`);
     
-    // Try database query first with distance filtering
+    // Try optimized spatial query first (new approach)
     let results: Application[] = [];
     
     try {
-      results = await fetchApplicationsFromDatabase(coordinates, maxDistanceKm);
-      console.log(`Direct database query returned ${results.length} applications within ${maxDistanceKm}km`);
-    } catch (err) {
-      console.warn('⚠️ Direct database query failed:', err);
+      // Use our new optimized spatial query
+      results = await fetchApplicationsWithSpatialQuery(coordinates, maxDistanceKm);
+      console.log(`Optimized spatial query returned ${results.length} applications within ${maxDistanceKm}km`);
       
-      // Fallback to edge function
+      if (results.length > 0) {
+        return results;
+      }
+    } catch (err) {
+      console.warn('⚠️ Optimized spatial query failed:', err);
+      
+      // Fall back to direct database query
       try {
-        const edgeResults = await fetchApplicationsFromEdge(coordinates);
-        if (edgeResults) {
-          console.log(`Edge function returned ${edgeResults.length} results`);
-          
-          // Filter by distance
-          results = edgeResults.filter(app => {
-            if (!app.coordinates) return false;
-            const distKm = calculateDistance(coordinates, app.coordinates);
-            return distKm <= maxDistanceKm;
-          });
-          
-          console.log(`Filtered to ${results.length} results within ${maxDistanceKm}km`);
+        results = await fetchApplicationsFromDatabase(coordinates, maxDistanceKm);
+        console.log(`Direct database query returned ${results.length} applications within ${maxDistanceKm}km`);
+        
+        if (results.length > 0) {
+          return results;
         }
-      } catch (edgeErr) {
-        console.warn('⚠️ Edge function also failed:', edgeErr);
+      } catch (dbErr) {
+        console.warn('⚠️ Direct database query failed:', dbErr);
+        
+        // Last resort: edge function
+        try {
+          const edgeResults = await fetchApplicationsFromEdge(coordinates);
+          if (edgeResults && edgeResults.length > 0) {
+            console.log(`Edge function returned ${edgeResults.length} results`);
+            return edgeResults;
+          }
+        } catch (edgeErr) {
+          console.warn('⚠️ Edge function also failed:', edgeErr);
+        }
       }
     }
     
-    // If we have no results with the initial radius, try gradually increasing it
+    // If we have no results with the initial attempts, try gradually increasing radius
     if (results.length === 0) {
       console.log('No results found within initial radius, expanding search');
       
@@ -56,18 +66,18 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
         console.log(`Expanding search radius to ${radius}km`);
         
         try {
-          const expandedResults = await fetchApplicationsFromDatabase(coordinates, radius);
+          // Try optimized query with expanded radius
+          const expandedResults = await fetchApplicationsWithSpatialQuery(coordinates, radius);
           
           if (expandedResults.length > 0) {
             console.log(`Found ${expandedResults.length} results within ${radius}km`);
-            results = expandedResults;
             
             // Add a note to the first result
-            if (results[0]) {
-              results[0].notes = `Showing results up to ${radius}km away because no applications were found closer to your search location.`;
+            if (expandedResults[0]) {
+              expandedResults[0].notes = `Showing results up to ${radius}km away because no applications were found closer to your search location.`;
             }
             
-            break;
+            return expandedResults;
           }
         } catch (err) {
           console.warn(`Failed to get results with expanded radius ${radius}km:`, err);
@@ -125,6 +135,3 @@ export const fetchApplications = async (coordinates: [number, number] | null): P
     return [];
   }
 };
-
-// Import the distance calculation function for filtering
-import { calculateDistance } from "./distance";

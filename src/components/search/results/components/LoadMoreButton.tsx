@@ -8,13 +8,17 @@ interface LoadMoreButtonProps {
   loadedCount: number;
   totalCount: number;
   isLastPage: boolean;
+  hasError?: boolean;
+  onRetry?: () => void;
 }
 
 export const LoadMoreButton = ({ 
   onLoadMore, 
   loadedCount, 
   totalCount, 
-  isLastPage 
+  isLastPage,
+  hasError,
+  onRetry
 }: LoadMoreButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,10 +29,37 @@ export const LoadMoreButton = ({
     setIsLoading(true);
     try {
       await onLoadMore();
+    } catch (error) {
+      console.error('Error loading more results:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleRetry = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onRetry) {
+      onRetry();
+    }
+  };
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center py-8 border-t mt-6">
+        <p className="text-sm text-gray-500 mb-4">
+          Error loading more results
+        </p>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRetry}
+          className="gap-2 px-8"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   if (isLastPage) {
     return (

@@ -6,9 +6,15 @@ interface ErrorMessageProps {
   title: string;
   message: string;
   onRetry?: () => void;
+  showCoverageInfo?: boolean;
 }
 
-export const ErrorMessage = ({ title, message, onRetry }: ErrorMessageProps) => {
+export const ErrorMessage = ({ 
+  title, 
+  message, 
+  onRetry,
+  showCoverageInfo = true
+}: ErrorMessageProps) => {
   return (
     <div className="mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
       <Search className="h-12 w-12 text-gray-400 mb-4" />
@@ -36,13 +42,15 @@ export const ErrorMessage = ({ title, message, onRetry }: ErrorMessageProps) => 
         </Button>
       </div>
       
-      <div className="mt-6 p-4 bg-white rounded border border-amber-200 max-w-md">
-        <h4 className="font-medium text-amber-800 mb-2">Coverage Information</h4>
-        <p className="text-sm text-gray-600">
-          Our planning application database currently has the best coverage in Greater London and the South East of England. 
-          We're working to expand our coverage to more areas of the UK.
-        </p>
-      </div>
+      {showCoverageInfo && (
+        <div className="mt-6 p-4 bg-white rounded border border-amber-200 max-w-md">
+          <h4 className="font-medium text-amber-800 mb-2">Coverage Information</h4>
+          <p className="text-sm text-gray-600">
+            Our planning application database currently has the best coverage in Greater London and the South East of England. 
+            We're working to expand our coverage to more areas of the UK.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
