@@ -45,6 +45,23 @@ export const ResultsListView = ({
 }: ResultsListViewProps) => {
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
+  const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
+
+  // Effect to detect long-running searches
+  useEffect(() => {
+    if (isLoading) {
+      // Set a timeout to detect long-running searches (more than 5 seconds)
+      const timeoutId = setTimeout(() => {
+        setIsLongSearchDetected(true);
+      }, 5000);
+      
+      // Clean up the timeout if the loading state changes before the timeout
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Reset the long search state when loading is complete
+      setIsLongSearchDetected(false);
+    }
+  }, [isLoading]);
 
   // Update loaded applications when new applications come in
   useEffect(() => {
@@ -72,7 +89,7 @@ export const ResultsListView = ({
 
   // If initial loading, show skeleton cards
   if (isLoading && currentPage === 0) {
-    return <LoadingSkeletons />;
+    return <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />;
   }
 
   // If error or no applications found, show empty state
