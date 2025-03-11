@@ -1,4 +1,3 @@
-
 export interface Application {
   id: number;
   title?: string;
@@ -9,14 +8,14 @@ export interface Application {
   description?: string;
   applicant?: string;
   submissionDate?: string;
-  submittedDate?: string; // Added this field
+  submittedDate?: string;
   decisionDue?: string;
   type?: string;
   ward?: string;
   officer?: string;
   consultationEnd?: string;
   image?: string;
-  streetview_url?: string | null; // Added this field explicitly
+  streetview_url?: string | null;
   image_map_url?: string | null;
   coordinates?: [number, number];
   ai_title?: string;
@@ -59,7 +58,8 @@ export interface Application {
   decision?: string;
   storybook?: string;
   storybook_header?: string;
-  received_date?: string | null; // Added this field
+  received_date?: string | null;
+  notes?: string;
 }
 
 export interface Comment {
