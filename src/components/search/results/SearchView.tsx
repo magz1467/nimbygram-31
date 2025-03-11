@@ -57,7 +57,11 @@ export const SearchView = ({
 
   // Helper to check if the error is a non-critical infrastructure message
   function isNonCriticalError(err: any): boolean {
-    return err?.message?.toLowerCase()?.includes('support table') || false;
+    if (!err) return true;
+    return typeof err.message === 'string' && (
+      err.message.toLowerCase().includes('support table') || 
+      err.message.toLowerCase().includes('function does not exist')
+    );
   }
 
   if (!initialSearch?.searchTerm) {

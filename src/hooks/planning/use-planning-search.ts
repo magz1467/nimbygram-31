@@ -27,17 +27,20 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log(`🔍 Searching with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
         
         const [lat, lng] = coordinates;
-        const radiusKm = 10;
+        // Reduce radius to improve performance
+        const radiusKm = 5; 
         
         // Try spatial search first
         try {
+          console.log('Attempting spatial search with PostGIS...');
           const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
           console.log('Spatial search results:', spatialResults?.length || 0);
+          
           if (spatialResults && spatialResults.length > 0) {
             return spatialResults;
           }
         } catch (spatialFunctionError) {
-          console.log('Spatial function not available, using fallback method:', spatialFunctionError);
+          console.log('Spatial function not available or failed, using fallback method:', spatialFunctionError);
           // Continue to fallback method
         }
         
@@ -52,9 +55,15 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       }
     },
     enabled: !!coordinates,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // Cache results for 5 minutes
+    retry: (failureCount, error) => {
+      // Only retry once, and don't retry timeouts
+      if (failureCount >= 1) return false;
+      if (error?.type === ErrorType.TIMEOUT) return false;
+      
+      return true;
+    },
+    retryDelay: 1000, // Wait 1 second before retrying
   });
 
   return {

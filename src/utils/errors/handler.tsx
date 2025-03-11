@@ -33,12 +33,7 @@ export function handleError(
   // Create standardized app error
   const appError = error instanceof AppError 
     ? error 
-    : new AppError(
-        formatErrorMessage(error, context), 
-        detectErrorType(error), 
-        error, 
-        context
-      );
+    : createAppError(error, context);
   
   // Always log to console
   logError(appError, context);
