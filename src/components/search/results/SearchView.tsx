@@ -5,6 +5,7 @@ import { usePlanningSearch } from "@/hooks/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
+import { MobileDetector } from "@/components/map/mobile/MobileDetector";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -64,17 +65,19 @@ export const SearchView = ({
   const isLoading = isLoadingCoords || isLoadingResults;
 
   return (
-    <SearchViewContent
-      initialSearch={initialSearch}
-      applications={applications}
-      isLoading={isLoading}
-      filters={filters}
-      onFilterChange={(type, value) => 
-        setFilters(prev => ({ ...prev, [type]: value }))
-      }
-      onError={onError}
-      onSearchComplete={onSearchComplete}
-      retryCount={retryCount}
-    />
+    <MobileDetector>
+      <SearchViewContent
+        initialSearch={initialSearch}
+        applications={applications}
+        isLoading={isLoading}
+        filters={filters}
+        onFilterChange={(type, value) => 
+          setFilters(prev => ({ ...prev, [type]: value }))
+        }
+        onError={onError}
+        onSearchComplete={onSearchComplete}
+        retryCount={retryCount}
+      />
+    </MobileDetector>
   );
 };

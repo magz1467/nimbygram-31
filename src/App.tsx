@@ -8,10 +8,10 @@ const router = createBrowserRouter(routes);
 
 function App() {
   return (
-    <MobileDetector>
+    <>
       <RouterProvider router={router} />
       <Toaster />
-    </MobileDetector>
+    </>
   );
 }
 

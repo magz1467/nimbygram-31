@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLocation } from 'react-router-dom';
 
 interface MobileDetectorProps {
   children: React.ReactNode;
@@ -8,12 +9,13 @@ interface MobileDetectorProps {
 
 export const MobileDetector = ({ children }: MobileDetectorProps) => {
   const isMobile = useIsMobile();
+  const location = useLocation();
   
   useEffect(() => {
-    // Prevent reloads on search results page
-    const isSearchResultsPage = window.location.pathname.includes('search-results');
+    // Check if we're on search results page to prevent reloads
+    const isSearchResultsPage = location.pathname.includes('search-results');
     
-    if (isMobile && window.performance && !isSearchResultsPage) {
+    if (isMobile && !isSearchResultsPage) {
       const isFirstLoad = (
         performance.navigation.type === 0 && 
         document.referrer === '' && 
@@ -52,7 +54,7 @@ export const MobileDetector = ({ children }: MobileDetectorProps) => {
         sessionStorage.removeItem('initialLoadDone');
       }
     };
-  }, [isMobile]);
+  }, [isMobile, location.pathname]);
 
   return <>{children}</>;
 };
