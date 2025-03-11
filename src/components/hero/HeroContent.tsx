@@ -1,3 +1,4 @@
+
 import { Stats } from "@/components/Stats";
 import { SearchForm } from "@/components/SearchForm";
 import { HeroTitle } from "./HeroTitle";
@@ -7,7 +8,7 @@ import Image from "@/components/ui/image";
 
 export const HeroContent = () => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-w-[90%]">
       <HeroTitle />
       <HeroSubtitle />
       <div className="md:bg-white md:rounded-xl md:shadow-sm md:p-2">
