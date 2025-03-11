@@ -13,14 +13,21 @@ export const ImageWithFallback = ({
   className = '',
   ...props 
 }: ImageWithFallbackProps) => {
-  const [imgSrc, setImgSrc] = useState<string | undefined>(src);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(undefined);
   const [hasError, setHasError] = useState(false);
   
-  // Reset error state when src changes
+  // Initialize and reset error state when src changes
   useEffect(() => {
-    setImgSrc(src);
-    setHasError(false);
-  }, [src]);
+    // Validate source before setting
+    if (src && src !== 'undefined' && src !== 'null' && src.trim() !== '') {
+      setImgSrc(src);
+      setHasError(false);
+    } else {
+      // Use fallback immediately for invalid sources
+      setImgSrc(fallbackSrc);
+      setHasError(true);
+    }
+  }, [src, fallbackSrc]);
 
   // Handle image error
   const handleError = () => {
@@ -31,7 +38,7 @@ export const ImageWithFallback = ({
     }
   };
   
-  // If src is undefined or empty, use fallback
+  // Default to fallback if no valid source
   if (!imgSrc || imgSrc === 'undefined' || imgSrc === 'null' || imgSrc.trim() === '') {
     return (
       <img

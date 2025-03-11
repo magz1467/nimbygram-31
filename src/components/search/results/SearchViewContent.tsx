@@ -102,7 +102,7 @@ export const SearchViewContent = ({
       toast({
         title: "Showing partial results",
         description: "We found some results, but couldn't retrieve everything. Try refining your search.",
-        variant: "warning",
+        variant: "default",
       });
     }
   }, [error, hasPartialResults, toast, isNonCritical]);

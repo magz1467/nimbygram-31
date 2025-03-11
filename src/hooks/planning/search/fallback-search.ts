@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { sortApplicationsByDistance } from "@/utils/distance";
+import { calculateDistance } from "../utils/distance-calculator";
 
 /**
  * Performs a fallback search for applications when the spatial search is not available
@@ -17,25 +18,21 @@ export async function performFallbackSearch(
   radiusKm: number,
   filters: any = {}
 ): Promise<Application[]> {
-  // Use a very small initial limit for immediate results
-  const initialLimit = 100;
-  
-  console.log(`🔍 Simplified fallback search at [${lat}, ${lng}] with radius ${radiusKm}km and limit ${initialLimit}`);
-  
-  // Use a simple distance-based approach with very small radius first
-  const smallRadiusKm = Math.min(radiusKm, 2); // Start with max 2km radius
-  
-  // Calculate bounding box for more efficient querying (uses approximately km to degrees conversion)
-  const latDegPerKm = 1/111; // 1 degree latitude is approximately 111km
-  const lngDegPerKm = 1/(111 * Math.cos(lat * Math.PI/180)); // Adjust for longitude at this latitude
-  
-  const latMin = lat - (smallRadiusKm * latDegPerKm);
-  const latMax = lat + (smallRadiusKm * latDegPerKm);
-  const lngMin = lng - (smallRadiusKm * lngDegPerKm);
-  const lngMax = lng + (smallRadiusKm * lngDegPerKm);
+  console.log(`🔍 Performing fallback search at [${lat}, ${lng}] with radius ${radiusKm}km`);
   
   try {
-    // First attempt - very targeted, small radius query with minimal filtering
+    // Calculate bounding box for more efficient querying
+    const kmToDeg = 0.01; // Rough approximation: 0.01 degree is about 1.1km at equator
+    const latRange = radiusKm * kmToDeg;
+    const lngRange = radiusKm * kmToDeg;
+    
+    const latMin = lat - latRange;
+    const latMax = lat + latRange;
+    const lngMin = lng - lngRange;
+    const lngMax = lng + lngRange;
+    
+    console.log(`Searching in bounding box: [${latMin},${lngMin}] to [${latMax},${lngMax}]`);
+    
     let query = supabase
       .from('crystal_roof')
       .select('*')
@@ -43,89 +40,170 @@ export async function performFallbackSearch(
       .lte('latitude', latMax)
       .gte('longitude', lngMin)
       .lte('longitude', lngMax)
-      .limit(initialLimit)
-      .order('id', { ascending: false }); // Get newest first
+      .limit(300); // Set a reasonable limit
     
-    // Apply minimal filters if provided
+    // Apply any filters
     if (filters.status) {
       query = query.ilike('status', `%${filters.status}%`);
     }
     
-    const { data: smallRadiusData, error: smallRadiusError } = await query;
-    
-    if (smallRadiusError) {
-      console.warn('Small radius query failed:', smallRadiusError);
-      // Fall through to next attempt
-    } else if (smallRadiusData && smallRadiusData.length > 0) {
-      console.log(`✅ Found ${smallRadiusData.length} results with small radius search`);
-      
-      // Process results into Application objects
-      const applications = smallRadiusData.map(mapDatabaseRecordToApplication);
-      
-      // Sort by distance from search point
-      return sortApplicationsByDistance(applications, [lat, lng]);
+    if (filters.type) {
+      query = query.or(`type.ilike.%${filters.type}%,application_type_full.ilike.%${filters.type}%`);
     }
     
-    // Second attempt - direct ID query for a few recent records
-    // This avoids complex queries altogether and is extremely fast
-    const { data: recentData, error: recentError } = await supabase
-      .from('crystal_roof')
-      .select('*')
-      .order('id', { ascending: false })
-      .limit(50);
-    
-    if (recentError) {
-      console.warn('Recent records query failed:', recentError);
-      throw new Error('Unable to retrieve planning data at this time.');
+    if (filters.classification) {
+      query = query.ilike('class_3', `%${filters.classification}%`);
     }
     
-    if (recentData && recentData.length > 0) {
-      console.log(`✅ Returning ${recentData.length} recent applications as fallback`);
-      
-      // Process results into Application objects
-      const applications = recentData.map(mapDatabaseRecordToApplication);
-      
-      // Sort by distance from search point even if they're not in radius
-      return sortApplicationsByDistance(applications, [lat, lng]);
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Fallback search error:', error);
+      throw error;
     }
     
-    // If we get here, both attempts failed but didn't throw
-    return [];
+    if (!data || data.length === 0) {
+      console.log('No results found in bounding box, trying increased radius');
+      // If no results, try with a larger radius
+      return performFallbackSearchLargerRadius(lat, lng, radiusKm * 3, filters);
+    }
+    
+    console.log(`Found ${data.length} results in bounding box`);
+    
+    // Convert database records to Application objects
+    const applications = data.map(item => {
+      // Calculate distance from search point
+      const distance = calculateDistance(
+        lat,
+        lng,
+        Number(item.latitude),
+        Number(item.longitude)
+      );
+      
+      return {
+        id: item.id,
+        reference: item.reference || item.lpa_app_no,
+        title: item.description || `Application ${item.id}`,
+        description: item.description || '',
+        status: item.status || 'Unknown',
+        address: item.address || '',
+        postcode: item.postcode || '',
+        coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
+        distance: distance, // Add distance property
+        application_type: item.application_type || '',
+        application_type_full: item.type || '',
+        decision: item.decision || '',
+        appeal_status: item.appeal_status || '',
+        lpa_code: item.lpa_code || '',
+        documents_url: item.documents_url || '',
+        comment_url: item.comment_url || '',
+        published_date: item.date_published || null,
+        received_date: item.valid_date || item.date_received || null,
+        decision_date: item.decision_date || null,
+        class_3: item.class_3 || '',
+        consultationEnd: item.consultation_end || null,
+        type: item.type || '',
+        image: item.image || null,
+        image_map_url: item.image_map_url || null,
+        streetview_url: item.streetview_url || null,
+      } as Application;
+    });
+    
+    // Log the first few sorted applications for debugging
+    console.log('\nSorted applications (first 10):');
+    applications
+      .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+      .slice(0, 10)
+      .forEach((app, i) => {
+        console.log(`${i+1}. ID: ${app.id}, Distance: ${app.distance?.toFixed(2)}km (${app.type}), Address: ${app.address}, Coordinates: ${app.coordinates}`);
+      });
+    
+    // Return applications sorted by distance
+    return applications.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     
   } catch (error) {
-    console.error('❌ All fallback search attempts failed:', error);
+    console.error('Error in fallback search:', error);
     throw error;
   }
 }
 
 /**
- * Maps a database record to an Application object
+ * Try searching with a larger radius as a last resort
  */
-function mapDatabaseRecordToApplication(item: any): Application {
-  return {
-    id: item.id,
-    reference: item.reference || item.lpa_app_no,
-    title: item.description || `Application ${item.id}`,
-    description: item.description || '',
-    status: item.status || 'Unknown',
-    address: item.address || '',
-    postcode: item.postcode || '',
-    coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
-    application_type: item.application_type || '',
-    application_type_full: item.type || '',
-    decision: item.decision || '',
-    appeal_status: item.appeal_status || '',
-    lpa_code: item.lpa_code || '',
-    documents_url: item.documents_url || '',
-    comment_url: item.comment_url || '',
-    published_date: item.date_published || null,
-    received_date: item.valid_date || item.date_received || null,
-    decision_date: item.decision_date || null,
-    class_3: item.class_3 || '',
-    consultationEnd: item.consultation_end || null,
-    type: item.type || '',
-    image: item.image || null,
-    image_map_url: item.image_map_url || null,
-    streetview_url: item.streetview_url || null,
-  } as Application;
+async function performFallbackSearchLargerRadius(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  filters: any = {}
+): Promise<Application[]> {
+  console.log(`🔄 Trying larger radius search: ${radiusKm}km`);
+  
+  try {
+    // For larger radius, just get the most recent applications
+    const { data, error } = await supabase
+      .from('crystal_roof')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(100);
+    
+    if (error) {
+      console.error('Larger radius search error:', error);
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('No results found even with larger radius');
+      return [];
+    }
+    
+    console.log(`Found ${data.length} applications as fallback with larger radius`);
+    
+    // Convert and sort by distance
+    const applications = data.map(item => {
+      // Calculate distance from search point
+      const distance = calculateDistance(
+        lat,
+        lng,
+        Number(item.latitude),
+        Number(item.longitude)
+      );
+      
+      return {
+        id: item.id,
+        reference: item.reference || item.lpa_app_no,
+        title: item.description || `Application ${item.id}`,
+        description: item.description || '',
+        status: item.status || 'Unknown',
+        address: item.address || '',
+        postcode: item.postcode || '',
+        coordinates: [Number(item.latitude), Number(item.longitude)] as [number, number],
+        distance: distance,
+        application_type: item.application_type || '',
+        application_type_full: item.type || '',
+        decision: item.decision || '',
+        appeal_status: item.appeal_status || '',
+        lpa_code: item.lpa_code || '',
+        documents_url: item.documents_url || '',
+        comment_url: item.comment_url || '',
+        published_date: item.date_published || null,
+        received_date: item.valid_date || item.date_received || null,
+        decision_date: item.decision_date || null,
+        class_3: item.class_3 || '',
+        consultationEnd: item.consultation_end || null,
+        type: item.type || '',
+        image: item.image || null,
+        image_map_url: item.image_map_url || null,
+        streetview_url: item.streetview_url || null,
+      } as Application;
+    });
+    
+    console.log('Search complete');
+    
+    // Return applications sorted by distance
+    return applications.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    
+  } catch (error) {
+    console.error('Error in larger radius fallback search:', error);
+    throw error;
+  }
 }
