@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +24,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   useEffect(() => {
     if (!coordinates) return;
     
-    // For now, we'll use a default radius
+    // For now, we'll use a default radius of 5km
     // This could be expanded to adjust based on search term type
     setSearchRadius(5);
   }, [coordinates]);
@@ -41,19 +42,27 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const radiusKm = searchRadius;
         
-        // Try spatial search first
+        // Try spatial search first with a shorter timeout
         try {
           console.log('Attempting spatial search with PostGIS...');
           const spatialStartTime = Date.now();
-          const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
+          const spatialResults = await Promise.race([
+            performSpatialSearch(lat, lng, radiusKm, filters),
+            new Promise<null>((_, reject) => 
+              setTimeout(() => reject(new Error('Spatial search timeout')), 5000)
+            )
+          ]);
+          
           const spatialEndTime = Date.now();
           console.log(`Spatial search took ${spatialEndTime - spatialStartTime}ms`);
-          console.log('Spatial search results:', spatialResults?.length || 0);
           
           if (spatialResults && spatialResults.length > 0) {
+            console.log('Spatial search results:', spatialResults.length);
             console.groupEnd();
             return spatialResults;
           }
+          
+          console.log('Spatial search returned no results, falling back to standard search');
         } catch (spatialFunctionError) {
           console.error('Spatial function error details:', {
             error: spatialFunctionError,
@@ -65,7 +74,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         }
         
         // If spatial search fails or isn't available, fall back to manual search
-        console.log('Falling back to standard bounding box search');
+        console.log('Using fallback bounding box search');
         const fallbackStartTime = Date.now();
         const fallbackResults = await performFallbackSearch(lat, lng, radiusKm, filters);
         const fallbackEndTime = Date.now();
@@ -86,20 +95,30 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     },
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // Cache results for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes
     retry: (failureCount, error) => {
       // Detailed retry logging
       console.log(`Query retry attempt ${failureCount}`, { error });
       
-      // Only retry once, and don't retry timeouts
+      // Don't retry more than once
       if (failureCount >= 1) {
         console.log('Not retrying: max failure count reached');
         return false;
       }
       
-      // Check if error is an AppError with type property
-      const isTimeoutError = error instanceof AppError && error.type === ErrorType.TIMEOUT;
+      // Don't retry timeout errors
+      if (error instanceof AppError && error.type === ErrorType.TIMEOUT) {
+        console.log('Not retrying: timeout error detected in AppError type');
+        return false;
+      }
       
-      // Otherwise check error message (fallback)
+      // Don't retry network errors when offline
+      if (!navigator.onLine) {
+        console.log('Not retrying: browser is offline');
+        return false;
+      }
+      
+      // Check error message for timeout indicators
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = String(error.message).toLowerCase();
         if (
@@ -112,13 +131,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         }
       }
       
-      // Don't retry timeout errors
-      if (isTimeoutError) {
-        console.log('Not retrying: timeout error detected in AppError type');
-        return false;
-      }
-      
-      console.log('Retrying query');
+      console.log('Retrying query once');
       return true;
     },
     retryDelay: 1000, // Wait 1 second before retrying

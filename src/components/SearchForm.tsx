@@ -17,7 +17,9 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault(); // Prevent default form submission behavior
+    
     const searchTerm = postcode.trim();
     
     if (!searchTerm || isSubmitting) {
@@ -39,18 +41,6 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         // Continue with search even if logging fails
       });
       
-      // Clear any existing search state from session storage
-      sessionStorage.removeItem('lastSearchLocation');
-      
-      // Clear query cache for fresh search results
-      const cacheKeys = Object.keys(sessionStorage).filter(key => 
-        key.startsWith('tanstack-query-')
-      );
-      
-      cacheKeys.forEach(key => {
-        sessionStorage.removeItem(key);
-      });
-      
       // Extract a readable name from the search term
       const displayTerm = searchTerm.startsWith('ChIJ') && searchTerm.includes(',')
         ? searchTerm.split(',')[0].trim()
@@ -69,7 +59,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         timestamp: Date.now()
       });
 
-      // Navigate to search results with state
+      // Use React Router navigation instead of forcing a page reload
       navigate('/search-results', {
         state: {
           searchType: 'location',
@@ -94,17 +84,19 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-4">
-        <PostcodeSearch
-          onSelect={(value) => {
-            console.log('📮 Location selected:', value);
-            setPostcode(value);
-          }}
-          placeholder="Search by postcode, street name or area"
-          className="flex-1"
-        />
-      </div>
-      <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+      <form onSubmit={handleSubmit} className="w-full">
+        <div className="mb-4">
+          <PostcodeSearch
+            onSelect={(value) => {
+              console.log('📮 Location selected:', value);
+              setPostcode(value);
+            }}
+            placeholder="Search by postcode, street name or area"
+            className="flex-1"
+          />
+        </div>
+        <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+      </form>
     </div>
   );
 };
