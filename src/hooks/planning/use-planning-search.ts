@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
@@ -6,6 +6,7 @@ import { performSpatialSearch } from './search/spatial-search';
 import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
 import { ErrorType, AppError } from '@/utils/errors';
+import { isUKPostcode, isLocationName } from '@/services/coordinates/location-type-detector';
 
 export interface SearchFilters {
   status?: string;
@@ -15,49 +16,85 @@ export interface SearchFilters {
 
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
+  const [searchRadius, setSearchRadius] = useState<number>(5); // Default radius in km
   const { toast } = useToast();
   
+  // Adjust radius based on search term type
+  useEffect(() => {
+    if (!coordinates) return;
+    
+    // For now, we'll use a default radius
+    // This could be expanded to adjust based on search term type
+    setSearchRadius(5);
+  }, [coordinates]);
+  
   const { data: applications = [], isLoading, error } = useQuery({
-    queryKey: ['planning-applications', coordinates?.join(','), filters],
+    queryKey: ['planning-applications', coordinates?.join(','), filters, searchRadius],
     queryFn: async () => {
       if (!coordinates) return [];
       
       try {
-        console.log(`🔍 Searching with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
+        console.group('🔍 Planning Search');
+        console.log(`Search with coordinates: [${coordinates[0]}, ${coordinates[1]}], radius: ${searchRadius}km`);
+        console.log('Filters:', filters);
         
         const [lat, lng] = coordinates;
-        // Reduce radius to improve performance
-        const radiusKm = 5; 
+        const radiusKm = searchRadius;
         
         // Try spatial search first
         try {
           console.log('Attempting spatial search with PostGIS...');
+          const spatialStartTime = Date.now();
           const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
+          const spatialEndTime = Date.now();
+          console.log(`Spatial search took ${spatialEndTime - spatialStartTime}ms`);
           console.log('Spatial search results:', spatialResults?.length || 0);
           
           if (spatialResults && spatialResults.length > 0) {
+            console.groupEnd();
             return spatialResults;
           }
         } catch (spatialFunctionError) {
-          console.log('Spatial function not available or failed, using fallback method:', spatialFunctionError);
+          console.error('Spatial function error details:', {
+            error: spatialFunctionError,
+            message: spatialFunctionError.message,
+            stack: spatialFunctionError.stack
+          });
+          console.log('Spatial function not available or failed, using fallback method');
           // Continue to fallback method
         }
         
         // If spatial search fails or isn't available, fall back to manual search
         console.log('Falling back to standard bounding box search');
+        const fallbackStartTime = Date.now();
         const fallbackResults = await performFallbackSearch(lat, lng, radiusKm, filters);
+        const fallbackEndTime = Date.now();
+        console.log(`Fallback search took ${fallbackEndTime - fallbackStartTime}ms`);
         console.log('Fallback search results:', fallbackResults.length);
+        console.groupEnd();
         return fallbackResults;
       } catch (err: any) {
-        console.error('Search error occurred:', err);
+        console.error('Search error details:', {
+          error: err,
+          message: err.message,
+          stack: err.stack,
+          coordinates,
+          filters
+        });
         return handleSearchError(err, toast);
       }
     },
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // Cache results for 5 minutes
     retry: (failureCount, error) => {
+      // Detailed retry logging
+      console.log(`Query retry attempt ${failureCount}`, { error });
+      
       // Only retry once, and don't retry timeouts
-      if (failureCount >= 1) return false;
+      if (failureCount >= 1) {
+        console.log('Not retrying: max failure count reached');
+        return false;
+      }
       
       // Check if error is an AppError with type property
       const isTimeoutError = error instanceof AppError && error.type === ErrorType.TIMEOUT;
@@ -70,13 +107,18 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           errorMessage.includes('timed out') ||
           errorMessage.includes('too long')
         ) {
+          console.log('Not retrying: timeout error detected in message');
           return false;
         }
       }
       
       // Don't retry timeout errors
-      if (isTimeoutError) return false;
+      if (isTimeoutError) {
+        console.log('Not retrying: timeout error detected in AppError type');
+        return false;
+      }
       
+      console.log('Retrying query');
       return true;
     },
     retryDelay: 1000, // Wait 1 second before retrying
@@ -87,6 +129,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     isLoading,
     error,
     filters,
-    setFilters
+    setFilters,
+    searchRadius,
+    setSearchRadius
   };
 };

@@ -18,14 +18,23 @@ DECLARE
   lng_min DOUBLE PRECISION;
   lng_max DOUBLE PRECISION;
 BEGIN
+  -- Log the search parameters for debugging
+  RAISE NOTICE 'Executing spatial search with lat: %, lng: %, radius: %km, limit: %', 
+               center_lat, center_lng, radius_km, result_limit;
+               
   -- Create a geography point from the input coordinates
   search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
   
   -- Calculate bounding box for pre-filtering (faster than full spatial calculations)
+  -- Use more precise calculations depending on latitude
   lat_min := center_lat - (radius_km/111.0);
   lat_max := center_lat + (radius_km/111.0);
+  
+  -- Longitude degrees per km varies with latitude
   lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
   lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  
+  RAISE NOTICE 'Bounding box: lat(% to %), lng(% to %)', lat_min, lat_max, lng_min, lng_max;
   
   -- Use a two-step process: first filter by bounding box (fast), then refine with exact distance (slower)
   RETURN QUERY
@@ -56,11 +65,14 @@ BEGIN
       ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY
     ) ASC
   LIMIT result_limit;
+  
+  -- Log the completion of the query
+  RAISE NOTICE 'Spatial search completed';
 END;
 $$;
 
--- Set a statement timeout to prevent long-running queries
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '5s';
+-- Set a statement timeout to prevent long-running queries (increased to 12 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '12s';
 
 -- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;

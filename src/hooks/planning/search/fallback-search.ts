@@ -14,7 +14,7 @@ export async function performFallbackSearch(
   radiusKm: number,
   filters: SearchFilters
 ): Promise<Application[]> {
-  console.log('Falling back to manual bounding box search');
+  console.log('Falling back to manual bounding box search', { lat, lng, radiusKm, filters });
   
   // Create base query
   let query = supabase
@@ -32,6 +32,8 @@ export async function performFallbackSearch(
   const lngMin = lng - (radiusKm * lngDegPerKm);
   const lngMax = lng + (radiusKm * lngDegPerKm);
   
+  console.log('Bounding box parameters:', { latMin, latMax, lngMin, lngMax });
+  
   // Add location filter - use parameterized queries for better performance
   query = query
     .gte('latitude', latMin)
@@ -41,27 +43,41 @@ export async function performFallbackSearch(
   
   // Add optional filters
   if (filters.status) {
+    console.log('Adding status filter:', filters.status);
     query = query.ilike('status', `%${filters.status}%`);
   }
   
   if (filters.type) {
+    console.log('Adding type filter:', filters.type);
     // Simplify type filtering to improve query performance
     query = query.or(`type.ilike.%${filters.type}%`);
   }
   
   if (filters.classification) {
+    console.log('Adding classification filter:', filters.classification);
     query = query.ilike('class_3', `%${filters.classification}%`);
   }
   
   try {
     // Add a strict limit to prevent timeouts - removed the .timeout() call that was causing the error
+    console.log('Executing fallback search query with limit 100');
+    const startTime = Date.now();
     const { data, error } = await query.limit(100);
+    const endTime = Date.now();
+    console.log(`Query execution time: ${endTime - startTime}ms`);
     
     if (error) {
-      console.error('Supabase query error:', error);
+      console.error('Supabase query error details:', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        details: error.details,
+        queryTime: `${endTime - startTime}ms`
+      });
       
       // Handle timeout errors with a more specific error
       if (error.code === '57014' || (error.message && error.message.includes('timeout'))) {
+        console.error('TIMEOUT ERROR: The search query took too long to complete');
         throw new Error('The search took too long to complete. Please try a more specific location or different filters.');
       }
       
@@ -69,11 +85,12 @@ export async function performFallbackSearch(
     }
     
     if (!data || data.length === 0) {
-      console.log('No results found for the search criteria');
+      console.log('No results found for the search criteria', { lat, lng, radiusKm, filters });
       return [];
     }
     
     // Calculate distance for each application and sort by distance
+    console.log(`Processing ${data.length} results from fallback search`);
     const results = data.map(app => {
       const distance = calculateDistance(
         lat,
@@ -87,7 +104,13 @@ export async function performFallbackSearch(
     console.log(`✅ Found ${results.length} planning applications with fallback query`);
     return results;
   } catch (error) {
-    console.error('Error in fallback search:', error);
+    console.error('Detailed error in fallback search:', {
+      error,
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      searchParams: { lat, lng, radiusKm, filters }
+    });
     // Rethrow with more context to aid debugging
     throw new Error(`Fallback search failed: ${error.message}`);
   }
