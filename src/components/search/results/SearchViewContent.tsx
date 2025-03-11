@@ -37,6 +37,8 @@ export const SearchViewContent = ({
   const hasResultsRef = useRef(false);
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
     hasResultsRef.current = applications && applications.length > 0;
@@ -47,6 +49,13 @@ export const SearchViewContent = ({
       onSearchComplete();
     }
   }, [isLoading, onSearchComplete]);
+
+  // Reset pagination when new search results come in
+  useEffect(() => {
+    if (!isLoading && applications.length > 0) {
+      setCurrentPage(0);
+    }
+  }, [applications, isLoading]);
 
   return (
     <div className="max-w-5xl mx-auto pb-16 pt-0">

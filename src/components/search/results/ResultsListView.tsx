@@ -46,6 +46,8 @@ export const ResultsListView = ({
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
+  const [paginatedApplications, setPaginatedApplications] = useState<Application[]>([]);
+  const pageSize = 10;
 
   // Effect to detect long-running searches
   useEffect(() => {
@@ -68,21 +70,23 @@ export const ResultsListView = ({
     if (applications && applications.length > 0 && !isLoading) {
       if (currentPage === 0) {
         // Reset for new search
-        setLoadedApplications(applications);
+        setLoadedApplications(applications.slice(0, pageSize));
       } else {
         // Append new results
         setLoadedApplications(prev => {
           const existingIds = new Set(prev.map(app => app.id));
-          const uniqueNewApps = applications.filter(app => !existingIds.has(app.id));
+          const uniqueNewApps = applications
+            .slice(0, (currentPage + 1) * pageSize)
+            .filter(app => !existingIds.has(app.id));
           return [...prev, ...uniqueNewApps];
         });
       }
     }
-  }, [applications, currentPage, isLoading]);
+  }, [applications, currentPage, isLoading, pageSize]);
 
   // Function to handle loading more results
   const handleLoadMore = async () => {
-    if (onPageChange && currentPage < totalPages - 1) {
+    if (onPageChange && currentPage < Math.ceil(applications.length / pageSize) - 1) {
       onPageChange(currentPage + 1);
     }
   };
@@ -102,6 +106,9 @@ export const ResultsListView = ({
       />
     );
   }
+
+  const remainingCount = applications.length - loadedApplications.length;
+  const isLastPage = loadedApplications.length >= applications.length;
 
   return (
     <div className="py-4">
@@ -127,14 +134,18 @@ export const ResultsListView = ({
       </div>
 
       {/* Load More Button */}
-      <div className="mt-8 max-w-2xl mx-auto">
-        <LoadMoreButton 
-          onLoadMore={handleLoadMore}
-          loadedCount={loadedApplications.length}
-          totalCount={totalCount}
-          isLastPage={currentPage >= totalPages - 1}
-        />
-      </div>
+      {applications.length > loadedApplications.length && (
+        <div className="mt-8 max-w-2xl mx-auto">
+          <LoadMoreButton 
+            onLoadMore={handleLoadMore}
+            loadedCount={loadedApplications.length}
+            totalCount={applications.length}
+            isLastPage={isLastPage}
+            hasError={false}
+            onRetry={onRetry}
+          />
+        </div>
+      )}
     </div>
   );
 };

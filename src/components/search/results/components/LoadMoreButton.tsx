@@ -71,6 +71,8 @@ export const LoadMoreButton = ({
     );
   }
 
+  const remainingCount = totalCount - loadedCount;
+
   return (
     <div className="flex flex-col items-center py-8 border-t mt-6">
       <Button 
@@ -87,7 +89,7 @@ export const LoadMoreButton = ({
           </div>
         ) : (
           <>
-            See More Results
+            See More Results ({remainingCount > 10 ? 10 : remainingCount})
             <ChevronDown className="h-4 w-4" />
           </>
         )}

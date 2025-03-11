@@ -30,6 +30,9 @@ export const ResultsContainer = ({
   setSelectedId,
   handleMarkerClick
 }: ResultsContainerProps) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
+
   // Simple implementation that focuses on showing the list view
   const onSeeOnMap = (id: number) => {
     setSelectedId(id);
@@ -40,6 +43,13 @@ export const ResultsContainer = ({
   const handleRetry = () => {
     window.location.reload();
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Calculate total pages based on the number of applications
+  const totalPages = Math.ceil(displayApplications.length / pageSize);
 
   return (
     <ResultsListView
@@ -54,6 +64,10 @@ export const ResultsContainer = ({
       handleMarkerClick={handleMarkerClick}
       allApplications={applications}
       postcode={searchTerm}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+      totalCount={displayApplications.length}
     />
   );
 };
