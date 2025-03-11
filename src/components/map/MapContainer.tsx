@@ -1,4 +1,3 @@
-
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
@@ -27,31 +26,37 @@ export const MapContainer = memo(({
   const mapRef = useRef<LeafletMap | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  console.log('🗺️ MapContainer render:', {
-    coordinates,
-    applicationsCount: applications.length,
-    selectedId,
-    firstApp: applications[0]
-  });
-
-  // Handle map view updates
+  // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
-    if (mapRef.current && coordinates) {
-      const map = mapRef.current;
-      map.setView(coordinates, map.getZoom() || 14, { animate: true });
+    if (!mapRef.current) return;
+    
+    const map = mapRef.current;
+    
+    if (selectedId) {
+      // Find the selected application
+      const selectedApp = applications.find(app => app.id === selectedId);
       
-      // Force the map to invalidate its size multiple times
-      const invalidateTimes = [0, 100, 300, 500, 1000];
-      invalidateTimes.forEach(delay => {
-        setTimeout(() => {
-          if (mapRef.current) {
-            mapRef.current.invalidateSize(true);
-            console.log(`🗺️ Invalidated map size after ${delay}ms`);
-          }
-        }, delay);
-      });
+      if (selectedApp?.coordinates) {
+        // Center on the selected application with appropriate zoom
+        map.setView(selectedApp.coordinates, 16, { animate: true });
+        console.log('🗺️ Centering map on selected application:', selectedId);
+        return;
+      }
     }
-  }, [coordinates]);
+    
+    // If no selection or selection not found, center on search coordinates
+    map.setView(coordinates, 14, { animate: true });
+    
+    // Force map to redraw
+    const invalidateTimes = [0, 100, 300, 500];
+    invalidateTimes.forEach(delay => {
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize(true);
+        }
+      }, delay);
+    });
+  }, [coordinates, selectedId, applications]);
 
   // Handle first mount of the map
   useEffect(() => {
