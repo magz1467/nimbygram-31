@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { MapSearch, RotateCcw } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 
 interface ErrorMessageProps {
   title: string;
@@ -11,7 +11,7 @@ interface ErrorMessageProps {
 export const ErrorMessage = ({ title, message, onRetry }: ErrorMessageProps) => {
   return (
     <div className="mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
-      <MapSearch className="h-12 w-12 text-gray-400 mb-4" />
+      <Search className="h-12 w-12 text-gray-400 mb-4" />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-6 max-w-md mx-auto">{message}</p>
       
