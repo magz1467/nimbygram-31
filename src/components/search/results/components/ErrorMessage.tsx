@@ -19,6 +19,22 @@ export const ErrorMessage = ({
   variant = 'default',
   className = ''
 }: ErrorMessageProps) => {
+  // Skip rendering if message contains known ignorable patterns
+  const shouldSkipRendering = () => {
+    const lowerMessage = message.toLowerCase();
+    return (
+      lowerMessage.includes('application_support') ||
+      lowerMessage.includes('relation') ||
+      (lowerMessage.includes('does not exist') && lowerMessage.includes('table'))
+    );
+  };
+
+  // If this is a non-critical error we want to completely skip rendering
+  if (shouldSkipRendering()) {
+    console.log('Skipping error display for non-critical error:', message);
+    return null;
+  }
+
   // For inline variants, use a more compact layout
   if (variant === 'inline') {
     return (

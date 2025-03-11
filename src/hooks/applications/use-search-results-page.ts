@@ -20,6 +20,7 @@ export const useSearchResultsPage = () => {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [searchComplete, setSearchComplete] = useState(false);
+  const hasResultsRef = useRef<boolean>(false);
 
   // Update search state when location.state changes
   useEffect(() => {
@@ -58,6 +59,9 @@ export const useSearchResultsPage = () => {
         window.sessionStorage.removeItem(key);
       });
     }
+    
+    // Reset refs and state for the new search
+    hasResultsRef.current = false;
     
     // Clear any existing timeout
     if (searchTimeoutRef.current) {
@@ -105,6 +109,12 @@ export const useSearchResultsPage = () => {
       return true;
     }
     
+    // If we have results, consider any error non-critical
+    if (hasResultsRef.current) {
+      console.log("We have results, so considering error non-critical:", error.message);
+      return true;
+    }
+    
     return false;
   };
 
@@ -114,6 +124,7 @@ export const useSearchResultsPage = () => {
     setIsError(false);
     setErrorDetails(null);
     setSearchComplete(false);
+    hasResultsRef.current = false;
     
     toast({
       title: "Retrying search",
@@ -189,7 +200,7 @@ export const useSearchResultsPage = () => {
     } else {
       setErrorDetails(formattedErrorMessage || 'We encountered an unexpected error. Please try your search again.');
     }
-  }, []);
+  }, [isNonCriticalError]);
 
   // Handle search completion
   const handleSearchComplete = useCallback(() => {
@@ -200,6 +211,14 @@ export const useSearchResultsPage = () => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
       searchTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Update results status when we receive applications data
+  const updateResultsStatus = useCallback((data: any) => {
+    if (data && Array.isArray(data) && data.length > 0) {
+      console.log(`Received ${data.length} results`);
+      hasResultsRef.current = true;
     }
   }, []);
 
@@ -222,6 +241,7 @@ export const useSearchResultsPage = () => {
     handleRetry,
     handleError,
     handleSearchComplete,
-    handlePostcodeSelect
+    handlePostcodeSelect,
+    updateResultsStatus
   };
 };

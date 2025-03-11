@@ -57,16 +57,18 @@ export const SearchViewContent = ({
 
   // Call the onError handler when an error occurs
   useEffect(() => {
-    if (onError && error && !isLoading && hasSearched) {
-      // Filter out non-critical errors
-      if (shouldShowError(error)) {
+    if (onError && !isLoading && hasSearched) {
+      // Check if we have an error that should be shown
+      if (error && shouldShowError(error)) {
+        console.log('Reporting error to parent component:', error.message);
         onError(error);
       } else {
-        // If it's a non-critical error, pass null to indicate no error to show
+        // If no error or non-critical error, pass null to indicate no error to show
+        console.log('No critical error to report');
         onError(null);
       }
     }
-  }, [error, onError, isLoading, hasSearched]);
+  }, [error, onError, isLoading, hasSearched, applications]);
 
   // Call the onSearchComplete handler when search is done
   useEffect(() => {
@@ -77,9 +79,11 @@ export const SearchViewContent = ({
 
   // Function to determine if an error should be displayed to the user
   const shouldShowError = (err: Error) => {
+    if (!err) return false;
+    
     const errorMsg = err.message.toLowerCase();
     
-    // Filter out the application_support table error
+    // Filter out the application_support table error and similar DB errors
     if (errorMsg.includes("application_support") || 
         errorMsg.includes("relation") ||
         errorMsg.includes("does not exist")) {
