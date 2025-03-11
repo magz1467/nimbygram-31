@@ -44,15 +44,31 @@ export const CardContent = ({
       onSeeOnMap();
     } else {
       // On desktop, open the map dialog
-      setShowMapDialog(true);
-      console.log('🗺️ Opening map dialog with app ID:', applicationId);
-      
-      // Ensure this application is selected
-      if (handleMarkerClick && applicationId) {
-        handleMarkerClick(applicationId);
+      if (coordinates && applicationId) {
+        setShowMapDialog(true);
+        // Ensure this application is selected
+        if (handleMarkerClick) {
+          handleMarkerClick(applicationId);
+        }
       }
     }
   };
+
+  if (!formattedStorybook?.content) {
+    // Even if no storybook content, still show the See on Map button
+    return (
+      <div className="mt-4">
+        <Button 
+          variant="outline" 
+          onClick={handleSeeOnMapClick}
+          className="w-full text-primary flex items-center justify-center gap-1.5"
+        >
+          <MapPin className="w-4 h-4" />
+          See on map
+        </Button>
+      </div>
+    );
+  }
 
   const parseHtmlContent = (content: string) => {
     return content
@@ -74,65 +90,63 @@ export const CardContent = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Content Section */}
-      {formattedStorybook?.content && (
-        <div className="space-y-4">
-          {/* Display NimbyWatch box if present */}
-          {formattedStorybook.content.includes('NimbyWatch') && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
-              <p className="font-semibold text-amber-800 mb-1">⚠️ NimbyWatch</p>
-              <div 
-                className="text-amber-700"
-                dangerouslySetInnerHTML={{ 
-                  __html: formattedStorybook.content
-                    .split('NimbyWatch:')[1]
-                    ?.split('<p>')[0] || ''
-                }}
-              />
-            </div>
-          )}
+    <div className="space-y-6">
+      {/* See on Map button - always visible as its own row */}
+      <Button 
+        variant="outline" 
+        onClick={handleSeeOnMapClick}
+        className="w-full text-primary flex items-center justify-center gap-1.5"
+      >
+        <MapPin className="w-4 h-4" />
+        See on map
+      </Button>
 
-          {/* Key Points */}
-          {formattedStorybook.content.includes('The Details:') && (
-            <div className="space-y-2">
-              <h3 className="font-medium text-sm">Key Points:</h3>
-              <ul className="space-y-1 pl-5 list-disc text-sm text-gray-700">
-                {getKeyDetails(parseHtmlContent(formattedStorybook.content)).map((detail, i) => (
-                  <li key={i}>{detail}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+      <div className="prose prose-sm max-w-none">
+        <div className="bg-primary/5 rounded-lg p-4">
+          <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+          <div className="text-gray-700">
+            {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
+          </div>
+        </div>
+      </div>
 
-          {/* Display main content */}
-          <div 
-            className="text-sm text-gray-700 prose-sm"
-            dangerouslySetInnerHTML={{ 
-              __html: formattedStorybook.content 
-            }}
-          />
+      <div className="space-y-4">
+        <h3 className="font-semibold text-gray-900">Key Details</h3>
+        <div className="grid gap-4">
+          {getKeyDetails(formattedStorybook.content).map((detail, index) => (
+            <div key={index} className="flex gap-3 items-start">
+              <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+              <p className="text-gray-700 flex-1">{parseHtmlContent(detail)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {formattedStorybook.content.includes('Nimbywatch:') && (
+        <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
+          <h3 className="font-semibold mb-2 flex items-center gap-2">
+            🏘️ Nimbywatch
+          </h3>
+          <div className="space-y-2 text-white/90">
+            {formattedStorybook.content
+              .split('Nimbywatch:')[1]
+              .split('•')
+              .filter(Boolean)
+              .map((point, index) => (
+                <p key={index} className="text-sm">
+                  {parseHtmlContent(point.trim())}
+                </p>
+              ))}
+          </div>
         </div>
       )}
 
-      {/* Map Button Section */}
-      <div className="pt-2">
-        <Button 
-          variant="outline" 
-          onClick={handleSeeOnMapClick}
-          className="w-full text-primary flex items-center justify-center gap-1.5"
-        >
-          <MapPin className="w-4 h-4" />
-          See on map
-        </Button>
-      </div>
-
       {/* Map Dialog for Desktop */}
-      {!isMobile && applicationId && (
+      {!isMobile && applicationId && coordinates && (
         <DesktopMapDialog
           applications={applications}
-          selectedId={applicationId}
-          coordinates={coordinates || [51.505, -0.09]} // Fallback coordinates
+          selectedId={selectedId}
+          coordinates={coordinates}
           handleMarkerClick={handleMarkerClick}
           isOpen={showMapDialog}
           onClose={() => setShowMapDialog(false)}

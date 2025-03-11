@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Application } from "@/types/planning";
 import { useState } from "react";
@@ -6,11 +5,11 @@ import { CardHeader } from "./card/CardHeader";
 import { CardImage } from "./card/CardImage";
 import { CardActions } from "./card/CardActions";
 import { CardContent } from "./card/CardContent";
-import { ListingContent } from "./card/ListingContent";
 import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
 import { getImageUrl } from "@/utils/imageUtils";
 import { CalendarDays } from "lucide-react";
+import { DesktopMapDialog } from "../search/results/DesktopMapDialog";
 
 interface SearchResultCardProps {
   application: Application;
@@ -34,6 +33,7 @@ export const SearchResultCard = ({
   postcode = ""
 }: SearchResultCardProps) => {
   const [showComments, setShowComments] = useState(false);
+  const [showMapDialog, setShowMapDialog] = useState(false);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -65,6 +65,7 @@ export const SearchResultCard = ({
   const handleSeeOnMap = () => {
     console.log('📍 See on map clicked for application:', application.id);
     if (application.id) {
+      setShowMapDialog(true);
       if (onSeeOnMap) {
         onSeeOnMap(application.id);
       }
@@ -110,19 +111,13 @@ export const SearchResultCard = ({
             </div>
           )}
           
-          {/* Listing content */}
-          <div className="mb-4">
-            <ListingContent storybook={application.storybook} />
-          </div>
-          
-          {/* Map button and dialog */}
           <CardContent 
-            storybook={null} 
+            storybook={application.storybook} 
             onSeeOnMap={handleSeeOnMap}
             applicationId={application.id}
             applications={applications}
             selectedId={selectedId}
-            coordinates={application.coordinates as [number, number] || coordinates}
+            coordinates={coordinates}
             handleMarkerClick={handleMarkerClick}
             isLoading={isLoading}
             postcode={postcode}
@@ -136,6 +131,19 @@ export const SearchResultCard = ({
           )}
         </div>
       </div>
+
+      {application.coordinates && (
+        <DesktopMapDialog
+          applications={applications}
+          selectedId={application.id}
+          coordinates={application.coordinates as [number, number]}
+          handleMarkerClick={handleMarkerClick || (() => {})}
+          isOpen={showMapDialog}
+          onClose={() => setShowMapDialog(false)}
+          isLoading={isLoading}
+          postcode={postcode}
+        />
+      )}
     </>
   );
 };

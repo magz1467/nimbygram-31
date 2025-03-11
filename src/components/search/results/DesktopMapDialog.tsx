@@ -45,25 +45,6 @@ export const DesktopMapDialog = ({
     }
   }, [isOpen]);
 
-  // Force map to trigger refresh
-  useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('refresh-map-markers'));
-        console.log('🔄 Dispatched map markers refresh event');
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, selectedId]);
-
-  console.log('🗺️ DesktopMapDialog rendering:', { 
-    isOpen, 
-    hasApplications: applications.length > 0,
-    selectedId, 
-    coordinates 
-  });
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
@@ -86,18 +67,16 @@ export const DesktopMapDialog = ({
           ref={mapContainerRef} 
           className="w-full h-full"
         >
-          {isOpen && (
-            <MapContent 
-              applications={applications}
-              selectedId={selectedId}
-              coordinates={coordinates}
-              isMobile={false}
-              isMapView={true}
-              onMarkerClick={handleMarkerClick}
-              isLoading={isLoading}
-              postcode={postcode}
-            />
-          )}
+          <MapContent 
+            applications={applications}
+            selectedId={selectedId}
+            coordinates={coordinates}
+            isMobile={false}
+            isMapView={true}
+            onMarkerClick={handleMarkerClick}
+            isLoading={isLoading}
+            postcode={postcode}
+          />
         </div>
       </DialogContent>
     </Dialog>
