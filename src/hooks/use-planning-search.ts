@@ -25,11 +25,73 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         // Get coordinates with 10km radius (fixed radius as requested)
         const [lat, lng] = coordinates;
         const radiusKm = 10; // Fixed 10km radius
+        
+        console.log(`Searching within ${radiusKm}km radius of [${lat}, ${lng}]`);
+        
+        // First, try using the optimized PostGIS function approach
+        try {
+          // Use the PostGIS spatial function for better performance
+          const { data: spatialData, error: spatialError } = await supabase
+            .rpc('get_nearby_applications', {
+              center_lat: lat,
+              center_lng: lng,
+              radius_km: radiusKm,
+              result_limit: 500
+            });
+            
+          if (spatialError) {
+            console.warn('PostGIS function not available, falling back to basic query:', spatialError);
+            // Let it fall through to the fallback query
+          } else if (spatialData && spatialData.length > 0) {
+            console.log(`Found ${spatialData.length} planning applications using spatial query`);
+            
+            // Apply filters in-memory if PostGIS query succeeded
+            let filteredResults = spatialData;
+            
+            if (filters.status) {
+              filteredResults = filteredResults.filter(app => 
+                app.status?.toLowerCase().includes(filters.status?.toLowerCase() || '')
+              );
+            }
+            
+            if (filters.type) {
+              filteredResults = filteredResults.filter(app => 
+                app.type?.toLowerCase().includes(filters.type?.toLowerCase() || '') ||
+                app.application_type_full?.toLowerCase().includes(filters.type?.toLowerCase() || '')
+              );
+            }
+            
+            if (filters.classification) {
+              filteredResults = filteredResults.filter(app => 
+                app.class_3?.toLowerCase().includes(filters.classification?.toLowerCase() || '')
+              );
+            }
+            
+            // Calculate distances and sort by closest first
+            const results = filteredResults.map(app => {
+              const distance = calculateDistance(
+                coordinates[0],
+                coordinates[1],
+                Number(app.latitude),
+                Number(app.longitude)
+              );
+              return { ...app, distance };
+            }).sort((a, b) => a.distance - b.distance);
+            
+            return results;
+          }
+        } catch (spatialError) {
+          console.warn('Error using spatial query, falling back to basic query:', spatialError);
+          // Continue to fallback approach below
+        }
+        
+        // Fallback approach - use basic query with manual lat/long filtering
+        // This is less efficient but more compatible
         const kmPerDegree = 111.32;
         const latDiff = radiusKm / kmPerDegree;
         const lngDiff = radiusKm / (kmPerDegree * Math.cos(lat * Math.PI / 180));
         
-        console.log(`Searching within ${radiusKm}km radius of [${lat}, ${lng}]`);
+        console.log('Using fallback query approach with bounding box');
         
         // Query with geographic bounds
         let query = supabase
@@ -51,7 +113,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           query = query.ilike('class_3', `%${filters.classification}%`);
         }
         
-        const { data, error } = await query.limit(500);
+        // Add a timeout hint to the query
+        query = query.options({ 
+          count: 'exact',
+          head: false
+        });
+        
+        // Limit the query to improve performance
+        const { data, error, count } = await query.limit(500);
         
         if (error) {
           console.error('Supabase query error:', error);
@@ -90,11 +159,21 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
       } catch (err: any) {
         console.error('Search error:', err);
-        toast({
-          title: "Search Error",
-          description: "There was a problem finding planning applications. Please try again.",
-          variant: "destructive",
-        });
+        
+        // Display a more user-friendly error message for timeouts
+        if (err.code === '57014' || (err.message && err.message.includes('timeout'))) {
+          toast({
+            title: "Search Timeout",
+            description: "The search is taking too long. Please try a more specific location or different filters.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Search Error",
+            description: "There was a problem finding planning applications. Please try again.",
+            variant: "destructive",
+          });
+        }
         
         // Return empty array instead of throwing to prevent UI from breaking
         return [];

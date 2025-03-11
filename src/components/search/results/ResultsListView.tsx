@@ -46,7 +46,6 @@ export const ResultsListView = ({
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
-  const [paginatedApplications, setPaginatedApplications] = useState<Application[]>([]);
   const pageSize = 10;
 
   // Effect to detect long-running searches
@@ -93,15 +92,37 @@ export const ResultsListView = ({
 
   // If initial loading, show skeleton cards
   if (isLoading && currentPage === 0) {
-    return <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />;
+    return (
+      <div>
+        <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />
+        {isLongSearchDetected && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md max-w-lg mx-auto">
+            <h3 className="text-amber-800 font-medium mb-1">This search is taking longer than usual</h3>
+            <p className="text-sm text-amber-700">
+              We're still looking for planning applications in this area. You can continue waiting or try a more specific search.
+            </p>
+          </div>
+        )}
+      </div>
+    );
   }
+
+  // Check for timeout-specific errors
+  const isTimeoutError = error && 
+    (error.message.includes('timeout') || 
+     error.message.includes('57014') || 
+     error.message.includes('canceling statement'));
 
   // If error or no applications found, show empty state
   if (error || (!applications?.length && !loadedApplications?.length)) {
     return (
       <ErrorMessage 
-        title={error ? "Error loading results" : "No results found"}
-        message={error ? error.message : `We couldn't find any planning applications for ${displayTerm || searchTerm || postcode}. Please try another search.`}
+        title={isTimeoutError ? "Search Timeout" : (error ? "Error loading results" : "No results found")}
+        message={
+          isTimeoutError ? 
+            `The search for "${displayTerm || searchTerm || postcode}" is taking too long. Please try a more specific location or different filters.` :
+            (error ? error.message : `We couldn't find any planning applications for ${displayTerm || searchTerm || postcode}. Please try another search.`)
+        }
         onRetry={onRetry}
       />
     );
@@ -149,4 +170,3 @@ export const ResultsListView = ({
     </div>
   );
 };
-
