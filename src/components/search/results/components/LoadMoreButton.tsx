@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 interface LoadMoreButtonProps {
-  onLoadMore: () => void;
+  onLoadMore: () => Promise<void>;
   loadedCount: number;
   totalCount: number;
   isLastPage: boolean;
@@ -19,13 +19,10 @@ export const LoadMoreButton = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLoadMore = async (e: React.MouseEvent) => {
-    // Prevent default to avoid page navigation/refresh
     e.preventDefault();
-    
     if (isLoading) return;
     
     setIsLoading(true);
-    
     try {
       await onLoadMore();
     } finally {
@@ -52,8 +49,17 @@ export const LoadMoreButton = ({
         className="gap-2 px-8 mb-4"
         disabled={isLoading}
       >
-        {isLoading ? "Loading..." : "See More Results"}
-        {!isLoading && <ChevronDown className="h-4 w-4" />}
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Loading more...
+          </div>
+        ) : (
+          <>
+            See More Results
+            <ChevronDown className="h-4 w-4" />
+          </>
+        )}
       </Button>
       <div className="text-sm text-gray-500 self-center">
         Showing {loadedCount} of {totalCount} results
