@@ -42,11 +42,29 @@ export function handleSearchError(
     appError.message = "The search took too long to complete. Please try a more specific location or different filters.";
   }
   
+  // Track significant search errors (but not timeouts which are common)
+  const shouldTrackToServer = appError.type !== ErrorType.TIMEOUT && appError.type !== ErrorType.NOT_FOUND;
+  
   // Use centralized error handler
   handleError(appError, toast, {
     context: 'search',
-    retry: retry
+    retry: retry,
+    logToServer: shouldTrackToServer
   });
+  
+  // Add telemetry for slow searches even when they don't fail completely
+  if (isTimeoutError) {
+    try {
+      console.info('Slow search telemetry:', {
+        errorType: 'timeout',
+        message: appError.message,
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      });
+    } catch (e) {
+      // Ignore telemetry errors
+    }
+  }
   
   throw appError; // Re-throw to let the error handling in the component deal with it
 }

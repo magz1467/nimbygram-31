@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
@@ -8,6 +8,8 @@ import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
 import { ErrorType, AppError } from "@/utils/errors";
 import { detectErrorType } from "@/utils/errors/detection";
+import { useToast } from '@/hooks/use-toast';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface SearchViewProps {
   initialSearch?: {
@@ -27,6 +29,17 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
+  const { toast } = useToast();
+  const { handleError: handleAppError } = useErrorHandler();
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  
+  // Start timing when initialSearch changes
+  useEffect(() => {
+    if (initialSearch?.searchTerm) {
+      setSearchStartTime(Date.now());
+    }
+  }, [initialSearch?.searchTerm]);
+  
   const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
@@ -39,13 +52,42 @@ export const SearchView = ({
     setFilters
   } = usePlanningSearch(coordinates);
 
+  // Log search performance metrics when search completes
+  useEffect(() => {
+    if (!isLoadingResults && !isLoadingCoords && searchStartTime) {
+      const searchDuration = Date.now() - searchStartTime;
+      console.log(`Search completed in ${searchDuration}ms`);
+      
+      // If search is slow (> 3s), log it for performance tracking
+      if (searchDuration > 3000) {
+        console.info('Slow search metrics:', {
+          duration: searchDuration,
+          resultsCount: applications?.length || 0,
+          searchTerm: initialSearch?.searchTerm,
+          coordinates
+        });
+      }
+      
+      // Reset the timer
+      setSearchStartTime(null);
+    }
+  }, [isLoadingResults, isLoadingCoords, searchStartTime, applications?.length, initialSearch?.searchTerm, coordinates]);
+
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
     if (onError && error && !error.message?.toLowerCase().includes('support table')) {
       console.log('🚨 Search error:', error);
+      
+      // Handle the error to show a toast
+      handleAppError(error, {
+        context: 'search',
+        silent: true // Don't show duplicate toast, SearchErrorView will handle display
+      });
+      
+      // Propagate the error up to the parent component
       onError(error);
     }
-  }, [error, onError]);
+  }, [error, onError, handleAppError]);
 
   useEffect(() => {
     if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
