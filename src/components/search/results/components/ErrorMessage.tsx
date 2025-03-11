@@ -23,9 +23,9 @@ export const ErrorMessage = ({
   const shouldSkipRendering = () => {
     const lowerMessage = message.toLowerCase();
     return (
-      lowerMessage.includes('application_support') ||
-      lowerMessage.includes('relation') ||
-      (lowerMessage.includes('does not exist') && lowerMessage.includes('table'))
+      lowerMessage.includes('relation') && 
+      lowerMessage.includes('does not exist') && 
+      lowerMessage.includes('table')
     );
   };
 
