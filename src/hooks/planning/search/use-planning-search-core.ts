@@ -11,19 +11,20 @@ import { useSearchCompletionHandler } from './use-search-completion-handler';
  */
 export function usePlanningSearchCore(coordinates: [number, number] | null) {
   const [filters, setFilters] = useState<SearchFilters>({});
-  // Always use 5km radius - no need for state or props
-  const searchRadius = 5;
   
   // Get search coordination functions
   const {
     debouncedCoordinates,
     queryKey,
-    searchState,
+    isLoading,
+    stage,
+    progress,
+    error,
+    method,
+    results,
+    hasResults,
     updateProgress,
-    setSearchMethod,
-    setResults,
-    completeSearch,
-    failSearch,
+    updateMethod,
     queryStartTimeRef
   } = useSearchCoordinator(coordinates, filters);
   
@@ -38,9 +39,14 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     queryStartTimeRef,
     {
       onProgress: updateProgress,
-      onMethodChange: setSearchMethod,
-      onSuccess: (apps) => setResults(apps),
-      onError: (error) => failSearch(error)
+      onMethodChange: updateMethod,
+      onSuccess: (apps) => {
+        // We directly use the applications data from the query
+        // No need for separate setResults since useSearchCoordinator manages this
+      },
+      onError: (error) => {
+        // Error handling is managed by useSearchCoordinator
+      }
     }
   );
   
@@ -49,27 +55,34 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     debouncedCoordinates,
     filters,
     applications,
-    searchState.method,
-    searchState.isLoading,
-    completeSearch
+    method,
+    isLoading,
+    () => {
+      // Search completion is handled by the coordinator
+    }
   );
   
   // When we get applications from the query, update our results
   useEffect(() => {
     if (applications && applications.length > 0) {
-      setResults(applications);
+      // Results are managed by useSearchCoordinator
     }
-  }, [applications, setResults]);
+  }, [applications]);
 
   return {
     applications: applications || [],
-    hasResults: searchState.hasResults,
-    isLoading: searchState.isLoading,
+    hasResults,
+    isLoading,
     isFetching,
-    error: searchState.error,
+    error,
     filters,
     setFilters,
-    searchRadius,
-    searchState
+    searchRadius: 5, // Fixed at 5km
+    searchState: {
+      stage,
+      progress,
+      method,
+      error
+    }
   };
 }
