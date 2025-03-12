@@ -7,14 +7,14 @@ import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { FeedbackButtons } from "./FeedbackButtons";
 import { SeeOnMapButton } from "./SeeOnMapButton";
-import { MapDialog } from "@/components/map/MapDialog";
+import { ApplicationMapDialog } from "@/components/map/ApplicationMapDialog";
 
 interface ApplicationListItemProps {
   application: Application;
   onSelect: (id: number) => void;
   onFeedback?: (applicationId: number, type: 'yimby' | 'nimby') => void;
   allApplications?: Application[];
-  searchCoordinates?: [number, number]; // Added search coordinates prop
+  searchCoordinates?: [number, number]; // Search coordinates prop
 }
 
 export const ApplicationListItem = ({ 
@@ -22,7 +22,7 @@ export const ApplicationListItem = ({
   onSelect,
   onFeedback,
   allApplications = [],
-  searchCoordinates // Original search coordinates
+  searchCoordinates
 }: ApplicationListItemProps) => {
   const [showMap, setShowMap] = useState(false);
   
@@ -86,14 +86,14 @@ export const ApplicationListItem = ({
         </div>
       </div>
       
-      {/* Map Dialog */}
+      {/* Map Dialog - Using the specialized component */}
       {showMap && (
-        <MapDialog
+        <ApplicationMapDialog
           isOpen={showMap}
           onClose={() => setShowMap(false)}
           application={application}
           allApplications={allApplications}
-          searchCoordinates={searchCoordinates} // Pass search coordinates
+          searchCoordinates={searchCoordinates}
         />
       )}
     </>
