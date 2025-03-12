@@ -130,7 +130,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null, searchTe
         await logSearchAttempt(coordinates, filters, searchRadius);
         
         const [lat, lng] = coordinates;
-        const radiusKm = searchRadius;
+        let radiusKm = searchRadius; // Changed from const to let so we can modify it
         
         // Try spatial search first with a longer timeout
         try {
