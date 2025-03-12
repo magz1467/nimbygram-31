@@ -7,7 +7,7 @@ import { performSpatialSearch } from './search/spatial-search';
 import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
 import { ErrorType, AppError } from '@/utils/errors';
-import { isUKPostcode, isLocationName } from '@/services/coordinates/location-type-detector';
+import { isUKPostcode } from '@/services/coordinates/location-type-detector';
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SearchFilters {
@@ -43,10 +43,38 @@ async function logSearchAttempt(
   }
 }
 
-export const usePlanningSearch = (coordinates: [number, number] | null) => {
+// List of postcode areas with good coverage
+const COVERAGE_AREAS = [
+  'AL', 'BR', 'CM', 'CR', 'DA', 'E', 'EC', 'EN', 'HA', 'IG', 
+  'KT', 'N', 'NW', 'RM', 'SE', 'SM', 'SW', 'TN', 'TW', 'UB', 
+  'W', 'WC', 'WD'
+];
+
+// Check if a postcode is in a well-covered area
+function isInPrimaryCoverageArea(searchTerm: string): boolean {
+  if (!isUKPostcode(searchTerm)) return true; // Not a postcode, use default behavior
+  const outwardCode = searchTerm.trim().toUpperCase().split(' ')[0];
+  const area = outwardCode.replace(/[0-9]/g, '');
+  return COVERAGE_AREAS.includes(area);
+}
+
+export const usePlanningSearch = (coordinates: [number, number] | null, searchTerm?: string) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5); // Default radius in km
   const { toast } = useToast();
+  
+  // Adjust radius based on search term location
+  useEffect(() => {
+    if (!coordinates || !searchTerm) return;
+    
+    // For postcodes outside our main coverage area, use a smaller radius to improve performance
+    if (isUKPostcode(searchTerm) && !isInPrimaryCoverageArea(searchTerm)) {
+      console.log('Postcode outside primary coverage area, using reduced search radius');
+      setSearchRadius(3); // Smaller radius for areas with less coverage
+    } else {
+      setSearchRadius(5); // Default radius
+    }
+  }, [coordinates, searchTerm]);
   
   // Detailed debug logging for coordinates changes
   useEffect(() => {
@@ -62,15 +90,6 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     }
   }, [coordinates, filters, searchRadius]);
   
-  // Adjust radius based on search term type
-  useEffect(() => {
-    if (!coordinates) return;
-    
-    // For now, we'll use a default radius of 5km
-    // This could be expanded to adjust based on search term type
-    setSearchRadius(5);
-  }, [coordinates]);
-  
   const { data: applications = [], isLoading, error } = useQuery({
     queryKey: ['planning-applications', coordinates?.join(','), filters, searchRadius],
     queryFn: async () => {
@@ -82,7 +101,6 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log(`Search with coordinates: [${coordinates[0]}, ${coordinates[1]}], radius: ${searchRadius}km`);
         console.log('Filters:', filters);
         console.log('Browser details:', navigator.userAgent);
-        console.log('Navigator language:', navigator.language);
         console.log('Window dimensions:', { 
           width: window.innerWidth, 
           height: window.innerHeight,
@@ -114,21 +132,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         const [lat, lng] = coordinates;
         const radiusKm = searchRadius;
         
-        // Try spatial search first with a shorter timeout
+        // Try spatial search first with a longer timeout
         try {
           console.log('Attempting spatial search with PostGIS...');
           const spatialStartTime = Date.now();
           console.log(`Spatial search started at: ${new Date(spatialStartTime).toISOString()}`);
           
-          const spatialResults = await Promise.race([
-            performSpatialSearch(lat, lng, radiusKm, filters),
-            new Promise<null>((_, reject) => 
-              setTimeout(() => {
-                console.log('⏱️ Spatial search timeout reached (8 seconds)');
-                reject(new Error('Spatial search timeout after 8 seconds'));
-              }, 8000)
-            )
-          ]);
+          const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
           
           const spatialEndTime = Date.now();
           console.log(`Spatial search took ${spatialEndTime - spatialStartTime}ms`);
@@ -146,7 +156,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           }
           
           console.log('Spatial search returned no results, falling back to standard search');
-        } catch (spatialFunctionError) {
+        } catch (spatialFunctionError: any) {
           console.error('Spatial function error details:', {
             error: spatialFunctionError,
             message: spatialFunctionError.message,
@@ -155,24 +165,27 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
             code: (spatialFunctionError as any).code || 'unknown'
           });
           console.log('Spatial function not available or failed, using fallback method');
-          // Continue to fallback method
+          
+          // If this was a timeout error, we should adjust our approach for the fallback
+          if (spatialFunctionError.name === 'AbortError' || 
+              spatialFunctionError.message?.toLowerCase().includes('timeout')) {
+            console.log('Reducing search radius for fallback due to timeout');
+            radiusKm = Math.max(2, radiusKm - 2); // Reduce radius but keep at least 2km
+          }
         }
         
         // If spatial search fails or isn't available, fall back to manual search
-        console.log('Using fallback bounding box search');
+        console.log('Using fallback bounding box search with radius:', radiusKm);
         const fallbackStartTime = Date.now();
         console.log(`Fallback search started at: ${new Date(fallbackStartTime).toISOString()}`);
         
-        // Use a promise race with timeout for fallback search as well
-        const fallbackResults = await Promise.race([
-          performFallbackSearch(lat, lng, radiusKm, filters),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => {
-              console.log('⏱️ Fallback search timeout reached (15 seconds)');
-              reject(new Error('Fallback search timeout after 15 seconds'));
-            }, 15000)
-          )
-        ]);
+        // Use a smaller radius for the fallback search if we're outside primary coverage areas
+        if (searchTerm && !isInPrimaryCoverageArea(searchTerm)) {
+          console.log('Using smaller radius for fallback search in non-primary area');
+          radiusKm = Math.min(radiusKm, 3);
+        }
+        
+        const fallbackResults = await performFallbackSearch(lat, lng, radiusKm, filters);
         
         const fallbackEndTime = Date.now();
         console.log(`Fallback search took ${fallbackEndTime - fallbackStartTime}ms`);
@@ -192,7 +205,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         const searchParams = {
           coordinates,
           filters,
-          radius: searchRadius
+          radius: searchRadius,
+          searchTerm
         };
         
         console.error('Search error details:', {

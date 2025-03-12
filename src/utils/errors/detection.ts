@@ -24,9 +24,12 @@ export function detectErrorType(error: any): ErrorType {
   // Check for timeout errors
   if (
     error.code === '57014' || // PostgreSQL statement_timeout
+    error.name === 'AbortError' ||
     message.includes('timeout') ||
     message.includes('timed out') ||
-    message.includes('too long')
+    message.includes('too long') ||
+    message.includes('took too long') ||
+    message.includes('canceling statement')
   ) {
     return ErrorType.TIMEOUT;
   }

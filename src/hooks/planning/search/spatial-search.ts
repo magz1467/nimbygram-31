@@ -58,32 +58,29 @@ export async function performSpatialSearch(
   });
   
   try {
-    // Add a timeout to the spatial search (increased to 12 seconds)
-    const timeoutPromise = new Promise<null>((_, reject) => {
-      setTimeout(() => {
-        console.log('⏱️ Spatial search timeout reached (10 seconds)');
-        reject(new Error('Spatial search timeout after 10 seconds'));
-      }, 10000); // 10 second timeout
-    });
+    // Add a timeout to the spatial search (increased to 14 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      console.log('⏱️ Spatial search timeout reached (14 seconds)');
+    }, 14000); // 14 second timeout - increased from 10s
     
     console.log('Starting spatial search with RPC call');
     const startTime = Date.now();
     console.log(`RPC call started at: ${new Date(startTime).toISOString()}`);
     
-    // Try to execute the spatial function with a timeout
-    const resultPromise = supabase
+    // Execute the spatial function with proper timeout handling
+    const { data: spatialData, error: spatialError } = await supabase
       .rpc('get_nearby_applications', { 
         center_lat: lat,
         center_lng: lng,
         radius_km: radiusKm,
-        result_limit: 150 // Reduced limit to improve performance
-      });
+        result_limit: 100 // Reduced limit to improve performance
+      })
+      .abortSignal(controller.signal);
     
-    // Race between the query and the timeout
-    const { data: spatialData, error: spatialError } = await Promise.race([
-      resultPromise,
-      timeoutPromise
-    ]) as any;
+    // Clear timeout
+    clearTimeout(timeoutId);
     
     const endTime = Date.now();
     const duration = endTime - startTime;
@@ -138,22 +135,23 @@ export async function performSpatialSearch(
     let filteredData = spatialData;
     const preFilterCount = filteredData.length;
     
-    if (filters.status) {
+    if (filters.status && filters.status !== 'all') {
       console.log('Filtering by status:', filters.status);
       filteredData = filteredData.filter(app => 
         app.status && app.status.toLowerCase().includes(filters.status!.toLowerCase())
       );
     }
     
-    if (filters.type) {
+    if (filters.type && filters.type !== 'all') {
       console.log('Filtering by type:', filters.type);
       filteredData = filteredData.filter(app => 
         (app.type && app.type.toLowerCase().includes(filters.type!.toLowerCase())) ||
-        (app.application_type_full && app.application_type_full.toLowerCase().includes(filters.type!.toLowerCase()))
+        (app.application_type_full && app.application_type_full.toLowerCase().includes(filters.type!.toLowerCase())) ||
+        (app.application_type && app.application_type.toLowerCase().includes(filters.type!.toLowerCase()))
       );
     }
     
-    if (filters.classification) {
+    if (filters.classification && filters.classification !== 'all') {
       console.log('Filtering by classification:', filters.classification);
       filteredData = filteredData.filter(app => 
         app.class_3 && app.class_3.toLowerCase().includes(filters.classification!.toLowerCase())
@@ -172,7 +170,14 @@ export async function performSpatialSearch(
         Number(app.latitude),
         Number(app.longitude)
       );
-      return { ...app, distance };
+      
+      // Convert to miles with proper formatting
+      const distanceMiles = distance * 0.621371;
+      
+      return { 
+        ...app, 
+        distance: `${distanceMiles.toFixed(1)} mi`
+      };
     });
     
     const processingEndTime = Date.now();
@@ -204,7 +209,7 @@ export async function performSpatialSearch(
     
     console.groupEnd();
     return results;
-  } catch (error) {
+  } catch (error: any) {
     spatialPerformanceMetrics.failureCount++;
     spatialPerformanceMetrics.lastErrorTimestamp = Date.now();
     
@@ -213,6 +218,12 @@ export async function performSpatialSearch(
       spatialPerformanceMetrics.errors.shift();
     }
     spatialPerformanceMetrics.errors.push(`${error.name || 'unknown'}: ${error.message}`);
+    
+    // Handle AbortError specially
+    if (error.name === 'AbortError') {
+      console.log('Spatial search was aborted due to timeout');
+      error.message = 'Spatial search timeout. The area might have too many applications.';
+    }
     
     console.error('Detailed error in spatial search:', {
       error,

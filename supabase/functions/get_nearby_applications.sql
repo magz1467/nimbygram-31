@@ -71,8 +71,8 @@ BEGIN
 END;
 $$;
 
--- Set a statement timeout to prevent long-running queries (increased to 12 seconds)
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '12s';
+-- Set a statement timeout to prevent long-running queries (increased to 15 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
 
 -- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
@@ -80,3 +80,4 @@ GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 -- Optimize index for fast bounding box searches
 DROP INDEX IF EXISTS idx_crystal_roof_lat_lng;
 CREATE INDEX idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);
+

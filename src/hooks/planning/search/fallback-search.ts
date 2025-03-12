@@ -13,6 +13,8 @@ export const performFallbackSearch = async (
   radius: number,
   filters: SearchFilters = {}
 ): Promise<Application[]> => {
+  console.log('Starting fallback search with params:', { lat, lng, radius, filters });
+  
   // Calculate bounding box
   const kmPerDegree = 111.32; // Approximate km per degree at the equator
   const latDiff = radius / kmPerDegree;
@@ -25,6 +27,8 @@ export const performFallbackSearch = async (
   const minLng = lng - lngDiff;
   const maxLng = lng + lngDiff;
   
+  console.log('Bounding box:', { minLat, maxLat, minLng, maxLng });
+  
   // Build query
   let query = supabase
     .from('crystal_roof')
@@ -33,7 +37,7 @@ export const performFallbackSearch = async (
     .lte('latitude', maxLat)
     .gte('longitude', minLng)
     .lte('longitude', maxLng)
-    .limit(500); // Limit to 500 results for performance
+    .limit(300); // Reduced from 500 to 300 for better performance
   
   // Add filters if provided
   if (filters.status && filters.status !== 'all') {
@@ -50,18 +54,21 @@ export const performFallbackSearch = async (
   
   // Set a request timeout using AbortController
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 18000); // 18 second timeout - increased from 15s
   
   try {
     // Track query performance
     const startTime = Date.now();
     
-    // Use fetch with AbortController for timeout - note we don't pass the controller to Supabase
-    // as it doesn't support it directly, but we'll abort the operation ourselves if needed
+    // Execute the query
     const { data, error } = await query;
     
     // Clear timeout
     clearTimeout(timeoutId);
+    
+    // Calculate execution time
+    const executionTime = Date.now() - startTime;
+    console.log(`Fallback search executed in ${executionTime}ms, returned ${data?.length || 0} results`);
     
     // Handle errors
     if (error) {
@@ -69,14 +76,12 @@ export const performFallbackSearch = async (
       throw error;
     }
     
-    // Calculate execution time
-    const executionTime = Date.now() - startTime;
-    console.log(`Fallback search executed in ${executionTime}ms, returned ${data?.length || 0} results`);
-    
     // No results
     if (!data || data.length === 0) {
       return [];
     }
+    
+    console.log(`Processing ${data.length} results...`);
     
     // Calculate distances and transform to Application objects
     return data.map((item: any) => {
@@ -115,13 +120,14 @@ export const performFallbackSearch = async (
       const distB = parseFloat(b.distance?.replace(' mi', '') || '9999');
       return distA - distB;
     });
-  } catch (error) {
+  } catch (error: any) {
     // Clear timeout
     clearTimeout(timeoutId);
     
     // Handle abort errors separately
     if (error.name === 'AbortError') {
-      throw new Error('Search timed out after 15 seconds. Please try again with more specific criteria.');
+      console.log('Fallback search was aborted due to timeout');
+      throw new Error('Search timed out after 18 seconds. Please try again with more specific criteria.');
     }
     
     throw error;

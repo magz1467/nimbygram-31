@@ -36,7 +36,7 @@ export const SearchView = ({
     error: searchError,
     filters,
     setFilters
-  } = usePlanningSearch(coordinates);
+  } = usePlanningSearch(coordinates, initialSearch?.searchTerm);
 
   // Combine errors from coordinates and search
   const error = coordsError || searchError;
