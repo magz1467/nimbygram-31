@@ -150,9 +150,6 @@ class SearchTelemetryService {
     } catch (err) {
       console.error('Error logging telemetry:', err);
     }
-    
-    // Return a resolved promise
-    return Promise.resolve();
   }
 
   private getDeviceInfo(): DeviceInfo {

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorType, AppError, formatErrorMessage } from "@/utils/errors";
 
@@ -183,7 +184,4 @@ export const reportErrorToServer = async (error: any, context: Record<string, an
   } catch (err) {
     console.error('Error while reporting error:', err);
   }
-  
-  // Return a resolved promise
-  return Promise.resolve();
 };
