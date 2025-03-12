@@ -48,10 +48,10 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
             console.error('❌ Geocoder failed:', status);
             
             // More descriptive error message based on status
-            const errorMessages = {
+            const errorMessages: Record<string, string> = {
               [google.maps.GeocoderStatus.ZERO_RESULTS]: "We couldn't find this location in the UK",
               [google.maps.GeocoderStatus.OVER_QUERY_LIMIT]: "Too many location searches, please try again later",
-              [google.maps.GeocoderStatus.REQUEST_DENIED]: "Location search request was denied",
+              [google.maps.GeocoderStatus.REQUEST_DENIED]: "Location search API access denied. Please try using a postcode instead.",
               [google.maps.GeocoderStatus.INVALID_REQUEST]: "Invalid location search request",
               [google.maps.GeocoderStatus.UNKNOWN_ERROR]: "Unknown error while searching for location",
             };
@@ -80,6 +80,21 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     throw new Error("No results found for location");
   } catch (error: any) {
     console.error('❌ Error in geocoding location name:', error);
+    
+    // Special handling for API key issues
+    if (error.message.includes('API key') || 
+        error.message.includes('denied') || 
+        error.message.includes('not authorized')) {
+      // Fallback to try the postcode lookup if this looks like a UK postcode
+      const postcodePattern = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i;
+      if (postcodePattern.test(locationName.trim())) {
+        console.log('⚠️ API key issue detected, but location looks like a postcode. Trying postcode lookup...');
+        throw new Error(`Google Maps API error. Try using the specific postcode instead of a location name.`);
+      }
+      
+      throw new Error(`Unable to use location search. Please try using a UK postcode instead.`);
+    }
+    
     throw new Error(`Could not find coordinates for location: ${error.message}`);
   }
 };
