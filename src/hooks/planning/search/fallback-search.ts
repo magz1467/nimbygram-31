@@ -2,10 +2,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { calculateDistance } from "../utils/distance-calculator";
-import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 
 /**
  * Performs a fallback search for planning applications using a bounding box approach
+ * This is used when the spatial search function is not available
  */
 export async function performFallbackSearch(
   lat: number, 
@@ -14,97 +14,107 @@ export async function performFallbackSearch(
   filters: any
 ): Promise<Application[]> {
   console.log('Performing fallback search with bounding box approach');
+  console.log('Search parameters:', { lat, lng, radiusKm, filters });
   
-  // Start with a smaller radius first
-  let searchRadius = radiusKm * 0.5;
-  let maxAttempts = 3;
-  let attempt = 0;
+  // Calculate the latitude and longitude deltas for the bounding box
+  // 1 degree of latitude = ~111.32 km
+  // 1 degree of longitude = ~111.32 km * cos(latitude)
+  const latDelta = radiusKm / 111.32;
+  const lngDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180));
   
-  while (attempt < maxAttempts) {
-    try {
-      console.log(`Search attempt ${attempt + 1} with radius ${searchRadius}km`);
-      
-      const latDelta = searchRadius / 111.32;
-      const lngDelta = searchRadius / (111.32 * Math.cos(lat * Math.PI / 180));
-      
-      // Build the query with a smaller limit
-      let query = supabase
-        .from('crystal_roof')
-        .select('*')
-        .gte('latitude', lat - latDelta)
-        .lte('latitude', lat + latDelta)
-        .gte('longitude', lng - lngDelta)
-        .lte('longitude', lng + lngDelta)
-        .limit(50); // Reduced limit for better performance
-      
-      // Apply any filters
-      if (filters?.status) {
-        query = query.ilike('status', `%${filters.status}%`);
-      }
-      if (filters?.type) {
-        query = query.ilike('type', `%${filters.type}%`);
-      }
-      
-      console.log('Executing fallback search query');
-      
-      // Execute the query with an AbortController for timeout handling
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 5000);
-      
-      try {
-        const { data, error } = await query;
-        clearTimeout(timeoutId);
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          console.log('No results found in fallback search');
-          return [];
-        }
-        
-        console.log(`Found ${data.length} results in fallback search`);
-        
-        // Transform the data using our utility function
-        const transformedApplications = transformApplicationsData(data);
-        
-        // Add distance calculations and sort
-        return transformedApplications
-          .filter(app => app.coordinates !== null)
-          .map(app => ({
-            ...app,
-            distance: `${(calculateDistance(lat, lng, app.latitude!, app.longitude!) * 0.621371).toFixed(1)} mi`
-          }))
-          .sort((a, b) => {
-            const distA = calculateDistance(lat, lng, a.latitude!, a.longitude!);
-            const distB = calculateDistance(lat, lng, b.latitude!, b.longitude!);
-            return distA - distB;
-          });
-          
-      } catch (error) {
-        clearTimeout(timeoutId);
-        
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.log('Query timed out, will retry with smaller radius');
-          searchRadius = searchRadius * 0.5;
-          attempt++;
-          continue;
-        }
-        
-        throw error;
-      }
-    } catch (error) {
-      console.error(`Search attempt ${attempt + 1} failed:`, error);
-      
-      if (attempt === maxAttempts - 1) {
-        throw error;
-      }
-      
-      searchRadius = searchRadius * 0.5;
-      attempt++;
+  // Build the query
+  let query = supabase
+    .from('crystal_roof')
+    .select('*')
+    .gte('latitude', lat - latDelta)
+    .lte('latitude', lat + latDelta)
+    .gte('longitude', lng - lngDelta)
+    .lte('longitude', lng + lngDelta);
+  
+  // Apply filters
+  if (filters) {
+    if (filters.status) {
+      query = query.ilike('status', `%${filters.status}%`);
+    }
+    
+    if (filters.type) {
+      query = query.ilike('type', `%${filters.type}%`);
     }
   }
   
-  throw new Error('Search failed after multiple attempts. Please try a more specific location.');
+  // Limit the number of results
+  query = query.limit(200);
+  
+  console.log('Executing fallback search query');
+  let { data, error } = await query;
+  
+  if (error) {
+    console.error('Fallback search error:', error);
+    
+    // Handle timeout errors specifically
+    if (error.message.includes('timeout') || error.message.includes('canceling statement')) {
+      console.log('Query timeout occurred, reducing search area');
+      
+      // Try a more restricted search area
+      const reducedRadius = radiusKm * 0.5;
+      const reducedLatDelta = reducedRadius / 111.32;
+      const reducedLngDelta = reducedRadius / (111.32 * Math.cos(lat * Math.PI / 180));
+      
+      const reducedQuery = supabase
+        .from('crystal_roof')
+        .select('*')
+        .gte('latitude', lat - reducedLatDelta)
+        .lte('latitude', lat + reducedLatDelta)
+        .gte('longitude', lng - reducedLngDelta)
+        .lte('longitude', lng + reducedLngDelta)
+        .limit(100);
+      
+      const { data: reducedData, error: reducedError } = await reducedQuery;
+      
+      if (reducedError) {
+        console.error('Reduced area search also failed:', reducedError);
+        throw reducedError;
+      }
+      
+      if (!reducedData || reducedData.length === 0) {
+        console.log('No results found in reduced search area');
+        return [];
+      }
+      
+      data = reducedData;
+    } else {
+      throw error;
+    }
+  }
+  
+  if (!data || data.length === 0) {
+    console.log('No results found in fallback search');
+    return [];
+  }
+  
+  console.log(`Found ${data.length} results in fallback search`);
+  
+  // Add distance and sort results
+  const results = data
+    .filter((app) => {
+      return (typeof app.latitude === 'number' && typeof app.longitude === 'number');
+    })
+    .map((app) => {
+      const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
+      const distanceMiles = distanceKm * 0.621371;
+      
+      return {
+        ...app,
+        distance: `${distanceMiles.toFixed(1)} mi`,
+        coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
+      };
+    })
+    .sort((a, b) => {
+      const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
+      const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
+      return distA - distB;
+    });
+  
+  console.log(`Returning ${results.length} filtered and sorted results`);
+  return results;
 }

@@ -58,15 +58,13 @@ export const SearchViewContent = ({
     }
   }, [applications, isLoading]);
 
-  // Calculate status counts for the header with explicit initialization
-  const statusCounts = applications.reduce((counts: { 'Under Review': number; 'Approved': number; 'Declined': number; 'Other': number }, app) => {
+  // Calculate status counts for the header with default values
+  const statusCounts = applications.reduce((counts: Record<string, number>, app) => {
     const status = app.status || 'Other';
     const category = status.includes('Under Review') ? 'Under Review' :
                     status.includes('Approved') ? 'Approved' :
                     status.includes('Declined') ? 'Declined' : 'Other';
-    
-    // Use the category as a key to increment the count
-    counts[category] += 1;
+    counts[category] = (counts[category] || 0) + 1;
     return counts;
   }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
 

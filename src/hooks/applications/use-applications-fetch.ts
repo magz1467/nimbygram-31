@@ -1,7 +1,6 @@
-
-import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/transformApplicationData';
+import { transformApplicationData } from '@/utils/applicationTransforms';
+import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 
 export interface FetchApplicationsParams {
@@ -58,24 +57,26 @@ export const fetchApplicationsInRadius = async ({
 
   console.log(`📦 Raw applications data:`, appsData?.map(app => ({
     id: app.id,
+    class_3: app.class_3,
     title: app.title,
     final_impact_score: app.final_impact_score
   })));
 
   const transformedApplications = appsData
-    ?.map(app => transformApplicationData(app))
+    ?.map(app => transformApplicationData(app, center))
     .filter((app): app is Application => app !== null);
 
   console.log('✨ Transformed applications:', transformedApplications?.map(app => ({
     id: app.id,
+    class_3: app.class_3,
     title: app.title,
-    final_impact_score: app.impact_score
+    final_impact_score: app.final_impact_score
   })));
 
   // Verify sorting
   console.log('🔄 Verifying impact score ordering:', transformedApplications?.map(app => ({
     id: app.id,
-    final_impact_score: app.impact_score
+    final_impact_score: app.final_impact_score
   })));
 
   return {

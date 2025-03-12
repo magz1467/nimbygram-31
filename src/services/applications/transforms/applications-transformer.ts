@@ -1,24 +1,35 @@
 
 import { Application } from "@/types/planning";
-import { transformApplicationData } from '@/utils/transformApplicationData';
+import { transformApplicationData } from "@/utils/transforms/application-transformer";
+import { calculateDistance, sortApplicationsByDistance } from "@/utils/distance";
 
-/**
- * Transforms raw application data from API to typed Application objects
- */
-export function transformApplicationsData(rawApplications: any[]): Application[] {
-  if (!rawApplications || !Array.isArray(rawApplications)) {
-    console.warn('Received invalid applications data:', rawApplications);
+export const transformAndSortApplications = (
+  applications: any[]
+): Application[] => {
+  if (!applications || !Array.isArray(applications) || applications.length === 0) {
     return [];
   }
-
-  return rawApplications
+  
+  console.log(`Transforming and sorting ${applications.length} applications`);
+  
+  // Transform the applications
+  const transformedApplications = applications
     .map(app => transformApplicationData(app))
     .filter((app): app is Application => app !== null);
-}
-
-/**
- * Transforms a single application with additional metadata
- */
-export function transformSingleApplication(application: any): Application | null {
-  return transformApplicationData(application);
-}
+  
+  // Check if we have coordinates for sorting
+  const hasCoordinates = transformedApplications.some(app => 
+    app.coordinates !== null && Array.isArray(app.coordinates) && app.coordinates.length === 2
+  );
+  
+  // Sort by distance if possible, otherwise return as-is
+  if (hasCoordinates) {
+    // We need a reference point for sorting - use the first application with coordinates
+    const referenceApp = transformedApplications.find(app => app.coordinates !== null);
+    if (referenceApp && referenceApp.coordinates) {
+      return sortApplicationsByDistance(transformedApplications, referenceApp.coordinates);
+    }
+  }
+  
+  return transformedApplications;
+};

@@ -32,42 +32,17 @@ export function isNonCriticalError(errorOrMessage: unknown): boolean {
 export function detectErrorType(error: unknown): ErrorType {
   if (!error) return ErrorType.UNKNOWN;
   
-  // Handle various error types and formats
-  let errorMessage = '';
+  const message = typeof error === 'string' 
+    ? error.toLowerCase() 
+    : error instanceof Error 
+      ? error.message.toLowerCase()
+      : '';
   
-  if (typeof error === 'string') {
-    errorMessage = error.toLowerCase();
-  } else if (error instanceof Error) {
-    errorMessage = error.message.toLowerCase();
-    
-    // Check for AbortError which indicates timeout
-    if (error.name === 'AbortError') {
-      return ErrorType.TIMEOUT;
-    }
-  } else if (error && typeof error === 'object') {
-    // Try to extract message from error object
-    if ('message' in error && typeof (error as any).message === 'string') {
-      errorMessage = (error as any).message.toLowerCase();
-    } else if ('error' in error && typeof (error as any).error === 'string') {
-      errorMessage = (error as any).error.toLowerCase();
-    } else {
-      // Try to stringify the object if it doesn't have a message property
-      try {
-        errorMessage = JSON.stringify(error).toLowerCase();
-      } catch (e) {
-        // If we can't stringify it, we'll fall back to the unknown type
-      }
-    }
-  }
-  
-  if (errorMessage.includes('timeout') || 
-      errorMessage.includes('too long') || 
-      errorMessage.includes('canceling statement') ||
-      errorMessage.includes('abort')) {
+  if (message.includes('timeout') || message.includes('too long') || message.includes('canceling statement')) {
     return ErrorType.TIMEOUT;
-  } else if (errorMessage.includes('network') || !navigator?.onLine) {
+  } else if (message.includes('network') || !navigator?.onLine) {
     return ErrorType.NETWORK;
-  } else if (errorMessage.includes('not found') || errorMessage.includes('no results')) {
+  } else if (message.includes('not found') || message.includes('no results')) {
     return ErrorType.NOT_FOUND;
   }
   
@@ -80,64 +55,15 @@ export function detectErrorType(error: unknown): ErrorType {
 export function formatErrorMessage(error: unknown): string {
   if (!error) return 'Unknown error';
   
-  // Handle Supabase error objects
-  if (typeof error === 'object' && error !== null) {
-    if ('message' in error && typeof (error as any).message === 'string') {
-      const message = (error as any).message;
-      if (message.includes('statement timeout')) {
-        return 'The search took too long. Please try a smaller area or add filters.';
-      }
-      return message;
-    }
-    if ('error' in error && typeof (error as any).error === 'string') {
-      return (error as any).error;
-    }
-    
-    // Try to stringify the object if we can't extract a message
-    try {
-      return JSON.stringify(error);
-    } catch (e) {
-      return 'An unexpected error occurred';
-    }
-  }
-  
   if (typeof error === 'string') {
     return error;
   }
   
   if (error instanceof Error) {
-    if (error.name === 'AbortError') {
-      return 'The search request timed out. Please try a more specific location or different filters.';
-    }
     return error.message;
   }
   
   return 'An unexpected error occurred';
-}
-
-/**
- * Detect timeout errors specifically
- */
-export function isTimeoutError(error: unknown): boolean {
-  if (!error) return false;
-  
-  // Check for AbortError which indicates timeout
-  if (error instanceof Error && error.name === 'AbortError') {
-    return true;
-  }
-  
-  const message = typeof error === 'string' 
-    ? error.toLowerCase() 
-    : error instanceof Error 
-      ? error.message.toLowerCase()
-      : typeof error === 'object' && error !== null && 'message' in error
-        ? String((error as any).message).toLowerCase()
-        : '';
-      
-  return message.includes('timeout') || 
-         message.includes('too long') || 
-         message.includes('canceling statement') ||
-         message.includes('abort');
 }
 
 /**
