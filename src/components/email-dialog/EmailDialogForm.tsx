@@ -30,7 +30,7 @@ export const EmailDialogForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      radius: "5" // Changed to match fixed 5km radius
+      radius: "5" // Fixed 5km radius
     }
   });
 
@@ -44,7 +44,7 @@ export const EmailDialogForm = ({
             <FormItem>
               <FormControl>
                 <RadiusSelect 
-                  radius={parseInt(field.value, 10)}
+                  value={field.value}
                   onChange={(value) => field.onChange(value.toString())}
                   className="w-full"
                 />

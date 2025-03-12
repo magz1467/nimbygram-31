@@ -7,7 +7,6 @@ interface RadiusSelectProps {
   onChange?: (radius: number) => void;
   className?: string;
   disabled?: boolean;
-  // Add value prop for compatibility with form components
   value?: string;
 }
 
@@ -20,18 +19,12 @@ export function RadiusSelect({
   onChange,
   value = "5" 
 }: RadiusSelectProps) {
-  const handleValueChange = (newValue: string) => {
-    if (onChange) {
-      onChange(parseInt(newValue, 10));
-    }
-  };
-
   return (
     <div className={`${className}`}>
       <Select 
         disabled={true} 
         value="5"
-        onValueChange={handleValueChange}
+        onValueChange={(value) => onChange?.(parseInt(value, 10))}
       >
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Radius: 5km" />

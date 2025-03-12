@@ -58,17 +58,15 @@ export function useSearchCoordinator(
     if (!debouncedCoordinates) return;
     
     const filterString = JSON.stringify(filters);
-    const radiusString = searchRadius.toString();
     const coordString = debouncedCoordinates.join(',');
     
     // Only update the query key if the search parameters have changed
     if (
       queryKey.current[1] !== coordString || 
-      queryKey.current[2] !== filterString || 
-      queryKey.current[3] !== radiusString
+      queryKey.current[2] !== filterString
     ) {
       const oldKey = [...queryKey.current];
-      queryKey.current = ['planning-applications', coordString, filterString, radiusString];
+      queryKey.current = ['planning-applications', coordString, filterString];
       console.log(`🔑 useSearchCoordinator [${componentId}] query key changed`, {
         from: oldKey,
         to: queryKey.current,
@@ -78,7 +76,7 @@ export function useSearchCoordinator(
       // Start search when parameters change
       startSearch();
     }
-  }, [debouncedCoordinates, filters, searchRadius, componentId, startSearch]);
+  }, [debouncedCoordinates, filters, componentId, startSearch]);
 
   return {
     debouncedCoordinates,

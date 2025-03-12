@@ -72,7 +72,6 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     filters,
     setFilters,
     searchRadius,
-    // We don't need setSearchRadius anymore since we're using a fixed radius
     searchState
   };
 }
