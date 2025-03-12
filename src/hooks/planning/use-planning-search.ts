@@ -7,7 +7,6 @@ import { performSpatialSearch } from './search/spatial-search';
 import { performFallbackSearch } from './search/fallback-search';
 import { handleSearchError } from './search/error-handler';
 import { ErrorType, AppError } from '@/utils/errors';
-import { isUKPostcode } from '@/services/coordinates/location-type-detector';
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SearchFilters {
@@ -43,38 +42,10 @@ async function logSearchAttempt(
   }
 }
 
-// List of postcode areas with good coverage
-const COVERAGE_AREAS = [
-  'AL', 'BR', 'CM', 'CR', 'DA', 'E', 'EC', 'EN', 'HA', 'IG', 
-  'KT', 'N', 'NW', 'RM', 'SE', 'SM', 'SW', 'TN', 'TW', 'UB', 
-  'W', 'WC', 'WD'
-];
-
-// Check if a postcode is in a well-covered area
-function isInPrimaryCoverageArea(searchTerm: string): boolean {
-  if (!isUKPostcode(searchTerm)) return true; // Not a postcode, use default behavior
-  const outwardCode = searchTerm.trim().toUpperCase().split(' ')[0];
-  const area = outwardCode.replace(/[0-9]/g, '');
-  return COVERAGE_AREAS.includes(area);
-}
-
 export const usePlanningSearch = (coordinates: [number, number] | null, searchTerm?: string) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5); // Default radius in km
   const { toast } = useToast();
-  
-  // Adjust radius based on search term location
-  useEffect(() => {
-    if (!coordinates || !searchTerm) return;
-    
-    // For postcodes outside our main coverage area, use a smaller radius to improve performance
-    if (isUKPostcode(searchTerm) && !isInPrimaryCoverageArea(searchTerm)) {
-      console.log('Postcode outside primary coverage area, using reduced search radius');
-      setSearchRadius(3); // Smaller radius for areas with less coverage
-    } else {
-      setSearchRadius(5); // Default radius
-    }
-  }, [coordinates, searchTerm]);
   
   // Detailed debug logging for coordinates changes
   useEffect(() => {
@@ -178,12 +149,6 @@ export const usePlanningSearch = (coordinates: [number, number] | null, searchTe
         console.log('Using fallback bounding box search with radius:', radiusKm);
         const fallbackStartTime = Date.now();
         console.log(`Fallback search started at: ${new Date(fallbackStartTime).toISOString()}`);
-        
-        // Use a smaller radius for the fallback search if we're outside primary coverage areas
-        if (searchTerm && !isInPrimaryCoverageArea(searchTerm)) {
-          console.log('Using smaller radius for fallback search in non-primary area');
-          radiusKm = Math.min(radiusKm, 3);
-        }
         
         const fallbackResults = await performFallbackSearch(lat, lng, radiusKm, filters);
         
