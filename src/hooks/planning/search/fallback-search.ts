@@ -61,73 +61,91 @@ export async function performFallbackSearch(
     }
     
     // Execute the query with timeout
-    const { data: quickData, error: quickError } = await quickQuery.timeout(6000);
+    const quickController = new AbortController();
+    const quickTimeout = setTimeout(() => quickController.abort(), 6000);
     
-    // If we got quick results, use them
-    if (quickData && quickData.length > 0) {
-      console.log(`Got ${quickData.length} quick results from fallback search`);
-      allResults = quickData;
+    try {
+      const { data: quickData, error: quickError } = await quickQuery;
+      clearTimeout(quickTimeout);
       
-      // Process and return these initial results while we fetch more
-      const quickResults = processResults(allResults, lat, lng);
-      
-      // Step 2: Try to get more results in a background fetch
-      try {
-        const fullQuery = supabase
-          .from('crystal_roof')
-          .select('*')
-          .gte('latitude', bbox.minLat)
-          .lte('latitude', bbox.maxLat)
-          .gte('longitude', bbox.minLng)
-          .lte('longitude', bbox.maxLng)
-          .limit(150);
+      // If we got quick results, use them
+      if (quickData && quickData.length > 0) {
+        console.log(`Got ${quickData.length} quick results from fallback search`);
+        allResults = quickData;
         
-        // Apply the same filters
-        if (filters?.status) {
-          fullQuery.ilike('status', `%${filters.status}%`);
-        }
-        if (filters?.type) {
-          fullQuery.ilike('type', `%${filters.type}%`);
+        // Process and return these initial results while we fetch more
+        const quickResults = processResults(allResults, lat, lng);
+        
+        // Step 2: Try to get more results in a background fetch
+        try {
+          const fullQuery = supabase
+            .from('crystal_roof')
+            .select('*')
+            .gte('latitude', bbox.minLat)
+            .lte('latitude', bbox.maxLat)
+            .gte('longitude', bbox.minLng)
+            .lte('longitude', bbox.maxLng)
+            .limit(150);
+          
+          // Apply the same filters
+          if (filters?.status) {
+            fullQuery.ilike('status', `%${filters.status}%`);
+          }
+          if (filters?.type) {
+            fullQuery.ilike('type', `%${filters.type}%`);
+          }
+          
+          // Execute with longer timeout
+          const fullController = new AbortController();
+          const fullTimeout = setTimeout(() => fullController.abort(), 15000);
+          
+          const { data: fullData } = await fullQuery;
+          clearTimeout(fullTimeout);
+          
+          if (fullData && fullData.length > quickData.length) {
+            console.log(`Got ${fullData.length} total results from fallback search`);
+            return processResults(fullData, lat, lng);
+          }
+        } catch (fullError) {
+          console.warn('Full fallback query failed, using quick results:', fullError);
         }
         
-        // Execute with longer timeout
-        const { data: fullData } = await fullQuery.timeout(15000);
-        
-        if (fullData && fullData.length > quickData.length) {
-          console.log(`Got ${fullData.length} total results from fallback search`);
-          return processResults(fullData, lat, lng);
-        }
-      } catch (fullError) {
-        console.warn('Full fallback query failed, using quick results:', fullError);
+        return quickResults;
       }
-      
-      return quickResults;
+    } catch (quickErr) {
+      clearTimeout(quickTimeout);
+      console.error('Quick fallback query failed or aborted:', quickErr);
     }
     
     // If quick query failed or returned no results, try with tighter bounds
-    if (quickError || !quickData || quickData.length === 0) {
-      console.log('Quick query failed or returned no results, trying with modified bounds');
-      
-      // Reduce the search radius for faster query
-      const tighterBbox = calculateBoundingBox(lat, lng, radiusKm * 0.7);
-      
-      const backupQuery = supabase
-        .from('crystal_roof')
-        .select('*')
-        .gte('latitude', tighterBbox.minLat)
-        .lte('latitude', tighterBbox.maxLat)
-        .gte('longitude', tighterBbox.minLng)
-        .lte('longitude', tighterBbox.maxLng)
-        .limit(75);
-      
-      if (filters?.status) {
-        backupQuery.ilike('status', `%${filters.status}%`);
-      }
-      if (filters?.type) {
-        backupQuery.ilike('type', `%${filters.type}%`);
-      }
-      
-      const { data: backupData, error: backupError } = await backupQuery.timeout(10000);
+    console.log('Quick query failed or returned no results, trying with modified bounds');
+    
+    // Reduce the search radius for faster query
+    const tighterBbox = calculateBoundingBox(lat, lng, radiusKm * 0.7);
+    
+    const backupQuery = supabase
+      .from('crystal_roof')
+      .select('*')
+      .gte('latitude', tighterBbox.minLat)
+      .lte('latitude', tighterBbox.maxLat)
+      .gte('longitude', tighterBbox.minLng)
+      .lte('longitude', tighterBbox.maxLng)
+      .limit(75);
+    
+    if (filters?.status) {
+      backupQuery.ilike('status', `%${filters.status}%`);
+    }
+    if (filters?.type) {
+      backupQuery.ilike('type', `%${filters.type}%`);
+    }
+    
+    // Create a timeout for the backup query
+    const backupController = new AbortController();
+    const backupTimeout = setTimeout(() => backupController.abort(), 10000);
+    
+    try {
+      const { data: backupData, error: backupError } = await backupQuery;
+      clearTimeout(backupTimeout);
       
       if (backupError) {
         console.error('Backup query error:', backupError);
@@ -141,10 +159,11 @@ export async function performFallbackSearch(
       
       console.log(`Got ${backupData.length} results from backup fallback search`);
       return processResults(backupData, lat, lng);
+    } catch (backupErr) {
+      clearTimeout(backupTimeout);
+      console.error('Backup query failed or aborted:', backupErr);
+      return [];
     }
-    
-    // This code should never be reached, but just in case
-    return processResults(allResults, lat, lng);
     
   } catch (error) {
     console.error('Error in fallback search:', error);

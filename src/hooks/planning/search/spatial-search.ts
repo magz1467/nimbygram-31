@@ -18,7 +18,7 @@ export async function performSpatialSearch(
     console.log('Search parameters:', { lat, lng, radiusKm, filters });
     
     // Use progressive loading - first get a small batch of results quickly
-    const { data: quickData, error: quickError } = await supabase.rpc(
+    const quickQuery = supabase.rpc(
       'get_nearby_applications',
       {
         center_lat: lat,
@@ -27,67 +27,86 @@ export async function performSpatialSearch(
         result_limit: 25 // Small limit for fast initial results
       },
       { count: 'exact' }
-    ).timeout(8000); // 8 second timeout for quick results
+    );
     
-    // Handle RPC function errors
-    if (quickError) {
-      // Log the specific error for debugging
-      console.error('Spatial search quick fetch error:', quickError.code, quickError.message);
-      
-      // If function doesn't exist, use fallback
-      if (quickError.message.includes('function') && 
-          (quickError.message.includes('exist') || 
-           quickError.message.includes('not found') ||
-           quickError.message.includes('does not exist'))) {
-        console.log('Spatial search RPC function not available, will use fallback search');
-        return null;
-      }
-      
-      // Return null for timeouts to trigger fallback
-      if (quickError.message.includes('timeout') || 
-          quickError.message.includes('cancel') ||
-          quickError.message.includes('57014')) {
-        console.warn('Spatial search timeout, will use fallback search');
-        return null;
-      }
-      
-      // For other errors, also use fallback
-      return null;
-    }
+    // Add timeout by using AbortController
+    const quickController = new AbortController();
+    const quickTimeout = setTimeout(() => quickController.abort(), 8000);
     
-    // Process initial results if available
-    if (quickData && quickData.length > 0) {
-      console.log(`Got ${quickData.length} quick results from spatial search`);
-      const processedQuickData = processResults(quickData, lat, lng, filters);
+    try {
+      const { data: quickData, error: quickError } = await quickQuery;
+      clearTimeout(quickTimeout);
       
-      // Try to get more complete results in the background
-      try {
-        // Use a longer timeout for the full results
-        const { data: fullData } = await supabase.rpc(
-          'get_nearby_applications',
-          {
-            center_lat: lat,
-            center_lng: lng,
-            radius_km: radiusKm,
-            result_limit: 100
-          }
-        ).timeout(15000); // 15 seconds for full results
+      // Handle RPC function errors
+      if (quickError) {
+        // Log the specific error for debugging
+        console.error('Spatial search quick fetch error:', quickError.code, quickError.message);
         
-        if (fullData && fullData.length > quickData.length) {
-          console.log(`Got ${fullData.length} total results from spatial search`);
-          return processResults(fullData, lat, lng, filters);
+        // If function doesn't exist, use fallback
+        if (quickError.message.includes('function') && 
+            (quickError.message.includes('exist') || 
+             quickError.message.includes('not found') ||
+             quickError.message.includes('does not exist'))) {
+          console.log('Spatial search RPC function not available, will use fallback search');
+          return null;
         }
-      } catch (fullError) {
-        console.warn('Full spatial query failed, using quick results:', fullError);
+        
+        // Return null for timeouts to trigger fallback
+        if (quickError.message.includes('timeout') || 
+            quickError.message.includes('cancel') ||
+            quickError.message.includes('57014')) {
+          console.warn('Spatial search timeout, will use fallback search');
+          return null;
+        }
+        
+        // For other errors, also use fallback
+        return null;
       }
       
-      // Return the quick results if full results failed
-      return processedQuickData;
+      // Process initial results if available
+      if (quickData && quickData.length > 0) {
+        console.log(`Got ${quickData.length} quick results from spatial search`);
+        const processedQuickData = processResults(quickData, lat, lng, filters);
+        
+        // Try to get more complete results in the background
+        try {
+          // Use a longer timeout for the full results
+          const fullQuery = supabase.rpc(
+            'get_nearby_applications',
+            {
+              center_lat: lat,
+              center_lng: lng,
+              radius_km: radiusKm,
+              result_limit: 100
+            }
+          );
+          
+          // Create a timeout for the full query
+          const fullController = new AbortController();
+          const fullTimeout = setTimeout(() => fullController.abort(), 15000);
+          
+          const { data: fullData } = await fullQuery;
+          clearTimeout(fullTimeout);
+          
+          if (fullData && fullData.length > quickData.length) {
+            console.log(`Got ${fullData.length} total results from spatial search`);
+            return processResults(fullData, lat, lng, filters);
+          }
+        } catch (fullError) {
+          console.warn('Full spatial query failed, using quick results:', fullError);
+        }
+        
+        // Return the quick results if full results failed
+        return processedQuickData;
+      }
+    } catch (quickErr) {
+      clearTimeout(quickTimeout);
+      console.error('Quick query aborted or failed:', quickErr);
     }
     
     // If no quick results, try one more time with higher limit
     // but still with reasonable timeout
-    const { data, error } = await supabase.rpc(
+    const finalQuery = supabase.rpc(
       'get_nearby_applications',
       {
         center_lat: lat,
@@ -95,20 +114,33 @@ export async function performSpatialSearch(
         radius_km: radiusKm,
         result_limit: 100
       }
-    ).timeout(12000); // 12 second timeout
+    );
     
-    if (error) {
-      console.error('Spatial search error:', error);
+    // Create a timeout for the final query
+    const finalController = new AbortController();
+    const finalTimeout = setTimeout(() => finalController.abort(), 12000);
+    
+    try {
+      const { data, error } = await finalQuery;
+      clearTimeout(finalTimeout);
+      
+      if (error) {
+        console.error('Spatial search error:', error);
+        return null;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log('No results found in spatial search');
+        return [];
+      }
+      
+      console.log(`Got ${data.length} results from spatial search`);
+      return processResults(data, lat, lng, filters);
+    } catch (err) {
+      clearTimeout(finalTimeout);
+      console.error('Final spatial search error:', err);
       return null;
     }
-    
-    if (!data || data.length === 0) {
-      console.log('No results found in spatial search');
-      return [];
-    }
-    
-    console.log(`Got ${data.length} results from spatial search`);
-    return processResults(data, lat, lng, filters);
     
   } catch (error) {
     console.error('Spatial search error:', error);

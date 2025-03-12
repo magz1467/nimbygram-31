@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
@@ -38,16 +37,19 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#F6F6F7] text-foreground font-sans;
+    @apply bg-[#F6F6F7] text-foreground font-sans min-h-screen overflow-x-hidden;
   }
   
-  /* Update scaling to 80% for zoom effect */
+  /* Update the root scaling and ensure proper viewport containment */
   #root {
     max-width: 1440px;
     margin: 0 auto;
     transform: scale(0.8);
     transform-origin: top center;
     padding: 2rem;
+    min-height: 100vh; /* Ensure the root takes full viewport height */
+    display: flex;
+    flex-direction: column;
   }
   
   /* Add additional container padding for better spacing */
@@ -65,6 +67,7 @@
   /* Make sure footer aligns properly with content */
   footer .container {
     @apply px-8 md:px-12 lg:px-16;
+    margin-bottom: 0; /* Ensure the footer sticks to the bottom */
   }
 }
 
