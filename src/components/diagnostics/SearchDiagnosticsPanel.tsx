@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { searchDiagnostics } from '@/utils/search-diagnostics';
 
 export const SearchDiagnosticsPanel = () => {

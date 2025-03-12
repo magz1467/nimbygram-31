@@ -1,7 +1,7 @@
 
 import { executeSearch } from "@/hooks/planning/search/search-executor";
 import { performSpatialSearch } from "@/hooks/planning/search/spatial-search";
-import { SearchMethod, SearchParams, SearchFilters } from "@/hooks/planning/search/types";
+import type { SearchMethod, SearchParams, SearchFilters } from "@/hooks/planning/search/types";
 import { usePlanningSearch } from "@/hooks/planning/use-planning-search";
 import { useSearchStateManager } from "@/hooks/planning/search/use-search-state-manager";
 import { useCoordinates } from "@/hooks/use-coordinates";
@@ -16,9 +16,6 @@ export const searchDiagnostics = {
   usePlanningSearch,
   useSearchStateManager,
   useCoordinates,
-  
-  // Types
-  SearchMethod,
   
   // Diagnostic functions
   logSearchState: (params: SearchParams) => {
@@ -58,4 +55,3 @@ export const searchDiagnostics = {
 };
 
 export type { SearchParams, SearchFilters };
-

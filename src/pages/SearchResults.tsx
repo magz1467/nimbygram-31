@@ -51,23 +51,15 @@ const SearchResultsPage = () => {
     };
   }, [componentId, location.pathname, searchState]);
 
-  // Log route changes
+  // Log route changes - fixed to prevent recurring effects
   useEffect(() => {
-    console.log(`🧭 SearchResultsPage location changed [${componentId}]`, {
-      pathname: location.pathname,
-      search: location.search,
-      state: location.state ? {
-        searchType: location.state.searchType,
-        searchTerm: location.state.searchTerm,
-        timestamp: location.state.timestamp
-      } : 'none',
-      renderCount: renderCountRef.current
-    });
+    if (!previousPath.current) {
+      previousPath.current = location.pathname;
+      return;
+    }
     
     if (previousPath.current !== location.pathname) {
-      if (previousPath.current) {
-        logRouteChange(previousPath.current, location.pathname, 'internal');
-      }
+      logRouteChange(previousPath.current, location.pathname, 'internal');
       previousPath.current = location.pathname;
     }
     
@@ -77,8 +69,8 @@ const SearchResultsPage = () => {
         clearTimeout(handleErrorTimeoutRef.current);
       }
     };
-  }, [location, componentId]);
-
+  }, [location.pathname]);
+  
   // Use useCallback to create stable function references
   const handleError = useCallback((err: Error | any) => {
     if (err) {
@@ -101,6 +93,8 @@ const SearchResultsPage = () => {
   }, [componentId]);
 
   const handleSearchComplete = useCallback(() => {
+    if (searchCompleteCalledRef.current) return;
+    
     console.log(`✅ SearchResultsPage search complete [${componentId}]`, {
       alreadyCalled: searchCompleteCalledRef.current,
       renderCount: renderCountRef.current

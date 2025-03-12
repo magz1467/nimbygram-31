@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
@@ -69,6 +69,9 @@ export const SearchView = ({
     (renderCounts.searchViewWithParams.get(searchParamsKey) || 0) + 1
   );
   
+  // Memoize the search term to prevent unnecessary coordinate lookups
+  const searchTerm = useMemo(() => initialSearch?.searchTerm || '', [initialSearch?.searchTerm]);
+  
   // Log render information
   useEffect(() => {
     console.log(`🔍 SearchView [${componentId}] MOUNTED`, {
@@ -96,9 +99,7 @@ export const SearchView = ({
     };
   }, [componentId, initialSearch?.searchTerm, initialSearch?.timestamp]);
   
-  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
-    initialSearch?.searchTerm || ''
-  );
+  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(searchTerm);
 
   // Log coordinate changes
   useEffect(() => {
@@ -112,6 +113,7 @@ export const SearchView = ({
     }
   }, [coordinates, componentId]);
 
+  // Only trigger usePlanningSearch when coordinates are available
   const { 
     applications, 
     isLoading: isLoadingResults,
@@ -155,16 +157,19 @@ export const SearchView = ({
     }
   }, [error, onError]);
 
-  // Search completion
-  useEffect(() => {
+  // Search completion - ensure this only runs once per search
+  const handleSearchCompleted = useCallback(() => {
     if (!isLoading && coordinates && applications && !searchCompleteRef.current && hasResults) {
       console.log(`✅ Search complete [${componentId}] - calling onSearchComplete`);
       searchCompleteRef.current = true;
-      if (onSearchComplete) {
-        onSearchComplete();
-      }
+      onSearchComplete?.();
     }
   }, [isLoading, coordinates, applications, onSearchComplete, componentId, hasResults]);
+
+  // Use a separate effect for search completion to avoid frequent rerenders
+  useEffect(() => {
+    handleSearchCompleted();
+  }, [handleSearchCompleted]);
 
   // If we found some applications but the search itself reported an error
   useEffect(() => {
