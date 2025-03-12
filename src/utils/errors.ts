@@ -1,4 +1,3 @@
-
 import { ErrorType } from "./errors/types";
 
 /**
@@ -55,15 +54,40 @@ export function detectErrorType(error: unknown): ErrorType {
 export function formatErrorMessage(error: unknown): string {
   if (!error) return 'Unknown error';
   
+  // Handle Supabase error objects
+  if (typeof error === 'object' && error !== null) {
+    if ('message' in error) {
+      if (error.message.includes('statement timeout')) {
+        return 'The search took too long. Please try a smaller area or add filters.';
+      }
+      return error.message;
+    }
+    if ('error' in error && typeof (error as any).error === 'string') {
+      return (error as any).error;
+    }
+  }
+  
   if (typeof error === 'string') {
     return error;
   }
   
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
   return 'An unexpected error occurred';
+}
+
+/**
+ * Detect timeout errors specifically
+ */
+export function isTimeoutError(error: unknown): boolean {
+  if (!error) return false;
+  const message = typeof error === 'string' 
+    ? error.toLowerCase() 
+    : error instanceof Error 
+      ? error.message.toLowerCase()
+      : '';
+      
+  return message.includes('timeout') || 
+         message.includes('too long') || 
+         message.includes('canceling statement');
 }
 
 /**
