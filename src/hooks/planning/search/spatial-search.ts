@@ -5,8 +5,8 @@ import { calculateDistance } from "../utils/distance-calculator";
 
 /**
  * Performs a spatial search for planning applications
- * Note: This function is currently not functional since the RPC doesn't exist
- * We keep it for future implementation
+ * This is a stub function that immediately returns null since the RPC function doesn't exist
+ * When the RPC function is created, this can be updated to use it
  */
 export async function performSpatialSearch(
   lat: number, 
@@ -14,13 +14,7 @@ export async function performSpatialSearch(
   radiusKm: number,
   filters: any
 ): Promise<Application[] | null> {
-  try {
-    // We'll immediately return null as the function doesn't exist on the server
-    // This will trigger the fallback search
-    console.log('Spatial search attempted but skipped - using fallback search instead');
-    return null;
-  } catch (error) {
-    console.error('Spatial search failed:', error);
-    return null;
-  }
+  // Immediately return null without attempting to call a non-existent function
+  console.log('Spatial search skipped - RPC function not available');
+  return null;
 }

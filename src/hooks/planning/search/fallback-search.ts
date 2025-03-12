@@ -26,7 +26,7 @@ export async function performFallbackSearch(
     
     console.log(`Search bounds: lat ${minLat} to ${maxLat}, lng ${minLng} to ${maxLng}`);
     
-    // Create query with proper typings for the filter conditions
+    // Create query
     let query = supabase
       .from('crystal_roof')
       .select('*')
@@ -35,16 +35,16 @@ export async function performFallbackSearch(
       .gte('longitude', minLng)
       .lte('longitude', maxLng);
     
-    // Add other filters
-    if (filters.status) {
+    // Add other filters if they exist and are not empty
+    if (filters?.status && filters.status.trim() !== '') {
       query = query.ilike('status', `%${filters.status}%`);
     }
     
-    if (filters.type) {
+    if (filters?.type && filters.type.trim() !== '') {
       query = query.ilike('type', `%${filters.type}%`);
     }
     
-    if (filters.classification) {
+    if (filters?.classification && filters.classification.trim() !== '') {
       query = query.ilike('classification', `%${filters.classification}%`);
     }
     
@@ -55,7 +55,6 @@ export async function performFallbackSearch(
     const { data, error } = await query;
     
     if (error) {
-      // Log the error but don't throw - we'll return an empty array instead
       console.error('Fallback search error:', error);
       return [];
     }

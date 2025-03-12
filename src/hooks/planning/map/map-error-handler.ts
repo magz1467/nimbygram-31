@@ -19,6 +19,22 @@ export function handleMapError(
     return;
   }
   
+  // Determine error type
+  let errorType = ErrorType.UNKNOWN;
+  if (err && typeof err === 'object' && err.message) {
+    if (
+      err.message.includes('timeout') || 
+      err.message.includes('too long') ||
+      err.message.includes('canceling statement')
+    ) {
+      errorType = ErrorType.TIMEOUT;
+    } else if (err.message.includes('network') || !navigator.onLine) {
+      errorType = ErrorType.NETWORK;
+    } else if (err.message.includes('not found') || err.message.includes('no results')) {
+      errorType = ErrorType.NOT_FOUND;
+    }
+  }
+  
   // Use the centralized error handler
   handleError(err, toast, {
     context: 'map',
