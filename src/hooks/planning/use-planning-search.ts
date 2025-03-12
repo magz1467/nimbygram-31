@@ -3,11 +3,9 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
-import { performSpatialSearch } from './search/spatial-search';
-import { performFallbackSearch } from './search/fallback-search';
-import { handleSearchError } from './search/error-handler';
 import { useErrorHandler } from '@/hooks/use-error-handler';
-import { searchLogger } from '@/utils/searchLogger';
+import { executeSearch } from './search/search-executor';
+import { processSearchError } from './search/search-error-handler';
 
 export interface SearchFilters {
   status?: string;
@@ -15,6 +13,12 @@ export interface SearchFilters {
   classification?: string;
 }
 
+/**
+ * Hook for searching planning applications based on coordinates
+ * 
+ * @param coordinates [latitude, longitude] for the search center
+ * @returns Search results, loading state, error state, filters, and control functions
+ */
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const { toast } = useToast();
@@ -31,32 +35,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       try {
         console.log(`🔍 Search attempt ${searchAttempts + 1} with coordinates: [${coordinates[0]}, ${coordinates[1]}]`);
         
-        const [lat, lng] = coordinates;
-        const radiusKm = 10;
+        // Default radius in kilometers
+        const searchRadius = 10;
         
-        // Log search for analytics
-        await searchLogger.logSearch(`${lat},${lng}`, 'coordinates', 'planning');
-        
-        // Try spatial search first
-        try {
-          const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
-          if (spatialResults) {
-            return spatialResults;
-          }
-        } catch (spatialFunctionError) {
-          console.log('Using spatial function not available, using fallback method');
-          
-          // Only log real errors, not just the fallback path
-          if (!isNonCritical(spatialFunctionError)) {
-            console.error('Spatial search error:', spatialFunctionError);
-          }
-          // Continue to fallback method
-        }
-        
-        // If spatial search fails or isn't available, fall back to manual search
-        return await performFallbackSearch(lat, lng, radiusKm, filters);
+        // Execute the search with appropriate strategies
+        return await executeSearch(coordinates, searchRadius, filters);
       } catch (err: any) {
-        return handleSearchError(err, toast, () => {
+        return processSearchError(err, toast, () => {
           // Increment search attempts to trigger a retry
           setSearchAttempts(prev => prev + 1);
         });
