@@ -16,6 +16,7 @@ interface ResultsListProps {
   isLastPage: boolean;
   onRetry?: () => void;
   handleLoadMore: () => Promise<void>;
+  hideControls?: boolean;
 }
 
 export const ResultsList = ({
@@ -30,25 +31,26 @@ export const ResultsList = ({
   postcode = "",
   isLastPage,
   onRetry,
-  handleLoadMore
+  handleLoadMore,
+  hideControls = false
 }: ResultsListProps) => {
   // Make sure coordinates are valid before passing them
   const validSearchCoordinates = coordinates ? (Array.isArray(coordinates) && coordinates.length === 2 ? coordinates as [number, number] : undefined) : undefined;
 
   return (
-    <div className="py-4">
-      <div className="max-w-lg mx-auto space-y-6">
+    <div className={hideControls ? "" : "py-4"}>
+      <div className={hideControls ? "" : "max-w-lg mx-auto space-y-6"}>
         {loadedApplications.map((application) => (
           <div 
             key={application.id}
-            className="animate-fade-in"
+            className={`animate-fade-in ${selectedId === application.id ? 'ring-2 ring-pink-300 rounded-lg' : ''}`}
           >
             <SearchResultCard
               application={application}
               onSeeOnMap={onSeeOnMap}
               applications={allApplications}
               selectedId={selectedId}
-              coordinates={validSearchCoordinates} // Pass validated coordinates
+              coordinates={validSearchCoordinates}
               handleMarkerClick={handleMarkerClick}
               isLoading={isLoading}
               postcode={postcode}
@@ -57,7 +59,7 @@ export const ResultsList = ({
         ))}
       </div>
 
-      {applications.length > loadedApplications.length && (
+      {!hideControls && applications.length > loadedApplications.length && (
         <div className="mt-8 max-w-lg mx-auto">
           <LoadMoreButton 
             onLoadMore={handleLoadMore}
