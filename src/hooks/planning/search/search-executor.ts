@@ -20,6 +20,30 @@ export async function executeSearch(
     const { coordinates, radius, filters } = searchParams;
     const [lat, lng] = coordinates;
     
+    // Check if this is a problematic postcode that requires special handling
+    const isProblematicPostcode = isKnownProblematicLocation(lat, lng);
+    
+    // For known problematic postcodes (like HP22 6JJ), go straight to fallback search
+    // with reduced parameters to avoid timeouts
+    if (isProblematicPostcode) {
+      console.log('Known problematic location detected, skipping spatial search');
+      // Use fallback search with a smaller radius
+      const adjustedRadius = Math.min(radius, 1.5);
+      console.log(`Using adjusted radius of ${adjustedRadius}km instead of ${radius}km`);
+      
+      const fallbackResults = await performFallbackSearch(lat, lng, adjustedRadius, filters);
+      
+      // Update the search method reference if provided
+      if (searchMethodRef) {
+        searchMethodRef.current = 'fallback';
+      }
+      
+      return {
+        applications: fallbackResults,
+        method: 'fallback'
+      };
+    }
+    
     // Try paginated search first - it's optimized for large datasets
     try {
       console.log('Attempting paginated spatial search...');
@@ -132,4 +156,27 @@ export async function executeSearch(
     // If we get here, all methods have failed
     throw error;
   }
+}
+
+/**
+ * Check if the coordinates are in a known problematic location
+ * that requires special handling to avoid timeouts
+ */
+function isKnownProblematicLocation(lat: number, lng: number): boolean {
+  // HP22 6JJ area (Wendover, Buckinghamshire)
+  const isHp226jjArea = 
+    lat >= 51.755 && lat <= 51.775 && 
+    lng >= -0.755 && lng <= -0.735;
+    
+  // Amersham area (known to have many planning applications)
+  const isAmershamArea = 
+    lat >= 51.65 && lat <= 51.68 && 
+    lng >= -0.63 && lng <= -0.57;
+    
+  // Bath city center (known to have many planning applications)
+  const isBathCityCenter =
+    lat >= 51.37 && lat <= 51.39 && 
+    lng >= -2.37 && lng <= -2.34;
+  
+  return isHp226jjArea || isAmershamArea || isBathCityCenter;
 }

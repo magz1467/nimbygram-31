@@ -21,11 +21,16 @@ export const SearchErrorView = ({
   // Format error message to avoid [object Object]
   const formattedErrorDetails = formatErrorMessage(errorDetails);
   
+  // Check if this is Wendover (HP22 6JJ) area timeout
+  const isWendoverPostcode = formattedErrorDetails?.includes('HP22 6JJ') || 
+    formattedErrorDetails?.toLowerCase().includes('wendover');
+  
   // Determine if this is a timeout with a specific area
   const isLocationTimeout = errorType === ErrorType.TIMEOUT && 
     (formattedErrorDetails?.includes('Amersham') || 
      formattedErrorDetails?.includes('reduced area') ||
-     formattedErrorDetails?.includes('search area'));
+     formattedErrorDetails?.includes('search area') ||
+     isWendoverPostcode);
   
   // Select the appropriate icon based on error type
   const ErrorIcon = () => {
@@ -45,6 +50,8 @@ export const SearchErrorView = ({
 
   // Get a title based on error type
   const getErrorTitle = () => {
+    if (isWendoverPostcode) return "Wendover Area Search Timeout";
+    
     switch (errorType) {
       case ErrorType.NETWORK:
         return "Connection Problem";
@@ -59,6 +66,10 @@ export const SearchErrorView = ({
 
   // Get a helpful message based on error type
   const getErrorMessage = () => {
+    if (isWendoverPostcode) {
+      return "The Wendover area (HP22 6JJ) has too many planning applications to search all at once. Please try searching a more specific location or street name within Wendover.";
+    }
+    
     if (formattedErrorDetails && !isLocationTimeout) return formattedErrorDetails;
     
     switch (errorType) {
@@ -66,7 +77,7 @@ export const SearchErrorView = ({
         return "We're having trouble connecting to our servers. Please check your internet connection and try again.";
       case ErrorType.TIMEOUT:
         return isLocationTimeout ? 
-          "This area has too many planning applications to search all at once. Please try searching a more specific location within Amersham." :
+          "This area has too many planning applications to search all at once. Please try searching a more specific location within this area." :
           "The search took too long to complete. Please try a more specific location or different filters.";
       case ErrorType.NOT_FOUND:
         return "We couldn't find any planning applications matching your search criteria.";
@@ -75,14 +86,23 @@ export const SearchErrorView = ({
     }
   };
   
-  // Get suggestions based on error type
+  // Get suggestions based on error type and specific location
   const getSuggestions = () => {
+    if (isWendoverPostcode) {
+      return [
+        "Try searching for a specific street in Wendover",
+        "Use 'Wendover High Street' or another landmark instead",
+        "Try searching for 'Halton' or another nearby village",
+        "Try a smaller search radius (3km or less) once you search again"
+      ];
+    }
+    
     switch (errorType) {
       case ErrorType.TIMEOUT:
         return isLocationTimeout ? [
-          "Try searching for a specific street in Amersham",
-          "Add 'Amersham High Street' or another landmark instead",
-          "Use a full postcode instead of just 'Amersham'",
+          "Try searching for a specific street in this area",
+          "Add a street name or landmark to your search",
+          "Use a full postcode instead of just the area name",
           "Try a smaller search radius once you search again"
         ] : [
           "Use a more specific location (e.g., full postcode instead of just 'Bath')",

@@ -33,6 +33,15 @@ export async function performFallbackSearch(
       radiusKm = 5; // Default to 5km
     }
     
+    // Check if this is a known high-density area like HP22 6JJ
+    const isHighDensityArea = isKnownHighDensityArea(lat, lng);
+    if (isHighDensityArea) {
+      console.log('High density area detected, using reduced search parameters');
+      // Use smaller radius for high-density areas
+      radiusKm = Math.min(radiusKm, 2);
+      console.log('Adjusted radius for high-density area:', radiusKm);
+    }
+    
     // Calculate the latitude and longitude deltas for the bounding box
     // 1 degree of latitude = ~111.32 km
     // 1 degree of longitude = ~111.32 km * cos(latitude)
@@ -45,6 +54,9 @@ export async function performFallbackSearch(
       lngMin: lng - lngDelta,
       lngMax: lng + lngDelta
     });
+    
+    // For high-density areas or large radius searches, fetch fewer results initially
+    const resultLimit = isHighDensityArea || radiusKm > 3 ? 50 : 100;
     
     // Build the query with more robust error handling
     let query = supabase
@@ -71,9 +83,9 @@ export async function performFallbackSearch(
     }
     
     // Limit the number of results to improve performance
-    query = query.limit(100); // Reduced from 200 to 100
+    query = query.limit(resultLimit);
     
-    console.log('Executing fallback search query');
+    console.log(`Executing fallback search query with limit: ${resultLimit}`);
     let { data, error } = await query;
     
     if (error) {
@@ -99,17 +111,18 @@ export async function performFallbackSearch(
             .lte('latitude', lat + reducedLatDelta)
             .gte('longitude', lng - reducedLngDelta)
             .lte('longitude', lng + reducedLngDelta)
-            .limit(50); // Reduced from 100 to 50
+            .limit(30); // Reduced from 50 to 30
           
           const { data: reducedData, error: reducedError } = await reducedQuery;
           
           if (reducedError) {
             console.error('Reduced area search also failed:', reducedError);
             
-            // Last resort - try an even smaller area with minimal filters
+            // Last resort - try an even smaller area with minimal fields
             console.log('Attempting last resort search with minimal area');
             
             try {
+              // Include only essential fields to speed up the query
               const lastResortQuery = supabase
                 .from('crystal_roof')
                 .select('id, latitude, longitude, address, title, status')
@@ -117,9 +130,16 @@ export async function performFallbackSearch(
                 .lte('latitude', lat + (reducedLatDelta * 0.5))
                 .gte('longitude', lng - (reducedLngDelta * 0.5))
                 .lte('longitude', lng + (reducedLngDelta * 0.5))
-                .limit(20);
+                .limit(15); // Further reduced limit
                 
               const { data: lastResortData, error: lastResortError } = await lastResortQuery;
+              
+              // Emergency fallback for very problematic postcodes (like HP22 6JJ)
+              if ((lastResortError || !lastResortData || lastResortData.length === 0) && 
+                  isHighDensityArea) {
+                console.log('All standard methods failed for known high-density area, using micro search');
+                return performMicroSearch(lat, lng, filters);
+              }
               
               if (lastResortError || !lastResortData || lastResortData.length === 0) {
                 throw createAppError('Search failed after multiple retries', lastResortError || reducedError, { 
@@ -132,6 +152,12 @@ export async function performFallbackSearch(
               console.log(`Last resort search found ${lastResortData.length} results`);
               data = lastResortData;
             } catch (finalError) {
+              // If we're in a known high-density area, try one last emergency approach
+              if (isHighDensityArea) {
+                console.log('All standard methods failed for known high-density area, using micro search');
+                return performMicroSearch(lat, lng, filters);
+              }
+              
               throw createAppError('All search attempts failed', finalError, { 
                 type: ErrorType.TIMEOUT,
                 userMessage: 'We had trouble searching this area. Please try a more specific location or try again later.'
@@ -145,6 +171,12 @@ export async function performFallbackSearch(
             data = reducedData;
           }
         } catch (retryError) {
+          // If we're in a known high-density area, try one last emergency approach
+          if (isHighDensityArea) {
+            console.log('All standard methods failed for known high-density area, using micro search');
+            return performMicroSearch(lat, lng, filters);
+          }
+          
           // If the retry also fails, throw a more specific error
           throw createAppError('Search failed after retry with reduced area', retryError, {
             type: ErrorType.TIMEOUT,
@@ -247,6 +279,99 @@ export async function performFallbackSearch(
       }
     );
   }
+}
+
+/**
+ * A last-resort search method for problematic high-density areas
+ * Uses a very small radius and limited fields to improve performance
+ */
+async function performMicroSearch(lat: number, lng: number, filters: any): Promise<Application[]> {
+  console.log('Performing micro search for high-density area');
+  
+  const microRadius = 0.3; // 300 meters only
+  const latDelta = microRadius / 111.32;
+  const lngDelta = microRadius / (111.32 * Math.cos(lat * Math.PI / 180));
+  
+  try {
+    // Ultra-minimal query with only essential fields
+    const query = supabase
+      .from('crystal_roof')
+      .select('id, latitude, longitude, address, title, status, type, decision_date')
+      .gte('latitude', lat - latDelta)
+      .lte('latitude', lat + latDelta)
+      .gte('longitude', lng - lngDelta)
+      .lte('longitude', lng + lngDelta)
+      .limit(10); // Very low limit to ensure we get at least some results
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Micro search failed:', error);
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('No results found in micro search');
+      return [];
+    }
+    
+    console.log(`Micro search found ${data.length} results`);
+    
+    // Process results
+    const results = data.map(app => {
+      try {
+        const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
+        const distanceMiles = distanceKm * 0.621371;
+        
+        return {
+          ...app,
+          distance: `${distanceMiles.toFixed(1)} mi`,
+          coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
+        };
+      } catch (err) {
+        return {
+          ...app,
+          distance: 'Nearby',
+          coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
+        };
+      }
+    });
+    
+    return results;
+  } catch (error) {
+    console.error('Error in micro search:', error);
+    throw createAppError(
+      'Emergency micro search failed', 
+      error,
+      {
+        type: ErrorType.SEARCH,
+        context: { lat, lng, microRadius: microRadius },
+        userMessage: 'We found too many planning applications in this area. Please try searching for a specific street within this postcode area.'
+      }
+    );
+  }
+}
+
+/**
+ * Check if the coordinates are in a known high-density area
+ * These are areas that typically cause timeouts
+ */
+function isKnownHighDensityArea(lat: number, lng: number): boolean {
+  // Special case for HP22 6JJ area (and surrounding)
+  const isHp226jjArea = 
+    lat >= 51.755 && lat <= 51.775 && 
+    lng >= -0.755 && lng <= -0.735;
+    
+  // Add other problematic areas here as needed
+  const isAmershamArea = 
+    lat >= 51.65 && lat <= 51.68 && 
+    lng >= -0.63 && lng <= -0.57;
+    
+  const isBathArea =
+    lat >= 51.35 && lat <= 51.40 && 
+    lng >= -2.40 && lng <= -2.33;
+    
+  return isHp226jjArea || isAmershamArea || isBathArea;
 }
 
 // Helper function to determine error type
