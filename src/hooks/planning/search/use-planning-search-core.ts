@@ -1,18 +1,18 @@
 
 import { useState, useEffect } from 'react';
 import { Application } from "@/types/planning";
-import { SearchFilters, SearchMethod } from './types';
+import { SearchFilters } from './types';
 import { useSearchCoordinator } from './use-search-coordinator';
 import { useSearchQuery } from './use-search-query';
-import { useSearchFallback } from './use-search-fallback';
 import { useSearchCompletionHandler } from './use-search-completion-handler';
 
 /**
- * Core implementation of the planning search hook
+ * Simplified core implementation of the planning search hook
  */
 export function usePlanningSearchCore(coordinates: [number, number] | null) {
   const [filters, setFilters] = useState<SearchFilters>({});
-  const [searchRadius, setSearchRadius] = useState<number>(5);
+  // Always use 5km radius for simplicity
+  const searchRadius = 5;
   
   // Get search coordination functions
   const {
@@ -45,20 +45,6 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     }
   );
   
-  // Set up fallback handling with progressive search
-  const {
-    progressiveResults,
-    isLoadingProgressive,
-    hasProgressiveResults
-  } = useSearchFallback(
-    debouncedCoordinates,
-    searchRadius,
-    filters,
-    searchState.isLoading,
-    !!searchState.error,
-    setResults
-  );
-  
   // Handle search completion telemetry
   useSearchCompletionHandler(
     debouncedCoordinates,
@@ -77,23 +63,16 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     }
   }, [applications, setResults]);
 
-  // Use progressive results while waiting for main search
-  const finalApplications = (searchState.isLoading && progressiveResults.length > 0) 
-    ? progressiveResults 
-    : (applications || []);
-
   return {
-    applications: finalApplications,
+    applications: applications || [],
     hasResults: searchState.hasResults,
     isLoading: searchState.isLoading,
     isFetching,
-    isLoadingProgressive,
     error: searchState.error,
     filters,
     setFilters,
     searchRadius,
-    setSearchRadius,
-    searchState,
-    progressiveResults: hasProgressiveResults
+    // We don't need setSearchRadius anymore since we're using a fixed radius
+    searchState
   };
 }

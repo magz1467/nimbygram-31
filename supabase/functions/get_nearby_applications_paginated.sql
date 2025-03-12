@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION get_nearby_applications_paginated(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
-  radius_km DOUBLE PRECISION DEFAULT 10,
+  radius_km DOUBLE PRECISION DEFAULT 5, -- Default set to 5km
   page_number INTEGER DEFAULT 0,
   page_size INTEGER DEFAULT 50
 )
@@ -18,11 +18,8 @@ BEGIN
     RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
   END IF;
   
-  IF radius_km <= 0 OR radius_km > 50 THEN
-    -- Enforce reasonable radius limits
-    radius_km := GREATEST(LEAST(radius_km, 50), 0.5);
-    RAISE NOTICE 'Adjusted radius to within valid range: %km', radius_km;
-  END IF;
+  -- Force radius to be 5km for consistency
+  radius_km := 5;
   
   -- Validate and limit pagination parameters
   page_size := LEAST(page_size, 100); -- Cap page size at 100
@@ -43,7 +40,7 @@ BEGIN
              POWER(SIN((RADIANS(cr.latitude) - RADIANS(center_lat))/2), 2) + 
              COS(RADIANS(center_lat)) * COS(RADIANS(cr.latitude)) * 
              POWER(SIN((RADIANS(cr.longitude) - RADIANS(center_lng))/2), 2)
-           )) as distance
+           )) as distance_km
     FROM crystal_roof cr
     WHERE 
       cr.latitude IS NOT NULL AND
@@ -54,8 +51,8 @@ BEGIN
   )
   SELECT *
   FROM bounded_results
-  WHERE distance <= radius_km
-  ORDER BY distance ASC
+  WHERE distance_km <= radius_km
+  ORDER BY distance_km ASC
   LIMIT page_size
   OFFSET offset_val;
   
@@ -64,13 +61,8 @@ BEGIN
 END;
 $$;
 
--- Add index for improved query performance if it doesn't exist
-CREATE INDEX IF NOT EXISTS idx_crystal_roof_coords 
-ON crystal_roof (latitude, longitude)
-WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
-
--- Set reasonable timeout (increased to 15 seconds to match other function)
-ALTER FUNCTION get_nearby_applications_paginated SET statement_timeout = '15s';
+-- Set timeout to 30 seconds
+ALTER FUNCTION get_nearby_applications_paginated SET statement_timeout = '30s';
 
 -- Grant permissions
 GRANT EXECUTE ON FUNCTION get_nearby_applications_paginated TO anon, authenticated;

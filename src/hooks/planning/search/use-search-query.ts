@@ -6,12 +6,12 @@ import { SearchFilters } from './types';
 import { useSearchErrorHandler } from './use-search-error-handler';
 
 /**
- * Hook to execute the main search query with proper error handling
+ * Hook to execute the simplified search query with proper error handling
  */
 export function useSearchQuery(
   queryKey: string[],
   debouncedCoordinates: [number, number] | null,
-  searchRadius: number,
+  searchRadius: number, // This parameter is kept for backward compatibility but not used
   filters: SearchFilters,
   queryStartTimeRef: React.MutableRefObject<number>,
   options: {
@@ -23,7 +23,7 @@ export function useSearchQuery(
 ) {
   const { handleSearchError } = useSearchErrorHandler(
     debouncedCoordinates, 
-    searchRadius, 
+    5, // Fixed 5km radius
     filters
   );
   
@@ -36,7 +36,7 @@ export function useSearchQuery(
         queryStartTimeRef.current = Date.now();
         console.log(`🔍 useSearchQuery query started`, {
           coordinates: debouncedCoordinates,
-          radius: searchRadius,
+          radius: 5, // Fixed 5km radius
           filters: Object.keys(filters),
           time: new Date().toISOString(),
           queryKey: queryKey,
@@ -45,7 +45,7 @@ export function useSearchQuery(
         options.onProgress('coordinates', 10);
         
         const result = await executeSearch(
-          { coordinates: debouncedCoordinates, radius: searchRadius, filters },
+          { coordinates: debouncedCoordinates, radius: 5, filters }, // Fixed 5km radius
           {
             onProgress: options.onProgress,
             onMethodChange: options.onMethodChange
