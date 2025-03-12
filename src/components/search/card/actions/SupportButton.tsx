@@ -38,8 +38,8 @@ export const SupportButton = ({
         { table_name: 'crystal_roof', column_name: 'support_count' }
       );
       
-      if (columnCheckError || !columnExists) {
-        // If we can't check or the column doesn't exist, show a friendly message
+      if (columnCheckError) {
+        console.error('Error checking column exists:', columnCheckError);
         toast({
           title: "Feature unavailable",
           description: "The support feature is currently being set up. Please try again later.",
@@ -48,16 +48,21 @@ export const SupportButton = ({
         return;
       }
       
-      // Toggle support status if column exists
-      const action = isSupportedByUser ? 'remove' : 'add';
+      if (!columnExists) {
+        toast({
+          title: "Feature unavailable",
+          description: "The support feature is currently being set up. Please try again later.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
-      const { data, error } = await supabase
+      // Toggle support status
+      const newCount = isSupportedByUser ? supportCount - 1 : supportCount + 1;
+      
+      const { error } = await supabase
         .from('crystal_roof')
-        .update({ 
-          support_count: isSupportedByUser 
-            ? supportCount - 1 
-            : supportCount + 1 
-        })
+        .update({ support_count: newCount })
         .eq('id', applicationId);
       
       if (error) throw error;

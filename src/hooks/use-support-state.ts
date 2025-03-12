@@ -12,6 +12,11 @@ export const useSupportState = (applicationId: number, user: any) => {
 
   useEffect(() => {
     const checkSupportCount = async () => {
+      if (!applicationId) {
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         setIsLoading(true);
         
@@ -24,7 +29,14 @@ export const useSupportState = (applicationId: number, user: any) => {
         if (columnCheckError) {
           console.warn('Could not check if column exists:', columnCheckError);
           // Fall back to trying the query
-        } else if (!columnExists) {
+          setSupportCount(0);
+          setIsSupportedByUser(false);
+          setTableExists(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!columnExists) {
           console.log('Support count column does not exist, using default values');
           setSupportCount(0);
           setIsSupportedByUser(false);
@@ -41,29 +53,33 @@ export const useSupportState = (applicationId: number, user: any) => {
           .single();
         
         if (error) {
-          // If the error is about support_count column not existing, it's non-critical
-          if (error.message.includes('support_count') || isNonCritical(error)) {
+          if (error.message && 
+              (error.message.includes('support_count') || 
+               isNonCritical(error))) {
             console.log('Support count not available, using default values');
             setSupportCount(0);
             setIsSupportedByUser(false);
             setTableExists(false);
           } else {
-            throw error;
+            console.error('Error fetching support count:', error);
+            setSupportCount(0);
+            setIsSupportedByUser(false);
           }
         } else if (data) {
-          setSupportCount(data.support_count || 0);
+          // Handle case where data exists but support_count might be null
+          const count = data.support_count !== null ? data.support_count : 0;
+          setSupportCount(count);
           setTableExists(true);
           
           // For now, we're not tracking which users supported which applications
-          // So we'll just set isSupportedByUser to false
+          setIsSupportedByUser(false);
+        } else {
+          // No data returned, set defaults
+          setSupportCount(0);
           setIsSupportedByUser(false);
         }
       } catch (error) {
-        if (!isNonCritical(error)) {
-          handleError(error, {
-            context: 'support state'
-          });
-        }
+        console.error('Error in useSupportState:', error);
         setSupportCount(0);
         setIsSupportedByUser(false);
       } finally {
