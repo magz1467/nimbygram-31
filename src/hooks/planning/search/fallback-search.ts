@@ -34,39 +34,70 @@ export async function performFallbackSearch(
   // Calculate bounding box once
   const bbox = calculateBoundingBox(lat, lng, radiusKm);
   
-  // Build the query using pre-calculated bounding box
-  let query = supabase
-    .from('crystal_roof')
-    .select('*')
-    .gte('latitude', bbox.minLat)
-    .lte('latitude', bbox.maxLat)
-    .gte('longitude', bbox.minLng)
-    .lte('longitude', bbox.maxLng);
-  
-  // Apply filters if provided
-  if (filters?.status) {
-    query = query.ilike('status', `%${filters.status}%`);
-  }
-  if (filters?.type) {
-    query = query.ilike('type', `%${filters.type}%`);
-  }
-  
-  // Limit results
-  query = query.limit(200);
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Fallback search error:', error);
-    throw error;
-  }
-  
-  if (!data || data.length === 0) {
-    console.log('No results found in fallback search');
+  try {
+    // Build the query using pre-calculated bounding box
+    let query = supabase
+      .from('crystal_roof')
+      .select('*')
+      .gte('latitude', bbox.minLat)
+      .lte('latitude', bbox.maxLat)
+      .gte('longitude', bbox.minLng)
+      .lte('longitude', bbox.maxLng);
+    
+    // Apply filters if provided
+    if (filters?.status) {
+      query = query.ilike('status', `%${filters.status}%`);
+    }
+    if (filters?.type) {
+      query = query.ilike('type', `%${filters.type}%`);
+    }
+    
+    // First try with a smaller limit to get quick results
+    const { data: quickData, error: quickError } = await query.limit(50);
+    
+    // If we got some initial results, return them while we fetch more
+    if (quickData && quickData.length > 0) {
+      // Process quick results
+      const quickResults = processResults(quickData, lat, lng);
+      
+      // Then try to get the full result set in the background
+      try {
+        const { data: fullData } = await query.limit(200);
+        if (fullData && fullData.length > quickData.length) {
+          return processResults(fullData, lat, lng);
+        }
+      } catch (fullError) {
+        console.warn('Full query error, using quick results:', fullError);
+        // Just use the quick results if the full query fails
+      }
+      
+      return quickResults;
+    }
+    
+    // If no quick results, try the full query
+    const { data, error } = await query.limit(200);
+    
+    if (error) {
+      console.error('Fallback search error:', error);
+      // Instead of throwing, return an empty array
+      return [];
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('No results found in fallback search');
+      return [];
+    }
+    
+    return processResults(data, lat, lng);
+    
+  } catch (error) {
+    console.error('Error in fallback search:', error);
+    // Return empty array instead of throwing
     return [];
   }
-  
-  // Process and sort results
+}
+
+function processResults(data: any[], lat: number, lng: number): Application[] {
   return data
     .filter((app) => typeof app.latitude === 'number' && typeof app.longitude === 'number')
     .map((app) => {

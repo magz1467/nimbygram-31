@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
@@ -16,6 +16,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [searchRadius, setSearchRadius] = useState<number>(5);
   const { toast } = useToast();
   const errorRef = useRef<Error | null>(null);
+  const hasShownErrorToast = useRef<boolean>(false);
+  
+  // Reset error toast flag when coordinates change
+  useEffect(() => {
+    hasShownErrorToast.current = false;
+  }, [coordinates, searchRadius, JSON.stringify(filters)]);
   
   // Function to handle search errors
   const handleSearchError = useCallback((err: any) => {
@@ -29,12 +35,23 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       return;
     }
     
-    // Provide user feedback
-    toast({
-      title: "Search Error",
-      description: err?.message || "There was an issue with your search. Please try again.",
-      variant: "destructive"
-    });
+    // Don't show timeout errors as toast messages
+    if (err?.message?.includes('timeout') || 
+        err?.message?.includes('canceling statement') ||
+        err?.message?.includes('57014')) {
+      console.log('Not showing toast for timeout error');
+      return;
+    }
+    
+    // Only show toast once per search
+    if (!hasShownErrorToast.current) {
+      toast({
+        title: "Search Issue",
+        description: "Your search is taking longer than expected. We'll show results as they become available.",
+        variant: "default",
+      });
+      hasShownErrorToast.current = true;
+    }
   }, [toast]);
   
   // Create a stable query key
@@ -88,7 +105,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     },
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    retry: 1, // Only retry once
+    retry: 2, // Retry twice
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,

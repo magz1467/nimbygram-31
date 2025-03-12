@@ -27,32 +27,73 @@ CREATE OR REPLACE FUNCTION get_nearby_applications(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
   radius_km DOUBLE PRECISION DEFAULT 10,
-  result_limit INTEGER DEFAULT 500
+  result_limit INTEGER DEFAULT 200
 )
 RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  search_point geometry;
+  -- Variables for improved performance
+  search_point GEOGRAPHY;
+  lat_min DOUBLE PRECISION;
+  lat_max DOUBLE PRECISION;
+  lng_min DOUBLE PRECISION;
+  lng_max DOUBLE PRECISION;
 BEGIN
-  -- Create search point
-  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326);
+  -- Calculate bounding box for pre-filtering (faster than full spatial calculations)
+  lat_min := center_lat - (radius_km/111.0);
+  lat_max := center_lat + (radius_km/111.0);
+  
+  -- Longitude degrees per km varies with latitude
+  lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  
+  -- Create a geography point from the input coordinates
+  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
+  
+  -- Use a two-step process for better performance:
+  -- 1. First filter by bounding box (fast)
+  -- 2. Then filter by actual distance (more accurate but slower)
+  
+  -- Set a statement timeout for this function to prevent long-running queries
+  -- Default PostgreSQL timeout is too long for web requests
+  SET LOCAL statement_timeout = '15s';
   
   RETURN QUERY
-  SELECT cr.*
-  FROM crystal_roof cr
-  WHERE ST_DWithin(
-    cr.geom,
-    search_point,
-    radius_km * 1000, -- Convert km to meters
-    true  -- Use spheroid for more accurate distances
+  WITH bbox_filtered AS (
+    -- Fast pre-filtering using bounding box
+    SELECT *
+    FROM crystal_roof
+    WHERE 
+      latitude IS NOT NULL AND
+      longitude IS NOT NULL AND
+      latitude BETWEEN lat_min AND lat_max AND
+      longitude BETWEEN lng_min AND lng_max
+    LIMIT result_limit * 2  -- Get more than needed for the next filtering step
   )
-  ORDER BY ST_Distance(cr.geom, search_point)
+  SELECT * 
+  FROM bbox_filtered
+  WHERE 
+    -- Only include points within the actual radius (more precise)
+    ST_DWithin(
+      search_point,
+      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY,
+      radius_km * 1000  -- Convert km to meters
+    )
+  ORDER BY
+    -- Order by actual distance for better results
+    ST_Distance(
+      search_point,
+      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY
+    ) ASC
   LIMIT result_limit;
+  
 END;
 $$;
 
--- Add permissions
+-- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
+-- To avoid conflicts, delete the other function if it exists
+DROP FUNCTION IF EXISTS get_nearby_applications(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION);
