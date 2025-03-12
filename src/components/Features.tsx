@@ -1,10 +1,11 @@
+
 import { PenLine, Map, FileText } from "lucide-react";
 import Image from "@/components/ui/image";
 
 const Features = () => {
   return (
-    <div className="bg-white py-16">
-      <div className="container mx-auto px-4">
+    <div className="bg-white py-16 w-full">
+      <div className="w-full px-4 md:container md:mx-auto md:px-4">
         <h2 className="text-2xl md:text-3xl font-bold mb-12 text-center text-foreground font-playfair">
           The easy way to have your say on local developments
         </h2>
