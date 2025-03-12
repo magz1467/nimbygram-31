@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { useResultsListState } from "@/hooks/search/useResultsListState";
 import { LoadingState } from "./components/LoadingState";
@@ -23,6 +24,8 @@ interface ResultsListViewProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   totalCount?: number;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
 }
 
 export const ResultsListView = ({ 
@@ -41,7 +44,9 @@ export const ResultsListView = ({
   currentPage = 0,
   totalPages = 1,
   onPageChange,
-  totalCount = 0
+  totalCount = 0,
+  hasPartialResults = false,
+  isSearchInProgress = false
 }: ResultsListViewProps) => {
   
   const {
@@ -52,24 +57,21 @@ export const ResultsListView = ({
     initialLoadComplete,
     isLastPage,
     handleLoadMore,
-    searchDuration
+    searchDuration,
+    loadingState,
+    hadResults
   } = useResultsListState({
     applications,
     isLoading,
     error: error || null,
     pageSize: 10,
     currentPage,
-    onPageChange
+    onPageChange,
+    hasPartialResults,
+    isSearchInProgress
   });
-
-  const [hadResults, setHadResults] = useState(false);
   
-  useEffect(() => {
-    if (applications?.length > 0 || loadedApplications?.length > 0) {
-      setHadResults(true);
-    }
-  }, [applications, loadedApplications]);
-
+  // First priority: Show results if we have them
   if (applications?.length > 0 || loadedApplications?.length > 0) {
     return (
       <ResultsList
@@ -89,7 +91,8 @@ export const ResultsListView = ({
     );
   }
 
-  if (isLoading || (!initialLoadComplete && hasStartedLoading) || searchDuration < 15000) {
+  // Second priority: Show loading state while searching or if we haven't completed initial load
+  if (isLoading || isSearchInProgress || (!initialLoadComplete && hasStartedLoading) || searchDuration < 15000) {
     return (
       <LoadingState
         isLongSearchDetected={isLongSearchDetected}
@@ -102,6 +105,7 @@ export const ResultsListView = ({
     );
   }
 
+  // Third priority: Show error if there's an error and we have no results
   if (!isLoading && error && !hadResults) {
     return (
       <TimeoutErrorMessage
@@ -114,6 +118,7 @@ export const ResultsListView = ({
     );
   }
 
+  // Fourth priority: Show "still searching" if search has just completed but we're still waiting
   if (!isLoading && !error && initialLoadComplete && searchDuration < 15000) {
     return (
       <NoResultsMessage
@@ -126,6 +131,7 @@ export const ResultsListView = ({
     );
   }
 
+  // Final case: No results found after thorough search
   return (
     <NoResultsMessage
       searchTerm={searchTerm}

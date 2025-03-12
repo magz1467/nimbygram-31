@@ -1,6 +1,8 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Application } from "@/types/planning";
+
+export type SearchLoadingState = 'initial' | 'searching' | 'partial-results' | 'complete' | 'no-results' | 'error';
 
 interface ResultsListStateProps {
   applications: Application[];
@@ -9,6 +11,8 @@ interface ResultsListStateProps {
   pageSize?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
 }
 
 export const useResultsListState = ({
@@ -17,18 +21,32 @@ export const useResultsListState = ({
   error,
   pageSize = 10,
   currentPage = 0,
-  onPageChange
+  onPageChange,
+  hasPartialResults = false,
+  isSearchInProgress = false
 }: ResultsListStateProps) => {
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [hadResults, setHadResults] = useState(false);
+  
   const searchStartTimeRef = useRef<number | null>(null);
   const initialResultsTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longSearchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const errorMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
   const minLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const noResultsTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate a comprehensive loading state that all components can use
+  const loadingState = useMemo((): SearchLoadingState => {
+    if (error && !hasPartialResults && !hadResults) return 'error';
+    if (applications.length > 0 || loadedApplications.length > 0) return 'partial-results';
+    if (!isLoading && initialLoadComplete && !isSearchInProgress && applications.length === 0) return 'no-results';
+    if (isLoading || !initialLoadComplete || isSearchInProgress) return 'searching';
+    return 'complete';
+  }, [isLoading, initialLoadComplete, applications.length, loadedApplications.length, error, hasPartialResults, hadResults, isSearchInProgress]);
 
   // Track if loading has ever started
   useEffect(() => {
@@ -42,6 +60,7 @@ export const useResultsListState = ({
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
       if (minLoadingTimerRef.current) clearTimeout(minLoadingTimerRef.current);
+      if (noResultsTimerRef.current) clearTimeout(noResultsTimerRef.current);
       
       // Set minimum loading time to prevent flickering
       minLoadingTimerRef.current = setTimeout(() => {
@@ -75,6 +94,7 @@ export const useResultsListState = ({
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
       if (minLoadingTimerRef.current) clearTimeout(minLoadingTimerRef.current);
+      if (noResultsTimerRef.current) clearTimeout(noResultsTimerRef.current);
     };
   }, [isLoading, hasStartedLoading, initialLoadComplete, applications.length]);
 
@@ -88,6 +108,7 @@ export const useResultsListState = ({
       // Clear any existing timers
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+      if (noResultsTimerRef.current) clearTimeout(noResultsTimerRef.current);
       
       // Show "long search" message after 8 seconds - early enough to set expectations
       longSearchTimerRef.current = setTimeout(() => {
@@ -98,7 +119,8 @@ export const useResultsListState = ({
       // Only show error message after 25 seconds if we're still loading 
       // and have no results - long enough to be patient but not so long users leave
       errorMessageTimerRef.current = setTimeout(() => {
-        if (applications.length === 0) {
+        // Only show error if we still have no results AND we're not still searching
+        if (applications.length === 0 && !isSearchInProgress && !hasPartialResults) {
           setShowErrorMessage(true);
           errorMessageTimerRef.current = null;
         }
@@ -108,13 +130,15 @@ export const useResultsListState = ({
     return () => {
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+      if (noResultsTimerRef.current) clearTimeout(noResultsTimerRef.current);
     };
-  }, [isLoading, applications.length]);
+  }, [isLoading, applications.length, isSearchInProgress, hasPartialResults]);
 
   // Update loaded applications when the applications array changes
   useEffect(() => {
     if (applications && applications.length > 0) {
       setShowErrorMessage(false);
+      setHadResults(true);
       
       // For first page, just show the first pageSize results
       if (currentPage === 0) {
@@ -149,6 +173,8 @@ export const useResultsListState = ({
     initialLoadComplete,
     isLastPage,
     handleLoadMore,
-    searchDuration
+    searchDuration,
+    loadingState,
+    hadResults
   };
 };

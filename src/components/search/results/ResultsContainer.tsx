@@ -15,6 +15,8 @@ export interface ResultsContainerProps {
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
   handleMarkerClick: (id: number) => void;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
 }
 
 export const ResultsContainer = ({
@@ -28,7 +30,9 @@ export const ResultsContainer = ({
   setShowMap,
   selectedId,
   setSelectedId,
-  handleMarkerClick
+  handleMarkerClick,
+  hasPartialResults = false,
+  isSearchInProgress = false
 }: ResultsContainerProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
@@ -68,6 +72,8 @@ export const ResultsContainer = ({
       totalPages={totalPages}
       onPageChange={handlePageChange}
       totalCount={displayApplications.length}
+      hasPartialResults={hasPartialResults}
+      isSearchInProgress={isSearchInProgress}
     />
   );
 };

@@ -18,11 +18,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const errorRef = useRef<Error | null>(null);
   const hasShownErrorToast = useRef<boolean>(false);
   const hasPartialResults = useRef<boolean>(false);
+  const isSearchInProgress = useRef<boolean>(false);
   
   // Reset error toast flag when coordinates change
   useEffect(() => {
     hasShownErrorToast.current = false;
     hasPartialResults.current = false;
+    isSearchInProgress.current = false;
   }, [coordinates, searchRadius, JSON.stringify(filters)]);
   
   // Function to handle search errors
@@ -80,13 +82,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     }
   }
   
-  const { data: applications = [], isLoading, error: queryError } = useQuery({
+  const { data: applications = [], isLoading, error: queryError, isFetching } = useQuery({
     queryKey: queryKey.current,
     queryFn: async () => {
       if (!coordinates) return [];
       
       try {
         console.log('Searching with coordinates:', coordinates, 'radius:', searchRadius);
+        isSearchInProgress.current = true;
         
         const [lat, lng] = coordinates;
         let results: Application[] = [];
@@ -122,6 +125,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         handleSearchError(err);
         // Return empty array to prevent component crashes
         return [];
+      } finally {
+        // After a delay, mark search as no longer in progress
+        // This helps prevent UI from flickering "no results" too early
+        setTimeout(() => {
+          isSearchInProgress.current = false;
+        }, 2000);
       }
     },
     enabled: !!coordinates,
@@ -146,7 +155,9 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
 
   return {
     applications: applications || [],
-    isLoading,
+    isLoading: isLoading || isFetching,
+    isSearchInProgress: isSearchInProgress.current,
+    hasPartialResults: hasPartialResults.current,
     error,
     filters,
     setFilters,

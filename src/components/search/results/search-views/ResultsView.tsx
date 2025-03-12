@@ -10,9 +10,18 @@ interface ResultsViewProps {
   searchTerm: string;
   filters: Record<string, any>;
   onFilterChange: (type: string, value: any) => void;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
 }
 
-export function ResultsView({ applications, searchTerm, filters, onFilterChange }: ResultsViewProps) {
+export function ResultsView({ 
+  applications, 
+  searchTerm, 
+  filters, 
+  onFilterChange,
+  hasPartialResults = false,
+  isSearchInProgress = false
+}: ResultsViewProps) {
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeSort, setActiveSort] = useState<SortType>('distance');
@@ -66,6 +75,8 @@ export function ResultsView({ applications, searchTerm, filters, onFilterChange 
           selectedId={selectedId}
           setSelectedId={setSelectedId}
           handleMarkerClick={(id) => setSelectedId(id)}
+          hasPartialResults={hasPartialResults}
+          isSearchInProgress={isSearchInProgress}
         />
       </div>
     </div>

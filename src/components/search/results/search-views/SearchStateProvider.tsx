@@ -27,6 +27,8 @@ interface SearchStateContextProps {
   setFilters: (type: string, value: any) => void;
   retry: () => void;
   hasSearched: boolean;
+  hasPartialResults: boolean;
+  isSearchInProgress: boolean;
 }
 
 const SearchStateContext = createContext<SearchStateContextProps | null>(null);
@@ -96,7 +98,9 @@ export function SearchStateProvider({
     isLoading: isLoadingResults,
     error: searchError,
     filters,
-    setFilters: updateFilters
+    setFilters: updateFilters,
+    hasPartialResults,
+    isSearchInProgress
   } = usePlanningSearch(coordinates);
   
   useEffect(() => {
@@ -164,7 +168,9 @@ export function SearchStateProvider({
     filters,
     setFilters,
     retry,
-    hasSearched
+    hasSearched,
+    hasPartialResults,
+    isSearchInProgress
   };
   
   return (
