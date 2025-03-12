@@ -32,6 +32,9 @@ export const ResultsList = ({
   onRetry,
   handleLoadMore
 }: ResultsListProps) => {
+  // Make sure coordinates are valid before passing them
+  const validSearchCoordinates = coordinates ? (Array.isArray(coordinates) && coordinates.length === 2 ? coordinates as [number, number] : undefined) : undefined;
+
   return (
     <div className="py-4">
       <div className="max-w-lg mx-auto space-y-6">
@@ -45,7 +48,7 @@ export const ResultsList = ({
               onSeeOnMap={onSeeOnMap}
               applications={allApplications}
               selectedId={selectedId}
-              coordinates={coordinates} // Pass search coordinates
+              coordinates={validSearchCoordinates} // Pass validated coordinates
               handleMarkerClick={handleMarkerClick}
               isLoading={isLoading}
               postcode={postcode}

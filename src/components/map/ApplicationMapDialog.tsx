@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Application } from "@/types/planning";
 import { X } from "lucide-react";
@@ -73,16 +72,11 @@ export const ApplicationMapDialog = ({
 }: ApplicationMapDialogProps) => {
   const [mapReady, setMapReady] = useState(false);
   
-  // If no coordinates are available for the application, we can't show the map
   if (!application.coordinates) {
     return null;
   }
 
-  // Get all applications with valid coordinates
   const validApplications = allApplications.filter(app => !!app.coordinates);
-  
-  // Use search coordinates if provided, otherwise use the default coordinates
-  const actualSearchCoordinates = searchCoordinates || application.coordinates;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -112,12 +106,14 @@ export const ApplicationMapDialog = ({
                 maxZoom={19}
               />
               
-              {/* Fixed Search Location Pin */}
-              <Marker 
-                position={actualSearchCoordinates}
-                icon={searchLocationIcon}
-                zIndexOffset={900}
-              />
+              {/* Only show search location pin if coordinates are provided */}
+              {searchCoordinates && (
+                <Marker 
+                  position={searchCoordinates}
+                  icon={searchLocationIcon}
+                  zIndexOffset={900}
+                />
+              )}
               
               {/* Application Markers */}
               {validApplications.map(app => (
@@ -129,7 +125,6 @@ export const ApplicationMapDialog = ({
                 />
               ))}
               
-              {/* Controller to set map view */}
               <MapController coordinates={application.coordinates} />
             </LeafletMapContainer>
           </div>
