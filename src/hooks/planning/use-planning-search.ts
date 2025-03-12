@@ -58,7 +58,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const result = await executeSearch(
           { coordinates, radius: searchRadius, filters },
-          searchMethodRef as React.MutableRefObject<'spatial' | 'fallback' | 'cache' | null>
+          searchMethodRef
         );
         
         // Log telemetry data about the search
@@ -67,7 +67,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           searchRadius,
           filters,
           result.applications.length,
-          result.searchMethod
+          result.method
         );
         
         // Update the hasResults state based on whether we got any results
