@@ -87,7 +87,7 @@ export const MapSplitView = ({
             <div 
               key={app.id}
               data-application-id={app.id}
-              className={`p-4 cursor-pointer transition-colors ${selectedId === app.id ? 'bg-pink-50' : 'hover:bg-gray-50'}`}
+              className={`p-4 cursor-pointer transition-colors ${selectedId === app.id ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
               onClick={() => handleApplicationSelect(app.id)}
             >
               <ResultsList

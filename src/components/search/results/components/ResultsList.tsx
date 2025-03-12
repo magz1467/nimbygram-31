@@ -43,7 +43,7 @@ export const ResultsList = ({
         {loadedApplications.map((application) => (
           <div 
             key={application.id}
-            className={`animate-fade-in ${selectedId === application.id ? 'ring-2 ring-pink-300 rounded-lg' : ''}`}
+            className="animate-fade-in"
           >
             <SearchResultCard
               application={application}
