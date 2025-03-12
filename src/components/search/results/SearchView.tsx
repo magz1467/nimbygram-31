@@ -10,6 +10,7 @@ import { ErrorType } from "@/utils/errors";
 import { isNonCriticalError } from "@/utils/errors";
 import { LoadingSkeletons } from "./components/LoadingSkeletons";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 // Add render counter
 const renderCounts = {
@@ -29,6 +30,22 @@ interface SearchViewProps {
   onSearchComplete?: () => void;
 }
 
+// Helper function to get a user-friendly label for the search stage
+const getStageLabel = (stage: string | null): string => {
+  switch (stage) {
+    case 'coordinates':
+      return 'Finding location...';
+    case 'searching':
+      return 'Searching for planning applications...';
+    case 'processing':
+      return 'Processing results...';
+    case 'complete':
+      return 'Search complete';
+    default:
+      return 'Searching...';
+  }
+};
+
 export const SearchView = ({
   initialSearch,
   retryCount = 0,
@@ -38,11 +55,9 @@ export const SearchView = ({
   const componentId = useRef(`sv-${Math.random().toString(36).substring(2, 9)}`).current;
   const mountTimeRef = useRef(Date.now());
   const hasReportedError = useRef(false);
-  const [localError, setLocalError] = useState<Error | null>(null);
-  const [showSkeleton, setShowSkeleton] = useState(true);
-  const { toast } = useToast();
   const searchCompleteRef = useRef(false);
   const componentRenders = useRef(0);
+  const { toast } = useToast();
   
   // Track renders
   componentRenders.current += 1;
@@ -106,7 +121,8 @@ export const SearchView = ({
     filters,
     setFilters,
     searchRadius,
-    setSearchRadius
+    setSearchRadius,
+    searchState
   } = usePlanningSearch(coordinates);
 
   // Track application loads
@@ -123,36 +139,12 @@ export const SearchView = ({
     }
   }, [applications, componentId, isFetching, isLoadingResults]);
 
-  // Show skeletons for a minimum time
-  useEffect(() => {
-    if (coordinates && !isLoadingCoords) {
-      console.log(`⏱️ Skeleton timer started [${componentId}]`);
-      const timer = setTimeout(() => {
-        console.log(`⏱️ Skeleton timer finished [${componentId}]`);
-        setShowSkeleton(false);
-      }, 1000); // Reduced to 1 second
-      
-      return () => {
-        console.log(`⏱️ Skeleton timer cleared [${componentId}]`);
-        clearTimeout(timer);
-      }
-    }
-  }, [coordinates, isLoadingCoords, componentId]);
-
+  // Determine if we should show loading UI
+  const isLoading = isLoadingCoords || isLoadingResults || isFetching;
+  const shouldShowSkeletons = isLoading && !hasResults;
+  
   // Combine errors
-  const error = localError || coordsError || searchError;
-
-  // Handle errors
-  useEffect(() => {
-    if ((coordsError || searchError) && !localError) {
-      console.log(`❌ Error detected [${componentId}]`, {
-        coordsError: coordsError?.message,
-        searchError: searchError?.message,
-        time: new Date().toISOString()
-      });
-      setLocalError(coordsError || searchError);
-    }
-  }, [coordsError, searchError, localError, componentId]);
+  const error = coordsError || searchError || searchState.error;
 
   // Error reporting
   useEffect(() => {
@@ -165,26 +157,16 @@ export const SearchView = ({
 
   // Search completion
   useEffect(() => {
-    console.log(`🔎 Search completion check [${componentId}]`, {
-      isLoadingResults,
-      isLoadingCoords,
-      hasCoordinates: !!coordinates,
-      hasApplications: !!applications,
-      searchCompleteRef: searchCompleteRef.current,
-      time: new Date().toISOString()
-    });
-    
-    if (!isLoadingResults && !isLoadingCoords && coordinates && applications && !searchCompleteRef.current) {
+    if (!isLoading && coordinates && applications && !searchCompleteRef.current && hasResults) {
       console.log(`✅ Search complete [${componentId}] - calling onSearchComplete`);
       searchCompleteRef.current = true;
       if (onSearchComplete) {
         onSearchComplete();
       }
     }
-  }, [isLoadingResults, isLoadingCoords, coordinates, applications, onSearchComplete, componentId]);
+  }, [isLoading, coordinates, applications, onSearchComplete, componentId, hasResults]);
 
-  // If we found some applications using the emergency search
-  // but the search itself reported an error
+  // If we found some applications but the search itself reported an error
   useEffect(() => {
     if (error && applications.length > 0) {
       console.log(`⚠️ Showing limited results toast [${componentId}]`);
@@ -201,19 +183,30 @@ export const SearchView = ({
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  // Show loading state when we're still getting coordinates or results
-  if ((isLoadingCoords || (isLoadingResults && showSkeleton)) && !hasResults) {
-    console.log(`⏳ Returning loading skeletons [${componentId}]`, {
+  // Show loading state when we're still searching
+  if (shouldShowSkeletons) {
+    const searchStage = searchState.stage;
+    const searchProgress = searchState.progress;
+    
+    console.log(`⏳ Returning loading view [${componentId}]`, {
+      stage: searchStage,
+      progress: searchProgress,
       isLoadingCoords,
-      isLoadingResults,
-      showSkeleton,
-      hasResults
+      isLoadingResults
     });
+    
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-4">Searching for planning applications...</h2>
+        <h2 className="text-2xl font-semibold mb-4">{getStageLabel(searchStage)}</h2>
         <p className="text-gray-600 mb-6">Looking for planning applications near {initialSearch.displayTerm || initialSearch.searchTerm}</p>
-        <LoadingSkeletons count={5} isLongSearch={false} />
+        
+        {/* Show progress bar */}
+        <div className="mb-8">
+          <Progress value={searchProgress} className="h-2 mb-2" />
+          <p className="text-sm text-gray-500 text-right">{Math.round(searchProgress)}%</p>
+        </div>
+        
+        <LoadingSkeletons count={5} isLongSearch={searchStage === 'searching'} />
       </div>
     );
   }
@@ -250,7 +243,6 @@ export const SearchView = ({
         errorDetails={error.message}
         errorType={errorType}
         onRetry={() => {
-          setLocalError(null);
           hasReportedError.current = false;
           window.location.reload();
         }}
@@ -258,8 +250,6 @@ export const SearchView = ({
     );
   }
 
-  const isLoading = isLoadingCoords || isLoadingResults || isFetching;
-  
   console.log(`🔄 Returning SearchViewContent [${componentId}]`, {
     applicationCount: applications?.length || 0,
     isLoading,
@@ -281,7 +271,7 @@ export const SearchView = ({
       onError={(err) => {
         console.log(`❌ Error in SearchViewContent [${componentId}]`, err);
         if (err && !isNonCriticalError(err)) {
-          setLocalError(err);
+          onError?.(err);
         }
       }}
       onSearchComplete={onSearchComplete}

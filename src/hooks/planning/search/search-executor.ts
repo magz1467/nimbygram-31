@@ -4,92 +4,65 @@ import { performFallbackSearch } from "./fallback-search";
 import { SearchMethod, SearchParams } from "./types";
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
+import { SearchStage } from "./use-search-state-manager";
 
-export async function executeSearch(
-  searchParams: SearchParams,
-  searchMethodRef?: React.MutableRefObject<SearchMethod | null>
-): Promise<{
-  applications: Application[],
-  method: SearchMethod
-}> {
-  try {
-    // Extract parameters from the search params
-    const { coordinates, radius, filters } = searchParams;
-    const [lat, lng] = coordinates;
-    
-    // Always try paginated RPC function first - it's optimized for large datasets
-    try {
-      console.log('Attempting paginated spatial search...');
+// Define the search strategy interface
+interface SearchStrategy {
+  name: SearchMethod;
+  execute: (params: SearchParams) => Promise<Application[]>;
+}
+
+// Create search strategies
+const searchStrategies: SearchStrategy[] = [
+  {
+    name: 'paginated',
+    execute: async (params: SearchParams): Promise<Application[]> => {
+      const { coordinates, radius, filters } = params;
+      const [lat, lng] = coordinates;
+      
+      console.log('Executing paginated RPC search strategy');
       const { data, error } = await supabase.rpc('get_nearby_applications_paginated', {
         center_lat: lat,
         center_lng: lng,
         radius_km: Math.min(radius, 10), // Cap at 10km
-        page_number: 0,
-        page_size: 10
+        page_number: params.page || 0,
+        page_size: params.pageSize || 10
       });
       
-      if (error) {
-        console.warn('Paginated search failed:', error.message);
-        throw error;
-      }
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
       
-      if (data && data.length > 0) {
-        console.log(`Paginated search successful, found ${data.length} results`);
-        
-        if (searchMethodRef) {
-          searchMethodRef.current = 'paginated';
-        }
-        
-        return {
-          applications: data,
-          method: 'paginated'
-        };
-      }
-      
-      console.log('Paginated search returned no results, trying spatial search');
-    } catch (paginatedError) {
-      console.warn('Paginated search error:', paginatedError);
+      return data;
     }
-    
-    // For non-high-density areas, try normal spatial search with reasonable radius
-    try {
-      const adjustedRadius = Math.min(radius, 10); // Cap at 10km
-      const spatialResults = await performSpatialSearch(lat, lng, adjustedRadius, filters);
+  },
+  {
+    name: 'spatial',
+    execute: async (params: SearchParams): Promise<Application[]> => {
+      const { coordinates, radius, filters } = params;
+      const [lat, lng] = coordinates;
       
-      if (searchMethodRef) {
-        searchMethodRef.current = 'spatial';
-      }
-      
-      return {
-        applications: spatialResults,
-        method: 'spatial'
-      };
-    } catch (spatialError) {
-      console.warn('Spatial search failed, falling back to bounding box search:', spatialError);
-      
-      // Use fallback search with capped radius
-      const fallbackResults = await performFallbackSearch(lat, lng, Math.min(radius, 10), filters);
-      
-      if (searchMethodRef) {
-        searchMethodRef.current = 'fallback';
-      }
-      
-      return {
-        applications: fallbackResults,
-        method: 'fallback'
-      };
+      console.log('Executing spatial search strategy');
+      return await performSpatialSearch(lat, lng, Math.min(radius, 10), filters);
     }
-  } catch (error) {
-    console.error('All search methods failed:', error);
-    
-    // If everything else failed, try a very basic query with limited scope
-    try {
-      console.log('Attempting emergency limited search...');
+  },
+  {
+    name: 'fallback',
+    execute: async (params: SearchParams): Promise<Application[]> => {
+      const { coordinates, radius, filters } = params;
+      const [lat, lng] = coordinates;
       
-      const { coordinates, radius } = searchParams;
+      console.log('Executing fallback search strategy');
+      return await performFallbackSearch(lat, lng, Math.min(radius, 10), filters);
+    }
+  },
+  {
+    name: 'emergency',
+    execute: async (params: SearchParams): Promise<Application[]> => {
+      const { coordinates, radius } = params;
       const [lat, lng] = coordinates;
       const smallRadius = Math.min(radius * 0.2, 1); // 20% of original radius or max 1km
       
+      console.log('Executing emergency limited search strategy');
       const { data, error } = await supabase
         .from('crystal_roof')
         .select('id, title, address, latitude, longitude, status')
@@ -100,23 +73,71 @@ export async function executeSearch(
         .limit(10);
         
       if (error) throw error;
+      if (!data || data.length === 0) return [];
       
-      if (data && data.length > 0) {
-        console.log(`Emergency search found ${data.length} results`);
-        
-        if (searchMethodRef) {
-          searchMethodRef.current = 'emergency';
+      return data;
+    }
+  }
+];
+
+type ProgressCallback = (stage: SearchStage, progress: number) => void;
+type MethodCallback = (method: SearchMethod) => void;
+
+export async function executeSearch(
+  searchParams: SearchParams,
+  options: {
+    onProgress?: ProgressCallback,
+    onMethodChange?: MethodCallback
+  } = {}
+): Promise<{
+  applications: Application[],
+  method: SearchMethod
+}> {
+  const { onProgress, onMethodChange } = options;
+  let currentProgress = 20; // Start at 20% (assuming coordinates are already resolved)
+  const progressStep = 60 / searchStrategies.length; // Distribute 60% of progress across strategies
+  
+  for (let i = 0; i < searchStrategies.length; i++) {
+    const strategy = searchStrategies[i];
+    
+    try {
+      if (onProgress) {
+        onProgress('searching', currentProgress);
+        currentProgress += progressStep / 2; // Update progress before attempt
+      }
+      
+      console.log(`Attempting search with ${strategy.name} strategy (${i+1}/${searchStrategies.length})`);
+      if (onMethodChange) {
+        onMethodChange(strategy.name);
+      }
+      
+      const applications = await strategy.execute(searchParams);
+      
+      if (applications.length > 0) {
+        if (onProgress) {
+          onProgress('processing', 80);
         }
         
+        console.log(`${strategy.name} search successful, found ${applications.length} results`);
+        
         return {
-          applications: data,
-          method: 'emergency'
+          applications,
+          method: strategy.name
         };
       }
-    } catch (emergencyError) {
-      console.error('Emergency search also failed:', emergencyError);
+      
+      console.log(`${strategy.name} search returned no results, trying next strategy`);
+      if (onProgress) {
+        currentProgress += progressStep / 2; // Update progress after attempt
+      }
+    } catch (error) {
+      console.warn(`${strategy.name} search failed:`, error);
+      if (onProgress) {
+        currentProgress += progressStep / 2; // Update progress after failure
+      }
+      // Continue to next strategy
     }
-    
-    throw error;
   }
+  
+  throw new Error("All search strategies failed");
 }

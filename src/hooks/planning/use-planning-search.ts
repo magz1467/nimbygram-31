@@ -8,21 +8,34 @@ import { useProgressiveSearch } from './search/progressive-search';
 import { useSearchErrorHandler } from './search/use-search-error-handler';
 import { useSearchTelemetry } from './search/use-search-telemetry';
 import { executeSearch } from './search/search-executor';
+import { useSearchStateManager } from './search/use-search-state-manager';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export type { SearchFilters } from './search/types';
 
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5);
-  const [hasResults, setHasResults] = useState<boolean>(false);
+  
+  // Use our centralized search state manager
+  const {
+    state: searchState,
+    startSearch,
+    updateProgress,
+    setSearchMethod,
+    setResults,
+    completeSearch,
+    failSearch
+  } = useSearchStateManager();
   
   const { logSearchCompleted } = useSearchTelemetry();
-  const { handleSearchError, errorRef, searchMethodRef } = useSearchErrorHandler(
+  const { handleSearchError } = useSearchErrorHandler(
     coordinates, 
     searchRadius, 
     filters
   );
   
+  // Use progressive search for quick initial results
   const { results: progressiveResults, isLoading: isLoadingProgressive } = 
     useProgressiveSearch(coordinates, searchRadius, filters);
   
@@ -51,10 +64,16 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     };
   }, [componentId, coordinates]);
   
-  if (coordinates) {
+  // Debounce coordinates changes to prevent rapid refetching
+  const debouncedCoordinates = useDebounce(coordinates, 300);
+  
+  // Update query key when search parameters change
+  useEffect(() => {
+    if (!debouncedCoordinates) return;
+    
     const filterString = JSON.stringify(filters);
     const radiusString = searchRadius.toString();
-    const coordString = coordinates.join(',');
+    const coordString = debouncedCoordinates.join(',');
     
     // Only update the query key if the search parameters have changed
     if (
@@ -69,33 +88,43 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         to: queryKey.current,
         renderCount: renderCountRef.current
       });
+      
+      // Start search when parameters change
+      startSearch();
     }
-  }
+  }, [debouncedCoordinates, filters, searchRadius, componentId, startSearch]);
   
+  // Execute the main search query
   const {
     data: applications = [],
-    isLoading,
-    isFetching,
-    error: queryError
+    isFetching
   } = useQuery({
     queryKey: queryKey.current,
     queryFn: async () => {
-      if (!coordinates) return [];
+      if (!debouncedCoordinates) return [];
       
       try {
         queryStartTimeRef.current = Date.now();
         console.log(`🔍 usePlanningSearch [${componentId}] query started`, {
-          coordinates,
+          coordinates: debouncedCoordinates,
           radius: searchRadius,
           filters: Object.keys(filters),
           time: new Date().toISOString(),
           queryKey: queryKey.current,
         });
         
+        updateProgress('coordinates', 10);
+        
         const result = await executeSearch(
-          { coordinates, radius: searchRadius, filters },
-          searchMethodRef
+          { coordinates: debouncedCoordinates, radius: searchRadius, filters },
+          {
+            onProgress: updateProgress,
+            onMethodChange: setSearchMethod
+          }
         );
+        
+        // Process the results
+        updateProgress('processing', 90);
         
         console.log(`✅ usePlanningSearch [${componentId}] query completed`, {
           method: result.method,
@@ -106,31 +135,41 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         // Log telemetry data about the search
         logSearchCompleted(
-          coordinates,
+          debouncedCoordinates,
           searchRadius,
           filters,
           result.applications.length,
           result.method
         );
         
-        // Update the hasResults state based on whether we got any results
-        setHasResults(result.applications.length > 0);
+        // Update results in the search state manager
+        setResults(result.applications);
+        
+        // Mark search as complete
+        completeSearch();
         
         return result.applications;
       } catch (err) {
         console.error(`❌ usePlanningSearch [${componentId}] query error:`, err);
         handleSearchError(err);
         
+        // Use progressive results as fallback if we have them
         const fallbackResults = progressiveResults.length > 0 ? progressiveResults : [];
         console.log(`⚠️ usePlanningSearch [${componentId}] using fallback results`, {
           count: fallbackResults.length,
           time: new Date().toISOString(),
         });
         
+        // Update results with whatever we have
+        setResults(fallbackResults);
+        
+        // Mark the search as failed
+        failSearch(err instanceof Error ? err : new Error(String(err)));
+        
         return fallbackResults;
       }
     },
-    enabled: !!coordinates,
+    enabled: !!debouncedCoordinates,
     staleTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -138,43 +177,30 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     refetchOnReconnect: false,
   });
 
-  // Track when query state changes
-  useEffect(() => {
-    console.log(`🔄 usePlanningSearch [${componentId}] query state change`, {
-      isLoading,
-      isFetching,
-      hasError: !!queryError,
-      applicationCount: applications?.length || 0,
-      renderCount: renderCountRef.current,
-      time: new Date().toISOString(),
-    });
-  }, [isLoading, isFetching, queryError, applications, componentId]);
-
-  // Once we have results, we want to maintain them even if there's an error
+  // When we get applications from the query, update our results
   useEffect(() => {
     if (applications && applications.length > 0) {
-      setHasResults(true);
+      setResults(applications);
     }
-  }, [applications]);
+  }, [applications, setResults]);
 
-  const error = queryError || errorRef.current;
-  
-  // If we have progressive results and we're loading, use those to show something to the user
-  const finalApplications = (isLoading && progressiveResults.length > 0) 
+  // Use progressive results while waiting for main search
+  const finalApplications = (searchState.isLoading && progressiveResults.length > 0) 
     ? progressiveResults 
     : (applications || []);
 
   return {
     applications: finalApplications,
-    hasResults,
-    isLoading: isLoading && !isLoadingProgressive,
+    hasResults: searchState.hasResults,
+    isLoading: searchState.isLoading,
     isFetching,
     isLoadingProgressive,
-    error,
+    error: searchState.error,
     filters,
     setFilters,
     searchRadius,
     setSearchRadius,
+    searchState,
     progressiveResults: progressiveResults.length > 0
   };
 };

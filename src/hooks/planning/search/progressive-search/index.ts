@@ -21,39 +21,57 @@ export function useProgressiveSearch(
   
   const {
     useCache = true,
-    quickSearchRadiusFactor = 0.5
+    quickSearchRadiusFactor = 0.5,
+    timeout = 5000 // Add timeout parameter
   } = options;
   
   useEffect(() => {
     // Reset state when coordinates change
-    setProgressiveResults([]);
+    if (!coordinates) {
+      setProgressiveResults([]);
+      return;
+    }
     
-    if (!coordinates || !featureFlags.isEnabled(FeatureFlags.ENABLE_PROGRESSIVE_LOADING)) {
+    if (!featureFlags.isEnabled(FeatureFlags.ENABLE_PROGRESSIVE_LOADING)) {
       return;
     }
     
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
     
     const loadProgressiveResults = async () => {
+      // Set loading state
+      setIsLoadingProgressive(true);
+      
+      // Set timeout to ensure progressive search doesn't run too long
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          console.log('Progressive search timed out');
+          setIsLoadingProgressive(false);
+        }
+      }, timeout);
+      
       // First check the cache if enabled
       if (useCache) {
         const cachedResults = checkCache(coordinates, searchRadius, filters);
         if (cachedResults && cachedResults.length > 0 && isMounted) {
+          console.log(`Found ${cachedResults.length} cached results for progressive search`);
           setProgressiveResults(cachedResults);
+          setIsLoadingProgressive(false);
+          if (timeoutId) clearTimeout(timeoutId);
           return;
         }
       }
       
-      // If no cached results, perform a quick search
-      setIsLoadingProgressive(true);
-      
       try {
+        console.log('Performing quick progressive search');
         const results = await performQuickSearch(
           { coordinates, searchRadius, filters },
           quickSearchRadiusFactor
         );
         
         if (isMounted && results.length > 0) {
+          console.log(`Progressive search found ${results.length} quick results`);
           setProgressiveResults(results);
         }
       } catch (error) {
@@ -61,6 +79,7 @@ export function useProgressiveSearch(
       } finally {
         if (isMounted) {
           setIsLoadingProgressive(false);
+          if (timeoutId) clearTimeout(timeoutId);
         }
       }
     };
@@ -70,9 +89,9 @@ export function useProgressiveSearch(
     // Cleanup function to reset results and handle component unmount
     return () => {
       isMounted = false;
-      setProgressiveResults([]);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [coordinates, searchRadius, filters, useCache, quickSearchRadiusFactor]);
+  }, [coordinates, searchRadius, filters, useCache, quickSearchRadiusFactor, timeout]);
   
   return {
     results: progressiveResults,
