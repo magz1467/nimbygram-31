@@ -27,6 +27,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 146 25% 24%;
     --radius: 0.75rem;
+    --separator-bg: 220 14% 96%;
   }
 }
 
@@ -51,6 +52,22 @@
   .container {
     @apply px-8 md:px-12 lg:px-16;
   }
+}
+
+.page-separator {
+  background-color: #F6F6F7;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+}
+
+.page-separator::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(139, 197, 190, 0.2); /* Light tiffany blue color */
 }
 
 .leaflet-container {
