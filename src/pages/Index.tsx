@@ -12,10 +12,10 @@ import { PageSeparator } from "@/components/ui/page-separator";
 
 const Index = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full">
       <PageSeparator />
       <Header />
-      <main className="flex-grow container mx-auto z-10 relative">
+      <main className="flex-grow w-full relative z-10">
         <Hero />
         <Features />
         <QuoteSection />

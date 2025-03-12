@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { calculateDistance } from "../utils/distance-calculator";
+import { PostgrestError } from "@supabase/supabase-js";
 
 /**
  * Performs a spatial search for planning applications using PostGIS
@@ -47,21 +47,24 @@ export async function performSpatialSearch(
       // Handle RPC function errors
       if (quickError) {
         // Log the specific error for debugging
-        console.error('Spatial search quick fetch error:', quickError.code, quickError.message);
+        console.error('Spatial search quick fetch error:', quickError);
+        
+        // Check if error is PostgrestError to access code property
+        const pgError = quickError as PostgrestError;
         
         // If function doesn't exist, use fallback
-        if (quickError.message.includes('function') && 
-            (quickError.message.includes('exist') || 
-             quickError.message.includes('not found') ||
-             quickError.message.includes('does not exist'))) {
+        if (pgError.message?.includes('function') && 
+            (pgError.message?.includes('exist') || 
+             pgError.message?.includes('not found') ||
+             pgError.message?.includes('does not exist'))) {
           console.log('Spatial search RPC function not available, will use fallback search');
           return null;
         }
         
         // Return null for timeouts to trigger fallback
-        if (quickError.message.includes('timeout') || 
-            quickError.message.includes('cancel') ||
-            quickError.message.includes('57014')) {
+        if (pgError.message?.includes('timeout') || 
+            pgError.message?.includes('cancel') ||
+            pgError.message?.includes('57014')) {
           console.warn('Spatial search timeout, will use fallback search');
           return null;
         }
