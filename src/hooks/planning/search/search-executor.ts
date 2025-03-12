@@ -1,4 +1,3 @@
-
 import { searchCache } from '@/services/cache/search-cache';
 import { performSpatialSearch } from './spatial-search';
 import { performFallbackSearch } from './fallback-search';
@@ -16,104 +15,46 @@ export async function executeSearch(
   
   const [lat, lng] = options.coordinates;
   
-  // Try cache first
-  if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
-    const cachedResults = searchCache.get(options.coordinates, options.radius, options.filters);
-    if (cachedResults && cachedResults.length > 0) {
-      console.log('Using cached results:', cachedResults.length);
-      return {
-        applications: cachedResults,
-        searchMethod: 'cache'
-      };
-    }
-  }
-  
-  // Try spatial search
+  // Try spatial search with pagination
   if (featureFlags.isEnabled(FeatureFlags.USE_SPATIAL_SEARCH)) {
-    console.log('Attempting spatial search first...');
+    console.log('Attempting paginated spatial search...');
     
-    const spatialSearchFn = async () => {
+    try {
       searchMethodRef.current = 'spatial';
-      return await performSpatialSearch(lat, lng, options.radius, options.filters);
-    };
-    
-    let spatialResults = null;
-    
-    if (featureFlags.isEnabled(FeatureFlags.ENABLE_RETRY_LOGIC)) {
-      try {
-        spatialResults = await withRetry(spatialSearchFn, {
-          maxRetries: 2,
-          retryableErrors: (err) => {
-            const errMsg = String(err?.message || '').toLowerCase();
-            return (
-              errMsg.includes('network') ||
-              errMsg.includes('timeout') ||
-              errMsg.includes('too long')
-            );
-          },
-          onRetry: (err, attempt, delay) => {
-            console.log(`Retrying spatial search (attempt ${attempt}) in ${delay}ms`);
-          }
-        });
-      } catch (err) {
-        console.error('Spatial search failed after retries:', err);
-        spatialResults = null;
-      }
-    } else {
-      try {
-        spatialResults = await performSpatialSearch(lat, lng, options.radius, options.filters);
-      } catch (err) {
-        console.error('Spatial search failed:', err);
-        spatialResults = null;
-      }
-    }
-    
-    if (spatialResults !== null && Array.isArray(spatialResults)) {
-      console.log('Using spatial search results:', spatialResults.length);
+      const results = await performSpatialSearch(
+        lat, 
+        lng, 
+        options.radius, 
+        options.filters,
+        0, // First page
+        50  // Page size
+      );
       
-      if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
-        searchCache.set(options.coordinates, options.radius, options.filters, spatialResults);
+      if (results && Array.isArray(results)) {
+        console.log(`Got ${results.length} initial results`);
+        
+        if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
+          searchCache.set(options.coordinates, options.radius, options.filters, results);
+        }
+        
+        return {
+          applications: results,
+          searchMethod: 'spatial'
+        };
       }
-      
-      return {
-        applications: spatialResults,
-        searchMethod: 'spatial'
-      };
+    } catch (err) {
+      console.error('Spatial search failed:', err);
+      // Continue to fallback
     }
   }
   
   // Fallback search
-  console.log('Spatial search unavailable, using fallback search');
+  console.log('Using fallback search');
+  searchMethodRef.current = 'fallback';
   
-  const fallbackSearchFn = async () => {
-    searchMethodRef.current = 'fallback';
-    return await performFallbackSearch(lat, lng, options.radius, options.filters);
-  };
+  const fallbackResults = await performFallbackSearch(lat, lng, options.radius, options.filters);
   
-  let fallbackResults;
-  
-  if (featureFlags.isEnabled(FeatureFlags.ENABLE_RETRY_LOGIC)) {
-    fallbackResults = await withRetry(fallbackSearchFn, {
-      maxRetries: 2,
-      retryableErrors: (err) => {
-        const errMsg = String(err?.message || '').toLowerCase();
-        return (
-          errMsg.includes('network') ||
-          errMsg.includes('timeout') ||
-          errMsg.includes('too long')
-        );
-      },
-      onRetry: (err, attempt, delay) => {
-        console.log(`Retrying fallback search (attempt ${attempt}) in ${delay}ms`);
-      }
-    });
-  } else {
-    fallbackResults = await fallbackSearchFn();
-  }
-  
-  console.log('Got fallback results:', fallbackResults.length);
-  
-  if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE) && Array.isArray(fallbackResults)) {
+  if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
     searchCache.set(options.coordinates, options.radius, options.filters, fallbackResults);
   }
   
