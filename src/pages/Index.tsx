@@ -16,40 +16,38 @@ const Index = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow container mx-auto px-4 md:px-6 lg:px-8">
         <ErrorBoundary fallback={<div className="p-4">Error loading hero section</div>}>
           <Suspense fallback={<div className="p-4">Loading hero section...</div>}>
             <Hero />
           </Suspense>
         </ErrorBoundary>
         
-        <div className="container mx-auto px-4 md:px-6 lg:px-8">
-          <ErrorBoundary fallback={<div className="p-4">Error loading features section</div>}>
-            <Suspense fallback={<div className="p-4">Loading features...</div>}>
-              <Features />
-            </Suspense>
-          </ErrorBoundary>
-          
-          <ErrorBoundary fallback={<div className="p-4">Error loading quote section</div>}>
-            <QuoteSection />
-          </ErrorBoundary>
-          
-          <ErrorBoundary fallback={<div className="p-4">Error loading services section</div>}>
-            <Services />
-          </ErrorBoundary>
-          
-          <ErrorBoundary fallback={<div className="p-4">Error loading mission section</div>}>
-            <Mission />
-          </ErrorBoundary>
-          
-          <ErrorBoundary fallback={<div className="p-4">Error loading updates section</div>}>
-            <StayUpToDate />
-          </ErrorBoundary>
-          
-          <ErrorBoundary fallback={<div className="p-4">Error loading contact section</div>}>
-            <GetInTouch />
-          </ErrorBoundary>
-        </div>
+        <ErrorBoundary fallback={<div className="p-4">Error loading features section</div>}>
+          <Suspense fallback={<div className="p-4">Loading features...</div>}>
+            <Features />
+          </Suspense>
+        </ErrorBoundary>
+        
+        <ErrorBoundary fallback={<div className="p-4">Error loading quote section</div>}>
+          <QuoteSection />
+        </ErrorBoundary>
+        
+        <ErrorBoundary fallback={<div className="p-4">Error loading services section</div>}>
+          <Services />
+        </ErrorBoundary>
+        
+        <ErrorBoundary fallback={<div className="p-4">Error loading mission section</div>}>
+          <Mission />
+        </ErrorBoundary>
+        
+        <ErrorBoundary fallback={<div className="p-4">Error loading updates section</div>}>
+          <StayUpToDate />
+        </ErrorBoundary>
+        
+        <ErrorBoundary fallback={<div className="p-4">Error loading contact section</div>}>
+          <GetInTouch />
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
@@ -57,4 +55,3 @@ const Index = () => {
 };
 
 export default Index;
-
