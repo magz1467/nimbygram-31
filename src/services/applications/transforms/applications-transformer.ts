@@ -4,8 +4,7 @@ import { transformApplicationData } from "@/utils/transforms/application-transfo
 import { calculateDistance, sortApplicationsByDistance } from "@/utils/distance";
 
 export const transformAndSortApplications = (
-  applications: any[],
-  coordinates: [number, number]
+  applications: any[]
 ): Application[] => {
   if (!applications || !Array.isArray(applications) || applications.length === 0) {
     return [];
@@ -15,20 +14,22 @@ export const transformAndSortApplications = (
   
   // Transform the applications
   const transformedApplications = applications
-    .map(app => transformApplicationData(app, coordinates))
+    .map(app => transformApplicationData(app))
     .filter((app): app is Application => app !== null);
   
-  // Use our canonical sorting by distance function
-  const sortedApps = sortApplicationsByDistance(transformedApplications, coordinates);
+  // Check if we have coordinates for sorting
+  const hasCoordinates = transformedApplications.some(app => 
+    app.coordinates !== null && Array.isArray(app.coordinates) && app.coordinates.length === 2
+  );
   
-  // Check if the sorting worked as expected
-  if (sortedApps.length > 0) {
-    console.log("\n🔍 First 5 applications sorted by distance (from transformer):");
-    sortedApps.slice(0, 5).forEach((app, index) => {
-      const distVal = (app as any).distanceValue;
-      console.log(`${index + 1}. ID: ${app.id}, Address: ${app.address}, Distance: ${typeof distVal === 'number' ? distVal.toFixed(3) : 'unknown'}km (${app.distance})`);
-    });
+  // Sort by distance if possible, otherwise return as-is
+  if (hasCoordinates) {
+    // We need a reference point for sorting - use the first application with coordinates
+    const referenceApp = transformedApplications.find(app => app.coordinates !== null);
+    if (referenceApp && referenceApp.coordinates) {
+      return sortApplicationsByDistance(transformedApplications, referenceApp.coordinates);
+    }
   }
   
-  return sortedApps;
+  return transformedApplications;
 };

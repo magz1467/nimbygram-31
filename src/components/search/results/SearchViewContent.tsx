@@ -58,7 +58,7 @@ export const SearchViewContent = ({
     }
   }, [applications, isLoading]);
 
-  // Calculate status counts for the header
+  // Calculate status counts for the header with default values
   const statusCounts = applications.reduce((counts: Record<string, number>, app) => {
     const status = app.status || 'Other';
     const category = status.includes('Under Review') ? 'Under Review' :

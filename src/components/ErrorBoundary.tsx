@@ -2,7 +2,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { ErrorType, formatErrorMessage, detectErrorType } from '@/utils/errors';
 
 interface Props {
@@ -47,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Show toast notification if possible
     try {
-      const toast = require("@/components/ui/use-toast").toast;
+      const toast = require("@/hooks/use-toast").toast;
       if (toast) {
         toast({
           title: "An error occurred",

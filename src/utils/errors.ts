@@ -69,7 +69,7 @@ export function formatErrorMessage(error: unknown): string {
 /**
  * Handle error with optional toast notification
  */
-export function handleError(error: unknown, toast?: any, options?: any): any {
+export function handleError(error: unknown, toast?: any): any {
   console.error('Error:', error);
   
   if (toast && !isNonCriticalError(error)) {

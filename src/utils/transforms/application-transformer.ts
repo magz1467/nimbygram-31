@@ -21,25 +21,25 @@ export function transformApplicationData(rawData: any): Application {
   // Transform the raw data to match Application type
   return {
     id: rawData.id,
-    application_id: rawData.application_id || rawData.id?.toString(),
     reference: rawData.reference || '',
-    proposal: rawData.proposal || rawData.description || '',
     address: rawData.address || '',
     coordinates: coordinates,
     status: rawData.status || 'Unknown',
     type: rawData.type || '',
-    url: rawData.url || '',
-    date_received: rawData.date_received || null,
-    decision_date: rawData.decision_date || null,
     title: rawData.title || rawData.proposal || '',
-    local_authority: rawData.local_authority || '',
     latitude: typeof rawData.latitude === 'number' ? rawData.latitude : null,
     longitude: typeof rawData.longitude === 'number' ? rawData.longitude : null,
     distance: rawData.distance || null,
-    image_url: rawData.image_url || null,
-    documents: rawData.documents || [],
+    image: rawData.image_url || null,
     description: rawData.description || rawData.proposal || '',
-    // Add any other fields needed
+    streetview_url: rawData.streetview_url || null,
+    image_map_url: rawData.image_map_url || null,
+    submittedDate: rawData.date_received || null,
+    decisionDue: rawData.decision_date || null,
+    ai_title: rawData.ai_title || null,
+    postcode: rawData.postcode || null,
+    impact_score: rawData.impact_score || null,
+    impact_score_details: rawData.impact_score_details || null
   };
 }
 
