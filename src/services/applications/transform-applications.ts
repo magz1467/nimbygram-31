@@ -1,5 +1,5 @@
 
-import { filterByLocationRelevance, transformAndSortApplications } from './transforms';
+import { filterByLocationRelevance, transformApplicationsData } from './transforms';
 
 // Re-export the functions from the smaller modules
-export { filterByLocationRelevance, transformAndSortApplications };
+export { filterByLocationRelevance, transformApplicationsData };
