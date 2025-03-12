@@ -1,52 +1,40 @@
 
 import { toast } from "@/hooks/use-toast";
-import { 
-  ErrorType, 
-  isNonCriticalError, 
-  formatErrorMessage, 
-  detectErrorType 
-} from "@/utils/errors";
-
-export interface ErrorHandlerOptions {
-  showToast?: boolean;
-  logToConsole?: boolean;
-  performanceData?: Record<string, any>;
-}
+import { ErrorType, AppError, ErrorHandlerOptions } from "./types";
+import { detectErrorType } from "./detection";
 
 /**
  * Centralized error handling function for consistent error management
  */
 export function handleError(
   error: unknown,
-  options: ErrorHandlerOptions = { showToast: true, logToConsole: true }
+  options: ErrorHandlerOptions = {}
 ): { message: string; type: ErrorType } {
-  const { showToast = true, logToConsole = true, performanceData } = options;
+  const { showToast = true, critical = true } = options;
   const timestamp = new Date().toISOString();
   
-  // Determine if error is critical or can be safely ignored
-  const isCritical = !isNonCriticalError(error);
-  const errorType = detectErrorType(error);
-  const message = formatErrorMessage(error);
+  // Convert to AppError if not already
+  const appError = error instanceof AppError 
+    ? error 
+    : new AppError(error instanceof Error ? error.message : String(error), {
+        type: detectErrorType(error),
+        context: options.context
+      });
   
-  // Always log errors to console with context
-  if (logToConsole) {
-    console.error(`Error [${timestamp}]:`, error);
-    if (performanceData) {
-      console.info(`Performance data for error context:`, performanceData);
-    }
-  }
+  // Log error with context
+  console.error(`Error [${timestamp}]:`, appError);
   
-  // Only show toast for critical errors that should interrupt the user
-  if (showToast && isCritical) {
+  // Show toast for critical errors that should interrupt the user
+  if (showToast && critical) {
     toast({
-      title: errorType === ErrorType.TIMEOUT ? "Search Timeout" : "Error",
-      description: message,
+      title: appError.type === ErrorType.TIMEOUT ? "Search Timeout" : "Error",
+      description: appError.message,
       variant: "destructive",
     });
   }
   
   return {
-    message,
-    type: errorType
+    message: appError.message,
+    type: appError.type
   };
 }

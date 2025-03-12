@@ -12,22 +12,40 @@ export enum ErrorType {
   AUTHENTICATION = 'authentication',
   PERMISSION = 'permission',
   DATABASE = 'database',
-  SPATIAL = 'spatial'
+  SPATIAL = 'spatial',
+  AUTHORIZATION = 'authorization'
 }
 
 /**
  * Interface for application errors with proper typing
  */
-export interface AppError extends Error {
-  type: ErrorType;
+export interface AppErrorOptions {
+  type?: ErrorType;
   details?: string;
   code?: string;
   context?: Record<string, any>;
 }
 
-export type ErrorOptions = {
+export class AppError extends Error {
+  type: ErrorType;
+  details?: string;
+  code?: string;
+  context?: Record<string, any>;
+
+  constructor(message: string, options: AppErrorOptions = {}) {
+    super(message);
+    this.name = 'AppError';
+    this.type = options.type || ErrorType.UNKNOWN;
+    this.details = options.details;
+    this.code = options.code;
+    this.context = options.context;
+  }
+}
+
+export type ErrorHandlerOptions = {
   showToast?: boolean;
   critical?: boolean;
+  context?: Record<string, any>;
 };
 
 /**
@@ -35,15 +53,7 @@ export type ErrorOptions = {
  */
 export function createAppError(
   message: string, 
-  type: ErrorType = ErrorType.UNKNOWN,
-  details?: string,
-  code?: string,
-  context?: Record<string, any>
+  options: AppErrorOptions = {}
 ): AppError {
-  const error = new Error(message) as AppError;
-  error.type = type;
-  if (details) error.details = details;
-  if (code) error.code = code;
-  if (context) error.context = context;
-  return error;
+  return new AppError(message, options);
 }
