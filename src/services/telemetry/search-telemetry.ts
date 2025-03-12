@@ -86,7 +86,7 @@ class SearchTelemetryService {
             console.error('Error logging telemetry:', response.error);
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error logging telemetry:', error);
         });
     } catch (error) {

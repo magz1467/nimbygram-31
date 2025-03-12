@@ -3,13 +3,13 @@ import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Application } from "@/types/planning";
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';
-import { SearchFilters } from './search/types';
+import type { SearchFilters } from './search/types';
 import { useProgressiveSearch } from './search/use-progressive-search';
 import { useSearchErrorHandler } from './search/use-search-error-handler';
 import { useSearchTelemetry } from './search/use-search-telemetry';
 import { executeSearch } from './search/search-executor';
 
-export { SearchFilters } from './search/types';
+export type { SearchFilters } from './search/types';
 
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
