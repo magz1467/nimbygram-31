@@ -116,11 +116,14 @@ export function useSpatialSearch(coordinates: SearchCoordinates | [number, numbe
     },
     enabled: !!coordinates,
     retry: false, // Don't retry on failure so we can see errors
-    onSuccess: (data) => {
-      console.log(`✅ [useSpatialSearch] Query successful, found ${data.applications.length} applications`);
-    },
-    onError: (error) => {
-      console.error('❌ [useSpatialSearch] Query failed with error:', error);
+    // Correctly handle callbacks with meta instead of directly on options object
+    meta: {
+      onSuccess: (data: SearchResult) => {
+        console.log(`✅ [useSpatialSearch] Query successful, found ${data.applications.length} applications`);
+      },
+      onError: (error: Error) => {
+        console.error('❌ [useSpatialSearch] Query failed with error:', error);
+      }
     }
   });
 }

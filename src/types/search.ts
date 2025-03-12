@@ -1,4 +1,3 @@
-
 import { Application } from "./planning";
 
 export interface SearchCoordinates {
@@ -16,5 +15,7 @@ export interface SearchResult {
   };
 }
 
-export const SEARCH_RADIUS = 5; // 5km radius
+// Default search radius in kilometers
+export const SEARCH_RADIUS = 10;
+
 export const SEARCH_TIMEOUT = 30000; // 30 second timeout
