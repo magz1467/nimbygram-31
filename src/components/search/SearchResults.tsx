@@ -14,35 +14,78 @@ interface SearchResultsProps {
 }
 
 export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
+  console.log('🔍 [SearchResults] Component rendering with coordinates:', coordinates);
+  
   const { data, isLoading, isError, error } = useSpatialSearch(coordinates);
 
   useEffect(() => {
+    console.log('🔍 [SearchResults] Effect running with dependencies:', { 
+      hasCoordinates: !!coordinates, 
+      isLoading, 
+      isError, 
+      hasData: !!data,
+      errorMessage: error instanceof Error ? error.message : 'No error'
+    });
+    
     if (coordinates) {
+      console.log('🔍 [SearchResults] Processing coordinates:', coordinates);
+      
       // Ensure coordinates are converted to a proper tuple
       const coordsArray: [number, number] = Array.isArray(coordinates) 
-        ? [coordinates[0], coordinates[1]]
+        ? coordinates.length === 2 ? [coordinates[0], coordinates[1]] as [number, number] : [0, 0]
         : [coordinates.lat, coordinates.lng];
       
-      console.log("🔍 Search initiated for coordinates:", coordinates);
-      console.log("🔍 Search radius:", SEARCH_RADIUS, "km");
-      searchDiagnostics.logSearch(coordsArray, SEARCH_RADIUS);
+      console.log("🔍 [SearchResults] Search initiated with coordinates:", coordsArray);
+      console.log("🔍 [SearchResults] Search radius:", SEARCH_RADIUS, "km");
+      
+      try {
+        searchDiagnostics.logSearch(coordsArray, SEARCH_RADIUS);
+        console.log('✅ [SearchResults] Search diagnostics logged successfully');
+      } catch (err) {
+        console.error('❌ [SearchResults] Failed to log search diagnostics:', err);
+      }
+    } else {
+      console.log('⚠️ [SearchResults] No coordinates available for search');
     }
     
     if (data) {
-      console.log(`📊 Search results: ${data.applications.length} applications found via ${data.method} method`);
+      console.log(`📊 [SearchResults] Search results received: ${data.applications.length} applications found via ${data.method} method`);
+      console.log('📊 [SearchResults] Search timing:', data.timing);
+      
       if (data.applications.length > 0) {
-        console.log("📊 First few results:", data.applications.slice(0, 3));
+        console.log("📊 [SearchResults] First few results:", data.applications.slice(0, 3));
+      } else {
+        console.log("⚠️ [SearchResults] No applications found in search results");
       }
-      searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
+      
+      try {
+        searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
+        console.log('✅ [SearchResults] Results diagnostics logged successfully');
+      } catch (err) {
+        console.error('❌ [SearchResults] Failed to log results diagnostics:', err);
+      }
     }
     
     if (isError) {
-      console.error("❌ Search error:", error);
-      searchDiagnostics.logError(error);
+      console.error("❌ [SearchResults] Search error occurred:", error);
+      console.error("❌ [SearchResults] Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      
+      try {
+        searchDiagnostics.logError(error);
+        console.log('✅ [SearchResults] Error diagnostics logged successfully');
+      } catch (err) {
+        console.error('❌ [SearchResults] Failed to log error diagnostics:', err);
+      }
     }
-  }, [coordinates, data, isError, error]);
+  }, [coordinates, data, isLoading, isError, error]);
+
+  console.log('🔍 [SearchResults] Current render state:', { isLoading, isError, hasData: !!data });
 
   if (isLoading) {
+    console.log('⏳ [SearchResults] Rendering loading state');
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin mr-2 text-primary" />
@@ -52,6 +95,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   }
 
   if (isError) {
+    console.log('❌ [SearchResults] Rendering error state:', error);
     return (
       <Alert variant="destructive" className="m-4">
         <AlertCircle className="h-4 w-4" />
@@ -73,6 +117,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   }
 
   if (!data?.applications.length) {
+    console.log('⚠️ [SearchResults] Rendering no results state');
     return (
       <div className="text-center p-8">
         <div className="mb-4 flex justify-center">
@@ -91,6 +136,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
     );
   }
 
+  console.log(`✅ [SearchResults] Rendering results: ${data.applications.length} applications`);
   return (
     <div className="space-y-4 p-4">
       <div className="flex justify-between items-center mb-4">
