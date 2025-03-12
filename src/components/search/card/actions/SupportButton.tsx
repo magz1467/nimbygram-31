@@ -23,7 +23,7 @@ export const SupportButton = ({
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { handleError } = useErrorHandler();
+  const { handleError, isNonCritical } = useErrorHandler();
   
   const handleSupport = async () => {
     const canProceed = checkAuth(() => setShowAuthDialog(true));
@@ -32,7 +32,23 @@ export const SupportButton = ({
     setIsSubmitting(true);
     
     try {
-      // Toggle support status
+      // Check if support_count column exists
+      const { data: columnExists, error: columnCheckError } = await supabase.rpc(
+        'check_column_exists',
+        { table_name: 'crystal_roof', column_name: 'support_count' }
+      );
+      
+      if (columnCheckError || !columnExists) {
+        // If we can't check or the column doesn't exist, show a friendly message
+        toast({
+          title: "Feature unavailable",
+          description: "The support feature is currently being set up. Please try again later.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Toggle support status if column exists
       const action = isSupportedByUser ? 'remove' : 'add';
       
       const { data, error } = await supabase
@@ -54,10 +70,19 @@ export const SupportButton = ({
       });
       
     } catch (error) {
-      handleError(error, {
-        context: 'support button',
-        retry: () => handleSupport()
-      });
+      // Only show errors if they're not related to the missing column
+      if (!isNonCritical(error)) {
+        handleError(error, {
+          context: 'support button',
+          retry: () => handleSupport()
+        });
+      } else {
+        // For non-critical errors, show a more user-friendly message
+        toast({
+          title: "Feature unavailable",
+          description: "The support feature is currently unavailable. Please try again later.",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
