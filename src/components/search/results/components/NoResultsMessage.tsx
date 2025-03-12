@@ -1,21 +1,42 @@
 
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
 
 interface NoResultsMessageProps {
   searchTerm?: string;
   displayTerm?: string;
   postcode?: string;
   onRetry?: () => void;
+  isStillSearching?: boolean;
 }
 
 export const NoResultsMessage = ({
   searchTerm,
   displayTerm,
   postcode,
-  onRetry
+  onRetry,
+  isStillSearching = false
 }: NoResultsMessageProps) => {
   const locationTerm = displayTerm || searchTerm || postcode || 'this location';
+  
+  if (isStillSearching) {
+    return (
+      <div className="p-8 text-center">
+        <div className="flex justify-center mb-3">
+          <Search className="text-primary h-10 w-10 animate-pulse" />
+        </div>
+        <h3 className="text-xl font-medium mb-3">Searching for applications...</h3>
+        <p className="text-gray-600 mb-4">
+          We're still looking for planning applications in {locationTerm}.
+        </p>
+        <div className="flex items-center justify-center space-x-2 mt-6">
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }}></div>
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }}></div>
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "600ms" }}></div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="p-8 text-center">

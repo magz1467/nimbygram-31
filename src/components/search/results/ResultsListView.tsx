@@ -1,10 +1,10 @@
-
 import { Application } from "@/types/planning";
 import { useResultsListState } from "@/hooks/search/useResultsListState";
 import { LoadingState } from "./components/LoadingState";
 import { TimeoutErrorMessage } from "./components/TimeoutErrorMessage";
 import { NoResultsMessage } from "./components/NoResultsMessage";
 import { ResultsList } from "./components/ResultsList";
+import { useEffect, useState } from "react";
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -62,19 +62,14 @@ export const ResultsListView = ({
     onPageChange
   });
 
-  // HIGHEST PRIORITY: If we're loading or not fully completed initial load, always show loading state
-  if (isLoading || (!initialLoadComplete && hasStartedLoading)) {
-    return (
-      <LoadingState
-        isLongSearchDetected={isLongSearchDetected}
-        onRetry={onRetry}
-        showErrorMessage={showErrorMessage}
-        error={error || null}
-      />
-    );
-  }
+  const [hadResults, setHadResults] = useState(false);
+  
+  useEffect(() => {
+    if (applications?.length > 0 || loadedApplications?.length > 0) {
+      setHadResults(true);
+    }
+  }, [applications, loadedApplications]);
 
-  // SECOND PRIORITY: If we have results, show them immediately regardless of loading state
   if (applications?.length > 0 || loadedApplications?.length > 0) {
     return (
       <ResultsList
@@ -94,8 +89,20 @@ export const ResultsListView = ({
     );
   }
 
-  // THIRD PRIORITY: Show error view for timeout errors when we truly have no results
-  if (!isLoading && error && (!applications?.length && !loadedApplications?.length)) {
+  if (isLoading || (!initialLoadComplete && hasStartedLoading) || searchDuration < 15000) {
+    return (
+      <LoadingState
+        isLongSearchDetected={isLongSearchDetected}
+        onRetry={onRetry}
+        showErrorMessage={showErrorMessage}
+        error={error || null}
+        searchTerm={searchTerm}
+        displayTerm={displayTerm}
+      />
+    );
+  }
+
+  if (!isLoading && error && !hadResults) {
     return (
       <TimeoutErrorMessage
         error={error}
@@ -107,26 +114,25 @@ export const ResultsListView = ({
     );
   }
 
-  // FOURTH PRIORITY: Show "no results" message only when initial load is TRULY complete
-  // and we have waited a significant amount of time to be sure the search is done
-  if (!isLoading && !error && initialLoadComplete && searchDuration > 12000) {
+  if (!isLoading && !error && initialLoadComplete && searchDuration < 15000) {
     return (
       <NoResultsMessage
         searchTerm={searchTerm}
         displayTerm={displayTerm}
         postcode={postcode}
         onRetry={onRetry}
+        isStillSearching={true}
       />
     );
   }
 
-  // Fallback to loading state if none of the above conditions are met
   return (
-    <LoadingState
-      isLongSearchDetected={isLongSearchDetected}
+    <NoResultsMessage
+      searchTerm={searchTerm}
+      displayTerm={displayTerm}
+      postcode={postcode}
       onRetry={onRetry}
-      showErrorMessage={showErrorMessage}
-      error={error || null}
+      isStillSearching={false}
     />
   );
 };

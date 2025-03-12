@@ -7,24 +7,38 @@ interface LoadingStateProps {
   onRetry?: () => void;
   showErrorMessage: boolean;
   error: Error | null;
+  searchTerm?: string;
+  displayTerm?: string;
 }
 
 export const LoadingState = ({ 
   isLongSearchDetected, 
   onRetry, 
   showErrorMessage, 
-  error 
+  error,
+  searchTerm,
+  displayTerm
 }: LoadingStateProps) => {
+  const locationTerm = displayTerm || searchTerm || 'this location';
+  
   return (
     <div>
       <div className="mb-6 text-center">
-        <div className="flex justify-center mb-2">
-          <Search className="animate-pulse h-6 w-6 text-primary" />
+        <div className="flex justify-center mb-4">
+          <div className="relative">
+            <Search className="h-10 w-10 text-primary" />
+            <div className="absolute inset-0 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
         <h3 className="text-lg font-medium">Searching for planning applications...</h3>
         <p className="text-sm text-muted-foreground">
-          Results will appear as soon as they're found
+          Looking for applications near {locationTerm}
         </p>
+        <div className="flex items-center justify-center space-x-2 mt-4">
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }}></div>
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }}></div>
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "600ms" }}></div>
+        </div>
       </div>
       
       <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />

@@ -28,6 +28,7 @@ export const useResultsListState = ({
   const initialResultsTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longSearchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const errorMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const minLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track if loading has ever started
   useEffect(() => {
@@ -40,6 +41,13 @@ export const useResultsListState = ({
       if (initialResultsTimerRef.current) clearTimeout(initialResultsTimerRef.current);
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+      if (minLoadingTimerRef.current) clearTimeout(minLoadingTimerRef.current);
+      
+      // Set minimum loading time to prevent flickering
+      minLoadingTimerRef.current = setTimeout(() => {
+        // This timer ensures we show loading state for at least 1.5 seconds
+        minLoadingTimerRef.current = null;
+      }, 1500);
     }
     
     // Only mark initial load as complete when we get results or a definitive empty state
@@ -50,9 +58,10 @@ export const useResultsListState = ({
         clearTimeout(initialResultsTimerRef.current);
       }
       
-      // Use a much longer delay (10 seconds) for empty results to ensure search is truly done
-      // This prevents premature "no results" display
-      const delay = applications.length > 0 ? 500 : 10000;
+      // Use much longer delays to prevent premature "no results" display
+      // - For results: wait 2 seconds
+      // - For empty results: wait 15 seconds to ensure search is truly done
+      const delay = applications.length > 0 ? 2000 : 15000;
       
       initialResultsTimerRef.current = setTimeout(() => {
         setInitialLoadComplete(true);
@@ -65,6 +74,7 @@ export const useResultsListState = ({
       if (initialResultsTimerRef.current) clearTimeout(initialResultsTimerRef.current);
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+      if (minLoadingTimerRef.current) clearTimeout(minLoadingTimerRef.current);
     };
   }, [isLoading, hasStartedLoading, initialLoadComplete, applications.length]);
 
@@ -79,11 +89,11 @@ export const useResultsListState = ({
       if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
       if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
       
-      // Show "long search" message after 10 seconds - early enough to set expectations
+      // Show "long search" message after 8 seconds - early enough to set expectations
       longSearchTimerRef.current = setTimeout(() => {
         setIsLongSearchDetected(true);
         longSearchTimerRef.current = null;
-      }, 10000);
+      }, 8000);
       
       // Only show error message after 25 seconds if we're still loading 
       // and have no results - long enough to be patient but not so long users leave
