@@ -1,7 +1,7 @@
 
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info } from "lucide-react";
+import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info, Database } from "lucide-react";
 import { ErrorType } from "@/utils/errors";
 import { useState } from "react";
 
@@ -17,6 +17,7 @@ export const SearchErrorView = ({
   onRetry 
 }: SearchErrorViewProps) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   
   // Select the appropriate icon based on error type
   const ErrorIcon = () => {
@@ -27,6 +28,8 @@ export const SearchErrorView = ({
         return <Clock className="h-16 w-16 text-amber-500 mb-4" />;
       case ErrorType.NOT_FOUND:
         return <Search className="h-16 w-16 text-blue-500 mb-4" />;
+      case ErrorType.DATABASE:
+        return <Database className="h-16 w-16 text-red-500 mb-4" />;
       default:
         return <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />;
     }
@@ -41,6 +44,8 @@ export const SearchErrorView = ({
         return "Search Timeout";
       case ErrorType.NOT_FOUND:
         return "No Results Found";
+      case ErrorType.DATABASE:
+        return "Database Error";
       default:
         return "Search Error";
     }
@@ -57,6 +62,8 @@ export const SearchErrorView = ({
         return "The search took too long to complete. Please try a more specific location or different filters.";
       case ErrorType.NOT_FOUND:
         return "We couldn't find any planning applications matching your search criteria.";
+      case ErrorType.DATABASE:
+        return "Our database is currently experiencing high demand. Please try a more specific search or try again later.";
       default:
         return "We had trouble finding planning applications for this location.";
     }
@@ -83,6 +90,12 @@ export const SearchErrorView = ({
           "Try again in a few minutes",
           "If the problem persists, contact support"
         ];
+      case ErrorType.DATABASE:
+        return [
+          "Use a more specific search term to reduce database load",
+          "Try again during off-peak hours",
+          "Add filters to narrow your search"
+        ];
       default:
         return [
           "Try a different search term",
@@ -90,6 +103,39 @@ export const SearchErrorView = ({
           "Try again later"
         ];
     }
+  };
+  
+  // Gather system diagnostics
+  const getDiagnostics = () => {
+    return {
+      browser: navigator.userAgent,
+      language: navigator.language,
+      online: navigator.onLine,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      pixelRatio: window.devicePixelRatio,
+      timestamp: new Date().toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      memory: (window.performance as any)?.memory ? {
+        jsHeapSizeLimit: formatBytes((window.performance as any).memory.jsHeapSizeLimit),
+        totalJSHeapSize: formatBytes((window.performance as any).memory.totalJSHeapSize),
+        usedJSHeapSize: formatBytes((window.performance as any).memory.usedJSHeapSize)
+      } : 'Not available',
+      connection: (navigator as any)?.connection ? {
+        effectiveType: (navigator as any).connection.effectiveType,
+        downlink: (navigator as any).connection.downlink,
+        rtt: (navigator as any).connection.rtt,
+        saveData: (navigator as any).connection.saveData
+      } : 'Not available'
+    };
+  };
+  
+  // Format bytes to human-readable
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -130,6 +176,24 @@ export const SearchErrorView = ({
             )}
           </div>
         )}
+        
+        <div className="mb-6 w-full max-w-md">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowDiagnostics(!showDiagnostics)}
+            className="flex items-center gap-2 mb-2"
+          >
+            <Info size={16} />
+            {showDiagnostics ? "Hide System Information" : "Show System Information"}
+          </Button>
+          
+          {showDiagnostics && (
+            <div className="bg-gray-100 p-3 rounded text-xs font-mono overflow-x-auto">
+              <pre>{JSON.stringify(getDiagnostics(), null, 2)}</pre>
+            </div>
+          )}
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
           <Button onClick={onRetry} className="flex items-center gap-2">

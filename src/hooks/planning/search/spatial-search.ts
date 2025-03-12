@@ -4,8 +4,40 @@ import { Application } from "@/types/planning";
 import { SearchFilters } from "../use-planning-search";
 import { calculateDistance } from "../utils/distance-calculator";
 
+// Performance tracking
+const spatialPerformanceMetrics = {
+  successCount: 0,
+  failureCount: 0,
+  totalDuration: 0,
+  maxDuration: 0,
+  lastErrorTimestamp: 0,
+  errors: [] as string[]
+};
+
 /**
- * Attempts to use the optimized PostGIS spatial search function with improved error handling and timeout management
+ * Log spatial search metrics
+ */
+function logSpatialSearchMetrics() {
+  const avgDuration = spatialPerformanceMetrics.successCount > 0 
+    ? spatialPerformanceMetrics.totalDuration / spatialPerformanceMetrics.successCount 
+    : 0;
+    
+  console.log('📊 Spatial Search Metrics:');
+  console.log(`Success rate: ${spatialPerformanceMetrics.successCount}/${spatialPerformanceMetrics.successCount + spatialPerformanceMetrics.failureCount} (${Math.round(spatialPerformanceMetrics.successCount * 100 / (spatialPerformanceMetrics.successCount + spatialPerformanceMetrics.failureCount || 1))}%)`);
+  console.log(`Average duration: ${avgDuration.toFixed(2)}ms`);
+  console.log(`Max duration: ${spatialPerformanceMetrics.maxDuration}ms`);
+  
+  if (spatialPerformanceMetrics.errors.length > 0) {
+    console.log('Recent errors:');
+    spatialPerformanceMetrics.errors.slice(-3).forEach((err, i) => 
+      console.log(`${i+1}. ${err}`)
+    );
+  }
+}
+
+/**
+ * Attempts to use the optimized PostGIS spatial search function with improved error handling,
+ * timeout management, and detailed diagnostics
  */
 export async function performSpatialSearch(
   lat: number, 
@@ -13,18 +45,30 @@ export async function performSpatialSearch(
   radiusKm: number,
   filters: SearchFilters
 ): Promise<Application[] | null> {
-  console.log('Using PostGIS spatial function for efficient search', { lat, lng, radiusKm, filters });
+  console.group('🔍 Spatial Search - DETAILED DIAGNOSTICS');
+  const overallStartTime = Date.now();
+  
+  console.log('Starting PostGIS spatial search with params:', { lat, lng, radiusKm, filters });
+  console.log('Connection status:', navigator.onLine ? 'online' : 'offline');
+  console.log('Current performance metrics:', {
+    successRate: `${spatialPerformanceMetrics.successCount}/${spatialPerformanceMetrics.successCount + spatialPerformanceMetrics.failureCount}`,
+    lastError: spatialPerformanceMetrics.lastErrorTimestamp > 0 
+      ? new Date(spatialPerformanceMetrics.lastErrorTimestamp).toISOString() 
+      : 'none'
+  });
   
   try {
     // Add a timeout to the spatial search (increased to 12 seconds)
     const timeoutPromise = new Promise<null>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Spatial search timeout after 12 seconds'));
-      }, 12000); // 12 second timeout
+        console.log('⏱️ Spatial search timeout reached (10 seconds)');
+        reject(new Error('Spatial search timeout after 10 seconds'));
+      }, 10000); // 10 second timeout
     });
     
     console.log('Starting spatial search with RPC call');
     const startTime = Date.now();
+    console.log(`RPC call started at: ${new Date(startTime).toISOString()}`);
     
     // Try to execute the spatial function with a timeout
     const resultPromise = supabase
@@ -32,7 +76,7 @@ export async function performSpatialSearch(
         center_lat: lat,
         center_lng: lng,
         radius_km: radiusKm,
-        result_limit: 200 // Reduce limit to improve performance
+        result_limit: 150 // Reduced limit to improve performance
       });
     
     // Race between the query and the timeout
@@ -42,23 +86,49 @@ export async function performSpatialSearch(
     ]) as any;
     
     const endTime = Date.now();
-    console.log(`Spatial query execution time: ${endTime - startTime}ms`);
+    const duration = endTime - startTime;
+    console.log(`Spatial query execution time: ${duration}ms`);
+    console.log(`RPC call completed at: ${new Date(endTime).toISOString()}`);
+    
+    // Track performance metrics
+    if (!spatialError) {
+      spatialPerformanceMetrics.successCount++;
+      spatialPerformanceMetrics.totalDuration += duration;
+      if (duration > spatialPerformanceMetrics.maxDuration) {
+        spatialPerformanceMetrics.maxDuration = duration;
+      }
+    }
       
     if (spatialError) {
+      spatialPerformanceMetrics.failureCount++;
+      spatialPerformanceMetrics.lastErrorTimestamp = Date.now();
+      
+      // Limit error history to last 10 errors
+      if (spatialPerformanceMetrics.errors.length >= 10) {
+        spatialPerformanceMetrics.errors.shift();
+      }
+      spatialPerformanceMetrics.errors.push(`${spatialError.code || 'unknown'}: ${spatialError.message}`);
+      
       console.error('PostGIS function detailed error:', {
         error: spatialError,
         code: spatialError.code,
         message: spatialError.message,
         details: spatialError.details,
         hint: spatialError.hint,
-        queryTime: `${endTime - startTime}ms`,
-        searchParams: { lat, lng, radiusKm }
+        queryTime: `${duration}ms`,
+        searchParams: { lat, lng, radiusKm },
+        timestamp: new Date().toISOString()
       });
+      
+      // Log performance metrics on error
+      logSpatialSearchMetrics();
+      console.groupEnd();
       return null;
     }
     
     if (!spatialData || spatialData.length === 0) {
       console.log('No results from spatial search', { lat, lng, radiusKm });
+      console.groupEnd();
       return [];
     }
     
@@ -66,6 +136,7 @@ export async function performSpatialSearch(
     
     // Apply filters after getting the data
     let filteredData = spatialData;
+    const preFilterCount = filteredData.length;
     
     if (filters.status) {
       console.log('Filtering by status:', filters.status);
@@ -89,9 +160,11 @@ export async function performSpatialSearch(
       );
     }
     
-    console.log(`After filtering: ${filteredData.length} applications remain`);
+    console.log(`After filtering: ${filteredData.length} applications remain (filtered out ${preFilterCount - filteredData.length})`);
     
     // Calculate distance and add it to the results
+    const processingStartTime = Date.now();
+    
     const results = filteredData.map(app => {
       const distance = calculateDistance(
         lat,
@@ -102,15 +175,62 @@ export async function performSpatialSearch(
       return { ...app, distance };
     });
     
+    const processingEndTime = Date.now();
+    console.log(`Results processing time: ${processingEndTime - processingStartTime}ms`);
+    
+    if (results.length > 0) {
+      console.log('First result:', {
+        id: results[0].id,
+        distance: results[0].distance,
+        coordinates: [results[0].latitude, results[0].longitude]
+      });
+      
+      if (results.length > 1) {
+        console.log('Last result:', {
+          id: results[results.length-1].id,
+          distance: results[results.length-1].distance,
+          coordinates: [results[results.length-1].latitude, results[results.length-1].longitude]
+        });
+      }
+    }
+    
+    const overallEndTime = Date.now();
+    console.log(`Total spatial search time: ${overallEndTime - overallStartTime}ms`);
+    
+    // Log metrics periodically
+    if (spatialPerformanceMetrics.successCount % 5 === 0) {
+      logSpatialSearchMetrics();
+    }
+    
+    console.groupEnd();
     return results;
   } catch (error) {
+    spatialPerformanceMetrics.failureCount++;
+    spatialPerformanceMetrics.lastErrorTimestamp = Date.now();
+    
+    // Limit error history to last 10 errors
+    if (spatialPerformanceMetrics.errors.length >= 10) {
+      spatialPerformanceMetrics.errors.shift();
+    }
+    spatialPerformanceMetrics.errors.push(`${error.name || 'unknown'}: ${error.message}`);
+    
     console.error('Detailed error in spatial search:', {
       error,
       errorName: error.name,
       errorMessage: error.message,
       errorStack: error.stack,
-      searchParams: { lat, lng, radiusKm, filters }
+      searchParams: { lat, lng, radiusKm, filters },
+      timestamp: new Date().toISOString(),
+      navigator: {
+        onLine: navigator.onLine,
+        userAgent: navigator.userAgent,
+        language: navigator.language
+      }
     });
+    
+    // Log performance metrics
+    logSpatialSearchMetrics();
+    console.groupEnd();
     return null;
   }
 }

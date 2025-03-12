@@ -1,52 +1,45 @@
 
-import { AppError, ErrorType } from './types';
-
 /**
- * Format error messages consistently
+ * Utility functions for error formatting and logging
  */
-export function formatErrorMessage(error: any, context?: string): string {
-  if (error instanceof AppError) {
-    return error.message;
-  }
-  
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  return 'An unknown error occurred';
-}
 
 /**
- * Log errors to console with consistent formatting
+ * Format and log errors with detailed information
  */
 export function logError(error: any, context?: string): void {
-  const errorObject = error instanceof AppError ? error : error;
+  console.error(`Error in ${context || 'application'}:`, error);
   
-  console.group('🚨 Application Error');
-  console.error(`Error ${context ? `in ${context}` : ''}:`, errorObject);
-  
-  if (error.stack) {
+  if (error?.stack) {
     console.error('Stack trace:', error.stack);
   }
   
-  console.groupEnd();
-}
-
-// NOTE: This function is deprecated - use createAppError from handler.tsx instead
-// @deprecated
-export function createAppError(error: any, context?: string): AppError {
-  console.warn('This createAppError function in formatting.ts is deprecated. Use the one from handler.tsx instead.');
-  
-  if (error instanceof AppError) {
-    return error;
+  // Log extra attributes for AppErrors
+  if (error?.type) {
+    console.log('Error type:', error.type);
   }
   
-  let errorType = ErrorType.UNKNOWN;
-  let message = formatErrorMessage(error, context);
+  if (error?.originalError) {
+    console.log('Original error:', error.originalError);
+  }
+}
+
+/**
+ * Format an error message for display based on context
+ */
+export function formatErrorMessage(error: Error, friendlyMessage?: string): string {
+  if (friendlyMessage) {
+    return friendlyMessage;
+  }
   
-  return new AppError(message, errorType, error, context);
+  const message = error.message || 'An unexpected error occurred';
+  
+  // Don't expose internal error details to users in production
+  if (process.env.NODE_ENV === 'production') {
+    return message.includes('Error:') 
+      ? message
+      : `Error: ${message}`;
+  }
+  
+  // In development, show more details
+  return `${error.name}: ${message}`;
 }

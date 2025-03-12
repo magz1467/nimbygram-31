@@ -1,20 +1,52 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { AppError, ErrorType, createAppError, handleError, isNonCriticalError } from "@/utils/errors";
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Log detailed search error information to Supabase for analysis
+ */
+async function logSearchErrorToSupabase(
+  error: any, 
+  searchParams: any, 
+  userAgent: string,
+  errorType: string
+) {
+  try {
+    const { data, error: logError } = await supabase.from('SearchErrors').insert({
+      error_message: error?.message || 'Unknown error',
+      error_type: errorType,
+      error_stack: error?.stack || '',
+      search_parameters: searchParams,
+      browser_info: userAgent,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (logError) {
+      console.error('Failed to log search error to database:', logError);
+    } else {
+      console.log('Search error logged to database successfully');
+    }
+  } catch (e) {
+    console.error('Exception while logging search error:', e);
+  }
+}
 
 /**
  * Handles search errors by determining error type and displaying appropriate messages
- * With enhanced error handling for better user experience
+ * With enhanced error handling for better user experience and detailed logging
  * 
  * @param err The error object
  * @param toast Toast function for showing notifications
+ * @param searchParams Search parameters for context
  * @returns Empty array for non-critical errors or throws the error
  */
 export function handleSearchError(
   err: any, 
-  toast: ReturnType<typeof useToast>["toast"]
+  toast: ReturnType<typeof useToast>["toast"],
+  searchParams?: any
 ) {
-  console.group('🚨 Search Error Handler');
+  console.group('🚨 Search Error Handler - DETAILED DIAGNOSTICS');
   console.log('Original error:', err);
   console.log('Error type:', err?.constructor?.name);
   console.log('Error message:', err?.message);
@@ -23,6 +55,27 @@ export function handleSearchError(
   if (err?.stack) {
     console.log('Error stack:', err.stack);
   }
+  
+  // Log browser and performance information
+  const performanceInfo = {
+    memory: window.performance?.memory ? {
+      jsHeapSizeLimit: window.performance.memory.jsHeapSizeLimit,
+      totalJSHeapSize: window.performance.memory.totalJSHeapSize,
+      usedJSHeapSize: window.performance.memory.usedJSHeapSize
+    } : 'Not available',
+    connection: navigator.connection ? {
+      effectiveType: navigator.connection.effectiveType,
+      downlink: navigator.connection.downlink,
+      rtt: navigator.connection.rtt,
+      saveData: navigator.connection.saveData
+    } : 'Not available',
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    deviceMemory: (navigator as any).deviceMemory || 'Not available',
+    onLine: navigator.onLine
+  };
+  
+  console.log('Browser performance context:', performanceInfo);
+  console.log('Search parameters:', searchParams);
   
   // Don't treat missing support table or functions as real errors
   if (isNonCriticalError(err)) {
@@ -63,11 +116,22 @@ export function handleSearchError(
       err.message.toLowerCase().includes('coordinates') ||
       err.message.toLowerCase().includes('geocod')
     );
+    
+  // Check for database-specific errors
+  const isDatabaseError =
+    err.code && (
+      err.code.startsWith('22') || // Data exception
+      err.code.startsWith('23') || // Integrity constraint violation
+      err.code.startsWith('42') || // Syntax error or access rule violation
+      err.code.startsWith('53') || // Insufficient resources
+      err.code.startsWith('54')    // Program limit exceeded
+    );
   
   console.log({
     isTimeoutError,
     isNetworkError,
-    isLocationError
+    isLocationError,
+    isDatabaseError
   });
   
   // Set appropriate error type and user-friendly message
@@ -83,10 +147,24 @@ export function handleSearchError(
     console.log('Handling as location error');
     errorType = ErrorType.NOT_FOUND;
     appError.message = "We couldn't find that location. Please try a different postcode or place name.";
+  } else if (isDatabaseError) {
+    console.log('Handling as database error');
+    errorType = ErrorType.DATABASE;
+    appError.message = "There was an issue with our database while processing your search. Please try again later.";
   }
   
   // Set the error type
   appError.type = errorType;
+  
+  // Log to Supabase for analysis
+  const detailedSearchParams = {
+    ...searchParams,
+    browser: navigator.userAgent,
+    timestamp: new Date().toISOString(),
+    performance: performanceInfo
+  };
+  
+  logSearchErrorToSupabase(err, detailedSearchParams, navigator.userAgent, errorType);
   
   // Use centralized error handler to show toast
   handleError(appError, toast, {
@@ -95,7 +173,7 @@ export function handleSearchError(
   
   // Return empty array for common errors instead of throwing
   // This prevents unnecessary retries and improves user experience
-  if (isTimeoutError || isNetworkError || isLocationError) {
+  if (isTimeoutError || isNetworkError || isLocationError || isDatabaseError) {
     console.log('Returning empty array for handled error instead of throwing');
     console.groupEnd();
     return [];
