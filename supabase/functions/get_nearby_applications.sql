@@ -1,119 +1,82 @@
 
+-- Function to get nearby applications within a radius using PostGIS
 CREATE OR REPLACE FUNCTION get_nearby_applications(
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
+  center_lat DOUBLE PRECISION,
+  center_lng DOUBLE PRECISION,
   radius_km DOUBLE PRECISION DEFAULT 10,
-  result_limit INTEGER DEFAULT 500
+  result_limit INTEGER DEFAULT 200
 )
-RETURNS TABLE (
-  id INTEGER,
-  title TEXT,
-  address TEXT,
-  status TEXT,
-  description TEXT,
-  type TEXT,
-  reference TEXT,
-  submittedDate TEXT,
-  decisionDue TEXT,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  distance DOUBLE PRECISION,
-  debug_info JSONB
-)
+RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  start_time TIMESTAMPTZ;
-  end_time TIMESTAMPTZ;
-  execution_time INTERVAL;
+  -- Variables for improved performance
+  search_point GEOGRAPHY;
   lat_min DOUBLE PRECISION;
   lat_max DOUBLE PRECISION;
   lng_min DOUBLE PRECISION;
   lng_max DOUBLE PRECISION;
-  box_size TEXT;
 BEGIN
-  -- Record start time for performance logging
-  start_time := clock_timestamp();
+  -- Log the search parameters for debugging
+  RAISE NOTICE 'Executing spatial search with lat: %, lng: %, radius: %km, limit: %', 
+               center_lat, center_lng, radius_km, result_limit;
+               
+  -- Create a geography point from the input coordinates
+  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
   
-  -- Calculate bounding box for pre-filtering
-  lat_min := latitude - (radius_km/111.0);
-  lat_max := latitude + (radius_km/111.0);
-  lng_min := longitude - (radius_km/(111.0 * COS(RADIANS(latitude))));
-  lng_max := longitude + (radius_km/(111.0 * COS(RADIANS(latitude))));
+  -- Calculate bounding box for pre-filtering (faster than full spatial calculations)
+  -- Use more precise calculations depending on latitude
+  lat_min := center_lat - (radius_km/111.0);
+  lat_max := center_lat + (radius_km/111.0);
   
-  -- Format bounding box for debugging
-  box_size := format('Bounding box: lat [%s to %s], lng [%s to %s]', 
-                    lat_min::TEXT, lat_max::TEXT, 
-                    lng_min::TEXT, lng_max::TEXT);
+  -- Longitude degrees per km varies with latitude
+  lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
   
-  -- Use a simple bounding box search for better performance
+  RAISE NOTICE 'Bounding box: lat(% to %), lng(% to %)', lat_min, lat_max, lng_min, lng_max;
+  
+  -- Use a two-step process: first filter by bounding box (fast), then refine with exact distance (slower)
   RETURN QUERY
-  SELECT 
-    cr.id,
-    cr.title,
-    cr.address,
-    cr.status,
-    cr.description,
-    cr.type,
-    cr.reference,
-    cr.submittedDate,
-    cr.decisionDue,
-    cr.latitude,
-    cr.longitude,
-    -- Calculate distance using the Haversine formula
-    (6371 * acos(cos(radians(latitude)) * 
-                 cos(radians(cr.latitude)) * 
-                 cos(radians(cr.longitude) - radians(longitude)) + 
-                 sin(radians(latitude)) * 
-                 sin(radians(cr.latitude)))) AS distance,
-    -- Include debug information
-    jsonb_build_object(
-      'search_point', jsonb_build_object('lat', latitude, 'lng', longitude),
-      'search_radius_km', radius_km,
-      'bounding_box', jsonb_build_object(
-        'lat_min', lat_min,
-        'lat_max', lat_max,
-        'lng_min', lng_min,
-        'lng_max', lng_max
-      ),
-      'application_point', jsonb_build_object('lat', cr.latitude, 'lng', cr.longitude),
-      'query_params', jsonb_build_object(
-        'center_lat', latitude,
-        'center_lng', longitude,
-        'radius_km', radius_km
-      )
-    ) AS debug_info
-  FROM crystal_roof cr
+  WITH bbox_filtered AS (
+    -- Fast pre-filtering using bounding box
+    SELECT *
+    FROM crystal_roof
+    WHERE 
+      latitude IS NOT NULL AND
+      longitude IS NOT NULL AND
+      latitude BETWEEN lat_min AND lat_max AND
+      longitude BETWEEN lng_min AND lng_max
+    LIMIT result_limit * 2  -- Get more than needed for the next filtering step
+  )
+  SELECT *
+  FROM bbox_filtered
   WHERE 
-    cr.latitude IS NOT NULL 
-    AND cr.longitude IS NOT NULL
-    AND cr.latitude BETWEEN lat_min AND lat_max
-    AND cr.longitude BETWEEN lng_min AND lng_max
-  ORDER BY distance ASC
+    -- Only include points within the actual radius
+    ST_DWithin(
+      search_point,
+      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY,
+      radius_km * 1000  -- Convert km to meters
+    )
+  ORDER BY
+    -- Order by actual distance for better results
+    ST_Distance(
+      search_point,
+      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY
+    ) ASC
   LIMIT result_limit;
   
-  -- Record end time for performance logging
-  end_time := clock_timestamp();
-  execution_time := end_time - start_time;
-  
-  -- Log execution time and parameters
-  RAISE NOTICE 'get_nearby_applications executed in % with params: lat=%, lng=%, radius=%km, result_limit=%',
-    execution_time,
-    latitude,
-    longitude,
-    radius_km,
-    result_limit;
+  -- Log the completion of the query
+  RAISE NOTICE 'Spatial search completed';
 END;
 $$;
 
--- Grant access to the function
+-- Set a statement timeout to prevent long-running queries (increased to 12 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '12s';
+
+-- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
--- Create index on latitude and longitude for faster searches
-CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 
-ON crystal_roof (latitude, longitude);
-
--- Add a statement timeout to prevent long-running queries
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
-
+-- Optimize index for fast bounding box searches
+DROP INDEX IF EXISTS idx_crystal_roof_lat_lng;
+CREATE INDEX idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);

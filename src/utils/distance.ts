@@ -1,3 +1,4 @@
+
 import { LatLngTuple } from "leaflet";
 import { Application } from "@/types/planning";
 
@@ -97,12 +98,21 @@ export const sortApplicationsByDistance = (
   });
   
   // Sort by the calculated distance
-  return appsWithDistance
-    .sort((a, b) => {
-      // Safely access _distanceValue which we just added
-      const distA = (a as any)._distanceValue;
-      const distB = (b as any)._distanceValue;
-      return distA - distB;
-    })
-    .map(({ _distanceValue, ...app }: any) => app as Application); // Remove the temporary distance value
-}
+  const sortedApps = appsWithDistance.sort((a, b) => {
+    // Safely access _distanceValue which we just added
+    const distA = (a as any)._distanceValue;
+    const distB = (b as any)._distanceValue;
+    return distA - distB;
+  });
+  
+  // Log the first few results for debugging
+  console.log("\nSorted applications (first 5):");
+  sortedApps.slice(0, 5).forEach((app, index) => {
+    // Safely access _distanceValue which we just added
+    const dist = (app as any)._distanceValue;
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}`);
+  });
+  
+  // Return sorted applications without the temporary _distanceValue property
+  return sortedApps.map(({ _distanceValue, ...app }: any) => app as Application);
+};

@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/applicationTransforms';
+import { transformApplicationData } from '@/utils/transforms/application-transformer';
 import { LatLngTuple } from 'leaflet';
 
 interface ApplicationError {
@@ -54,7 +55,7 @@ export const useApplicationsData = () => {
       
       // Transform into the expected format
       const transformedApplications = rawData
-        .map(app => transformApplicationData(app))
+        .map(app => transformApplicationData(app, center))
         .filter((app): app is Application => app !== null);
 
       console.log('✨ Transformed applications:', {

@@ -1,91 +1,57 @@
 
--- First, make sure PostGIS extension is enabled (if not already)
-CREATE EXTENSION IF NOT EXISTS postgis;
-
--- Add a geometry column to crystal_roof if it doesn't exist
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'crystal_roof' AND column_name = 'geom'
-  ) THEN
-    -- Add geometry column
-    PERFORM AddGeometryColumn('public', 'crystal_roof', 'geom', 4326, 'POINT', 2);
-    
-    -- Populate geometry column from existing lat/long
-    UPDATE crystal_roof 
-    SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
-    WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
-    
-    -- Create spatial index
-    CREATE INDEX idx_crystal_roof_geom ON crystal_roof USING GIST (geom);
-  END IF;
-END
-$$;
-
--- Create or replace the paginated search function using PostGIS
-CREATE OR REPLACE FUNCTION get_nearby_applications_paginated(
+-- Create spatial search function for crystal_roof table
+CREATE OR REPLACE FUNCTION get_nearby_applications(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
-  radius_km DOUBLE PRECISION DEFAULT 5, -- Changed default to 5km
-  page_number INTEGER DEFAULT 0,
-  page_size INTEGER DEFAULT 10  -- Changed default to 10
+  radius_km DOUBLE PRECISION DEFAULT 10,
+  result_limit INTEGER DEFAULT 500
 )
 RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  search_point geometry;
-  offset_val INTEGER;
+  lat_min DOUBLE PRECISION;
+  lat_max DOUBLE PRECISION;
+  lng_min DOUBLE PRECISION;
+  lng_max DOUBLE PRECISION;
 BEGIN
-  -- Input validation
-  IF center_lat IS NULL OR center_lng IS NULL THEN
-    RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
-  END IF;
+  -- Calculate bounding box for better performance
+  lat_min := center_lat - (radius_km/111.0);
+  lat_max := center_lat + (radius_km/111.0);
   
-  -- Enforce reasonable radius limits
-  radius_km := GREATEST(LEAST(radius_km, 50), 0.1);
+  -- Longitude degrees per km varies with latitude
+  lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
   
-  -- Validate pagination
-  page_size := LEAST(page_size, 50);  -- Cap at 50 max results per page
-  page_number := GREATEST(page_number, 0);
-  offset_val := page_number * page_size;
-  
-  -- Create search point
-  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326);
-  
-  -- Log query parameters
-  RAISE NOTICE 'Executing spatial search at (%, %) with radius %km, page: %, size: %',
-    center_lat, center_lng, radius_km, page_number, page_size;
-  
+  -- Use bounding box approach with distance calculation
   RETURN QUERY
-  SELECT 
-    cr.*
+  SELECT cr.*
   FROM crystal_roof cr
   WHERE 
-    cr.geom IS NOT NULL
-    -- ST_DWithin with geography type for accurate distance calculation
-    AND ST_DWithin(
-      cr.geom::geography,
-      search_point::geography,
-      radius_km * 1000  -- Convert km to meters
-    )
-  ORDER BY 
-    -- Calculate exact distance for sorting
-    ST_Distance(
-      cr.geom::geography,
-      search_point::geography
-    )
-  LIMIT page_size
-  OFFSET offset_val;
-  
-  RAISE NOTICE 'Spatial search completed for page % with size %', page_number, page_size;
+    -- Only include points that have both latitude and longitude
+    cr.latitude IS NOT NULL AND
+    cr.longitude IS NOT NULL AND
+    -- Fast bounding box filter
+    cr.latitude BETWEEN lat_min AND lat_max AND
+    cr.longitude BETWEEN lng_min AND lng_max
+  ORDER BY
+    -- Calculate distance using haversine formula for better accuracy
+    2 * 6371 * ASIN(SQRT(
+      POWER(SIN((RADIANS(cr.latitude) - RADIANS(center_lat))/2), 2) + 
+      COS(RADIANS(center_lat)) * COS(RADIANS(cr.latitude)) * 
+      POWER(SIN((RADIANS(cr.longitude) - RADIANS(center_lng))/2), 2)
+    )) ASC
+  LIMIT result_limit;
 END;
 $$;
 
--- Set reasonable timeout
-ALTER FUNCTION get_nearby_applications_paginated SET statement_timeout = '15s';
+-- Add permissions for anonymous and authenticated users
+GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
--- Grant permissions
-GRANT EXECUTE ON FUNCTION get_nearby_applications_paginated TO anon, authenticated;
+-- Create index on latitude and longitude for faster searches
+CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 
+ON crystal_roof (latitude, longitude);
+
+-- Set timeout to prevent long-running queries
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';

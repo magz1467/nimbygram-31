@@ -1,11 +1,6 @@
 
-import { ErrorType, AppError, safeStringify } from './types';
-import { createAppError } from './error-factory';
-
-// Re-export types
-export type { ErrorType, AppError };
-export { safeStringify, createAppError };
-
-// Re-export utility functions for handling errors
-export { isNonCriticalError } from '../errors';
-export { detectErrorType, formatErrorMessage } from '../errors';
+// Re-export specific items to avoid name conflicts
+export { ErrorType, AppError, type ErrorOptions } from './types';
+export { detectErrorType, isNonCriticalError } from './detection';
+export { formatErrorMessage, logError } from './formatting';
+export { createAppError, handleError } from './handler';

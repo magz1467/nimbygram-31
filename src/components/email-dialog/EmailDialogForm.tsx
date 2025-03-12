@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,9 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
-// Simplified form schema - radius is always 5km
 const formSchema = z.object({
-  radius: z.string().default("5"),
+  radius: z.string(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -31,7 +29,7 @@ export const EmailDialogForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      radius: "5" // Fixed 5km radius
+      radius: "100"
     }
   });
 
@@ -41,10 +39,13 @@ export const EmailDialogForm = ({
         <FormField
           control={form.control}
           name="radius"
-          render={() => (
+          render={({ field }) => (
             <FormItem>
               <FormControl>
-                <RadiusSelect className="w-full" />
+                <RadiusSelect 
+                  value={field.value} 
+                  onChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

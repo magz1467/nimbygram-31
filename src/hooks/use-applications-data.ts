@@ -1,39 +1,68 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Application } from "@/types/planning";
-import { fetchApplicationById } from "@/services/applications/application-service";
-import { fetchApplicationsByLocation } from "@/services/applications/application-service";
+import { LatLngTuple } from 'leaflet';
+import { fetchApplicationsInRadius } from './applications/use-applications-fetch';
+import { calculateStatusCounts, StatusCounts } from './applications/use-status-counts';
 
-export const useApplicationsData = (
-  coordinates: [number, number] | null,
-  radius: number = 5,
-  limit: number = 100
-) => {
+export interface ApplicationError {
+  message: string;
+  details?: string;
+}
+
+export const useApplicationsData = () => {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<ApplicationError | null>(null);
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    'Under Review': 0,
+    'Approved': 0,
+    'Declined': 0,
+    'Other': 0
+  });
 
-  useEffect(() => {
-    if (!coordinates) return;
+  const fetchApplications = async (
+    center: LatLngTuple,
+    radius: number,
+    page = 0,
+    pageSize = 100
+  ) => {
+    setIsLoading(true);
+    setError(null);
 
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    try {
+      const { applications: fetchedApps, totalCount: count } = 
+        await fetchApplicationsInRadius({ center, radius, page, pageSize });
+      
+      setApplications(fetchedApps);
+      setTotalCount(count);
+      setStatusCounts(calculateStatusCounts(fetchedApps));
+      console.log('📊 Status counts:', statusCounts);
 
-      try {
-        const [lat, lng] = coordinates;
-        const results = await fetchApplicationsByLocation(lat, lng, radius);
-        setApplications(results.slice(0, limit));
-      } catch (err) {
-        console.error('Error fetching applications:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch applications'));
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (error: any) {
+      console.error('Failed to fetch applications:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      setError({
+        message: 'Failed to fetch applications',
+        details: error.message
+      });
+    } finally {
+      setIsLoading(false);
+      console.log('🏁 Fetch completed');
+    }
+  };
 
-    fetchData();
-  }, [coordinates, radius, limit]);
-
-  return { applications, loading, error };
+  return {
+    applications,
+    isLoading,
+    totalCount,
+    statusCounts,
+    error,
+    fetchApplicationsInRadius: fetchApplications,
+  };
 };

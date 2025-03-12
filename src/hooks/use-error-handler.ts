@@ -17,20 +17,17 @@ export function useErrorHandler() {
   const handleAppError = useCallback((error: any, options: any = {}) => {
     console.error('Error:', error);
     
-    const formattedMessage = formatErrorMessage(error);
-    const errorType = detectErrorType(error);
-    
     if (toast && !isNonCriticalError(error)) {
       toast({
-        title: options.title || "Error",
-        description: formattedMessage,
+        title: "Error",
+        description: formatErrorMessage(error),
         variant: "destructive",
       });
     }
     
     return {
-      message: formattedMessage,
-      type: errorType
+      message: formatErrorMessage(error),
+      type: detectErrorType(error)
     };
   }, [toast]);
   

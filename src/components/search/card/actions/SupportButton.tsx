@@ -23,7 +23,7 @@ export const SupportButton = ({
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { handleError, isNonCritical } = useErrorHandler();
+  const { handleError } = useErrorHandler();
   
   const handleSupport = async () => {
     const canProceed = checkAuth(() => setShowAuthDialog(true));
@@ -32,37 +32,16 @@ export const SupportButton = ({
     setIsSubmitting(true);
     
     try {
-      // Check if support_count column exists
-      const { data: columnExists, error: columnCheckError } = await supabase.rpc(
-        'check_column_exists',
-        { table_name: 'crystal_roof', column_name: 'support_count' }
-      );
-      
-      if (columnCheckError) {
-        console.error('Error checking column exists:', columnCheckError);
-        toast({
-          title: "Feature unavailable",
-          description: "The support feature is currently being set up. Please try again later.",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (!columnExists) {
-        toast({
-          title: "Feature unavailable",
-          description: "The support feature is currently being set up. Please try again later.",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
       // Toggle support status
-      const newCount = isSupportedByUser ? supportCount - 1 : supportCount + 1;
+      const action = isSupportedByUser ? 'remove' : 'add';
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('crystal_roof')
-        .update({ support_count: newCount })
+        .update({ 
+          support_count: isSupportedByUser 
+            ? supportCount - 1 
+            : supportCount + 1 
+        })
         .eq('id', applicationId);
       
       if (error) throw error;
@@ -75,19 +54,10 @@ export const SupportButton = ({
       });
       
     } catch (error) {
-      // Only show errors if they're not related to the missing column
-      if (!isNonCritical(error)) {
-        handleError(error, {
-          context: 'support button',
-          retry: () => handleSupport()
-        });
-      } else {
-        // For non-critical errors, show a more user-friendly message
-        toast({
-          title: "Feature unavailable",
-          description: "The support feature is currently unavailable. Please try again later.",
-        });
-      }
+      handleError(error, {
+        context: 'support button',
+        retry: () => handleSupport()
+      });
     } finally {
       setIsSubmitting(false);
     }

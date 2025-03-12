@@ -16,6 +16,3 @@ BEGIN
   RETURN table_exists;
 END;
 $$;
-
--- Add permissions for anonymous and authenticated users
-GRANT EXECUTE ON FUNCTION check_table_exists TO anon, authenticated;

@@ -1,29 +1,25 @@
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { routes } from './routes/routes';
-import { Toaster } from '@/components/ui/toaster';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { routes } from "@/routes/routes";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useEffect } from "react";
+import { initReloadTracker } from "@/utils/reloadTracker";
 
-// Create a client with sensible defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // Data considered fresh for 5 minutes
-      retry: 2, // Retry failed queries twice
-      refetchOnWindowFocus: false // Don't refetch when window regains focus
-    }
-  }
-});
-
-// Create router from routes
+// Create a router instance
 const router = createBrowserRouter(routes);
 
 function App() {
+  // Initialize the reload tracker on app mount
+  useEffect(() => {
+    initReloadTracker();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary>
       <RouterProvider router={router} />
       <Toaster />
-    </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -1,85 +1,86 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { Application } from "@/types/planning";
+import { supabase } from "@/integrations/supabase/client";
+import { transformApplicationData } from '@/utils/transformApplicationData';
+import { LatLngTuple } from 'leaflet';
 
-export async function fetchApplicationsInArea(
-  latitude: number, 
-  longitude: number, 
-  radius: number = 1,
-  filters: Record<string, string> = {}
-): Promise<any[]> {
-  try {
-    const filtersObj = { ...filters };
-    
-    let query = supabase
-      .from('crystal_roof')
-      .select('*')
-      .order('application_id', { ascending: false })
-      .limit(200);
-    
-    // Apply basic filters if provided
-    for (const key in filtersObj) {
-      if (Object.prototype.hasOwnProperty.call(filtersObj, key) && filtersObj[key]) {
-        query = query.eq(key, filtersObj[key]);
-      }
-    }
-    
-    // For spatial queries, we need to use a more complex approach
-    // But for now, let's just do a basic distance filter
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching applications:', error);
-      throw error;
-    }
-    
-    if (!data || !Array.isArray(data)) {
-      console.error('Invalid response format:', data);
-      return [];
-    }
-    
-    // Filter by distance manually
-    const distanceFiltered = data.filter(app => {
-      if (!app.centroid) return false;
-      
-      try {
-        // Simple distance calculation
-        const coords = typeof app.centroid === 'string' 
-          ? JSON.parse(app.centroid) 
-          : app.centroid;
-          
-        if (!coords || !coords.coordinates) return false;
-        
-        const [appLng, appLat] = coords.coordinates;
-        const distance = calculateDistance(latitude, longitude, appLat, appLng);
-        
-        return distance <= radius;
-      } catch (e) {
-        console.error('Error parsing coordinates:', e);
-        return false;
-      }
+export interface FetchApplicationsParams {
+  center: LatLngTuple;
+  radius: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ApplicationsResponse {
+  applications: Application[];
+  totalCount: number;
+  rawData: any;
+}
+
+export const fetchApplicationsInRadius = async ({
+  center,
+  radius,
+  page = 0,
+  pageSize = 100
+}: FetchApplicationsParams): Promise<ApplicationsResponse> => {
+  console.log('🔍 Starting fetch with params:', { 
+    center, 
+    radius, 
+    page, 
+    pageSize,
+    timestamp: new Date().toISOString()
+  });
+
+  const { data, error } = await supabase
+    .rpc('get_applications_with_counts_optimized', {
+      center_lng: center[1],
+      center_lat: center[0],
+      radius_meters: radius,
+      page_size: pageSize,
+      page_number: page
     });
-    
-    return distanceFiltered;
-  } catch (error) {
-    console.error('Error fetching applications by area:', error);
+
+  if (error) {
+    console.error('Error fetching applications:', error);
     throw error;
   }
-}
 
-// Simple distance calculation function (haversine formula)
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  const d = R * c; // Distance in km
-  return d;
-}
+  if (!data || !data[0]) {
+    console.log('No applications found');
+    return {
+      applications: [],
+      totalCount: 0,
+      rawData: null
+    };
+  }
 
-function deg2rad(deg: number): number {
-  return deg * (Math.PI/180);
-}
+  const { applications: appsData, total_count } = data[0];
+
+  console.log(`📦 Raw applications data:`, appsData?.map(app => ({
+    id: app.id,
+    title: app.title,
+    final_impact_score: app.final_impact_score
+  })));
+
+  const transformedApplications = appsData
+    ?.map(app => transformApplicationData(app))
+    .filter((app): app is Application => app !== null);
+
+  console.log('✨ Transformed applications:', transformedApplications?.map(app => ({
+    id: app.id,
+    title: app.title,
+    final_impact_score: app.impact_score
+  })));
+
+  // Verify sorting
+  console.log('🔄 Verifying impact score ordering:', transformedApplications?.map(app => ({
+    id: app.id,
+    final_impact_score: app.impact_score
+  })));
+
+  return {
+    applications: transformedApplications || [],
+    totalCount: total_count || 0,
+    rawData: data[0]
+  };
+};

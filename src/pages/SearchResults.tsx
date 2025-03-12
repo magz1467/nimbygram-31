@@ -1,51 +1,91 @@
 
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Header } from '@/components/Header';
-import { SearchResults } from '@/components/search/SearchResults';
-import { SearchCoordinates } from '@/types/search';
-import '../utils/debug-helpers';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { SearchView } from "@/components/search/results/SearchView";
+import { SearchErrorView } from "@/components/search/results/SearchErrorView";
+import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
+import { logRouteChange } from "@/utils/reloadTracker";
+import { Header } from "@/components/Header"; // Add Header import
 
 const SearchResultsPage = () => {
   const location = useLocation();
-  const [coordinates, setCoordinates] = React.useState<SearchCoordinates | null>(
-    location.state?.coordinates || null
-  );
+  const navigate = useNavigate();
+  const [error, setError] = useState<Error | null>(null);
+  const searchState = location.state;
+  const firstRenderRef = useRef(true);
+  const handleErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousPath = useRef<string | null>(null);
 
+  // Log route changes
   useEffect(() => {
-    // Log page load and state
-    console.log('🔍 [SearchResultsPage] Page loaded with state:', location.state);
-    console.log('🔍 [SearchResultsPage] Initial coordinates:', coordinates);
-    
-    // Import diagnostics tools for console access
-    import('../utils/search-console-diagnostics')
-      .then(module => {
-        console.log('✅ Search console diagnostics loaded and available via window.searchConsoleTools');
-        (window as any).searchConsoleTools = module.default;
-      })
-      .catch(err => console.error('❌ Failed to load diagnostics:', err));
-    
-    // Load debug helpers
-    import('../utils/debug-helpers')
-      .then(() => console.log('✅ Debug helpers loaded'))
-      .catch(err => console.error('❌ Failed to load debug helpers:', err));
-  }, [location.state, coordinates]);
-
-  const handleRetry = () => {
-    console.log('🔄 [SearchResultsPage] Retry triggered');
-    if (coordinates) {
-      console.log('🔄 [SearchResultsPage] Refreshing coordinates:', coordinates);
-      setCoordinates({ ...coordinates });
+    if (previousPath.current !== location.pathname) {
+      if (previousPath.current) {
+        logRouteChange(previousPath.current, location.pathname, 'internal');
+      }
+      previousPath.current = location.pathname;
     }
-  };
+    
+    return () => {
+      // Clear any pending timeouts when component unmounts
+      if (handleErrorTimeoutRef.current) {
+        clearTimeout(handleErrorTimeoutRef.current);
+      }
+    };
+  }, [location]);
+
+  // Use useCallback to create stable function references
+  const handleError = useCallback((err: Error | null) => {
+    if (err) {
+      console.log('Search error detected:', err.message);
+      
+      // Prevent setting state during render cycle
+      if (handleErrorTimeoutRef.current) {
+        clearTimeout(handleErrorTimeoutRef.current);
+      }
+      
+      handleErrorTimeoutRef.current = setTimeout(() => {
+        setError(err);
+        handleErrorTimeoutRef.current = null;
+      }, 0);
+    }
+  }, []);
+
+  const handleSearchComplete = useCallback(() => {
+    console.log('Search complete');
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    // Reset the error state and force a re-render
+    setError(null);
+  }, []);
 
   return (
-    <div>
+    <>
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <SearchResults coordinates={coordinates} onRetry={handleRetry} />
-      </main>
-    </div>
+      {!searchState?.searchTerm ? (
+        <NoSearchStateView onPostcodeSelect={(postcode) => {
+          navigate('/search-results', {
+            state: {
+              searchType: 'location',
+              searchTerm: postcode,
+              displayTerm: postcode,
+              timestamp: Date.now()
+            }
+          });
+        }} />
+      ) : error ? (
+        <SearchErrorView 
+          errorDetails={error.message} 
+          onRetry={handleRetry} 
+        />
+      ) : (
+        <SearchView 
+          initialSearch={searchState}
+          onError={handleError}
+          onSearchComplete={handleSearchComplete}
+        />
+      )}
+    </>
   );
 };
 

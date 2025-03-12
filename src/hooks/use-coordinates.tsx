@@ -1,138 +1,142 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { 
+  fetchCoordinatesFromPlaceId,
+  fetchCoordinatesByLocationName,
+  fetchCoordinatesFromPostcodesIo,
+  detectLocationType,
+  extractPlaceName
+} from '@/services/coordinates';
 import { useToast } from '@/hooks/use-toast';
-import { createAppError } from '@/utils/errors/error-factory';
-import { ErrorType } from '@/utils/errors/types';
-import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
-import { useCoordinatesFetch } from './coordinates/use-coordinates-fetch';
-import { logCoordinatesOperation } from '@/utils/coordinates/coordinates-logger';
 
-// Cache for storing previously resolved coordinates
-const coordinatesCache: Record<string, [number, number]> = {
-  // Preload known problematic areas with their coordinates
-  'HP22 6JJ': [51.765769, -0.744319], // Wendover
-  'WENDOVER': [51.765769, -0.744319],
+// Helper function to implement timeout for promises
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    )
+  ]) as Promise<T>;
 };
 
 export const useCoordinates = (searchTerm: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const { fetchCoordinates, isLoading, setIsLoading } = useCoordinatesFetch();
-  const retryCountRef = useRef(0);
-  const MAX_RETRIES = 3;
 
   useEffect(() => {
     let isMounted = true;
-    retryCountRef.current = 0;
 
-    const performCoordinatesSearch = async () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
-      abortControllerRef.current = new AbortController();
-      
+    const fetchCoordinates = async () => {
       if (!searchTerm) {
-        logCoordinatesOperation('search', 'No search term provided');
+        console.log('❌ useCoordinates: No search term provided');
         return;
       }
       
-      const normalizedSearchTerm = searchTerm.trim().toUpperCase();
-      
-      // Check cache first
-      if (coordinatesCache[normalizedSearchTerm]) {
-        console.log(`📍 Using cached coordinates for: ${searchTerm}`);
-        if (isMounted) {
-          setCoordinates(coordinatesCache[normalizedSearchTerm]);
-          setIsLoading(false);
-        }
-        return;
-      }
-      
-      // Special case for Wendover
-      if (normalizedSearchTerm.includes('HP22 6JJ') || normalizedSearchTerm.includes('WENDOVER')) {
-        console.log(`📍 Special case handling for Wendover: ${searchTerm}`);
-        if (isMounted) {
-          setCoordinates([51.765769, -0.744319]);
-          setIsLoading(false);
-        }
-        return;
-      }
-      
+      // Reset state on new request
       setIsLoading(true);
       setError(null);
       setCoordinates(null);
       
-      searchTelemetry.logEvent(TelemetryEventType.SEARCH_STARTED, { searchTerm });
+      console.log('🔍 useCoordinates: Fetching coordinates for:', searchTerm);
       
       try {
-        const locationCoords = await fetchCoordinates(searchTerm);
+        // Determine what type of location string we have
+        const locationType = detectLocationType(searchTerm);
         
-        if (isMounted && locationCoords) {
-          // Cache the result
-          coordinatesCache[normalizedSearchTerm] = locationCoords;
-          
-          searchTelemetry.logEvent(TelemetryEventType.COORDINATES_RESOLVED, {
-            searchTerm,
-            coordinates: locationCoords
-          });
-          
-          setCoordinates(locationCoords);
-        }
-      } catch (error: any) {
-        console.error(`Failed to get coordinates for ${searchTerm}:`, error);
-        
-        // If we have retries left, try again
-        if (retryCountRef.current < MAX_RETRIES) {
-          retryCountRef.current++;
-          console.log(`Retrying coordinates fetch (${retryCountRef.current}/${MAX_RETRIES}) for ${searchTerm}`);
-          
-          // Slight delay before retry
-          setTimeout(() => {
-            if (isMounted) {
-              performCoordinatesSearch();
+        // Choose the right method based on what we're dealing with
+        switch (locationType) {
+          case 'PLACE_ID':
+            console.log('🌍 Detected Google Place ID, using Maps API to get coordinates');
+            const placeCoords = await withTimeout(
+              fetchCoordinatesFromPlaceId(searchTerm),
+              10000,
+              "Timeout while retrieving location details"
+            );
+            if (isMounted) setCoordinates(placeCoords);
+            break;
+            
+          case 'LOCATION_NAME':
+            console.log('🏙️ Detected location name:', searchTerm);
+            
+            try {
+              // First try with the full search term
+              console.log('🔍 Searching for exact location name:', searchTerm);
+              const locationCoords = await withTimeout(
+                fetchCoordinatesByLocationName(searchTerm),
+                10000,
+                "Timeout while searching for location"
+              );
+              
+              if (isMounted && locationCoords) {
+                console.log('✅ Found coordinates for location:', locationCoords);
+                setCoordinates(locationCoords);
+              }
+            } catch (locationError) {
+              console.warn('⚠️ Location search failed:', locationError.message);
+              
+              // Extract simplified place name as fallback
+              const placeName = extractPlaceName(searchTerm);
+              if (placeName && placeName !== searchTerm) {
+                try {
+                  console.log('🔍 Trying with simplified place name:', placeName);
+                  const fallbackCoords = await withTimeout(
+                    fetchCoordinatesByLocationName(placeName),
+                    10000,
+                    "Timeout while searching for simplified location"
+                  );
+                  
+                  if (isMounted && fallbackCoords) {
+                    console.log('✅ Found coordinates for simplified location:', fallbackCoords);
+                    setCoordinates(fallbackCoords);
+                  }
+                } catch (fallbackError) {
+                  console.error('❌ Both direct and simplified location searches failed');
+                  throw fallbackError;
+                }
+              } else {
+                throw locationError;
+              }
             }
-          }, 1000);
-          return;
+            break;
+            
+          case 'POSTCODE':
+            // Regular UK postcode - use Postcodes.io
+            console.log('📫 Regular postcode detected, using Postcodes.io API');
+            const postcodeCoords = await withTimeout(
+              fetchCoordinatesFromPostcodesIo(searchTerm),
+              10000,
+              "Timeout while looking up postcode"
+            );
+            if (isMounted) setCoordinates(postcodeCoords);
+            break;
         }
+      } catch (error) {
+        console.error("❌ useCoordinates: Error fetching coordinates:", error.message);
         
-        const appError = createAppError(
-          `We couldn't find the location "${searchTerm}". Please try a more specific UK location or postcode.`,
-          error,
-          {
-            type: error.type || ErrorType.UNKNOWN,
-            context: { searchTerm }
-          }
-        );
-        
-        searchTelemetry.logEvent(TelemetryEventType.COORDINATES_ERROR, {
-          searchTerm,
-          errorType: appError.type,
-          errorMessage: appError.message
-        });
-        
+        // Show user-friendly error toast
         toast({
           title: "Location Error",
-          description: appError.userMessage,
+          description: `We couldn't find the location "${searchTerm}". Please try a more specific UK location or postcode.`,
           variant: "destructive",
         });
         
         if (isMounted) {
-          setError(appError);
+          setError(error instanceof Error ? error : new Error(String(error)));
           setCoordinates(null);
         }
       } finally {
         if (isMounted) {
+          console.log('🏁 useCoordinates: Finished loading');
           setIsLoading(false);
-          abortControllerRef.current = null;
         }
       }
     };
 
-    if (searchTerm?.trim()) {
-      performCoordinatesSearch();
+    if (searchTerm && searchTerm.trim()) {
+      console.log('🔄 useCoordinates: Search term changed, fetching new coordinates:', searchTerm);
+      fetchCoordinates();
     } else {
       setCoordinates(null);
       setIsLoading(false);
@@ -140,13 +144,10 @@ export const useCoordinates = (searchTerm: string | undefined) => {
     }
     
     return () => {
+      console.log('🔇 useCoordinates: Cleanup');
       isMounted = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
     };
-  }, [searchTerm, toast, fetchCoordinates, setIsLoading]);
+  }, [searchTerm, toast]);
 
   return { coordinates, isLoading, error };
 };

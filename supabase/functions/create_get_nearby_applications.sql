@@ -1,63 +1,68 @@
 
--- This direct implementation should help resolve any RPC function issues
+-- This function can be used to create the missing get_nearby_applications RPC function
+-- Run this in the Supabase SQL editor to enable spatial search functionality
+
+-- Function to get nearby applications within a radius using basic distance calculations
 CREATE OR REPLACE FUNCTION get_nearby_applications(
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
+  center_lat DOUBLE PRECISION,
+  center_lng DOUBLE PRECISION,
   radius_km DOUBLE PRECISION DEFAULT 10,
-  result_limit INTEGER DEFAULT 500
+  result_limit INTEGER DEFAULT 200
 )
-RETURNS TABLE (
-  id INTEGER,
-  title TEXT,
-  address TEXT,
-  status TEXT,
-  description TEXT,
-  type TEXT,
-  reference TEXT,
-  submittedDate TEXT,
-  decisionDue TEXT,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  distance DOUBLE PRECISION
-)
-LANGUAGE SQL
+RETURNS SETOF crystal_roof
+LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-  -- Simple implementation with standard SQL for maximum compatibility
-  SELECT 
-    cr.id,
-    cr.title,
-    cr.address,
-    cr.status,
-    cr.description,
-    cr.type,
-    cr.reference,
-    cr.submittedDate,
-    cr.decisionDue,
-    cr.latitude,
-    cr.longitude,
-    -- Calculate distance using the Haversine formula
-    (6371 * acos(cos(radians(latitude)) * 
-                 cos(radians(cr.latitude)) * 
-                 cos(radians(cr.longitude) - radians(longitude)) + 
-                 sin(radians(latitude)) * 
-                 sin(radians(cr.latitude)))) AS distance
+DECLARE
+  -- Variables for improved performance
+  lat_min DOUBLE PRECISION;
+  lat_max DOUBLE PRECISION;
+  lng_min DOUBLE PRECISION;
+  lng_max DOUBLE PRECISION;
+BEGIN
+  -- Calculate bounding box for pre-filtering (faster than full distance calculations)
+  lat_min := center_lat - (radius_km/111.0);
+  lat_max := center_lat + (radius_km/111.0);
+  
+  -- Longitude degrees per km varies with latitude
+  lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
+  
+  -- Use a simple bounding box approach with Haversine distance calculation
+  RETURN QUERY
+  SELECT cr.*
   FROM crystal_roof cr
   WHERE 
-    cr.latitude IS NOT NULL 
-    AND cr.longitude IS NOT NULL
-    -- Use a simple bounding box for initial filtering (much faster)
-    AND cr.latitude BETWEEN (latitude - radius_km/111.0) AND (latitude + radius_km/111.0)
-    AND cr.longitude BETWEEN (longitude - radius_km/(111.0 * COS(RADIANS(latitude)))) 
-                       AND (longitude + radius_km/(111.0 * COS(RADIANS(latitude))))
-  ORDER BY distance ASC
+    -- Only include points that have both latitude and longitude
+    cr.latitude IS NOT NULL AND
+    cr.longitude IS NOT NULL AND
+    -- Fast bounding box filter
+    cr.latitude BETWEEN lat_min AND lat_max AND
+    cr.longitude BETWEEN lng_min AND lng_max AND
+    -- Calculate actual distance using the Haversine formula
+    -- 6371 is Earth's radius in kilometers
+    2 * 6371 * ASIN(SQRT(
+      POWER(SIN((RADIANS(cr.latitude) - RADIANS(center_lat))/2), 2) + 
+      COS(RADIANS(center_lat)) * COS(RADIANS(cr.latitude)) * 
+      POWER(SIN((RADIANS(cr.longitude) - RADIANS(center_lng))/2), 2)
+    )) <= radius_km
+  ORDER BY
+    -- Order by actual distance
+    2 * 6371 * ASIN(SQRT(
+      POWER(SIN((RADIANS(cr.latitude) - RADIANS(center_lat))/2), 2) + 
+      COS(RADIANS(center_lat)) * COS(RADIANS(cr.latitude)) * 
+      POWER(SIN((RADIANS(cr.longitude) - RADIANS(center_lng))/2), 2)
+    )) ASC
   LIMIT result_limit;
+END;
 $$;
 
--- Grant access to the function
+-- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
+
+-- Set timeout to prevent long-running queries (10 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '10s';
 
 -- Create index on latitude and longitude for faster searches
 CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 
 ON crystal_roof (latitude, longitude);
-

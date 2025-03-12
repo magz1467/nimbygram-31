@@ -1,92 +1,48 @@
+
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { RotateCw } from "lucide-react";
 
 interface LoadingSkeletonsProps {
-  count: number;
-  isLongSearch?: boolean;
+  isLongSearch: boolean;
   onRetry?: () => void;
 }
 
-export const LoadingSkeletons = ({ count, isLongSearch = false, onRetry }: LoadingSkeletonsProps) => {
-  const [loadingMessage, setLoadingMessage] = useState("Loading results...");
-  const [artificialProgress, setArtificialProgress] = useState(0);
-  
-  useEffect(() => {
-    if (!isLongSearch) return;
-    
-    const messages = [
-      "Loading results...",
-      "This area has many planning applications...",
-      "Still working on it...",
-      "Almost there...",
-      "Retrieving applications..."
-    ];
-    
-    let messageIndex = 0;
-    const intervalId = setInterval(() => {
-      messageIndex = (messageIndex + 1) % messages.length;
-      setLoadingMessage(messages[messageIndex]);
-    }, 3000);
-    
-    return () => clearInterval(intervalId);
-  }, [isLongSearch]);
-  
-  useEffect(() => {
-    if (!isLongSearch) return;
-    
-    setArtificialProgress(10);
-    
-    const intervalId = setInterval(() => {
-      setArtificialProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(intervalId);
-          return 90;
-        }
-        
-        const increment = prev < 30 ? 5 : (prev < 60 ? 3 : 1);
-        return prev + increment;
-      });
-    }, 800);
-    
-    return () => clearInterval(intervalId);
-  }, [isLongSearch]);
-  
+export const LoadingSkeletons = ({ isLongSearch, onRetry }: LoadingSkeletonsProps) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-8">
+      {[1, 2, 3].map((i) => (
+        <div 
+          key={i} 
+          className="bg-white rounded-lg shadow-sm overflow-hidden max-w-2xl mx-auto h-[300px] animate-pulse"
+        >
+          <div className="p-6 space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-24 w-full" />
+            <div className="flex gap-2 mt-4">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
+        </div>
+      ))}
+      
+      {/* Show message for long-running searches */}
       {isLongSearch && (
-        <div className="mb-4">
-          <p className="text-sm text-gray-500 mb-2">{loadingMessage}</p>
-          <Progress value={artificialProgress} className="h-1" />
+        <div className="text-center mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md mx-auto">
+          <h4 className="text-amber-800 font-medium">Search taking longer than usual</h4>
+          <p className="text-amber-700 text-sm mt-1">
+            We're still looking for applications in this area. This might be a busy area with many applications.
+          </p>
           {onRetry && (
-            <button 
-              onClick={onRetry}
-              className="mt-4 text-sm text-primary hover:text-primary/80"
-            >
-              Try a different search
-            </button>
+            <Button onClick={onRetry} variant="outline" size="sm" className="mt-3 gap-2">
+              <RotateCw className="h-3 w-3" />
+              Try again
+            </Button>
           )}
         </div>
       )}
-      
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="space-y-3">
-          <Skeleton className="h-5 w-2/3" />
-          <div className="flex space-x-4">
-            <Skeleton className="h-24 w-24 rounded-md" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-4/6" />
-            </div>
-          </div>
-          <div className="flex space-x-2">
-            <Skeleton className="h-8 w-20 rounded-full" />
-            <Skeleton className="h-8 w-24 rounded-full" />
-          </div>
-          <Skeleton className="h-0.5 w-full" />
-        </div>
-      ))}
     </div>
   );
 };
