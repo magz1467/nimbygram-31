@@ -16,12 +16,11 @@ interface SearchResultsProps {
 export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   const { data, isLoading, isError, error } = useSpatialSearch(coordinates);
 
-  // Log search diagnostics
   useEffect(() => {
     if (coordinates) {
       // Ensure coordinates are converted to a proper tuple
       const coordsArray: [number, number] = Array.isArray(coordinates) 
-        ? [coordinates[0], coordinates[1]] 
+        ? [coordinates[0], coordinates[1]]
         : [coordinates.lat, coordinates.lng];
       
       console.log("🔍 Search initiated for coordinates:", coordinates);
@@ -31,7 +30,9 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
     
     if (data) {
       console.log(`📊 Search results: ${data.applications.length} applications found via ${data.method} method`);
-      console.log("📊 First few results:", data.applications.slice(0, 3));
+      if (data.applications.length > 0) {
+        console.log("📊 First few results:", data.applications.slice(0, 3));
+      }
       searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
     }
     
@@ -79,7 +80,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
         </div>
         <h3 className="font-medium text-xl mb-2">No Results Found</h3>
         <p className="text-muted-foreground mb-6">
-          No planning applications found within 10km of this location.
+          No planning applications found within {SEARCH_RADIUS}km of this location.
           <br />
           Try searching for a different location or postcode.
         </p>
@@ -111,5 +112,3 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
     </div>
   );
 }
-
-export default SearchResults;
