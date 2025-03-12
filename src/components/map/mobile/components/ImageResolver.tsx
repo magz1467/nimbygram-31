@@ -8,7 +8,7 @@ interface ImageResolverProps {
   title: string;
   applicationId: number;
   coordinates: [number, number];
-  class_3?: string;
+  classification?: string;
   className?: string;
 }
 
@@ -32,14 +32,14 @@ export const ImageResolver = ({
   title,
   applicationId,
   coordinates,
-  class_3,
+  classification,
   className = ''
 }: ImageResolverProps) => {
   console.log('🖼️ ImageResolver rendering for:', {
     applicationId,
     hasImageMapUrl: !!imageMapUrl,
     hasImage: !!image,
-    class_3,
+    classification,
     coordinates
   });
 
@@ -47,8 +47,8 @@ export const ImageResolver = ({
   let imageSource = imageMapUrl || image;
   
   // If no direct image is available, try to use category image
-  if (!imageSource && class_3 && CATEGORY_IMAGES[class_3 as keyof typeof CATEGORY_IMAGES]) {
-    imageSource = CATEGORY_IMAGES[class_3 as keyof typeof CATEGORY_IMAGES];
+  if (!imageSource && classification && CATEGORY_IMAGES[classification as keyof typeof CATEGORY_IMAGES]) {
+    imageSource = CATEGORY_IMAGES[classification as keyof typeof CATEGORY_IMAGES];
   } else if (!imageSource) {
     // Default to miscellaneous if no category is matched
     imageSource = CATEGORY_IMAGES['Miscellaneous'];

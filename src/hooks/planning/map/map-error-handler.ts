@@ -52,7 +52,6 @@ export function handleMapError(
   // Use the centralized error handler with our processed error
   handleError(appError, toast, {
     context: 'map',
-    retry: retry,
-    silent: false
+    retry: retry
   });
 }

@@ -33,7 +33,7 @@ export const useFilteredApplications = (
       if (activeFilters.type && !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
         return false;
       }
-      if (activeFilters.classification && !app.class_3?.toLowerCase().includes(activeFilters.classification.toLowerCase())) {
+      if (activeFilters.classification && !app.classification?.toLowerCase().includes(activeFilters.classification.toLowerCase())) {
         return false;
       }
       return true;

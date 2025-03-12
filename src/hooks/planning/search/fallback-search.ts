@@ -45,7 +45,7 @@ export async function performFallbackSearch(
     }
     
     if (filters?.classification && filters.classification.trim() !== '') {
-      query = query.ilike('class_3', `%${filters.classification}%`); // Use class_3 for classification filter
+      query = query.ilike('classification', `%${filters.classification}%`); // Use classification instead of class_3
     }
     
     // Increase limit for wider search
