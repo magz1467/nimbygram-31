@@ -1,39 +1,86 @@
 
 import { useState, useEffect } from 'react';
 import { Application } from "@/types/planning";
-import { fetchApplicationById } from "@/services/applications/application-service";
-import { fetchApplicationsInRadius } from "@/services/applications/application-service"; // Correct import path
+import { useErrorHandler } from '@/hooks/use-error-handler';
+import { supabase } from "@/integrations/supabase/client";
 
-export const useApplicationsData = (
-  coordinates: [number, number] | null,
-  radius: number = 5,
-  limit: number = 100
-) => {
+export interface ApplicationsDataParams {
+  coordinates?: [number, number];
+  radius?: number;
+  limit?: number;
+  filters?: Record<string, any>;
+}
+
+export function useApplicationsData(params: ApplicationsDataParams) {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-
+  const { handleError } = useErrorHandler();
+  
   useEffect(() => {
-    if (!coordinates) return;
-
-    const fetchData = async () => {
-      setLoading(true);
+    if (!params.coordinates) {
+      return;
+    }
+    
+    async function fetchData() {
+      setIsLoading(true);
       setError(null);
-
+      
       try {
-        const [lat, lng] = coordinates;
-        const results = await fetchApplicationsInRadius(lat, lng, radius, limit);
-        setApplications(results);
+        const [lat, lng] = params.coordinates || [0, 0];
+        const radius = params.radius || 5;
+        const limit = params.limit || 100;
+        
+        // Attempt to use spatial search function if available
+        try {
+          const { data, error } = await supabase.rpc('get_nearby_applications', { 
+            center_lat: lat,
+            center_lng: lng,
+            radius_km: radius,
+            result_limit: limit
+          });
+          
+          if (error) {
+            // If specific RPC function error, use fallback
+            if (error.message.includes('function') || error.message.includes('does not exist')) {
+              console.log('Spatial search not available, using fallback');
+              throw new Error('Spatial search not available');
+            }
+            throw error;
+          }
+          
+          setApplications(data || []);
+        } catch (spatialError) {
+          // Fallback to manual bounding box search
+          console.log('Using fallback search method');
+          
+          // Calculate bounding box (simple approximation)
+          const latDelta = radius / 111; // ~111km per degree of latitude
+          const lngDelta = radius / (111 * Math.cos(lat * Math.PI / 180)); // Adjust for longitude
+          
+          const { data, error } = await supabase
+            .from('crystal_roof')
+            .select('*')
+            .gte('latitude', lat - latDelta)
+            .lte('latitude', lat + latDelta)
+            .gte('longitude', lng - lngDelta)
+            .lte('longitude', lng + lngDelta)
+            .limit(limit);
+            
+          if (error) throw error;
+          
+          setApplications(data || []);
+        }
       } catch (err) {
-        console.error('Error fetching applications:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch applications'));
+        const appError = handleError(err, { title: 'Error fetching applications' });
+        setError(appError as Error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    };
-
+    }
+    
     fetchData();
-  }, [coordinates, radius, limit]);
-
-  return { applications, loading, error };
-};
+  }, [params.coordinates, params.radius, params.limit, params.filters, handleError]);
+  
+  return { applications, isLoading, error };
+}

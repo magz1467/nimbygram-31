@@ -1,6 +1,5 @@
 
-import { ErrorType, AppError, safeStringify } from './types';
-import { createAppError } from './error-factory';
+import { ErrorType, AppError } from './types';
 
 /**
  * Checks if an error is non-critical (can be safely ignored in the UI)
@@ -12,7 +11,7 @@ export function isNonCriticalError(errorOrMessage: unknown): boolean {
     ? errorOrMessage.toLowerCase() 
     : errorOrMessage instanceof Error 
       ? errorOrMessage.message.toLowerCase()
-      : safeStringify(errorOrMessage).toLowerCase();
+      : '';
   
   // List of patterns that indicate non-critical errors
   const nonCriticalPatterns = [
@@ -37,7 +36,7 @@ export function detectErrorType(error: unknown): ErrorType {
     ? error.toLowerCase() 
     : error instanceof Error 
       ? error.message.toLowerCase()
-      : safeStringify(error).toLowerCase();
+      : '';
   
   if (message.includes('timeout') || message.includes('too long') || message.includes('canceling statement')) {
     return ErrorType.TIMEOUT;
@@ -70,45 +69,35 @@ export function formatErrorMessage(error: unknown): string {
     return error.message || 'An unexpected error occurred';
   }
   
-  // Safely convert objects to strings to avoid [object Object]
-  return safeStringify(error);
+  // For AppError with userMessage
+  if (typeof error === 'object' && error !== null && 'userMessage' in error && error.userMessage) {
+    return error.userMessage as string;
+  }
+  
+  // Try to safely convert objects to strings
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'An unexpected error occurred';
+  }
 }
 
 /**
  * Handle error with optional toast notification
  */
-export function handleError(
-  error: unknown, 
-  options: { 
-    toast?: any, 
-    context?: string, 
-    retry?: () => void 
-  } = {}
-): AppError {
-  console.error(`Error${options.context ? ` in ${options.context}` : ''}:`, error);
+export function handleError(error: unknown, toast?: any): Record<string, any> {
+  console.error('Error:', error);
   
-  // Create a standardized AppError
-  const appError = createAppError(
-    formatErrorMessage(error),
-    error,
-    {
-      type: detectErrorType(error),
-      context: options.context ? { context: options.context } : undefined
-    }
-  );
-  
-  // Show toast notification if provided and error is critical
-  if (options.toast && !isNonCriticalError(error)) {
-    options.toast({
+  if (toast && !isNonCriticalError(error)) {
+    toast({
       title: "Error",
-      description: appError.userMessage || formatErrorMessage(error),
+      description: formatErrorMessage(error),
       variant: "destructive",
-      action: options.retry ? {
-        label: "Retry",
-        onClick: options.retry
-      } : undefined
     });
   }
   
-  return appError;
+  return {
+    message: formatErrorMessage(error),
+    type: detectErrorType(error)
+  };
 }

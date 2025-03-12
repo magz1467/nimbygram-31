@@ -1,151 +1,182 @@
 
-import { ErrorType } from './types';
-
-type TryCatchResult<T, F> = [T, null] | [null, F];
+import { ErrorType, AppError, createAppError } from './index';
 
 /**
- * A utility function that wraps a promise and returns a tuple with the result or error
- * 
- * @param promise The promise or async function to execute
- * @param fallbackValue The fallback value to return in case of error
- * @param options Additional options
- * @returns A tuple with [result, null] or [null, error]
+ * Generic try-catch helper that wraps async operations 
+ * and handles errors consistently
  */
-export async function tryCatch<T, F = Error>(
-  promise: Promise<T> | (() => Promise<T>),
-  fallbackValue: F | null = null,
+export async function tryCatch<T>(
+  operation: () => Promise<T>,
+  errorMessage: string,
   options: {
-    context?: string;
-    errorTransformer?: (error: any) => F;
+    type?: ErrorType,
+    context?: Record<string, any>,
+    onError?: (error: AppError) => void
   } = {}
-): Promise<TryCatchResult<T, F>> {
+): Promise<T> {
   try {
-    const result = typeof promise === 'function' ? await promise() : await promise;
-    return [result, null];
-  } catch (error) {
-    if (options.context) {
-      console.error(`Error in ${options.context}:`, error);
-    } else {
-      console.error('Error in tryCatch:', error);
+    return await operation();
+  } catch (err) {
+    const appError = createAppError(
+      errorMessage,
+      err,
+      {
+        type: options.type || ErrorType.UNKNOWN,
+        context: options.context
+      }
+    );
+    
+    if (options.onError) {
+      options.onError(appError);
     }
-
-    if (options.errorTransformer) {
-      return [null, options.errorTransformer(error)];
-    }
-
-    return [null, (error instanceof Error ? error : new Error(String(error))) as F];
+    
+    throw appError;
   }
 }
 
 /**
- * A utility function that attempts multiple fallback strategies in order
- * 
- * @param strategies Array of functions to try in sequence
- * @param fallbackValue The value to return if all strategies fail
- * @param options Additional options
- * @returns The result of the first successful strategy or the fallback value
+ * Attempts multiple strategies in sequence until one succeeds
+ * Useful for implementing fallbacks
  */
 export async function tryEach<T>(
   strategies: Array<() => Promise<T>>,
-  fallbackValue: T | null = null,
+  errorMessage: string,
   options: {
-    context?: string;
-    stopOnError?: boolean;
+    type?: ErrorType,
+    context?: Record<string, any>,
+    onError?: (error: AppError, strategyIndex: number) => void
   } = {}
-): Promise<T | null> {
-  const errors: Error[] = [];
-
+): Promise<T> {
+  let lastError: any = null;
+  
   for (let i = 0; i < strategies.length; i++) {
     try {
-      const result = await strategies[i]();
-      return result;
-    } catch (error) {
-      const strategyName = `Strategy ${i + 1}`;
-      if (options.context) {
-        console.error(`Error in ${options.context} (${strategyName}):`, error);
-      } else {
-        console.error(`Error in tryEach (${strategyName}):`, error);
+      return await strategies[i]();
+    } catch (err) {
+      lastError = err;
+      
+      if (options.onError) {
+        const appError = err instanceof Error 
+          ? createAppError(err.message, err, { type: options.type, context: options.context })
+          : createAppError(errorMessage, err, { type: options.type, context: options.context });
+        
+        options.onError(appError, i);
       }
-
-      errors.push(error instanceof Error ? error : new Error(String(error)));
-
-      if (options.stopOnError) {
-        break;
-      }
+      
+      // Continue to next strategy
     }
   }
-
-  // Log all collected errors
-  if (errors.length > 0) {
-    console.error(`All ${errors.length} strategies failed:`, errors);
-  }
-
-  return fallbackValue;
+  
+  // If we get here, all strategies failed
+  throw createAppError(
+    errorMessage,
+    lastError,
+    { 
+      type: options.type || ErrorType.UNKNOWN,
+      context: { ...options.context, allStrategiesFailed: true }
+    }
+  );
 }
 
 /**
- * Create a retry wrapper around an async function
- * 
- * @param fn The async function to retry
- * @param options Retry options
- * @returns A function that will retry the original function
+ * Retry an operation multiple times with configurable backoff
  */
-export function withRetry<T, Args extends any[]>(
-  fn: (...args: Args) => Promise<T>,
+export async function retryOperation<T>(
+  operation: () => Promise<T>,
   options: {
-    maxRetries?: number;
-    delay?: number;
-    backoff?: boolean;
-    context?: string;
-    retryIf?: (error: any) => boolean;
+    maxRetries?: number,
+    retryDelay?: number,
+    backoffFactor?: number,
+    retryableErrors?: Array<ErrorType | string>,
+    onRetry?: (error: any, attempt: number) => void,
+    errorMessage?: string
   } = {}
-): (...args: Args) => Promise<T> {
+): Promise<T> {
   const {
     maxRetries = 3,
-    delay = 300,
-    backoff = true,
-    context = 'retry',
-    retryIf = () => true,
+    retryDelay = 1000,
+    backoffFactor = 2,
+    retryableErrors = [ErrorType.NETWORK, ErrorType.TIMEOUT],
+    onRetry,
+    errorMessage = "Operation failed after multiple attempts"
   } = options;
-
-  return async (...args: Args): Promise<T> => {
-    let lastError: any;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        lastError = error;
-
-        if (attempt === maxRetries || !retryIf(error)) {
-          console.error(`Failed after ${attempt} retries in ${context}:`, error);
-          throw error;
-        }
-
-        const sleepTime = backoff ? delay * Math.pow(2, attempt) : delay;
-        console.warn(`Retry ${attempt + 1}/${maxRetries} in ${context} after ${sleepTime}ms`);
-        await new Promise(resolve => setTimeout(resolve, sleepTime));
+  
+  let attempt = 0;
+  let delay = retryDelay;
+  
+  while (attempt <= maxRetries) {
+    try {
+      return await operation();
+    } catch (err) {
+      attempt++;
+      
+      // Check if we've hit max retries
+      if (attempt > maxRetries) {
+        throw createAppError(
+          errorMessage,
+          err,
+          { context: { maxRetries, attempts: attempt } }
+        );
       }
+      
+      // Check if this error type is retryable
+      const errorType = getErrorTypeFromError(err);
+      const isRetryable = retryableErrors.includes(errorType) || 
+                          retryableErrors.some(e => err instanceof Error && err.message.includes(String(e)));
+      
+      if (!isRetryable) {
+        throw err; // Don't retry non-retryable errors
+      }
+      
+      // Notify about retry if callback provided
+      if (onRetry) {
+        onRetry(err, attempt);
+      }
+      
+      // Wait before next attempt with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= backoffFactor;
     }
-
-    // This should never happen due to the throw in the catch block
-    throw lastError;
-  };
+  }
+  
+  // This should never be reached due to the throw inside the loop
+  throw createAppError(
+    errorMessage,
+    null,
+    { type: ErrorType.UNKNOWN }
+  );
 }
 
-/**
- * Create an error object with contextual information
- */
-export function createError(
-  message: string,
-  originalError?: any,
-  errorType: ErrorType = ErrorType.UNKNOWN
-): Error {
-  const error = new Error(message);
+// Helper to extract error type from various error objects
+function getErrorTypeFromError(error: any): ErrorType {
+  if (!error) return ErrorType.UNKNOWN;
   
-  // Add additional properties
-  (error as any).originalError = originalError;
-  (error as any).type = errorType;
+  // If it's an AppError, use its type
+  if (error.type && Object.values(ErrorType).includes(error.type)) {
+    return error.type as ErrorType;
+  }
   
-  return error;
+  // Try to detect error type from message
+  if (error.message) {
+    const message = error.message.toLowerCase();
+    
+    if (message.includes('network') || message.includes('fetch') || !navigator.onLine) {
+      return ErrorType.NETWORK;
+    }
+    
+    if (message.includes('timeout') || message.includes('too long')) {
+      return ErrorType.TIMEOUT;
+    }
+    
+    if (message.includes('not found') || message.includes('404')) {
+      return ErrorType.NOT_FOUND;
+    }
+    
+    if (message.includes('permission') || message.includes('unauthorized') || 
+        message.includes('forbidden') || message.includes('401') || message.includes('403')) {
+      return ErrorType.PERMISSION;
+    }
+  }
+  
+  return ErrorType.UNKNOWN;
 }

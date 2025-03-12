@@ -5,7 +5,8 @@ import {
   ErrorType, 
   detectErrorType,
   isNonCriticalError, 
-  formatErrorMessage
+  formatErrorMessage,
+  createAppError
 } from '@/utils/errors';
 import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
 
@@ -18,24 +19,18 @@ interface ErrorHandlerOptions {
   userMessage?: string;
 }
 
-interface AppError extends Error {
-  type: ErrorType;
-  context?: Record<string, any>;
-  userMessage?: string;
-}
-
 interface GlobalErrorHandler {
-  handleError: (error: unknown, options?: ErrorHandlerOptions) => AppError;
+  handleError: (error: unknown, options?: ErrorHandlerOptions) => Error;
   isNonCritical: (error: unknown) => boolean;
   formatMessage: (error: unknown) => string;
-  createError: (message: string, options?: any) => AppError;
+  createError: (message: string, options?: any) => Error;
   ErrorType: typeof ErrorType;
 }
 
 export function useGlobalErrorHandler(): GlobalErrorHandler {
   const { toast } = useToast();
   
-  const handleError = useCallback((error: unknown, options: ErrorHandlerOptions = {}): AppError => {
+  const handleError = useCallback((error: unknown, options: ErrorHandlerOptions = {}): Error => {
     // Default options
     const opts = {
       context: 'application',
@@ -61,10 +56,15 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
     const formattedMessage = formatErrorMessage(error);
     
     // Create standardized error object
-    const appError = new Error(formattedMessage) as AppError;
-    appError.type = errorType;
-    appError.context = { context: opts.context };
-    appError.userMessage = opts.userMessage;
+    const appError = createAppError(
+      formattedMessage,
+      error,
+      {
+        type: errorType,
+        context: { context: opts.context },
+        userMessage: opts.userMessage
+      }
+    );
     
     // Log to telemetry if enabled
     if (opts.trackTelemetry) {
@@ -76,13 +76,14 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
     }
     
     // Show toast notification if not silent and error is critical
-    if (!opts.silent && !isNonCriticalError(error)) {
+    if (!opts.silent && !isNonCritical(error)) {
       toast({
         title: `Error ${opts.context ? `in ${opts.context}` : ''}`,
         description: appError.userMessage || formattedMessage,
         variant: "destructive",
         action: opts.retry ? {
-          element: <button onClick={opts.retry}>Retry</button>
+          altText: "Retry",
+          onClick: opts.retry
         } : undefined
       });
     }
@@ -90,12 +91,8 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
     return appError;
   }, [toast]);
 
-  const createError = useCallback((message: string, options: any = {}): AppError => {
-    const error = new Error(message) as AppError;
-    error.type = options.type || ErrorType.UNKNOWN;
-    error.context = options.context || {};
-    error.userMessage = options.userMessage;
-    return error;
+  const createError = useCallback((message: string, options: any = {}): Error => {
+    return createAppError(message, null, options);
   }, []);
 
   return {

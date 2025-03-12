@@ -1,97 +1,155 @@
 
-import { ErrorType } from '@/utils/errors/types';
-import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
-
-interface AppError extends Error {
-  type?: ErrorType;
-}
-
-interface ErrorReportingOptions {
-  context?: string;
-  tags?: Record<string, string>;
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-  };
-  silent?: boolean;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { ErrorType, AppError, formatErrorMessage } from "@/utils/errors";
 
 /**
- * Reports errors to telemetry and centralized error tracking
+ * A centralized service for error reporting, analytics, and monitoring
  */
-export function reportError(
-  error: Error | AppError | unknown,
-  options: ErrorReportingOptions = {}
-): void {
-  // Format error details
-  const errorDetails = formatErrorDetails(error);
+class ErrorReportingService {
+  private isEnabled: boolean = true;
+  private errorCount: Record<string, number> = {};
   
-  // Log to console
-  if (!options.silent) {
-    const context = options.context ? ` in ${options.context}` : '';
-    console.error(`Error${context}:`, error);
+  constructor() {
+    // Reset error count every hour to prevent flooding
+    setInterval(() => {
+      this.errorCount = {};
+    }, 60 * 60 * 1000);
   }
   
-  // Log to telemetry service
-  searchTelemetry.logEvent(TelemetryEventType.SEARCH_ERROR, {
-    errorType: errorDetails.type || 'unknown',
-    errorMessage: errorDetails.message,
-    errorStack: errorDetails.stack,
-    ...options
-  });
+  public disable(): void {
+    this.isEnabled = false;
+  }
   
-  // In the future, you could add more reporting services here:
-  // - Sentry
-  // - LogRocket
-  // - Custom backend error logging endpoint
+  public enable(): void {
+    this.isEnabled = true;
+  }
+  
+  /**
+   * Report an error to the centralized reporting system
+   * Includes rate limiting to prevent flooding
+   */
+  public reportError(
+    error: Error | AppError | unknown,
+    context: Record<string, any> = {}
+  ): void {
+    if (!this.isEnabled) {
+      return;
+    }
+    
+    const formattedError = this.formatError(error);
+    const errorKey = this.getErrorKey(formattedError);
+    
+    // Rate limiting to prevent flooding
+    if (this.isRateLimited(errorKey)) {
+      return;
+    }
+    
+    // Log to console for development
+    console.error('🔴 Error reported:', formattedError, context);
+    
+    // In production, we would send to a monitoring service
+    if (process.env.NODE_ENV === 'production') {
+      // Send to Supabase for logging
+      this.logToSupabase(formattedError, context);
+      
+      // Here we would integrate with Sentry, LogRocket, etc.
+    }
+  }
+  
+  private formatError(error: Error | AppError | unknown): {
+    message: string;
+    type: ErrorType;
+    stack?: string;
+  } {
+    if (!error) {
+      return {
+        message: 'Unknown error',
+        type: ErrorType.UNKNOWN
+      };
+    }
+    
+    // If it's an AppError, use its properties
+    if (typeof error === 'object' && 'type' in error) {
+      const appError = error as AppError;
+      return {
+        message: appError.message,
+        type: appError.type,
+        stack: appError.stack
+      };
+    }
+    
+    // If it's a standard Error
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        type: this.detectErrorType(error),
+        stack: error.stack
+      };
+    }
+    
+    // For anything else, convert to string
+    return {
+      message: formatErrorMessage(error),
+      type: ErrorType.UNKNOWN
+    };
+  }
+  
+  private detectErrorType(error: Error): ErrorType {
+    const message = error.message.toLowerCase();
+    
+    if (message.includes('network') || !navigator.onLine) {
+      return ErrorType.NETWORK;
+    } else if (message.includes('timeout')) {
+      return ErrorType.TIMEOUT;
+    } else if (message.includes('not found')) {
+      return ErrorType.NOT_FOUND;
+    }
+    
+    return ErrorType.UNKNOWN;
+  }
+  
+  private getErrorKey(error: { message: string; type: ErrorType }): string {
+    return `${error.type}:${error.message.substring(0, 100)}`;
+  }
+  
+  private isRateLimited(errorKey: string): boolean {
+    // Initialize count if not exists
+    if (!this.errorCount[errorKey]) {
+      this.errorCount[errorKey] = 0;
+    }
+    
+    // Increment count
+    this.errorCount[errorKey]++;
+    
+    // Rate limit to max 5 of the same error per hour
+    return this.errorCount[errorKey] > 5;
+  }
+  
+  private logToSupabase(
+    error: { message: string; type: ErrorType; stack?: string },
+    context: Record<string, any>
+  ): void {
+    supabase
+      .from('error_logs')
+      .insert({
+        error_message: error.message,
+        error_type: error.type,
+        error_stack: error.stack,
+        context: context,
+        user_agent: navigator.userAgent,
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+      .then((result) => {
+        if (result.error) {
+          console.error('Failed to log error to Supabase:', result.error);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to log error to Supabase:', err);
+      });
+  }
 }
 
-/**
- * Format error details for consistent reporting
- */
-function formatErrorDetails(error: unknown): {
-  message: string;
-  type?: string;
-  stack?: string;
-  code?: string;
-} {
-  if (!error) {
-    return { message: 'Unknown error (null or undefined)' };
-  }
-  
-  // Handle AppError
-  if (typeof error === 'object' && error !== null && 'type' in error) {
-    const appError = error as AppError;
-    return {
-      message: appError.message || 'Unknown error',
-      type: appError.type?.toString(),
-      stack: appError.stack,
-      code: (appError as any).code
-    };
-  }
-  
-  // Handle standard Error
-  if (error instanceof Error) {
-    return {
-      message: error.message || 'Unknown error',
-      stack: error.stack,
-      code: (error as any).code
-    };
-  }
-  
-  // Handle string error
-  if (typeof error === 'string') {
-    return { message: error };
-  }
-  
-  // Handle other types of errors
-  try {
-    return {
-      message: JSON.stringify(error),
-      type: typeof error
-    };
-  } catch {
-    return { message: 'Unserializable error' };
-  }
-}
+// Export singleton instance
+export const errorReporting = new ErrorReportingService();

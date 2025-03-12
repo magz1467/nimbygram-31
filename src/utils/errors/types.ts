@@ -21,6 +21,7 @@ export interface AppError extends Error {
   context?: Record<string, any>;
   recoverable?: boolean;
   userMessage?: string;
+  stack?: string;
 }
 
 export type ErrorOptions = {

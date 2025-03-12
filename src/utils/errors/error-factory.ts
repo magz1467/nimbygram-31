@@ -10,12 +10,12 @@ export function createAppError(
   const type = options.type || detectErrorType(originalError, message);
   
   const error = new Error(message) as AppError;
+  error.name = 'AppError'; // Ensure name property exists
   error.type = type;
   error.originalError = originalError;
   error.context = options.context || {};
   error.recoverable = options.recoverable !== undefined ? options.recoverable : isRecoverableError(type);
   error.userMessage = options.userMessage || getUserFriendlyMessage(type, message);
-  error.name = 'AppError';
   
   // Capture stack trace
   if (Error.captureStackTrace) {
