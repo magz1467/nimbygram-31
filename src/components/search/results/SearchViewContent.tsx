@@ -1,102 +1,112 @@
 
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
-import { ErrorMessage } from "./components/ErrorMessage";
-import { ResultsContainer } from "./ResultsContainer";
-import { ResultsHeader } from "./ResultsHeader";
-import { Application } from "@/types/planning";
-import { SearchFilters } from "@/hooks/planning/use-planning-search";
-import { SortType } from "@/types/application-types";
+import { useState, useEffect } from 'react';
+import { useSearchState } from './search-views/SearchStateProvider';
+import { LoadingView } from './search-views/LoadingView';
+import { ErrorView } from './search-views/ErrorView';
+import { ResultsView } from './search-views/ResultsView';
+import { NoSearchStateView } from './NoSearchStateView';
+import { ErrorType, detectErrorType } from '@/utils/errors';
+import { StatusCounts } from '@/types/application-types';
 
-interface SearchViewContentProps {
-  initialSearch: {
-    searchType: 'postcode' | 'location';
-    searchTerm: string;
-    displayTerm?: string;
-    timestamp?: number;
-  };
-  applications: Application[];
-  isLoading: boolean;
-  filters: SearchFilters;
-  onFilterChange: (type: string, value: any) => void;
-  onError?: (error: Error | null) => void;
-  onSearchComplete?: () => void;
-  retryCount?: number;
-}
+export function SearchViewContent() {
+  const { 
+    initialSearch, 
+    loadingState, 
+    applications, 
+    filters, 
+    setFilters,
+    retry,
+    hasSearched,
+    coordinates
+  } = useSearchState();
 
-export const SearchViewContent = ({
-  initialSearch,
-  applications = [],
-  isLoading,
-  filters,
-  onFilterChange,
-  onError,
-  onSearchComplete,
-  retryCount = 0
-}: SearchViewContentProps) => {
-  const hasResultsRef = useRef(false);
-  const [showMap, setShowMap] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [activeSort, setActiveSort] = useState<SortType>('distance');
-  const pageSize = 10;
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
-    hasResultsRef.current = applications && applications.length > 0;
+    if (loadingState.error) {
+      // Delay showing the error to avoid flashing
+      const timer = setTimeout(() => {
+        setShowError(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowError(false);
+    }
+  }, [loadingState.error]);
+
+  // Initialize statusCounts with proper structure
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    'Under Review': 0,
+    'Approved': 0,
+    'Declined': 0,
+    'Other': 0
+  });
+
+  // Calculate status counts from applications
+  useEffect(() => {
+    if (applications?.length) {
+      const counts: StatusCounts = {
+        'Under Review': 0,
+        'Approved': 0,
+        'Declined': 0,
+        'Other': 0
+      };
+      
+      applications.forEach(app => {
+        const status = app.status?.toLowerCase() || '';
+        
+        if (status.includes('under review') || status.includes('pending')) {
+          counts['Under Review']++;
+        } else if (status.includes('approved') || status.includes('granted')) {
+          counts['Approved']++;
+        } else if (status.includes('declined') || status.includes('refused') || status.includes('rejected')) {
+          counts['Declined']++;
+        } else {
+          counts['Other']++;
+        }
+      });
+      
+      setStatusCounts(counts);
+    }
   }, [applications]);
-
-  useEffect(() => {
-    if (onSearchComplete && !isLoading) {
-      onSearchComplete();
-    }
-  }, [isLoading, onSearchComplete]);
-
-  useEffect(() => {
-    if (!isLoading && applications.length > 0) {
-      setCurrentPage(0);
-    }
-  }, [applications, isLoading]);
-
-  // Calculate status counts for the header with default values
-  const statusCounts = applications.reduce((counts: Record<string, number>, app) => {
-    const status = app.status || 'Other';
-    const category = status.includes('Under Review') ? 'Under Review' :
-                    status.includes('Approved') ? 'Approved' :
-                    status.includes('Declined') ? 'Declined' : 'Other';
-    counts[category] = (counts[category] || 0) + 1;
-    return counts;
-  }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
-
-  return (
-    <div className="max-w-4xl mx-auto pb-16 pt-0">
-      <ResultsHeader 
-        searchTerm={initialSearch.searchTerm}
-        resultCount={applications?.length || 0}
-        isLoading={isLoading}
-        isMapVisible={showMap}
-        onToggleMapView={() => setShowMap(!showMap)}
-        activeSort={activeSort}
-        activeFilters={filters}
-        onFilterChange={onFilterChange}
-        onSortChange={(sortType) => setActiveSort(sortType)}
-        statusCounts={statusCounts}
+  
+  if (!initialSearch?.searchTerm) {
+    return <NoSearchStateView onPostcodeSelect={() => {}} />;
+  }
+  
+  // Show error view if there's an error and we've already searched
+  if ((loadingState.error || loadingState.stage === 'error') && hasSearched && showError) {
+    const error = loadingState.error || new Error('Unknown search error');
+    const errorType = (error as any).type || detectErrorType(error);
+    
+    return (
+      <ErrorView 
+        error={error} 
+        errorType={errorType} 
+        onRetry={retry} 
       />
-
-      <div className="px-4 lg:px-6">
-        <ResultsContainer
-          applications={applications}
-          isLoading={isLoading}
-          searchTerm={initialSearch.searchTerm}
-          displayApplications={applications}
-          coordinates={null}
-          showMap={showMap}
-          setShowMap={setShowMap}
-          selectedId={selectedId}
-          setSelectedId={setSelectedId}
-          handleMarkerClick={(id) => setSelectedId(id)}
-        />
-      </div>
-    </div>
+    );
+  }
+  
+  // Show loading view if we're loading
+  if (loadingState.isLoading || loadingState.stage !== 'complete') {
+    return (
+      <LoadingView 
+        stage={loadingState.stage}
+        isLongRunning={loadingState.longRunning}
+        searchTerm={initialSearch.searchTerm}
+        onRetry={retry}
+      />
+    );
+  }
+  
+  // Show results view when we have applications
+  return (
+    <ResultsView 
+      applications={applications}
+      searchTerm={initialSearch.searchTerm}
+      filters={filters}
+      onFilterChange={setFilters}
+    />
   );
-};
+}

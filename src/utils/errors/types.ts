@@ -1,54 +1,56 @@
 
+/**
+ * Enum representing different types of errors in the application
+ */
 export enum ErrorType {
   UNKNOWN = 'unknown',
   NETWORK = 'network',
   TIMEOUT = 'timeout',
   NOT_FOUND = 'not_found',
   SERVER = 'server',
-  VALIDATION = 'validation',
   AUTHENTICATION = 'authentication',
-  PERMISSION = 'permission',
+  AUTHORIZATION = 'authorization',
+  VALIDATION = 'validation',
   DATABASE = 'database',
   SPATIAL = 'spatial',
-  AUTHORIZATION = 'authorization'
+  FRONTEND = 'frontend'
 }
 
+/**
+ * Options for creating an application error
+ */
 export interface AppErrorOptions {
   type?: ErrorType;
-  details?: string;
+  cause?: Error | unknown;
   code?: string;
-  context?: Record<string, any>;
-  performanceData?: Record<string, any>;
-  logToConsole?: boolean;
+  metadata?: Record<string, any>;
 }
 
-export type ErrorHandlerOptions = {
-  showToast?: boolean;
-  critical?: boolean;
-  context?: Record<string, any>;
-  performanceData?: Record<string, any>;
-  logToConsole?: boolean;
-};
-
+/**
+ * Extended Error class for application-specific errors
+ */
 export class AppError extends Error {
   type: ErrorType;
-  details?: string;
+  cause?: Error | unknown;
   code?: string;
-  context?: Record<string, any>;
+  metadata?: Record<string, any>;
 
   constructor(message: string, options: AppErrorOptions = {}) {
     super(message);
     this.name = 'AppError';
     this.type = options.type || ErrorType.UNKNOWN;
-    this.details = options.details;
+    this.cause = options.cause;
     this.code = options.code;
-    this.context = options.context;
+    this.metadata = options.metadata;
+    
+    // Set the prototype explicitly to ensure instanceof works properly
+    Object.setPrototypeOf(this, AppError.prototype);
   }
 }
 
-export function createAppError(
-  message: string, 
-  options: AppErrorOptions = {}
-): AppError {
+/**
+ * Factory function to create AppError instances
+ */
+export function createAppError(message: string, options: AppErrorOptions = {}): AppError {
   return new AppError(message, options);
 }

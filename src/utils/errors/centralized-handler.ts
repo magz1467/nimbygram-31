@@ -1,40 +1,44 @@
 
-import { toast } from "@/hooks/use-toast";
-import { ErrorType, AppError, ErrorHandlerOptions } from "./types";
-import { detectErrorType } from "./detection";
+import { ErrorType, AppError, AppErrorOptions } from './types';
+import { detectErrorType } from './detection';
+import { formatErrorMessage } from './formatting';
+import { toast } from 'sonner';
+
+interface ErrorHandlerOptions {
+  context?: string;
+  silent?: boolean;
+}
 
 /**
- * Centralized error handling function for consistent error management
+ * Centralized error handler for the application
  */
-export function handleError(
-  error: unknown,
-  options: ErrorHandlerOptions = {}
-): { message: string; type: ErrorType } {
-  const { showToast = true, critical = true } = options;
-  const timestamp = new Date().toISOString();
+export function handleError(error: unknown, options: ErrorHandlerOptions = {}) {
+  const { context = 'application', silent = false } = options;
   
-  // Convert to AppError if not already
-  const appError = error instanceof AppError 
-    ? error 
-    : new AppError(error instanceof Error ? error.message : String(error), {
-        type: detectErrorType(error),
-        context: options.context
-      });
+  // Detect error type
+  const errorType = 
+    (error as AppError)?.type || 
+    (typeof error === 'object' && error !== null && 'type' in error ? 
+      (error as any).type : 
+      detectErrorType(error));
   
-  // Log error with context
-  console.error(`Error [${timestamp}]:`, appError);
+  // Format error message
+  const errorMessage = formatErrorMessage(error);
   
-  // Show toast for critical errors that should interrupt the user
-  if (showToast && critical) {
-    toast({
-      title: appError.type === ErrorType.TIMEOUT ? "Search Timeout" : "Error",
-      description: appError.message,
-      variant: "destructive",
+  // Log error to console
+  console.error(`[${context}] ${errorType}:`, error);
+  
+  // Show toast for non-silent errors
+  if (!silent) {
+    toast.error(errorMessage, {
+      description: `Error type: ${errorType}`,
+      duration: 5000,
     });
   }
   
   return {
-    message: appError.message,
-    type: appError.type
+    type: errorType,
+    message: errorMessage,
+    error
   };
 }

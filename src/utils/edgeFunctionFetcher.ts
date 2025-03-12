@@ -1,104 +1,114 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { handleError } from '@/utils/errors/centralized-handler';
-import { ErrorType, createAppError } from './errors/types';
-
-interface FunctionCallOptions {
-  functionName: string;
-  payload?: any;
-  headers?: Record<string, string>;
-  options?: {
-    timeout?: number;
-    retries?: number;
-    retryDelay?: number;
-  };
-}
-
-// Default timeout in milliseconds
-const DEFAULT_TIMEOUT = 30000;
+import { supabase } from "@/integrations/supabase/client";
+import { createAppError } from "./errors/types";
+import { ErrorType } from "./errors";
+import { handleError } from "./errors/centralized-handler";
 
 /**
- * Calls a Supabase Edge Function with timeout and retry support
+ * Generic function to invoke Edge Functions with error handling and timeouts
  */
-export async function callEdgeFunction<T = any>({
-  functionName,
-  payload = {},
-  headers = {},
-  options = {}
-}: FunctionCallOptions): Promise<T> {
+export async function invokeFunctionWithTimeout<T = any>(
+  functionName: string,
+  payload?: any,
+  options: {
+    timeout?: number;
+    retry?: boolean;
+    maxRetries?: number;
+    retryDelay?: number;
+    silentError?: boolean;
+  } = {}
+): Promise<T> {
   const {
-    timeout = DEFAULT_TIMEOUT,
-    retries = 0,
-    retryDelay = 1000
+    timeout = 30000,
+    retry = false,
+    maxRetries = 2,
+    retryDelay = 1000,
+    silentError = false,
   } = options;
 
-  // Create an AbortController for timeout handling
+  // Create an AbortController for timeout management
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+  let retries = 0;
+  
   try {
-    // Attempt to call the function
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body: payload,
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // Handle errors
-    if (error) {
-      throw createAppError(`Edge function error (${functionName}): ${error.message}`, {
-        type: ErrorType.SERVER,
-        details: JSON.stringify(error),
-        code: error.code || 'EDGE_FUNCTION_ERROR'
-      });
+    // Basic validation
+    if (!functionName) {
+      throw createAppError('Function name is required', { type: ErrorType.VALIDATION });
     }
 
-    return data as T;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
+    async function attemptFetch(): Promise<T> {
+      try {
+        console.log(`Invoking edge function: ${functionName}`, { payload });
+        
+        // This line is fixed: we removed the signal property which doesn't exist in FunctionInvokeOptions
+        const { data, error } = await supabase.functions.invoke(functionName, {
+          body: payload,
+        });
 
-    // Handle aborted requests (timeout)
-    if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-      throw createAppError(`Function call timed out (${functionName})`, {
-        type: ErrorType.TIMEOUT,
-        details: `The function call exceeded the ${timeout}ms timeout limit.`,
-        code: 'EDGE_FUNCTION_TIMEOUT'
-      });
-    }
-
-    // Check if we should retry
-    if (retries > 0) {
-      console.warn(`Retrying edge function '${functionName}', ${retries} attempts left`);
-      
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
-      
-      // Retry with one less retry attempt
-      return callEdgeFunction({
-        functionName,
-        payload,
-        headers,
-        options: {
-          timeout,
-          retries: retries - 1,
-          retryDelay: retryDelay * 1.5 // Exponential backoff
+        if (error) {
+          console.error(`Edge function error (${functionName}):`, error);
+          
+          if (retry && retries < maxRetries) {
+            retries++;
+            console.log(`Retrying (${retries}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            return attemptFetch();
+          }
+          
+          throw createAppError(
+            error.message || `Failed to execute ${functionName}`,
+            { type: ErrorType.SERVER, cause: error }
+          );
         }
-      });
+
+        return data as T;
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          throw createAppError(
+            `Function ${functionName} timed out after ${timeout}ms`,
+            { type: ErrorType.TIMEOUT }
+          );
+        }
+        
+        if (retry && retries < maxRetries && error.type !== ErrorType.VALIDATION) {
+          retries++;
+          console.log(`Retrying (${retries}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return attemptFetch();
+        }
+        
+        throw error;
+      }
     }
 
-    // Log and rethrow the error if we're out of retries
-    handleError(error, {
-      context: { 
-        functionName, 
-        payload 
-      }
+    const result = await attemptFetch();
+    return result;
+  } catch (error) {
+    handleError(error, { 
+      context: `edgeFunction:${functionName}`,
+      silent: silentError
     });
-    
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
+}
+
+/**
+ * Function to fetch data from a Supabase Edge Function
+ */
+export async function fetchFromEdgeFunction<T = any>(
+  functionName: string,
+  payload?: any,
+  options?: {
+    timeout?: number;
+    retry?: boolean;
+    maxRetries?: number;
+    retryDelay?: number;
+    silentError?: boolean;
+  }
+): Promise<T> {
+  return invokeFunctionWithTimeout<T>(functionName, payload, options);
 }

@@ -1,11 +1,12 @@
 
 import { useState } from 'react';
 import { Application } from "@/types/planning";
-import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/transforms/application-transformer';
 import { LatLngTuple } from 'leaflet';
+import { fetchApplicationsInRadius } from './use-applications-fetch';
+import { calculateStatusCounts, StatusCounts } from './use-status-counts';
+import { handleError } from '@/utils/errors/centralized-handler';
 
-interface ApplicationError {
+export interface ApplicationError {
   message: string;
   details?: string;
 }
@@ -15,14 +16,14 @@ export const useApplicationsData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<ApplicationError | null>(null);
-  const [statusCounts, setStatusCounts] = useState({
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
     'Under Review': 0,
     'Approved': 0,
     'Declined': 0,
     'Other': 0
   });
 
-  const fetchApplicationsInRadius = async (
+  const fetchApplications = async (
     center: LatLngTuple,
     radius: number,
     page = 0,
@@ -30,66 +31,15 @@ export const useApplicationsData = () => {
   ) => {
     setIsLoading(true);
     setError(null);
-    console.log('🔍 Starting fetch with params:', { 
-      center, 
-      radius, 
-      page, 
-      pageSize,
-      timestamp: new Date().toISOString()
-    });
 
     try {
-      // Query the crystal_roof table directly to get raw data
-      const { data: rawData, error: queryError } = await supabase
-        .from('crystal_roof')
-        .select('*')
-        .order('id');
-
-      if (queryError) {
-        console.error('Error fetching applications:', queryError);
-        throw queryError;
-      }
-
-      // Log raw data from crystal_roof
-      console.log('Raw data from crystal_roof:', rawData);
+      const { applications: fetchedApps, totalCount: count } = 
+        await fetchApplicationsInRadius({ center, radius, page, pageSize });
       
-      // Transform into the expected format
-      const transformedApplications = rawData
-        .map(app => transformApplicationData(app, center))
-        .filter((app): app is Application => app !== null);
-
-      console.log('✨ Transformed applications:', {
-        total: transformedApplications?.length,
-        withStorybook: transformedApplications?.filter(app => app.storybook)?.length,
-        sampleStorybook: transformedApplications?.[0]?.storybook
-      });
-
-      setApplications(transformedApplications || []);
-      setTotalCount(transformedApplications.length || 0);
-
-      // Calculate status counts
-      const counts = {
-        'Under Review': 0,
-        'Approved': 0,
-        'Declined': 0,
-        'Other': 0
-      };
-
-      transformedApplications?.forEach(app => {
-        const status = app.status.toLowerCase();
-        if (status.includes('under consideration')) {
-          counts['Under Review']++;
-        } else if (status.includes('approved')) {
-          counts['Approved']++;
-        } else if (status.includes('declined')) {
-          counts['Declined']++;
-        } else {
-          counts['Other']++;
-        }
-      });
-
-      setStatusCounts(counts);
-      console.log('📊 Status counts:', counts);
+      setApplications(fetchedApps);
+      setTotalCount(count);
+      setStatusCounts(calculateStatusCounts(fetchedApps));
+      console.log('📊 Status counts:', statusCounts);
 
     } catch (error: any) {
       console.error('Failed to fetch applications:', error);
@@ -99,6 +49,9 @@ export const useApplicationsData = () => {
         hint: error.hint,
         code: error.code
       });
+      
+      handleError(error, { context: 'useApplicationsData' });
+      
       setError({
         message: 'Failed to fetch applications',
         details: error.message
@@ -115,6 +68,6 @@ export const useApplicationsData = () => {
     totalCount,
     statusCounts,
     error,
-    fetchApplicationsInRadius,
+    fetchApplicationsInRadius: fetchApplications,
   };
 };
