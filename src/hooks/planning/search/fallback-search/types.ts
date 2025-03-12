@@ -1,5 +1,5 @@
 
-import { ErrorType } from "@/utils/errors/types";
+import { Application } from "@/types/planning";
 
 export interface FallbackSearchParams {
   lat: number;
@@ -8,10 +8,15 @@ export interface FallbackSearchParams {
   filters: any;
 }
 
-export interface ErrorTypeMapping {
-  [key: string]: ErrorType;
+export interface FallbackSearchResult {
+  applications: Application[];
+  method: 'fallback';
 }
 
-export interface UserErrorMessages {
-  [key in ErrorType]: string;
+// Generic filter interface
+export interface SearchFilters {
+  status?: string;
+  type?: string;
+  classification?: string;
+  [key: string]: string | undefined;
 }
