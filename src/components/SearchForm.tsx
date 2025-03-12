@@ -66,7 +66,10 @@ export const SearchForm = ({ activeTab, onSearch }) => {
             className="flex-1"
           />
         </div>
-        <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+        <SearchButton 
+          isSubmitting={isSubmitting} 
+          onClick={() => handleSubmit(null)} 
+        />
       </form>
     </div>
   );

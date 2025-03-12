@@ -22,7 +22,6 @@ export function handleMapError(
   // Use the centralized error handler
   handleError(err, toast, {
     context: 'map',
-    retry: retry,
-    type: ErrorType.UNKNOWN // Let the handler detect the type
+    retry: retry
   });
 }

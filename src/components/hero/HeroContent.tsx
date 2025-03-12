@@ -25,7 +25,10 @@ export const HeroContent = () => {
         />
       </div>
       <div className="bg-white rounded-xl shadow-sm p-2">
-        <SearchForm />
+        <SearchForm 
+          activeTab="home" 
+          onSearch={(term) => console.log('Search term:', term)}
+        />
       </div>
       <HeroTestimonial />
     </div>
