@@ -1,4 +1,7 @@
 
+import { HeroContent } from "@/components/hero/HeroContent";
+import { HeroImage } from "@/components/hero/HeroImage";
+
 export const Hero = () => {
   return (
     <div className="bg-background py-8 md:py-16 font-sans w-full">
@@ -11,3 +14,4 @@ export const Hero = () => {
     </div>
   );
 };
+
