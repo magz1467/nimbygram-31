@@ -3,7 +3,7 @@
  */
 
 // Use a single API key to prevent confusion
-const GOOGLE_MAPS_API_KEY = 'AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
 
 // Keep track of loading state to prevent duplicate loading
 let isLoading = false;
