@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorType, AppError, formatErrorMessage } from "@/utils/errors";
 
@@ -129,26 +128,27 @@ class ErrorReportingService {
     error: { message: string; type: ErrorType; stack?: string },
     context: Record<string, any>
   ): void {
-    supabase
-      .from('error_logs')
-      .insert({
-        error_message: error.message,
-        error_type: error.type,
-        error_stack: error.stack,
-        context: context,
-        user_agent: navigator.userAgent,
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
-      .then((result) => {
-        if (result.error) {
-          console.error('Failed to log error to Supabase:', result.error);
-        }
-      })
-      // Explicitly handle promise rejection
-      .catch((err) => {
-        console.error('Failed to log error to Supabase:', err);
-      });
+    Promise.resolve(
+      supabase
+        .from('error_logs')
+        .insert({
+          error_message: error.message,
+          error_type: error.type,
+          error_stack: error.stack,
+          context: context,
+          user_agent: navigator.userAgent,
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+    )
+    .then((result) => {
+      if (result.error) {
+        console.error('Failed to log error to Supabase:', result.error);
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to log error to Supabase:', err);
+    });
   }
 }
 

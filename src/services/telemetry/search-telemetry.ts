@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { ErrorType } from '@/utils/errors/types';
@@ -69,7 +68,7 @@ class SearchTelemetryService {
     
     try {
       // Store in Supabase with proper Promise handling
-      supabase
+      Promise.resolve(supabase
         .from('search_telemetry')
         .insert([{
           event_type: eventType,
@@ -83,15 +82,13 @@ class SearchTelemetryService {
           device_info: this.getDeviceInfo(),
           timestamp: new Date().toISOString()
         }])
-        .then((response) => {
-          if (response.error) {
-            console.error('Error logging telemetry:', response.error);
-          }
-        })
-        // Explicitly handle promise rejection
-        .catch((error) => {
-          console.error('Error logging telemetry:', error);
-        });
+      ).then((response) => {
+        if (response.error) {
+          console.error('Error logging telemetry:', response.error);
+        }
+      }).catch((error) => {
+        console.error('Error logging telemetry:', error);
+      });
     } catch (error) {
       console.error('Error logging telemetry:', error);
     }
