@@ -16,7 +16,7 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <PageSeparator />
       <Header />
-      <main className="flex-grow container mx-auto px-4 md:px-6 lg:px-8 z-10 relative">
+      <main className="flex-grow container mx-auto z-10 relative">
         <Hero />
         <Features />
         <QuoteSection />

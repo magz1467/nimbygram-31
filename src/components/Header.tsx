@@ -7,8 +7,8 @@ export const Header = () => {
   const location = useLocation();
 
   return (
-    <header className="border-b bg-white">
-      <div className="container mx-auto px-4">
+    <header className="w-full bg-white border-b">
+      <div className="container mx-auto">
         <div className="flex items-center justify-between h-16">
           <Logo />
           <MobileMenu />

@@ -55,6 +55,11 @@
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
     max-width: 1280px !important; /* Ensure container has max width */
   }
+  
+  /* Make sure header aligns properly with content */
+  header .container {
+    @apply px-8 md:px-12 lg:px-16;
+  }
 }
 
 .page-separator {
