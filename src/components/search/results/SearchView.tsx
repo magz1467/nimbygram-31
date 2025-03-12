@@ -17,7 +17,9 @@ function SearchViewContent() {
     filters, 
     setFilters,
     retry,
-    hasSearched
+    hasSearched,
+    hasPartialResults,
+    isSearchInProgress
   } = useSearchState();
   
   if (!initialSearch?.searchTerm) {
@@ -57,6 +59,8 @@ function SearchViewContent() {
       searchTerm={initialSearch.searchTerm}
       filters={filters}
       onFilterChange={setFilters}
+      hasPartialResults={hasPartialResults}
+      isSearchInProgress={isSearchInProgress}
     />
   );
 }

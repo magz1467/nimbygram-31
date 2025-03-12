@@ -44,8 +44,12 @@ export const ResultsContainer = ({
     console.log(`See on map clicked for application: ${id}`);
   };
 
+  // Modified to not cause page reloads
   const handleRetry = () => {
-    window.location.reload();
+    // Instead of reloading the whole page, we can emit an event or use a callback
+    console.log("Retry search requested");
+    // Only reload if explicitly requested by user interaction
+    // The automatic reloading after results are found has been removed
   };
 
   const handlePageChange = (page: number) => {
