@@ -1,14 +1,67 @@
 
-import { useEffect, useRef, useState } from 'react';
-import { useCoordinates } from "@/hooks/use-coordinates";
-import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
-import { SearchViewContent } from "./SearchViewContent";
-import { NoSearchStateView } from "./NoSearchStateView";
-import { SearchErrorView } from "./SearchErrorView";
-import { MobileDetector } from "@/components/map/mobile/MobileDetector";
-import { ErrorType } from "@/utils/errors";
-import { isNonCriticalError } from "@/utils/errors";
+import { useEffect } from 'react';
+import { SearchStateProvider, useSearchState } from './search-views/SearchStateProvider';
+import { LoadingView } from './search-views/LoadingView';
+import { ErrorView } from './search-views/ErrorView';
+import { ResultsView } from './search-views/ResultsView';
+import { NoSearchStateView } from './NoSearchStateView';
+import { ErrorType, detectErrorType } from '@/utils/errors';
+import { Header } from '@/components/Header';
 
+// This is the inner component that uses the search state context
+function SearchViewContent() {
+  const { 
+    initialSearch, 
+    loadingState, 
+    applications, 
+    filters, 
+    setFilters,
+    retry,
+    hasSearched
+  } = useSearchState();
+  
+  if (!initialSearch?.searchTerm) {
+    return <NoSearchStateView onPostcodeSelect={() => {}} />;
+  }
+  
+  // Show error view if there's an error and we've already searched
+  if ((loadingState.error || loadingState.stage === 'error') && hasSearched) {
+    const error = loadingState.error || new Error('Unknown search error');
+    const errorType = 'type' in error ? error.type as ErrorType : detectErrorType(error);
+    
+    return (
+      <ErrorView 
+        error={error} 
+        errorType={errorType} 
+        onRetry={retry} 
+      />
+    );
+  }
+  
+  // Show loading view if we're loading
+  if (loadingState.isLoading || loadingState.stage !== 'complete') {
+    return (
+      <LoadingView 
+        stage={loadingState.stage}
+        isLongRunning={loadingState.longRunning}
+        searchTerm={initialSearch.searchTerm}
+        onRetry={retry}
+      />
+    );
+  }
+  
+  // Show results view when we have applications
+  return (
+    <ResultsView 
+      applications={applications}
+      searchTerm={initialSearch.searchTerm}
+      filters={filters}
+      onFilterChange={setFilters}
+    />
+  );
+}
+
+// This is the wrapper component that provides the search state context
 interface SearchViewProps {
   initialSearch?: {
     searchType: 'postcode' | 'location';
@@ -16,122 +69,54 @@ interface SearchViewProps {
     displayTerm?: string;
     timestamp?: number;
   };
-  retryCount?: number;
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
 }
 
-export const SearchView = ({
+export function SearchView({ 
   initialSearch,
-  retryCount = 0,
   onError,
   onSearchComplete
-}: SearchViewProps) => {
-  // Use a ref to prevent multiple error callbacks
-  const hasReportedError = useRef(false);
-  const [localError, setLocalError] = useState<Error | null>(null);
-  
-  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
-    initialSearch?.searchTerm || ''
-  );
-
-  const { 
-    applications, 
-    isLoading: isLoadingResults,
-    error: searchError,
-    filters,
-    setFilters
-  } = usePlanningSearch(coordinates);
-
-  // Combine errors from coordinates and search
-  const error = localError || coordsError || searchError;
-
-  useEffect(() => {
-    // Store any error in local state to prevent loss during rerenders
-    if ((coordsError || searchError) && !localError) {
-      setLocalError(coordsError || searchError);
-    }
-  }, [coordsError, searchError, localError]);
-
-  useEffect(() => {
-    // Only propagate meaningful errors, not infrastructure setup messages
-    // And only report an error once to prevent loops
-    if (onError && error && !isNonCriticalError(error) && !hasReportedError.current) {
-      console.log('🚨 Search error:', error);
-      hasReportedError.current = true;
-      
-      // Safely call onError, avoiding state updates during render
-      setTimeout(() => {
-        onError(error);
-      }, 0);
-    }
-  }, [error, onError]);
-
-  useEffect(() => {
-    // Only call onSearchComplete when everything is truly done
-    if (!isLoadingResults && !isLoadingCoords && coordinates && applications && onSearchComplete && !hasReportedError.current) {
-      // Safely call completion callback
-      setTimeout(() => {
-        if (onSearchComplete) onSearchComplete();
-      }, 0);
-    }
-  }, [isLoadingResults, isLoadingCoords, coordinates, applications, onSearchComplete]);
-
-  if (!initialSearch?.searchTerm) {
-    return <NoSearchStateView onPostcodeSelect={() => {}} />;
-  }
-
-  // Only show error view for real errors, not infrastructure messages
-  if (error && !isNonCriticalError(error) && !applications.length) {
-    // Determine error type for proper display
-    let errorType = ErrorType.UNKNOWN;
-    
-    if ('type' in error && error.type) {
-      // If the error already has a type property, use it
-      errorType = error.type as ErrorType;
-    } else if (
-      error.message?.includes('timeout') || 
-      error.message?.includes('too long') ||
-      error.message?.includes('canceling statement')
-    ) {
-      errorType = ErrorType.TIMEOUT;
-    } else if (error.message?.includes('network') || !navigator.onLine) {
-      errorType = ErrorType.NETWORK;
-    } else if (error.message?.includes('not found') || error.message?.includes('no results')) {
-      errorType = ErrorType.NOT_FOUND;
-    }
-    
-    return (
-      <SearchErrorView 
-        errorDetails={error.message}
-        errorType={errorType}
-        onRetry={() => {
-          setLocalError(null);
-          hasReportedError.current = false;
-          window.location.reload();
-        }}
-      />
-    );
-  }
-
-  const isLoading = isLoadingCoords || isLoadingResults;
-
+}: SearchViewProps) {
   return (
-    <SearchViewContent
-      initialSearch={initialSearch}
-      applications={applications || []}
-      isLoading={isLoading}
-      filters={filters}
-      onFilterChange={(type, value) => {
-        setFilters({ ...filters, [type]: value });
-      }}
-      onError={(err) => {
-        if (err && !isNonCriticalError(err)) {
-          setLocalError(err);
-        }
-      }}
-      onSearchComplete={onSearchComplete}
-      retryCount={retryCount}
-    />
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        <SearchStateProvider initialSearch={initialSearch}>
+          <SearchViewContentWithCallbacks 
+            onError={onError} 
+            onSearchComplete={onSearchComplete} 
+          />
+        </SearchStateProvider>
+      </div>
+    </div>
   );
-};
+}
+
+// This component handles the callbacks
+function SearchViewContentWithCallbacks({ 
+  onError, 
+  onSearchComplete 
+}: {
+  onError?: (error: Error | null) => void;
+  onSearchComplete?: () => void;
+}) {
+  const { loadingState, hasSearched } = useSearchState();
+  
+  // Call onError when there's an error
+  useEffect(() => {
+    if (onError && loadingState.error) {
+      onError(loadingState.error);
+    }
+  }, [loadingState.error, onError]);
+  
+  // Call onSearchComplete when search is complete
+  useEffect(() => {
+    if (onSearchComplete && loadingState.stage === 'complete' && hasSearched) {
+      onSearchComplete();
+    }
+  }, [loadingState.stage, hasSearched, onSearchComplete]);
+  
+  return <SearchViewContent />;
+}

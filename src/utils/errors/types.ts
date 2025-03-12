@@ -1,44 +1,44 @@
 
 /**
- * Types of errors for better categorization and handling
+ * Types of errors that can occur in the application
  */
 export enum ErrorType {
+  UNKNOWN = 'unknown',
   NETWORK = 'network',
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  VALIDATION = 'validation',
-  SERVER = 'server',
-  DATABASE = 'database',
-  NOT_FOUND = 'not_found',
   TIMEOUT = 'timeout',
-  UNKNOWN = 'unknown'
+  NOT_FOUND = 'not_found',
+  SERVER = 'server',
+  VALIDATION = 'validation',
+  AUTHENTICATION = 'authentication',
+  PERMISSION = 'permission',
+  DATABASE = 'database',
+  SPATIAL = 'spatial'
 }
 
 /**
- * Error options for the error handler
+ * Interface for application errors with proper typing
  */
-export interface ErrorOptions {
-  type?: ErrorType;
-  context?: string;
-  retry?: () => void;
-  fallback?: any;
-  silent?: boolean;
-  logToServer?: boolean;
-}
-
-/**
- * Standard application error that includes type information
- */
-export class AppError extends Error {
+export interface AppError extends Error {
   type: ErrorType;
-  context?: string;
-  originalError?: any;
+  details?: string;
+  code?: string;
+  context?: Record<string, any>;
+}
 
-  constructor(message: string, type: ErrorType = ErrorType.UNKNOWN, originalError?: any, context?: string) {
-    super(message);
-    this.name = 'AppError';
-    this.type = type;
-    this.originalError = originalError;
-    this.context = context;
-  }
+/**
+ * Create a typed application error
+ */
+export function createAppError(
+  message: string, 
+  type: ErrorType = ErrorType.UNKNOWN,
+  details?: string,
+  code?: string,
+  context?: Record<string, any>
+): AppError {
+  const error = new Error(message) as AppError;
+  error.type = type;
+  if (details) error.details = details;
+  if (code) error.code = code;
+  if (context) error.context = context;
+  return error;
 }
