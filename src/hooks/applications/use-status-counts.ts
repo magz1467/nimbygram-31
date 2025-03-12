@@ -1,33 +1,36 @@
 
-import { useMemo } from 'react';
-import { Application } from "@/types/planning";
-import { StatusCounts } from "@/types/application-types";
+import { useState, useEffect } from 'react';
+import { Application } from '@/types/planning';
 
-export function useStatusCounts(applications: Application[]) {
-  const statusCounts: StatusCounts = useMemo(() => {
-    const counts: StatusCounts = {
-      'Under Review': 0,
-      'Approved': 0,
-      'Declined': 0,
-      'Other': 0
-    };
+export interface StatusCounts {
+  [key: string]: number;
+}
 
+export const useStatusCounts = (applications: Application[]) => {
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({});
+
+  useEffect(() => {
+    const counts: StatusCounts = {};
+    
+    // Count applications by status
     applications.forEach(app => {
-      const status = (app.status || '').toLowerCase();
-      
-      if (status.includes('review') || status.includes('pending') || status.includes('consultation')) {
-        counts['Under Review']++;
-      } else if (status.includes('approved') || status.includes('granted') || status.includes('permitted')) {
-        counts['Approved']++;
-      } else if (status.includes('declined') || status.includes('refused') || status.includes('rejected')) {
-        counts['Declined']++;
-      } else {
-        counts['Other']++;
-      }
+      const status = app.status || 'Unknown';
+      counts[status] = (counts[status] || 0) + 1;
     });
-
-    return counts;
+    
+    setStatusCounts(counts);
   }, [applications]);
 
   return { statusCounts };
-}
+};
+
+export const calculateStatusCounts = (applications: Application[]): StatusCounts => {
+  const counts: StatusCounts = {};
+  
+  applications.forEach(app => {
+    const status = app.status || 'Unknown';
+    counts[status] = (counts[status] || 0) + 1;
+  });
+  
+  return counts;
+};

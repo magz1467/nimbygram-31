@@ -1,9 +1,6 @@
 
-import { detectErrorType } from './detection';
-import { formatErrorMessage, formatErrorForLogging } from './formatting';
-import { handleError } from './centralized-handler';
-import { isNonCriticalError } from '../errors';
-export type { AppError, AppErrorOptions, ErrorHandlerOptions } from './types';
-export { ErrorType } from './types';
-export { createAppError } from './types';
-export { handleError, detectErrorType, formatErrorMessage, formatErrorForLogging, isNonCriticalError };
+export { AppError, ErrorType, createAppError } from './types';
+export type { AppErrorOptions, ErrorHandlerOptions } from './types';
+export { handleError } from './centralized-handler';
+export { formatErrorMessage, formatErrorForLogging } from './formatting';
+export { detectErrorType } from './detection';

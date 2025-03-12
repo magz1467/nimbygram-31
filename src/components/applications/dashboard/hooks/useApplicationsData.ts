@@ -49,27 +49,41 @@ export const useApplicationsData = ({ postcode, radius = 5 }: UseApplicationsDat
           
         if (dbError) throw dbError;
 
-        // Transform raw data to Application type
-        const transformedApps = (applicationsData || []).map(item => ({
-          id: item.id,
-          title: item.description || `Application ${item.id}`,
-          address: item.address || '',
-          status: item.status || 'Under Review',
-          coordinates: item.latitude && item.longitude 
-            ? [Number(item.latitude), Number(item.longitude)] 
-            : undefined,
-          reference: item.reference || '',
-          description: item.description || '',
-          applicant: item.applicant || '',
-          submissionDate: item.submission_date || '',
-          submittedDate: item.submission_date || '',
-          decisionDue: item.decision_due || '',
-          type: item.type || '',
-          ward: item.ward || '',
-          received_date: item.received_date || item.received || item.submission_date || null,
-          image_map_url: item.image_map_url || null,
-          postcode: item.postcode || ''
-        }));
+        // Transform raw data to Application type, ensuring coordinates are properly cast
+        const transformedApps: Application[] = (applicationsData || []).map(item => {
+          // Only create coordinates if both latitude and longitude exist
+          let coords: [number, number] | undefined = undefined;
+          if (item.latitude && item.longitude) {
+            coords = [Number(item.latitude), Number(item.longitude)];
+          }
+          
+          return {
+            id: item.id,
+            title: item.ai_title || item.description || `Application ${item.id}`,
+            address: item.address || '',
+            status: item.status || 'Under Review',
+            coordinates: coords,
+            reference: item.reference || '',
+            description: item.description || '',
+            applicant: item.applicant || '',
+            submittedDate: item.submission_date || '',
+            decisionDue: item.decision_due || item.decision_target_date || '',
+            type: item.application_type || item.application_type_full || '',
+            ward: item.ward || '',
+            officer: item.officer || '',
+            consultationEnd: item.last_date_consultation_comments || '',
+            image: item.image || '',
+            streetview_url: item.streetview_url || null,
+            image_map_url: item.image_map_url || null,
+            postcode: item.postcode || '',
+            impact_score: item.impact_score || null,
+            impact_score_details: item.impact_score_details || null,
+            last_date_consultation_comments: item.last_date_consultation_comments || null,
+            valid_date: item.valid_date || null,
+            centroid: item.centroid || null,
+            received_date: item.received_date || null
+          } as Application;
+        });
         
         setApplications(transformedApps);
       } catch (err) {
