@@ -64,7 +64,9 @@ export const SearchViewContent = ({
     const category = status.includes('Under Review') ? 'Under Review' :
                     status.includes('Approved') ? 'Approved' :
                     status.includes('Declined') ? 'Declined' : 'Other';
-    counts[category as keyof typeof counts] = (counts[category as keyof typeof counts] || 0) + 1;
+    
+    // Use the category as a key to increment the count
+    counts[category] += 1;
     return counts;
   }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
 
