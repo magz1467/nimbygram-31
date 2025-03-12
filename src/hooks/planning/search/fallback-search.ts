@@ -15,18 +15,18 @@ export async function performFallbackSearch(
   try {
     console.log('Performing fallback search with bounding box');
     
-    // Calculate bounding box
-    const latDelta = radiusKm / 111;
-    const lngDelta = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
+    // Calculate bounding box - more accurate calculation
+    const latDelta = radiusKm / 111.32; // 1 degree latitude is approximately 111.32 km
+    const lngDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180)); // Account for longitude distortion
     
     const minLat = lat - latDelta;
     const maxLat = lat + latDelta;
     const minLng = lng - lngDelta;
     const maxLng = lng + lngDelta;
     
-    console.log(`Search bounds: lat ${minLat} to ${maxLat}, lng ${minLng} to ${maxLng}`);
+    console.log(`Search bounds: lat ${minLat.toFixed(4)} to ${maxLat.toFixed(4)}, lng ${minLng.toFixed(4)} to ${maxLng.toFixed(4)}`);
     
-    // Create query
+    // Create query - use more specific column names from crystal_roof
     let query = supabase
       .from('crystal_roof')
       .select('*')
@@ -45,18 +45,21 @@ export async function performFallbackSearch(
     }
     
     if (filters?.classification && filters.classification.trim() !== '') {
-      query = query.ilike('classification', `%${filters.classification}%`);
+      query = query.ilike('class_3', `%${filters.classification}%`); // Use class_3 for classification filter
     }
     
-    // Limit to a reasonable number
-    query = query.limit(50);
+    // Increase limit for wider search
+    query = query.limit(100);
+    
+    // Execute query with timeout handling
+    const queryPromise = query;
     
     // Execute query
-    const { data, error } = await query;
+    const { data, error } = await queryPromise;
     
     if (error) {
       console.error('Fallback search error:', error);
-      return [];
+      throw error;
     }
     
     if (!data || data.length === 0) {
@@ -67,13 +70,25 @@ export async function performFallbackSearch(
     console.log(`Found ${data.length} results in fallback search`);
     
     // Add distance and sort - handle cases where lat/lng might not be numeric
-    return data
+    const results = data
       .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
-      .map(app => ({
-        ...app,
-        distance: calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude))
-      }))
-      .sort((a, b) => a.distance - b.distance);
+      .map(app => {
+        // Calculate the actual distance in kilometers
+        const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
+        // Convert to miles for display (UK standard)
+        const distanceMiles = distanceKm * 0.621371;
+        
+        return {
+          ...app,
+          distance: `${distanceMiles.toFixed(1)} mi`,
+          // Store the raw distance for sorting
+          _rawDistance: distanceKm
+        };
+      })
+      .sort((a, b) => (a._rawDistance || Infinity) - (b._rawDistance || Infinity));
+    
+    // Remove the temporary _rawDistance property
+    return results.map(({ _rawDistance, ...app }) => app);
   } catch (error) {
     console.error('Fallback search failed:', error);
     // Return empty array instead of throwing

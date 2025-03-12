@@ -46,10 +46,21 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const [lat, lng] = coordinates;
         
-        // Skip spatial search entirely since we know it doesn't exist
-        // Go straight to fallback search
-        console.log('Using fallback search directly');
-        return await performFallbackSearch(lat, lng, searchRadius, filters);
+        // First try spatial search (with PostGIS)
+        console.log('Attempting spatial search first...');
+        const spatialResults = await performSpatialSearch(lat, lng, searchRadius, filters);
+        
+        // If spatial search returns results or empty array (not null), use those results
+        if (spatialResults !== null) {
+          console.log('Using spatial search results:', spatialResults.length);
+          return spatialResults;
+        }
+        
+        // If spatial search returns null (indicating failure/unavailability), use fallback
+        console.log('Spatial search unavailable, using fallback search');
+        const fallbackResults = await performFallbackSearch(lat, lng, searchRadius, filters);
+        console.log('Got fallback results:', fallbackResults.length);
+        return fallbackResults;
       } catch (err) {
         console.error('Search error:', err);
         // Store the error to prevent losing it on re-renders

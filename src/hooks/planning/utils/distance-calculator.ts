@@ -26,9 +26,10 @@ export function calculateDistance(
   
   // Validation
   if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
-      typeof lat2 !== 'number' || typeof lon2 !== 'number') {
-    console.error('Invalid coordinates', { lat1, lon1, lat2, lon2 });
-    return 0;
+      typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
+      isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+    console.error('Invalid coordinates in distance calculation:', { lat1, lon1, lat2, lon2 });
+    return Number.MAX_SAFE_INTEGER; // Return a large value for invalid inputs
   }
   
   const R = 6371; // Earth's radius in km
@@ -39,5 +40,20 @@ export function calculateDistance(
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+  const distance = R * c;
+  
+  return distance;
+}
+
+/**
+ * Formats a distance value to a user-friendly string in miles
+ * @param distanceKm Distance in kilometers
+ * @returns Formatted distance string
+ */
+export function formatDistance(distanceKm: number): string {
+  if (typeof distanceKm !== 'number' || isNaN(distanceKm)) {
+    return "Unknown";
+  }
+  const distanceMiles = distanceKm * 0.621371;
+  return `${distanceMiles.toFixed(1)} mi`;
 }
