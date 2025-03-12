@@ -44,6 +44,24 @@ export const ResultsHeader = ({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleMapView}
+            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+          >
+            {isMapVisible ? (
+              <>
+                <List className="h-4 w-4" />
+                List
+              </>
+            ) : (
+              <>
+                <Map className="h-4 w-4" />
+                Map
+              </>
+            )}
+          </Button>
           {extraControls}
         </div>
       </div>

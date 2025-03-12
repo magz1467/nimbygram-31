@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { ResultsListView } from "./ResultsListView";
 import { useState } from "react";
@@ -88,7 +89,7 @@ export const ResultsContainer = ({
       displayTerm={displayTerm}
       onRetry={handleRetry}
       selectedId={selectedId}
-      coordinates={coordinates} // Ensure we're passing coordinates
+      coordinates={coordinates}
       handleMarkerClick={handleMarkerClick}
       allApplications={applications}
       postcode={searchTerm}

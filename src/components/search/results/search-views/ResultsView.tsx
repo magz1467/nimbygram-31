@@ -4,8 +4,6 @@ import { Application } from "@/types/planning";
 import { ResultsHeader } from "@/components/search/results/ResultsHeader";
 import { ResultsContainer } from "@/components/search/results/ResultsContainer";
 import { SortType, StatusCounts } from "@/types/application-types";
-import { Button } from "@/components/ui/button";
-import { Map } from "lucide-react";
 
 interface ResultsViewProps {
   applications: Application[];
@@ -72,17 +70,6 @@ export function ResultsView({
         onFilterChange={onFilterChange}
         onSortChange={(sortType) => setActiveSort(sortType)}
         statusCounts={statusCounts}
-        extraControls={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowMap(!showMap)}
-            className="flex items-center gap-1.5 ml-2 bg-pink-100 hover:bg-pink-200 text-gray-800"
-          >
-            <Map className="h-4 w-4" />
-            Map
-          </Button>
-        }
       />
 
       <div className="px-4 lg:px-6">
