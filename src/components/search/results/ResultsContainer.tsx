@@ -1,7 +1,7 @@
-
 import { Application } from "@/types/planning";
 import { ResultsListView } from "./ResultsListView";
 import { useState } from "react";
+import { MapSplitView } from "./components/MapSplitView";
 
 export interface ResultsContainerProps {
   applications: Application[];
@@ -59,6 +59,26 @@ export const ResultsContainer = ({
   // Calculate total pages based on the number of applications
   const totalPages = Math.ceil(displayApplications.length / pageSize);
 
+  // Show the map split view if showMap is true
+  if (showMap && coordinates && displayApplications.length > 0) {
+    return (
+      <MapSplitView
+        applications={displayApplications}
+        selectedId={selectedId}
+        setSelectedId={setSelectedId}
+        coordinates={coordinates}
+        searchTerm={searchTerm}
+        onMarkerClick={handleMarkerClick}
+        onToggleMapView={() => setShowMap(false)}
+        isLoading={isLoading}
+        hasPartialResults={hasPartialResults}
+        isSearchInProgress={isSearchInProgress}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  // Otherwise show the standard list view
   return (
     <ResultsListView
       applications={displayApplications}
