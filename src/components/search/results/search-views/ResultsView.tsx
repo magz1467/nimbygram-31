@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { ResultsHeader } from "@/components/search/results/ResultsHeader";
 import { ResultsContainer } from "@/components/search/results/ResultsContainer";
-import { SortType } from "@/types/application-types";
-import { StatusCounts } from "@/types/application-types";
+import { SortType, StatusCounts } from "@/types/application-types";
 
 interface ResultsViewProps {
   applications: Application[];
@@ -22,18 +22,22 @@ export function ResultsView({ applications, searchTerm, filters, onFilterChange 
     'Under Review': 0,
     'Approved': 0,
     'Declined': 0,
-    'Other': 0,
-    ...applications.reduce((counts, app) => {
-      const status = app.status || 'Other';
-      const category = status.includes('Under Review') ? 'Under Review' :
-                      status.includes('Approved') ? 'Approved' :
-                      status.includes('Declined') ? 'Declined' : 'Other';
-      return {
-        ...counts,
-        [category]: (counts[category] || 0) + 1
-      };
-    }, {} as StatusCounts)
+    'Other': 0
   };
+  
+  // Count applications by status
+  applications.forEach(app => {
+    const status = app.status || 'Other';
+    if (status.includes('Under Review')) {
+      statusCounts['Under Review']++;
+    } else if (status.includes('Approved')) {
+      statusCounts['Approved']++;
+    } else if (status.includes('Declined')) {
+      statusCounts['Declined']++;
+    } else {
+      statusCounts['Other']++;
+    }
+  });
   
   return (
     <div>

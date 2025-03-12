@@ -1,5 +1,5 @@
 
-import { ErrorType } from "./errors/types";
+import { ErrorType, AppError, AppErrorOptions } from "./errors/types";
 
 /**
  * Checks if an error is non-critical (can be safely ignored in the UI)
@@ -68,5 +68,4 @@ export function formatErrorMessage(error: unknown): string {
 
 // Export types
 export { ErrorType };
-export type { AppError } from './errors/types';
-export type { ErrorOptions } from './errors/types';
+export type { AppError, AppErrorOptions } from './errors/types';

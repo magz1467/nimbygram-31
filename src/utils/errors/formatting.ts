@@ -2,14 +2,12 @@
 import { AppError, ErrorType } from './types';
 
 /**
- * Format error messages consistently
+ * Formats an error message for display
  */
-export function formatErrorMessage(error: any, context?: string): string {
-  if (error instanceof AppError) {
-    return error.message;
-  }
+export function formatErrorMessage(error: unknown): string {
+  if (!error) return 'Unknown error';
   
-  if (error instanceof Error) {
+  if (error instanceof AppError) {
     return error.message;
   }
   
@@ -17,36 +15,43 @@ export function formatErrorMessage(error: any, context?: string): string {
     return error;
   }
   
-  return 'An unknown error occurred';
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'An unexpected error occurred';
 }
 
 /**
- * Log errors to console with consistent formatting
+ * Formats an error for logging to console
  */
-export function logError(error: any, context?: string): void {
-  const errorObject = error instanceof AppError ? error : error;
-  
-  console.group('🚨 Application Error');
-  console.error(`Error ${context ? `in ${context}` : ''}:`, errorObject);
-  
-  if (error.stack) {
-    console.error('Stack trace:', error.stack);
-  }
-  
-  console.groupEnd();
-}
-
-// NOTE: This function is deprecated - use createAppError from handler.tsx instead
-// @deprecated
-export function createAppError(error: any, context?: string): AppError {
-  console.warn('This createAppError function in formatting.ts is deprecated. Use the one from handler.tsx instead.');
+export function formatErrorForLogging(
+  error: unknown, 
+  context?: Record<string, any>
+): Record<string, any> {
+  const baseInfo = {
+    timestamp: new Date().toISOString(),
+    message: formatErrorMessage(error),
+    type: error instanceof AppError ? error.type : 'unknown',
+    ...(context || {})
+  };
   
   if (error instanceof AppError) {
-    return error;
+    return {
+      ...baseInfo,
+      details: error.details,
+      code: error.code,
+      context: error.context
+    };
   }
   
-  let errorType = ErrorType.UNKNOWN;
-  let message = formatErrorMessage(error, context);
+  if (error instanceof Error) {
+    return {
+      ...baseInfo,
+      name: error.name,
+      stack: error.stack
+    };
+  }
   
-  return new AppError(message, errorType, error, context);
+  return baseInfo;
 }

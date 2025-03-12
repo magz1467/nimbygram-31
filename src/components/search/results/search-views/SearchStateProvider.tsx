@@ -1,10 +1,11 @@
+
 import { createContext, useContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLoadingState, LoadingStage } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
 import { usePlanningSearch } from '@/hooks/planning/use-planning-search';
 import { handleError } from '@/utils/errors/centralized-handler';
 import { getSearchPerformanceTracker } from '@/utils/performance/search-performance-tracker';
-import { ErrorType } from '@/utils/errors';
+import { ErrorType, AppError, createAppError } from '@/utils/errors/types';
 import { Application } from '@/types/planning';
 
 interface SearchStateContextProps {
@@ -54,8 +55,9 @@ export function SearchStateProvider({
     timeout: 45000,
     longRunningThreshold: 20000,
     onTimeout: () => {
-      const timeoutError = new Error('Search operation timed out');
-      timeoutError.type = ErrorType.TIMEOUT;
+      const timeoutError = createAppError('Search operation timed out', {
+        type: ErrorType.TIMEOUT
+      });
       setError(timeoutError);
       performanceTracker.addMetadata('timeout', true);
       performanceTracker.logReport();

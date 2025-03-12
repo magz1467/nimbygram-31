@@ -1,51 +1,30 @@
 
-import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { AppError, ErrorType } from './types';
+import { toast } from "@/hooks/use-toast";
+import { AppError, ErrorType } from "./types";
+import { formatErrorMessage } from "./formatting";
 
 /**
- * Create a standardized error
+ * Handles error display in the UI
  */
-export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
-  if (error instanceof AppError) {
-    return error;
-  }
+export function handleUIError(error: unknown, options?: { showToast?: boolean }) {
+  const { showToast = true } = options || {};
   
-  const message = error.message || 'An error occurred';
-  return new AppError(message, errorType || ErrorType.UNKNOWN, error, context);
-}
-
-/**
- * Handle errors in a standardized way
- */
-export function handleError(
-  error: any, 
-  toast: ReturnType<typeof useToast>["toast"],
-  options: { context?: string; retry?: () => void; silent?: boolean } = {}
-): AppError {
-  const { context, retry, silent = false } = options;
+  if (!error) return;
   
-  // Create standardized app error
-  const appError = error instanceof AppError 
-    ? error 
-    : createAppError(error, context);
+  const message = formatErrorMessage(error);
+  const type = error instanceof AppError ? error.type : ErrorType.UNKNOWN;
   
-  // Log to console
-  console.error(`Error${context ? ` in ${context}` : ''}:`, appError);
+  // Log error to console
+  console.error('UI Error:', message, { type });
   
-  // Show toast notification if not silent
-  if (!silent) {
+  // Show toast for user feedback
+  if (showToast) {
     toast({
-      title: context ? `Error in ${context}` : "Error",
-      description: appError.message,
+      title: type === ErrorType.TIMEOUT ? "Operation Timeout" : "Error",
+      description: message,
       variant: "destructive",
-      action: retry ? (
-        <ToastAction altText="Retry" onClick={retry}>
-          Retry
-        </ToastAction>
-      ) : undefined
     });
   }
   
-  return appError;
+  return { message, type };
 }
