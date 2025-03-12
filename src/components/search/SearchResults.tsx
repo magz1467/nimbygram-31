@@ -1,10 +1,11 @@
 
 import { useSpatialSearch } from "@/hooks/use-spatial-search";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { SearchCoordinates, SEARCH_RADIUS } from "@/types/search";
 import { Loader2 } from "lucide-react";
+import ResultsContainer from "./results/ResultsContainer";
+import { searchDiagnostics } from "@/utils/search-diagnostics";
 
 interface SearchResultsProps {
   coordinates: SearchCoordinates | null;
@@ -12,12 +13,26 @@ interface SearchResultsProps {
 }
 
 export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
-  const { data, isLoading, isError } = useSpatialSearch(coordinates);
+  const { data, isLoading, isError, error } = useSpatialSearch(coordinates);
+
+  // Log search diagnostics
+  React.useEffect(() => {
+    if (coordinates) {
+      searchDiagnostics.logSearch([coordinates.lat, coordinates.lng], SEARCH_RADIUS);
+    }
+    if (data) {
+      searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
+    }
+    if (isError) {
+      searchDiagnostics.logError(error);
+    }
+  }, [coordinates, data, isError, error]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin mr-2" />
+        <span>Searching for planning applications...</span>
       </div>
     );
   }
@@ -25,11 +40,13 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   if (isError) {
     return (
       <Alert variant="destructive" className="m-4">
-        <h3 className="font-medium mb-2">Search Error</h3>
-        <p className="text-sm mb-4">Failed to retrieve planning applications. Please try again.</p>
-        <Button onClick={onRetry} variant="outline" size="sm">
-          Retry Search
-        </Button>
+        <AlertTitle>Search Error</AlertTitle>
+        <AlertDescription>
+          <p className="mb-4">Failed to retrieve planning applications. Please try again.</p>
+          <Button onClick={onRetry} variant="outline" size="sm">
+            Retry Search
+          </Button>
+        </AlertDescription>
       </Alert>
     );
   }
@@ -51,27 +68,20 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
         <h2 className="text-lg font-semibold">
           Found {data.applications.length} applications
         </h2>
-        <span className="text-sm text-muted-foreground">
-          Search took {data.timing?.duration}ms
-        </span>
+        {data.timing && (
+          <span className="text-sm text-muted-foreground">
+            Search took {data.timing.duration}ms using {data.method} method
+          </span>
+        )}
       </div>
 
-      {data.applications.map((app) => (
-        <Card key={app.id} className="p-4">
-          <h3 className="font-medium">{app.title || app.reference}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{app.address}</p>
-          <div className="flex gap-2 mt-2">
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              {app.status}
-            </span>
-            {app.type && (
-              <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                {app.type}
-              </span>
-            )}
-          </div>
-        </Card>
-      ))}
+      <ResultsContainer 
+        applications={data.applications} 
+        isLoading={isLoading} 
+        error={error as Error | null} 
+      />
     </div>
   );
 }
+
+export default SearchResults;

@@ -1,73 +1,29 @@
 
-import { Application } from "@/types/planning";
-import { ResultsListView } from "./ResultsListView";
-import { useState } from "react";
+import React from 'react';
+import { Application } from '@/types/planning';
+import ResultsListView from './ResultsListView';
 
-export interface ResultsContainerProps {
+interface ResultsContainerProps {
   applications: Application[];
-  displayApplications: Application[];
   isLoading: boolean;
-  searchTerm?: string;
-  displayTerm?: string;
-  coordinates?: [number, number] | null;
-  showMap: boolean;
-  setShowMap: (show: boolean) => void;
-  selectedId: number | null;
-  setSelectedId: (id: number | null) => void;
-  handleMarkerClick: (id: number) => void;
+  error: Error | null;
 }
 
-export const ResultsContainer = ({
-  applications,
-  displayApplications,
-  isLoading,
-  searchTerm,
-  displayTerm,
-  coordinates,
-  showMap,
-  setShowMap,
-  selectedId,
-  setSelectedId,
-  handleMarkerClick
-}: ResultsContainerProps) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
-
-  // Simple implementation that focuses on showing the list view
-  const onSeeOnMap = (id: number) => {
-    setSelectedId(id);
-    // In a real implementation we might integrate with a map view here
-    console.log(`See on map clicked for application: ${id}`);
-  };
-
-  const handleRetry = () => {
-    window.location.reload();
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Calculate total pages based on the number of applications
-  const totalPages = Math.ceil(displayApplications.length / pageSize);
+export const ResultsContainer = ({ applications, isLoading, error }: ResultsContainerProps) => {
+  if (error) {
+    return (
+      <div className="p-4 rounded-md bg-red-50 border border-red-200">
+        <h3 className="text-red-800 font-medium">Error</h3>
+        <p className="text-red-700 text-sm">{error.message}</p>
+      </div>
+    );
+  }
 
   return (
-    <ResultsListView
-      applications={displayApplications}
-      isLoading={isLoading}
-      onSeeOnMap={onSeeOnMap}
-      searchTerm={searchTerm}
-      displayTerm={displayTerm}
-      onRetry={handleRetry}
-      selectedId={selectedId}
-      coordinates={coordinates}
-      handleMarkerClick={handleMarkerClick}
-      allApplications={applications}
-      postcode={searchTerm}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={handlePageChange}
-      totalCount={displayApplications.length}
-    />
+    <div className="mt-4">
+      <ResultsListView applications={applications} isLoading={isLoading} />
+    </div>
   );
 };
+
+export default ResultsContainer;

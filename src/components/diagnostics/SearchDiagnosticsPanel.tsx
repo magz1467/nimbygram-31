@@ -14,17 +14,17 @@ export const SearchDiagnosticsPanel = () => {
 
     console.log = (...args) => {
       originalLog(...args);
-      setLogs(prev => [...prev, `LOG: ${JSON.stringify(args)}`]);
+      setLogs(prev => [...prev, `LOG: ${args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')}`]);
     };
 
     console.error = (...args) => {
       originalError(...args);
-      setLogs(prev => [...prev, `ERROR: ${JSON.stringify(args)}`]);
+      setLogs(prev => [...prev, `ERROR: ${args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')}`]);
     };
 
     console.warn = (...args) => {
       originalWarn(...args);
-      setLogs(prev => [...prev, `WARN: ${JSON.stringify(args)}`]);
+      setLogs(prev => [...prev, `WARN: ${args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')}`]);
     };
 
     return () => {
@@ -65,3 +65,5 @@ export const SearchDiagnosticsPanel = () => {
     </div>
   );
 };
+
+export default SearchDiagnosticsPanel;
