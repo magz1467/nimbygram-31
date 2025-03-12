@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/applicationTransforms';
+import { transformApplicationData } from '@/utils/transformApplicationData';
 import { LatLngTuple } from 'leaflet';
 
 export const useApplicationsFetch = () => {
@@ -44,17 +45,15 @@ export const useApplicationsFetch = () => {
 
       console.log(`📦 Raw applications data:`, appsData?.map(app => ({
         id: app.id,
-        class_3: app.class_3,
         title: app.title
       })));
 
       const transformedApplications = appsData
-        ?.map(app => transformApplicationData(app, center))
+        ?.map(app => transformApplicationData(app))
         .filter((app): app is Application => app !== null);
 
       console.log('✨ Transformed applications:', transformedApplications?.map(app => ({
         id: app.id,
-        class_3: app.class_3,
         title: app.title
       })));
 

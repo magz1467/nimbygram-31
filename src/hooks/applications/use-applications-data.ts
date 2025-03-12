@@ -1,15 +1,32 @@
 
 import { useState } from 'react';
 import { Application } from "@/types/planning";
-import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/applicationTransforms';
-import { calculateStatusCounts, type StatusCounts } from './use-status-counts';
 import { LatLngTuple } from 'leaflet';
+import { fetchApplicationsInRadius } from './applications/use-applications-fetch';
+import { transformApplicationData } from '@/utils/transformApplicationData';
 
-interface ApplicationError {
+export interface ApplicationError {
   message: string;
   details?: string;
 }
+
+export interface StatusCounts {
+  'Under Review': number;
+  'Approved': number;
+  'Declined': number;
+  'Other': number;
+}
+
+export const calculateStatusCounts = (applications: Application[]): StatusCounts => {
+  return applications.reduce((counts: StatusCounts, app) => {
+    const status = app.status || 'Other';
+    const category = status.includes('Under Review') ? 'Under Review' :
+                   status.includes('Approved') ? 'Approved' :
+                   status.includes('Declined') ? 'Declined' : 'Other';
+    counts[category as keyof StatusCounts] = (counts[category as keyof StatusCounts] || 0) + 1;
+    return counts;
+  }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
+};
 
 export const useApplicationsData = () => {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -23,7 +40,7 @@ export const useApplicationsData = () => {
     'Other': 0
   });
 
-  const fetchApplicationsInRadius = async (
+  const fetchApplications = async (
     center: LatLngTuple,
     radius: number,
     page = 0,
@@ -31,39 +48,14 @@ export const useApplicationsData = () => {
   ) => {
     setIsLoading(true);
     setError(null);
-    console.log('🔍 Starting fetch with params:', { 
-      center, 
-      radius, 
-      page, 
-      pageSize,
-      timestamp: new Date().toISOString()
-    });
 
     try {
-      const { data: rawData, error: queryError } = await supabase
-        .from('crystal_roof')
-        .select('*')
-        .order('id');
-
-      if (queryError) {
-        console.error('Error fetching applications:', queryError);
-        throw queryError;
-      }
-
-      const transformedApplications = rawData
-        .map(app => transformApplicationData(app, center))
-        .filter((app): app is Application => app !== null);
-
-      console.log('✨ Transformed applications:', {
-        total: transformedApplications?.length,
-        withStorybook: transformedApplications?.filter(app => app.storybook)?.length,
-        sampleStorybook: transformedApplications?.[0]?.storybook
-      });
-
-      setApplications(transformedApplications || []);
-      setTotalCount(transformedApplications.length || 0);
-      setStatusCounts(calculateStatusCounts(transformedApplications));
-
+      const { applications: fetchedApps, totalCount: count } = 
+        await fetchApplicationsInRadius({ center, radius, page, pageSize });
+      
+      setApplications(fetchedApps);
+      setTotalCount(count);
+      setStatusCounts(calculateStatusCounts(fetchedApps));
       console.log('📊 Status counts:', statusCounts);
 
     } catch (error: any) {
@@ -90,6 +82,6 @@ export const useApplicationsData = () => {
     totalCount,
     statusCounts,
     error,
-    fetchApplicationsInRadius,
+    fetchApplicationsInRadius: fetchApplications,
   };
 };

@@ -1,53 +1,38 @@
 
 import { Application } from "@/types/planning";
+import { transformApplicationData } from "../transformApplicationData";
 
-/**
- * Transforms raw application data into the Application type
- * with proper type conversions and formatting
- */
-export function transformApplicationData(rawData: any): Application {
-  if (!rawData) return {} as Application;
-  
-  // Ensure coordinates are properly formatted as [number, number]
-  let coordinates: [number, number] | null = null;
-  
-  // Handling different coordinate formats
-  if (Array.isArray(rawData.coordinates) && rawData.coordinates.length === 2) {
-    coordinates = [Number(rawData.coordinates[0]), Number(rawData.coordinates[1])];
-  } else if (typeof rawData.latitude === 'number' && typeof rawData.longitude === 'number') {
-    coordinates = [Number(rawData.latitude), Number(rawData.longitude)];
-  }
-  
-  // Transform the raw data to match Application type
+export const transformApplicationFromDatabase = (app: any): Application | null => {
+  return transformApplicationData(app);
+};
+
+// Convert database data to Application object
+export const mapDataToApplication = (data: any): Application => {
+  if (!data) return {} as Application;
+
   return {
-    id: rawData.id,
-    reference: rawData.reference || '',
-    address: rawData.address || '',
-    coordinates: coordinates,
-    status: rawData.status || 'Unknown',
-    type: rawData.type || '',
-    title: rawData.title || rawData.proposal || '',
-    latitude: typeof rawData.latitude === 'number' ? rawData.latitude : null,
-    longitude: typeof rawData.longitude === 'number' ? rawData.longitude : null,
-    distance: rawData.distance || null,
-    image: rawData.image_url || null,
-    description: rawData.description || rawData.proposal || '',
-    streetview_url: rawData.streetview_url || null,
-    image_map_url: rawData.image_map_url || null,
-    submittedDate: rawData.date_received || null,
-    decisionDue: rawData.decision_date || null,
-    ai_title: rawData.ai_title || null,
-    postcode: rawData.postcode || null,
-    impact_score: rawData.impact_score || null,
-    impact_score_details: rawData.impact_score_details || null
+    id: data.id,
+    title: data.title || data.ai_title || "Unnamed planning application",
+    address: data.address || "No address provided",
+    status: data.status || "Unknown",
+    description: data.description || "",
+    reference: data.reference || data.lpa_app_no || "",
+    type: data.type || data.application_type || "",
+    ward: data.ward || "",
+    officer: data.officer || "",
+    applicant: data.applicant || "",
+    submissionDate: data.submission_date || data.submitted_date || data.received_date || null,
+    decisionDue: data.decision_due || data.decision_target_date || null,
+    consultationEnd: data.consultation_end || data.last_date_consultation_comments || null,
+    distance: data.distance || "",
+    postcode: data.postcode || "",
+    impact_score: data.impact_score || data.final_impact_score || null,
+    impact_score_details: data.impact_score_details || null,
+    coordinates: data.coordinates || (data.latitude && data.longitude ? [data.latitude, data.longitude] : undefined),
+    latitude: data.latitude || null,
+    longitude: data.longitude || null,
+    ai_title: data.ai_title || null,
+    image_map_url: data.image_map_url || null,
+    streetview_url: data.streetview_url || null,
   };
-}
-
-/**
- * Transforms an array of raw application data into Application objects
- */
-export function transformApplicationsData(rawDataArray: any[]): Application[] {
-  if (!Array.isArray(rawDataArray)) return [];
-  
-  return rawDataArray.map(transformApplicationData);
-}
+};
