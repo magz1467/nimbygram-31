@@ -8,6 +8,10 @@ import { logRouteChange } from "@/utils/reloadTracker";
 import { Header } from "@/components/Header";
 import { formatErrorMessage } from "@/utils/errors";
 import { ErrorType, detectErrorType } from "@/utils/errors";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Create a client
+const queryClient = new QueryClient();
 
 // For tracking renders
 const renderCounts = { page: 0 };
@@ -115,7 +119,7 @@ const SearchResultsPage = () => {
   });
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Header />
       {!searchState?.searchTerm ? (
         <NoSearchStateView onPostcodeSelect={(postcode) => {
@@ -142,7 +146,7 @@ const SearchResultsPage = () => {
           onSearchComplete={handleSearchComplete}
         />
       )}
-    </>
+    </QueryClientProvider>
   );
 };
 
