@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { calculateDistance } from "../utils/distance-calculator";
-import { isTimeoutError } from "@/utils/errors";
+import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 
 /**
  * Performs a fallback search for planning applications using a bounding box approach
@@ -53,8 +53,6 @@ export async function performFallbackSearch(
       
       try {
         const { data, error } = await query;
-        
-        // Clear the timeout since the query completed
         clearTimeout(timeoutId);
         
         if (error) {
@@ -68,28 +66,26 @@ export async function performFallbackSearch(
         
         console.log(`Found ${data.length} results in fallback search`);
         
-        // Process and return the results
-        return data
-          .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
-          .map(app => {
-            const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
-            return {
-              ...app,
-              distance: `${(distanceKm * 0.621371).toFixed(1)} mi`,
-              coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
-            };
-          })
+        // Transform the data using our utility function
+        const transformedApplications = transformApplicationsData(data);
+        
+        // Add distance calculations and sort
+        return transformedApplications
+          .filter(app => app.coordinates !== null)
+          .map(app => ({
+            ...app,
+            distance: `${(calculateDistance(lat, lng, app.latitude!, app.longitude!) * 0.621371).toFixed(1)} mi`
+          }))
           .sort((a, b) => {
-            const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
-            const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
+            const distA = calculateDistance(lat, lng, a.latitude!, a.longitude!);
+            const distB = calculateDistance(lat, lng, b.latitude!, b.longitude!);
             return distA - distB;
           });
+          
       } catch (error) {
-        // Clear the timeout to prevent memory leaks
         clearTimeout(timeoutId);
         
-        // If it's an abort error, treat it as a timeout
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           console.log('Query timed out, will retry with smaller radius');
           searchRadius = searchRadius * 0.5;
           attempt++;
@@ -101,7 +97,7 @@ export async function performFallbackSearch(
     } catch (error) {
       console.error(`Search attempt ${attempt + 1} failed:`, error);
       
-      if (!isTimeoutError(error) || attempt === maxAttempts - 1) {
+      if (attempt === maxAttempts - 1) {
         throw error;
       }
       

@@ -1,38 +1,31 @@
 
 import { Application } from "@/types/planning";
-import { transformApplicationData } from "../transformApplicationData";
 
-export const transformApplicationFromDatabase = (app: any): Application | null => {
-  return transformApplicationData(app);
-};
-
-// Convert database data to Application object
-export const mapDataToApplication = (data: any): Application => {
-  if (!data) return {} as Application;
-
+export const transformApplicationFromDatabase = (data: any): Application => {
   return {
     id: data.id,
-    title: data.title || data.ai_title || "Unnamed planning application",
-    address: data.address || "No address provided",
-    status: data.status || "Unknown",
-    description: data.description || "",
-    reference: data.reference || data.lpa_app_no || "",
-    type: data.type || data.application_type || "",
-    ward: data.ward || "",
-    officer: data.officer || "",
-    applicant: data.applicant || "",
-    submissionDate: data.submission_date || data.submitted_date || data.received_date || null,
-    decisionDue: data.decision_due || data.decision_target_date || null,
-    consultationEnd: data.consultation_end || data.last_date_consultation_comments || null,
-    distance: data.distance || "",
-    postcode: data.postcode || "",
-    impact_score: data.impact_score || data.final_impact_score || null,
-    impact_score_details: data.impact_score_details || null,
-    coordinates: data.coordinates || (data.latitude && data.longitude ? [data.latitude, data.longitude] : undefined),
-    latitude: data.latitude || null,
-    longitude: data.longitude || null,
-    ai_title: data.ai_title || null,
-    image_map_url: data.image_map_url || null,
-    streetview_url: data.streetview_url || null,
+    reference: data.reference || '',
+    title: data.title || '',
+    description: data.description || '',
+    status: data.status || '',
+    type: data.type || '',
+    latitude: data.latitude,
+    longitude: data.longitude,
+    address: data.address || '',
+    documents: data.documents || [],
+    coordinates: data.latitude && data.longitude ? [data.latitude, data.longitude] : null,
+    distance: data.distance || null,
+    created_at: data.created_at || null,
+    updated_at: data.updated_at || null,
+    impact_score: data.impact_score || null,
+    classification: data.classification || '',
+    postcode: data.postcode || '',
+    image_url: data.image_url || null,
   };
+};
+
+export const transformApplicationsData = (applications: any[]): Application[] => {
+  return applications
+    .filter(app => app && typeof app === 'object')
+    .map(transformApplicationFromDatabase);
 };
