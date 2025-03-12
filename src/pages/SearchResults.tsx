@@ -5,12 +5,15 @@ import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
 import { logRouteChange } from "@/utils/reloadTracker";
-import { Header } from "@/components/Header"; // Add Header import
+import { Header } from "@/components/Header";
+import { formatErrorMessage } from "@/utils/errors";
+import { ErrorType, detectErrorType } from "@/utils/errors";
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [error, setError] = useState<Error | null>(null);
+  const [errorType, setErrorType] = useState<ErrorType>(ErrorType.UNKNOWN);
   const searchState = location.state;
   const firstRenderRef = useRef(true);
   const handleErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,9 +37,9 @@ const SearchResultsPage = () => {
   }, [location]);
 
   // Use useCallback to create stable function references
-  const handleError = useCallback((err: Error | null) => {
+  const handleError = useCallback((err: Error | any) => {
     if (err) {
-      console.log('Search error detected:', err.message);
+      console.log('Search error detected:', err);
       
       // Prevent setting state during render cycle
       if (handleErrorTimeoutRef.current) {
@@ -44,7 +47,10 @@ const SearchResultsPage = () => {
       }
       
       handleErrorTimeoutRef.current = setTimeout(() => {
-        setError(err);
+        // Create a proper error object with formatted message
+        const errorObj = err instanceof Error ? err : new Error(formatErrorMessage(err));
+        setError(errorObj);
+        setErrorType(detectErrorType(err));
         handleErrorTimeoutRef.current = null;
       }, 0);
     }
@@ -76,6 +82,7 @@ const SearchResultsPage = () => {
       ) : error ? (
         <SearchErrorView 
           errorDetails={error.message} 
+          errorType={errorType}
           onRetry={handleRetry} 
         />
       ) : (

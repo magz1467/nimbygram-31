@@ -1,7 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info } from "lucide-react";
 import { ErrorType } from "@/utils/errors";
 import { useState } from "react";
+import { formatErrorMessage } from "@/utils/errors";
 
 interface SearchErrorViewProps {
   errorDetails: string | null;
@@ -15,6 +17,15 @@ export const SearchErrorView = ({
   onRetry 
 }: SearchErrorViewProps) => {
   const [showDetails, setShowDetails] = useState(false);
+  
+  // Format error message to avoid [object Object]
+  const formattedErrorDetails = typeof errorDetails === 'string' 
+    ? errorDetails 
+    : errorDetails instanceof Error 
+      ? errorDetails.message 
+      : errorDetails && typeof errorDetails === 'object' 
+        ? JSON.stringify(errorDetails, null, 2)
+        : 'Unknown error';
   
   // Select the appropriate icon based on error type
   const ErrorIcon = () => {
@@ -46,7 +57,7 @@ export const SearchErrorView = ({
 
   // Get a helpful message based on error type
   const getErrorMessage = () => {
-    if (errorDetails) return errorDetails;
+    if (formattedErrorDetails) return formattedErrorDetails;
     
     switch (errorType) {
       case ErrorType.NETWORK:
@@ -108,7 +119,7 @@ export const SearchErrorView = ({
           </ul>
         </div>
         
-        {errorDetails && (
+        {formattedErrorDetails && (
           <div className="mb-6 w-full max-w-md">
             <Button 
               variant="outline" 
@@ -122,7 +133,7 @@ export const SearchErrorView = ({
             
             {showDetails && (
               <div className="bg-gray-100 p-3 rounded text-xs font-mono overflow-x-auto">
-                {errorDetails}
+                {formattedErrorDetails}
               </div>
             )}
           </div>

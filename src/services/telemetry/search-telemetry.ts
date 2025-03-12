@@ -2,9 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
-// Add missing uuid package
-<lov-add-dependency>uuid</lov-add-dependency>
-
 export enum TelemetryEventType {
   SEARCH_STARTED = 'search-started',
   SEARCH_COMPLETED = 'search-completed',
@@ -70,7 +67,7 @@ class SearchTelemetryService {
     console.log(`Telemetry: ${eventType}`, event);
     
     try {
-      // Store in Supabase - FIX: Use .then().catch() pattern rather than .catch
+      // Store in Supabase - Fix: Use .then().catch() pattern rather than .catch
       supabase
         .from('search_telemetry')
         .insert([{

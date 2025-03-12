@@ -10,7 +10,9 @@ export enum ErrorType {
   AUTHORIZATION = 'authorization',
   VALIDATION = 'validation',
   DATABASE = 'database',
-  SERVER = 'server'
+  SERVER = 'server',
+  COORDINATES = 'coordinates',
+  SEARCH = 'search'
 }
 
 export interface AppError extends Error {
@@ -27,3 +29,24 @@ export type ErrorOptions = {
   recoverable?: boolean;
   userMessage?: string;
 };
+
+// Helper function to safely stringify objects
+export function safeStringify(obj: any): string {
+  if (obj === null || obj === undefined) {
+    return String(obj);
+  }
+  
+  if (obj instanceof Error) {
+    return obj.message || obj.toString();
+  }
+  
+  if (typeof obj === 'object') {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch (e) {
+      return '[Complex Object]';
+    }
+  }
+  
+  return String(obj);
+}

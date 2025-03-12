@@ -1,5 +1,5 @@
 
-import { ErrorType } from "./errors/types";
+import { ErrorType, safeStringify } from "./errors/types";
 
 /**
  * Checks if an error is non-critical (can be safely ignored in the UI)
@@ -40,10 +40,16 @@ export function detectErrorType(error: unknown): ErrorType {
   
   if (message.includes('timeout') || message.includes('too long') || message.includes('canceling statement')) {
     return ErrorType.TIMEOUT;
-  } else if (message.includes('network') || !navigator?.onLine) {
+  } else if (message.includes('network') || message.includes('fetch') || !navigator?.onLine) {
     return ErrorType.NETWORK;
   } else if (message.includes('not found') || message.includes('no results')) {
     return ErrorType.NOT_FOUND;
+  } else if (message.includes('coordinates') || message.includes('location')) {
+    return ErrorType.COORDINATES;
+  } else if (message.includes('database') || message.includes('sql')) {
+    return ErrorType.DATABASE;
+  } else if (message.includes('permission') || message.includes('access')) {
+    return ErrorType.PERMISSION;
   }
   
   return ErrorType.UNKNOWN;
@@ -60,10 +66,11 @@ export function formatErrorMessage(error: unknown): string {
   }
   
   if (error instanceof Error) {
-    return error.message;
+    return error.message || 'An unexpected error occurred';
   }
   
-  return 'An unexpected error occurred';
+  // Safely convert objects to strings to avoid [object Object]
+  return safeStringify(error);
 }
 
 /**

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { calculateDistance } from "../utils/distance-calculator";
 import { createAppError } from "@/utils/errors/error-factory";
-import { ErrorType } from "@/utils/errors/types";
+import { ErrorType, safeStringify } from "@/utils/errors/types";
 
 /**
  * Performs a fallback search for planning applications using a bounding box approach
@@ -19,6 +19,14 @@ export async function performFallbackSearch(
   console.log('Search parameters:', { lat, lng, radiusKm, filters });
   
   try {
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      throw createAppError('Invalid coordinates for search', null, {
+        type: ErrorType.COORDINATES,
+        context: { lat, lng },
+        userMessage: 'We couldn\'t find the location you specified. Please try a different search term.'
+      });
+    }
+    
     // Calculate the latitude and longitude deltas for the bounding box
     // 1 degree of latitude = ~111.32 km
     // 1 degree of longitude = ~111.32 km * cos(latitude)
@@ -78,7 +86,8 @@ export async function performFallbackSearch(
           console.error('Reduced area search also failed:', reducedError);
           throw createAppError('Search failed after retry with reduced area', reducedError, { 
             type: ErrorType.TIMEOUT,
-            recoverable: true
+            recoverable: true,
+            userMessage: 'The search took too long. Try a smaller area or a more specific location.'
           });
         }
         
@@ -131,10 +140,17 @@ export async function performFallbackSearch(
     
     // Wrap in AppError if not already
     if (!(error.name === 'AppError')) {
-      throw createAppError('Failed to perform fallback search', error, {
-        type: ErrorType.UNKNOWN,
-        recoverable: false
-      });
+      throw createAppError(
+        typeof error === 'string' ? error : 
+        error instanceof Error ? error.message : 
+        'Failed to perform fallback search: ' + safeStringify(error), 
+        error, 
+        {
+          type: ErrorType.UNKNOWN,
+          recoverable: false,
+          userMessage: 'We had trouble searching for planning applications. Please try again later.'
+        }
+      );
     }
     
     throw error;
