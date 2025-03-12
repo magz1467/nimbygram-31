@@ -3,7 +3,7 @@ import { useSpatialSearch } from "@/hooks/use-spatial-search";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SearchCoordinates } from "@/types/search";
+import { SearchCoordinates, SEARCH_RADIUS } from "@/types/search";
 import { Loader2 } from "lucide-react";
 
 interface SearchResultsProps {
@@ -22,7 +22,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
     );
   }
 
-  if (isError || data?.method === 'error') {
+  if (isError) {
     return (
       <Alert variant="destructive" className="m-4">
         <h3 className="font-medium mb-2">Search Error</h3>

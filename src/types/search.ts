@@ -1,24 +1,20 @@
 
 import { Application } from "./planning";
 
-export type SearchResult = {
+export interface SearchCoordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface SearchResult {
   applications: Application[];
-  total: number;
-  method: 'spatial' | 'fallback' | 'error';
+  method: 'spatial' | 'fallback';
   timing?: {
     start: number;
     end: number;
     duration: number;
   };
-};
+}
 
-export type SearchCoordinates = {
-  lat: number;
-  lng: number;
-};
-
-export type SearchError = {
-  message: string;
-  code?: string;
-  details?: string;
-};
+export const SEARCH_RADIUS = 5; // 5km radius
+export const SEARCH_TIMEOUT = 30000; // 30 second timeout

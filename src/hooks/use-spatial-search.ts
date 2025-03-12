@@ -1,17 +1,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { SearchResult, SearchCoordinates } from '@/types/search';
+import { SearchCoordinates, SearchResult, SEARCH_RADIUS, SEARCH_TIMEOUT } from '@/types/search';
 import { Application } from '@/types/planning';
 
-const SEARCH_TIMEOUT = 30000; // 30 seconds
-const SEARCH_RADIUS = 5; // 5km
-
-async function executeSearch(coordinates: SearchCoordinates): Promise<SearchResult> {
+async function performSpatialSearch(coordinates: SearchCoordinates): Promise<SearchResult> {
   const startTime = Date.now();
 
   try {
-    // Try spatial search first
+    // Try spatial search first using PostGIS
     const { data: spatialData, error: spatialError } = await Promise.race([
       supabase.rpc('get_nearby_applications', {
         center_lat: coordinates.lat,
@@ -24,11 +21,10 @@ async function executeSearch(coordinates: SearchCoordinates): Promise<SearchResu
     ]);
 
     if (spatialError) throw spatialError;
-    
+
     if (spatialData) {
       return {
         applications: spatialData as Application[],
-        total: spatialData.length,
         method: 'spatial',
         timing: {
           start: startTime,
@@ -38,7 +34,7 @@ async function executeSearch(coordinates: SearchCoordinates): Promise<SearchResu
       };
     }
 
-    // If spatial search fails, try fallback search
+    // Fallback to bounding box search if spatial search returns no results
     const latDiff = SEARCH_RADIUS / 111.32; // approx km per degree
     const lngDiff = SEARCH_RADIUS / (111.32 * Math.cos(coordinates.lat * (Math.PI / 180)));
 
@@ -55,7 +51,6 @@ async function executeSearch(coordinates: SearchCoordinates): Promise<SearchResu
 
     return {
       applications: fallbackData || [],
-      total: fallbackData?.length || 0,
       method: 'fallback',
       timing: {
         start: startTime,
@@ -63,28 +58,18 @@ async function executeSearch(coordinates: SearchCoordinates): Promise<SearchResu
         duration: Date.now() - startTime
       }
     };
-
   } catch (error) {
     console.error('Search error:', error);
-    return {
-      applications: [],
-      total: 0,
-      method: 'error',
-      timing: {
-        start: startTime,
-        end: Date.now(),
-        duration: Date.now() - startTime
-      }
-    };
+    throw error;
   }
 }
 
 export function useSpatialSearch(coordinates: SearchCoordinates | null) {
   return useQuery({
     queryKey: ['spatial-search', coordinates],
-    queryFn: () => executeSearch(coordinates!),
+    queryFn: () => performSpatialSearch(coordinates!),
     enabled: !!coordinates,
-    retry: false,
+    retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
