@@ -97,7 +97,7 @@ export const ResultsListView = ({
   if (isLoading && !hasData) {
     return (
       <div>
-        <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />
+        <LoadingSkeletons count={5} isLongSearch={isLongSearchDetected} onRetry={onRetry} />
         {isLongSearchDetected && (
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md max-w-lg mx-auto">
             <h3 className="text-amber-800 font-medium mb-1">This search is taking longer than usual</h3>
@@ -181,4 +181,3 @@ export const ResultsListView = ({
     </div>
   );
 };
-
