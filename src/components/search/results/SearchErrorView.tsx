@@ -1,10 +1,15 @@
 
-import { Button } from "@/components/ui/button";
-import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info, MapPin } from "lucide-react";
-import { ErrorType } from "@/utils/errors";
 import { useState } from "react";
-import { formatErrorMessage } from "@/utils/errors";
 import { useNavigate } from "react-router-dom";
+import { ErrorType } from "@/utils/errors";
+import { formatErrorMessage } from "@/utils/errors";
+import { ErrorIcon } from "./error-view/ErrorIcon";
+import { ErrorTitle } from "./error-view/ErrorTitle";
+import { ErrorSuggestions } from "./error-view/ErrorSuggestions";
+import { ErrorActions } from "./error-view/ErrorActions";
+import { WendoverAlternatives } from "./error-view/WendoverAlternatives";
+import { Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SearchErrorViewProps {
   errorDetails: string | null;
@@ -20,75 +25,16 @@ export const SearchErrorView = ({
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   
-  // Format error message to avoid [object Object]
-  const formattedErrorDetails = formatErrorMessage(errorDetails);
-  
-  // Check if this is Wendover (HP22 6JJ) area timeout
+  const formattedErrorDetails = formatErrorMessage(errorDetails || "Unknown error");
   const isWendoverPostcode = formattedErrorDetails?.toLowerCase().includes('hp22 6jj') || 
     formattedErrorDetails?.toLowerCase().includes('wendover');
   
-  // Determine if this is a timeout with a specific area
   const isLocationTimeout = errorType === ErrorType.TIMEOUT && 
     (formattedErrorDetails?.includes('Amersham') || 
      formattedErrorDetails?.includes('reduced area') ||
      formattedErrorDetails?.includes('search area') ||
      isWendoverPostcode);
-  
-  // Select the appropriate icon based on error type
-  const ErrorIcon = () => {
-    switch (errorType) {
-      case ErrorType.NETWORK:
-        return <WifiOff className="h-16 w-16 text-red-500 mb-4" />;
-      case ErrorType.TIMEOUT:
-        return isLocationTimeout ? 
-          <MapPin className="h-16 w-16 text-amber-500 mb-4" /> : 
-          <Clock className="h-16 w-16 text-amber-500 mb-4" />;
-      case ErrorType.NOT_FOUND:
-        return <Search className="h-16 w-16 text-blue-500 mb-4" />;
-      default:
-        return <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />;
-    }
-  };
 
-  // Get a title based on error type
-  const getErrorTitle = () => {
-    if (isWendoverPostcode) return "Wendover Area Search Timeout";
-    
-    switch (errorType) {
-      case ErrorType.NETWORK:
-        return "Connection Problem";
-      case ErrorType.TIMEOUT:
-        return isLocationTimeout ? "Area Search Timeout" : "Search Timeout";
-      case ErrorType.NOT_FOUND:
-        return "No Results Found";
-      default:
-        return "Search Error";
-    }
-  };
-
-  // Get a helpful message based on error type
-  const getErrorMessage = () => {
-    if (isWendoverPostcode) {
-      return "The Wendover area (HP22 6JJ) has too many planning applications to search all at once. Please try searching a more specific location or street name within Wendover.";
-    }
-    
-    if (formattedErrorDetails && !isLocationTimeout) return formattedErrorDetails;
-    
-    switch (errorType) {
-      case ErrorType.NETWORK:
-        return "We're having trouble connecting to our servers. Please check your internet connection and try again.";
-      case ErrorType.TIMEOUT:
-        return isLocationTimeout ? 
-          "This area has too many planning applications to search all at once. Please try searching a more specific location within this area." :
-          "The search took too long to complete. Please try a more specific location or different filters.";
-      case ErrorType.NOT_FOUND:
-        return "We couldn't find any planning applications matching your search criteria.";
-      default:
-        return "We had trouble finding planning applications for this location.";
-    }
-  };
-  
-  // Get suggestions based on error type and specific location
   const getSuggestions = () => {
     if (isWendoverPostcode) {
       return [
@@ -107,7 +53,7 @@ export const SearchErrorView = ({
           "Use a full postcode instead of just the area name",
           "Try a smaller search radius once you search again"
         ] : [
-          "Use a more specific location (e.g., full postcode instead of just 'Bath')",
+          "Use a more specific location",
           "Try adding filters like application status or type",
           "Search for a smaller area or specific street name"
         ];
@@ -116,12 +62,6 @@ export const SearchErrorView = ({
           "Check if you typed the location correctly",
           "Try a nearby location",
           "Expand your search by using a more general area name"
-        ];
-      case ErrorType.NETWORK:
-        return [
-          "Check your internet connection",
-          "Try again in a few minutes",
-          "If the problem persists, contact support"
         ];
       default:
         return [
@@ -132,7 +72,6 @@ export const SearchErrorView = ({
     }
   };
 
-  // Special handler for Wendover alternatives
   const handleWendoverAlternativeSearch = (alternativeLocation: string) => {
     navigate('/search-results', {
       state: {
@@ -147,49 +86,21 @@ export const SearchErrorView = ({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
-        <ErrorIcon />
-        <h2 className="text-2xl font-bold mb-4">{getErrorTitle()}</h2>
+        <div className="mb-4">
+          <ErrorIcon errorType={errorType} isLocationTimeout={isLocationTimeout} />
+        </div>
+        
+        <ErrorTitle errorType={errorType} isWendoverPostcode={isWendoverPostcode} />
+        
         <p className="text-gray-600 mb-6 text-center max-w-md">
-          {getErrorMessage()}
+          {formattedErrorDetails}
         </p>
         
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 max-w-md w-full">
-          <h3 className="font-semibold text-lg mb-2">Suggestions:</h3>
-          <ul className="list-disc pl-5 space-y-1">
-            {getSuggestions().map((suggestion, index) => (
-              <li key={index} className="text-gray-700">{suggestion}</li>
-            ))}
-          </ul>
-          
-          {isWendoverPostcode && (
-            <div className="mt-4 space-y-2">
-              <h4 className="font-medium text-sm text-gray-600">Try these alternatives:</h4>
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleWendoverAlternativeSearch("Wendover High Street")}
-                >
-                  Wendover High Street
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleWendoverAlternativeSearch("Halton Village")}
-                >
-                  Halton Village
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleWendoverAlternativeSearch("Stoke Mandeville")}
-                >
-                  Stoke Mandeville
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <ErrorSuggestions suggestions={getSuggestions()} />
+        
+        {isWendoverPostcode && (
+          <WendoverAlternatives onSelect={handleWendoverAlternativeSearch} />
+        )}
         
         {formattedErrorDetails && (
           <div className="mb-6 w-full max-w-md">
@@ -211,15 +122,7 @@ export const SearchErrorView = ({
           </div>
         )}
         
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button onClick={onRetry} className="flex items-center gap-2">
-            <RotateCw className="h-4 w-4" />
-            Try Again
-          </Button>
-          <Button variant="outline" onClick={() => window.history.back()} className="flex items-center gap-2">
-            Go Back
-          </Button>
-        </div>
+        <ErrorActions onRetry={onRetry} />
       </div>
     </div>
   );
