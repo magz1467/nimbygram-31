@@ -59,12 +59,6 @@ export async function performSpatialSearch(
           return false;
         }
         
-        // Classification filter
-        if (filters.classification && app.classification && 
-            !app.classification.toLowerCase().includes(filters.classification.toLowerCase())) {
-          return false;
-        }
-        
         return true;
       });
     }

@@ -45,10 +45,6 @@ export async function performFallbackSearch(
       query = query.ilike('type', `%${filters.type}%`);
     }
     
-    if (filters?.classification && filters.classification.trim() !== '') {
-      query = query.ilike('classification', `%${filters.classification}%`);
-    }
-    
     // Increase limit to get more results
     query = query.limit(1000);
     

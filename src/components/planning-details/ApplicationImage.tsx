@@ -43,9 +43,9 @@ export const ApplicationImage = ({ application }: ApplicationImageProps) => {
       return;
     }
 
-    // Then try to determine category from class_3 or title/description
-    let detectedCategory = application.class_3;
-    if (!detectedCategory && application.description) {
+    // Then try to determine category from application description
+    let detectedCategory = null;
+    if (application.description) {
       const titleLower = application.description.toLowerCase();
       if (titleLower.includes('demolition')) {
         detectedCategory = 'Demolition';

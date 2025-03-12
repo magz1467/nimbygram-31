@@ -2,7 +2,6 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortDropdown } from "./SortDropdown";
 import { FilterDropdown } from "./FilterDropdown";
-import { ClassificationFilters } from "./ClassificationFilters";
 import { StatusFilter } from "./StatusFilter";
 import { SortType } from "@/types/application-types";
 import { useCallback } from "react";
@@ -13,7 +12,6 @@ interface FilterControlsProps {
   activeFilters?: {
     status?: string;
     type?: string;
-    classification?: string;
   };
   activeSort: SortType;
   isMobile?: boolean;
@@ -60,10 +58,7 @@ export const FilterControls = ({
   if (showCategoryFiltersOnly) {
     return (
       <div className="flex items-center space-x-2 w-full overflow-x-auto hide-scrollbar">
-        <ClassificationFilters 
-          onFilterChange={handleFilterChange} 
-          activeFilter={activeFilters.classification} 
-        />
+        {/* Removed ClassificationFilters component */}
       </div>
     );
   }
@@ -82,11 +77,6 @@ export const FilterControls = ({
         activeSort={activeSort}
       />
       
-      <ClassificationFilters 
-        onFilterChange={handleFilterChange} 
-        activeFilter={activeFilters.classification} 
-      />
-
       {applications.length > 0 && (
         <StatusFilter 
           onFilterChange={handleFilterChange}
