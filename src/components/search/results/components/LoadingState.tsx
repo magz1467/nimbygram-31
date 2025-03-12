@@ -26,7 +26,7 @@ export const LoadingState = ({
             <div>
               <h3 className="text-amber-800 font-medium mb-1">This search is taking longer than usual</h3>
               <p className="text-sm text-amber-700">
-                We're still looking for planning applications in this area. Results will appear as soon as they're ready.
+                We're still looking for planning applications in this area. The first results will appear as soon as they're ready.
               </p>
             </div>
           </div>
@@ -37,12 +37,12 @@ export const LoadingState = ({
         <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-md max-w-lg mx-auto">
           <h3 className="text-amber-800 font-medium mb-1">Search is still in progress</h3>
           <p className="text-sm text-amber-700 mb-2">
-            We're experiencing some delays with this search. You can wait for it to complete or try again with a more specific location.
+            We're experiencing some delays with this search. Initial results may show up soon, or you can try a more specific location.
           </p>
           {onRetry && (
             <button 
               onClick={onRetry} 
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
             >
               Retry with current search
             </button>

@@ -17,7 +17,11 @@ export async function performSpatialSearch(
     console.log('Attempting spatial search with RPC function');
     console.log('Search parameters:', { lat, lng, radiusKm, filters });
     
-    // Use progressive loading - first get a small batch of results quickly
+    // Progressive loading strategy:
+    // 1. First try to get a small batch of results quickly (25 records)
+    // 2. Then try to get more complete results (up to 100 records)
+    
+    // Quick query with smaller limit for fast initial results
     const quickQuery = supabase.rpc(
       'get_nearby_applications',
       {
@@ -28,13 +32,17 @@ export async function performSpatialSearch(
       }
     );
     
-    // Add timeout by using AbortController
-    const quickController = new AbortController();
-    const quickTimeout = setTimeout(() => quickController.abort(), 8000);
+    // Add timeout by using Promise.race
+    const quickTimeout = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('Quick spatial search timeout')), 8000);
+    });
     
     try {
-      const { data: quickData, error: quickError } = await quickQuery;
-      clearTimeout(quickTimeout);
+      // Race between the query and timeout
+      const { data: quickData, error: quickError } = await Promise.race([
+        quickQuery,
+        quickTimeout.then(() => ({ data: null, error: new Error('Timeout') }))
+      ]);
       
       // Handle RPC function errors
       if (quickError) {
@@ -76,31 +84,37 @@ export async function performSpatialSearch(
               center_lat: lat,
               center_lng: lng,
               radius_km: radiusKm,
-              result_limit: 100
+              result_limit: 100 // More complete results
             }
           );
           
-          // Create a timeout for the full query
-          const fullController = new AbortController();
-          const fullTimeout = setTimeout(() => fullController.abort(), 15000);
+          // Set a longer timeout for full results
+          const fullTimeout = new Promise<null>((_, reject) => {
+            setTimeout(() => reject(new Error('Full spatial search timeout')), 15000);
+          });
           
-          const { data: fullData } = await fullQuery;
-          clearTimeout(fullTimeout);
+          const { data: fullData } = await Promise.race([
+            fullQuery,
+            fullTimeout.then(() => ({ data: null }))
+          ]);
           
           if (fullData && fullData.length > quickData.length) {
-            console.log(`Got ${fullData.length} total results from spatial search`);
+            console.log(`Got ${fullData.length} total results from complete spatial search`);
             return processResults(fullData, lat, lng, filters);
+          } else {
+            console.log('Full query returned no additional results, using quick results');
           }
         } catch (fullError) {
-          console.warn('Full spatial query failed, using quick results:', fullError);
+          console.warn('Full spatial query failed or timed out, using quick results:', fullError);
         }
         
-        // Return the quick results if full results failed
+        // Return the quick results if full results failed or returned no additional data
         return processedQuickData;
+      } else {
+        console.log('Quick query returned no results');
       }
     } catch (quickErr) {
-      clearTimeout(quickTimeout);
-      console.error('Quick query aborted or failed:', quickErr);
+      console.error('Quick query failed:', quickErr);
     }
     
     // If no quick results, try one more time with higher limit
@@ -111,20 +125,24 @@ export async function performSpatialSearch(
         center_lat: lat,
         center_lng: lng,
         radius_km: radiusKm,
-        result_limit: 100
+        result_limit: 100 // Try with full limit
       }
     );
     
-    // Create a timeout for the final query
-    const finalController = new AbortController();
-    const finalTimeout = setTimeout(() => finalController.abort(), 12000);
+    // Set a timeout for the final query
+    const finalTimeout = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('Final spatial search timeout')), 12000);
+    });
     
     try {
-      const { data, error } = await finalQuery;
-      clearTimeout(finalTimeout);
+      // Race between the query and timeout
+      const { data, error } = await Promise.race([
+        finalQuery,
+        finalTimeout.then(() => ({ data: null, error: new Error('Timeout') }))
+      ]);
       
       if (error) {
-        console.error('Spatial search error:', error);
+        console.error('Final spatial search error:', error);
         return null;
       }
       
@@ -136,17 +154,18 @@ export async function performSpatialSearch(
       console.log(`Got ${data.length} results from spatial search`);
       return processResults(data, lat, lng, filters);
     } catch (err) {
-      clearTimeout(finalTimeout);
       console.error('Final spatial search error:', err);
-      return null;
+      return null; // Return null to indicate fallback should be used
     }
-    
   } catch (error) {
     console.error('Spatial search error:', error);
     return null; // Return null to indicate fallback should be used
   }
 }
 
+/**
+ * Process and filter the results from the spatial search
+ */
 function processResults(data: any[], lat: number, lng: number, filters: any): Application[] {
   // Apply additional filters if needed
   let filteredData = data;
@@ -169,7 +188,7 @@ function processResults(data: any[], lat: number, lng: number, filters: any): Ap
     });
   }
   
-  // Add distance and sort
+  // Add distance and sort by distance
   return filteredData
     .filter((app: any) => {
       return (typeof app.latitude === 'number' && typeof app.longitude === 'number');

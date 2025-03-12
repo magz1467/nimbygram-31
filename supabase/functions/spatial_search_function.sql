@@ -2,6 +2,7 @@
 -- Enable PostGIS extension
 CREATE EXTENSION IF NOT EXISTS postgis;
 
+-- Optimize the spatial search function for better performance
 -- First, check if we need to add a geometry column to crystal_roof table
 DO $$
 BEGIN
@@ -19,12 +20,14 @@ BEGIN
     SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
     WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
     
-    -- Add a spatial index on the geometry column
+    -- Add a spatial index on the geometry column for faster spatial queries
     CREATE INDEX idx_crystal_roof_geom ON crystal_roof USING GIST (geom);
   END IF;
 END $$;
 
--- Create a separate regular index on lat/lng for non-spatial queries
+-- Create regular indexes on lat/lng columns for non-spatial queries
+CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat ON crystal_roof (latitude);
+CREATE INDEX IF NOT EXISTS idx_crystal_roof_lng ON crystal_roof (longitude);
 CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);
 
 -- Create or replace the optimized spatial search function
@@ -41,53 +44,89 @@ AS $$
 DECLARE
   search_point geometry;
   search_radius_meters DOUBLE PRECISION;
+  bbox geometry;
+  start_time timestamptz;
+  query_time interval;
+  lat_min DOUBLE PRECISION;
+  lat_max DOUBLE PRECISION;
+  lng_min DOUBLE PRECISION;
+  lng_max DOUBLE PRECISION;
 BEGIN
+  -- Start performance timing
+  start_time := clock_timestamp();
+  
   -- Convert parameters to appropriate types
   search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326);
   search_radius_meters := radius_km * 1000;
   
-  -- Set a statement timeout to 30 seconds (to prevent long-running queries)
+  -- Set a more generous statement timeout to prevent long-running queries from failing
+  -- but not so long that users are waiting forever
   SET LOCAL statement_timeout = '30s';
   
-  -- Use a two-step query for better performance:
-  -- 1. First use fast bounding box operation
-  -- 2. Then refine with more expensive exact distance calculation
+  -- Pre-calculate bounding box coordinates for more efficient filtering
+  -- 1 degree latitude is approximately 111.32 km
+  lat_min := center_lat - (radius_km / 111.32);
+  lat_max := center_lat + (radius_km / 111.32);
+  
+  -- Longitude degrees per km varies with latitude
+  lng_min := center_lng - (radius_km / (111.32 * COS(RADIANS(center_lat))));
+  lng_max := center_lng + (radius_km / (111.32 * COS(RADIANS(center_lat))));
+  
+  -- Create a spatial bounding box
+  bbox := ST_MakeEnvelope(lng_min, lat_min, lng_max, lat_max, 4326);
+  
+  -- Log query parameters for debugging
+  RAISE NOTICE 'Searching near (%, %) with radius % km', center_lat, center_lng, radius_km;
+  
+  -- Use a multi-stage query approach for better performance:
+  -- 1. First filter by bounding box (uses spatial index, very fast)
+  -- 2. Then filter by actual distance (more precise but can use PostGIS optimization)
+  -- 3. Apply limit for pagination
   
   RETURN QUERY
-  WITH bbox_candidates AS (
-    SELECT * 
+  WITH bbox_filtered AS (
+    SELECT *
     FROM crystal_roof
     WHERE 
-      latitude IS NOT NULL AND 
+      latitude IS NOT NULL AND
       longitude IS NOT NULL AND
-      -- Fast bounding box filter using index
-      latitude BETWEEN (center_lat - radius_km/111.0) AND (center_lat + radius_km/111.0) AND
-      longitude BETWEEN 
-        (center_lng - radius_km/(111.0*COS(RADIANS(center_lat)))) AND 
-        (center_lng + radius_km/(111.0*COS(RADIANS(center_lat))))
-    LIMIT result_limit * 2  -- Get more than needed for the next filtering step
+      -- Use either geometry column with GIST index or lat/lng columns with btree index
+      -- The query planner will choose the most efficient approach
+      (
+        (geom IS NOT NULL AND ST_Within(geom, bbox))
+        OR 
+        (
+          latitude BETWEEN lat_min AND lat_max AND
+          longitude BETWEEN lng_min AND lng_max
+        )
+      )
+    LIMIT result_limit * 2  -- Get more than needed for the final distance filter
+  ),
+  distance_calculated AS (
+    SELECT 
+      app.*,
+      CASE
+        -- Use PostGIS distance calculation if geometry column is available
+        WHEN app.geom IS NOT NULL THEN 
+          ST_Distance(app.geom::geography, search_point::geography)
+        -- Fall back to Haversine formula if geometry is not available
+        ELSE
+          (2 * 6371000 * asin(sqrt(
+            power(sin((radians(app.latitude) - radians(center_lat))/2), 2) +
+            cos(radians(center_lat)) * cos(radians(app.latitude)) *
+            power(sin((radians(app.longitude) - radians(center_lng))/2), 2)
+          )))
+      END AS distance_meters
+    FROM bbox_filtered app
   )
-  SELECT *
-  FROM bbox_candidates
-  WHERE 
-    -- If geom column is populated, use it for precise distance check
-    (geom IS NOT NULL AND 
-     ST_DWithin(geom::geography, search_point::geography, search_radius_meters))
-    OR
-    -- Fallback to haversine calculation if geom is not available
-    (geom IS NULL AND 
-     (2 * 6371 * ASIN(SQRT(
-        POWER(SIN((RADIANS(latitude) - RADIANS(center_lat))/2), 2) + 
-        COS(RADIANS(center_lat)) * COS(RADIANS(latitude)) * 
-        POWER(SIN((RADIANS(longitude) - RADIANS(center_lng))/2), 2)
-      )) <= radius_km))
-  ORDER BY
-    -- Order by distance
-    ST_Distance(
-      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
-      search_point::geography
-    )
+  SELECT * FROM distance_calculated
+  WHERE distance_meters <= search_radius_meters
+  ORDER BY distance_meters ASC
   LIMIT result_limit;
+  
+  -- Log execution time for performance monitoring
+  query_time := clock_timestamp() - start_time;
+  RAISE NOTICE 'Spatial query executed in % ms', EXTRACT(MILLISECOND FROM query_time);
 END;
 $$;
 
