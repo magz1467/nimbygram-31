@@ -5,23 +5,21 @@ import { SearchFilters } from './types';
 import { useSearchStateManager } from './use-search-state-manager';
 import { Application } from '@/types/planning';
 
-/**
- * Hook to coordinate search queries and state based on coordinates changes
- * Simplified with fixed 5km radius
- */
 export function useSearchCoordinator(
   coordinates: [number, number] | null,
   filters: SearchFilters
 ) {
-  // Get search state management functions
   const {
-    state: searchState,
+    isLoading,
+    stage,
+    progress,
+    error,
+    method,
+    results,
+    hasResults,
     startSearch,
-    updateProgress,
-    setSearchMethod,
-    setResults,
-    completeSearch,
-    failSearch
+    _updateProgress: updateProgress,
+    _updateMethod: updateMethod
   } = useSearchStateManager();
 
   // Debounce coordinates changes to prevent rapid refetching
@@ -29,7 +27,7 @@ export function useSearchCoordinator(
   
   // Track query key and query start time
   const queryKey = useRef<string[]>(['planning-applications', 'no-coordinates']);
-  const queryStartTimeRef = useRef<number>(0);
+  const queryStartTimeRef = useRef<number>(Date.now());
   const componentId = useRef(`sc-${Math.random().toString(36).substring(2, 9)}`).current;
   const mountTimeRef = useRef(Date.now());
   const renderCountRef = useRef(0);
@@ -60,11 +58,7 @@ export function useSearchCoordinator(
     const filterString = JSON.stringify(filters);
     const coordString = debouncedCoordinates.join(',');
     
-    // Only update the query key if the search parameters have changed
-    if (
-      queryKey.current[1] !== coordString || 
-      queryKey.current[2] !== filterString
-    ) {
+    if (queryKey.current[1] !== coordString || queryKey.current[2] !== filterString) {
       const oldKey = [...queryKey.current];
       queryKey.current = ['planning-applications', coordString, filterString];
       console.log(`🔑 useSearchCoordinator [${componentId}] query key changed`, {
@@ -73,20 +67,26 @@ export function useSearchCoordinator(
         renderCount: renderCountRef.current
       });
       
-      // Start search when parameters change
-      startSearch();
+      startSearch({
+        coordinates: debouncedCoordinates,
+        filters,
+        radius: 5 // Fixed 5km radius as per requirements
+      });
     }
   }, [debouncedCoordinates, filters, componentId, startSearch]);
 
   return {
     debouncedCoordinates,
     queryKey: queryKey.current,
-    searchState,
+    isLoading,
+    stage,
+    progress,
+    error,
+    method,
+    results,
+    hasResults,
     updateProgress,
-    setSearchMethod,
-    setResults,
-    completeSearch,
-    failSearch,
+    updateMethod,
     queryStartTimeRef
   };
 }
