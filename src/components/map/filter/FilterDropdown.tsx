@@ -1,21 +1,28 @@
 
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
+import { Filter, Calendar as CalendarIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface FilterDropdownProps {
   onFilterChange: (filterType: string, value: string) => void;
   activeFilters: {
     status?: string;
     type?: string;
+    date?: string;
   };
   isMobile?: boolean;
   applications?: any[];
@@ -43,6 +50,10 @@ export const FilterDropdown = memo(({
     'Other': 0
   }
 }: FilterDropdownProps) => {
+  const [date, setDate] = useState<Date | undefined>(
+    activeFilters.date ? new Date(activeFilters.date) : undefined
+  );
+
   const hasActiveFilters = useMemo(() => 
     Object.values(activeFilters).some(Boolean), 
     [activeFilters]
@@ -52,9 +63,22 @@ export const FilterDropdown = memo(({
     onFilterChange(filterType, value);
   }, [onFilterChange]);
 
+  const handleDateChange = useCallback((selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+    if (selectedDate) {
+      // Format date as YYYY-MM-DD for consistency with database format
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      onFilterChange("date", formattedDate);
+    } else {
+      onFilterChange("date", "");
+    }
+  }, [onFilterChange]);
+
   const handleClearFilters = useCallback(() => {
     onFilterChange("status", "");
     onFilterChange("type", "");
+    onFilterChange("date", "");
+    setDate(undefined);
   }, [onFilterChange]);
 
   return (
@@ -84,6 +108,8 @@ export const FilterDropdown = memo(({
             <DropdownMenuSeparator />
           </>
         )}
+        
+        {/* Status filter section */}
         <DropdownMenuItem
           onClick={() => handleFilterChange("status", "")}
           className="justify-between"
@@ -101,6 +127,37 @@ export const FilterDropdown = memo(({
             {activeFilters.status === option.value && <span>✓</span>}
           </DropdownMenuItem>
         ))}
+        
+        <DropdownMenuSeparator />
+        
+        {/* Date filter section */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="justify-between">
+            <span>Date filter</span>
+            {activeFilters.date && <span className="text-xs">Since {activeFilters.date}</span>}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="p-0">
+            <div className="p-2">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={handleDateChange}
+                className="p-3 pointer-events-auto border rounded-md"
+                initialFocus
+              />
+              {activeFilters.date && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => handleDateChange(undefined)}
+                >
+                  Clear date filter
+                </Button>
+              )}
+            </div>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );

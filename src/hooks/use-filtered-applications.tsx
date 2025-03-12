@@ -3,11 +3,13 @@ import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { sortApplicationsByDistance } from '@/utils/distance';
+import { isAfter, parseISO } from 'date-fns';
 
 interface ActiveFilters {
   status?: string;
   type?: string;
   search?: string;
+  date?: string;
 }
 
 export const useFilteredApplications = (
@@ -26,12 +28,29 @@ export const useFilteredApplications = (
 
     // Apply filters
     let filtered = applications.filter(app => {
+      // Apply status filter
       if (activeFilters.status && !app.status?.toLowerCase().includes(activeFilters.status.toLowerCase())) {
         return false;
       }
+      
+      // Apply type filter
       if (activeFilters.type && !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
         return false;
       }
+      
+      // Apply date filter (using valid_date field)
+      if (activeFilters.date && app.valid_date) {
+        try {
+          const filterDate = parseISO(activeFilters.date);
+          const appValidDate = parseISO(app.valid_date);
+          if (!isAfter(appValidDate, filterDate) && !app.valid_date.startsWith(activeFilters.date)) {
+            return false;
+          }
+        } catch (error) {
+          console.error('Date parsing error:', error);
+        }
+      }
+      
       return true;
     });
 
