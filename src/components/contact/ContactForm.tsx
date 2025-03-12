@@ -50,7 +50,7 @@ export const ContactForm = () => {
     } catch (error) {
       handleError(error, {
         context: 'contact form',
-        retry: () => handleSubmit(e)
+        retry: true // Changed from function to boolean
       });
     } finally {
       setIsSubmitting(false);

@@ -6,7 +6,7 @@ import { detectErrorType } from './detection';
 export interface ErrorHandlerOptions {
   context?: string;
   silent?: boolean;
-  retry?: boolean;
+  retry?: boolean; // Changed from function type to boolean
 }
 
 /**

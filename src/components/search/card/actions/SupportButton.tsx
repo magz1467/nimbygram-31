@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { HeartIcon } from "lucide-react";
 import { useState } from "react";
@@ -56,7 +55,7 @@ export const SupportButton = ({
     } catch (error) {
       handleError(error, {
         context: 'support button',
-        retry: () => handleSupport()
+        retry: true
       });
     } finally {
       setIsSubmitting(false);
