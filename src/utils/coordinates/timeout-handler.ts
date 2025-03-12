@@ -12,8 +12,8 @@ export const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutM
   // Create a timeout promise that rejects after timeoutMs
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
-      const error = new Error(timeoutMessage);
-      error['type'] = 'TIMEOUT';
+      const error = new Error(timeoutMessage) as Error & { type?: string };
+      error.type = 'TIMEOUT';
       reject(error);
     }, timeoutMs);
   });
@@ -32,11 +32,17 @@ export const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutM
           console.error(`Enhanced error details - Code: ${error.code}, Message: ${error.message}`);
           
           // Format Supabase error with full details
-          const formattedError = new Error(error.message || 'Unknown database error');
-          formattedError['code'] = error.code;
-          formattedError['details'] = error.details;
-          formattedError['hint'] = error.hint;
-          formattedError['originalError'] = error;
+          const formattedError = new Error(error.message || 'Unknown database error') as Error & { 
+            code?: string; 
+            details?: string; 
+            hint?: string; 
+            originalError?: unknown 
+          };
+          
+          formattedError.code = error.code;
+          formattedError.details = error.details;
+          formattedError.hint = error.hint;
+          formattedError.originalError = error;
           
           throw formattedError;
         }

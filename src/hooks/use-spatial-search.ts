@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SearchCoordinates, SearchResult, SEARCH_RADIUS, SEARCH_TIMEOUT } from '@/types/search';
 import { Application } from '@/types/planning';
 import { withTimeout } from '@/utils/coordinates/timeout-handler';
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 async function performSpatialSearch(coordinates: SearchCoordinates): Promise<SearchResult> {
   const startTime = Date.now();
@@ -14,10 +15,10 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
       center_lat: coordinates.lat,
       center_lng: coordinates.lng,
       radius_km: SEARCH_RADIUS
-    });
+    }).then((response) => response);
     
     // Convert PostgrestFilterBuilder to Promise with withTimeout
-    const result = await withTimeout(
+    const result = await withTimeout<PostgrestResponse<any>>(
       spatialPromise, 
       SEARCH_TIMEOUT, 
       'Spatial search timeout'
@@ -48,10 +49,11 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
       .lte('latitude', coordinates.lat + latDiff)
       .gte('longitude', coordinates.lng - lngDiff)
       .lte('longitude', coordinates.lng + lngDiff)
-      .limit(100);
+      .limit(100)
+      .then((response) => response);
       
     // Convert PostgrestFilterBuilder to Promise with withTimeout
-    const fallbackResult = await withTimeout(
+    const fallbackResult = await withTimeout<PostgrestResponse<any>>(
       fallbackPromise,
       SEARCH_TIMEOUT,
       'Fallback search timeout'
