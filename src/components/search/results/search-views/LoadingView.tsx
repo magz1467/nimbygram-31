@@ -13,6 +13,7 @@ interface LoadingViewProps {
 
 export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: LoadingViewProps) {
   const [dots, setDots] = useState('');
+  const [showingResults, setShowingResults] = useState(false);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -22,12 +23,24 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
     return () => clearInterval(interval);
   }, []);
   
+  // After a delay, inform user we might show partial results
+  useEffect(() => {
+    if (stage === 'searching') {
+      const timer = setTimeout(() => {
+        setShowingResults(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [stage]);
+  
   const getLoadingMessage = () => {
     switch (stage) {
       case 'coordinates':
         return `Finding location "${searchTerm}"${dots}`;
       case 'searching':
-        return `Finding planning applications${dots}`;
+        return showingResults 
+          ? `Finding planning applications${dots}`
+          : `Searching for planning applications${dots}`;
       case 'rendering':
         return `Processing results${dots}`;
       default:
@@ -43,7 +56,7 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
         </h2>
         <p className="text-gray-500 text-sm">
           {stage === 'coordinates' ? 'Converting your location to coordinates...' : 
-           stage === 'searching' ? 'Scanning all local planning applications...' : 
+           stage === 'searching' ? (showingResults ? 'Results will appear as soon as they are found. Please wait...' : 'Scanning all local planning applications...') : 
            'Processing and analyzing results...'}
         </p>
       </div>
@@ -56,6 +69,11 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
             <p className="text-amber-700 text-sm mt-1">
               There might be many planning applications in this area. First results should appear shortly.
             </p>
+            {showingResults && (
+              <p className="text-amber-700 text-sm mt-1">
+                We'll show results as they become available. No applications found yet.
+              </p>
+            )}
           </div>
         </div>
       )}

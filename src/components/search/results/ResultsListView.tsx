@@ -79,6 +79,7 @@ export const ResultsListView = ({
      error.message.includes('57014') || 
      error.message.includes('canceling statement'));
 
+  // Show error view for timeout errors with no results
   if (!isLoading && error && (!applications?.length && !loadedApplications?.length)) {
     return (
       <TimeoutErrorMessage
@@ -91,8 +92,29 @@ export const ResultsListView = ({
     );
   }
 
-  // Show "no results" message only when initial load is complete and we have no results
-  if (!isLoading && !error && (!applications?.length && !loadedApplications?.length) && initialLoadComplete) {
+  // If we have applications, show them immediately - no waiting needed
+  if (applications?.length > 0 || loadedApplications?.length > 0) {
+    return (
+      <ResultsList
+        loadedApplications={loadedApplications.length > 0 ? loadedApplications : applications.slice(0, 10)}
+        applications={applications}
+        allApplications={allApplications}
+        onSeeOnMap={onSeeOnMap}
+        selectedId={selectedId}
+        coordinates={coordinates}
+        handleMarkerClick={handleMarkerClick}
+        isLoading={isLoading}
+        postcode={postcode}
+        isLastPage={isLastPage}
+        onRetry={onRetry}
+        handleLoadMore={handleLoadMore}
+      />
+    );
+  }
+
+  // Show "no results" message only when initial load is TRULY complete and we have no results
+  // This should only show after a significant delay to ensure search is really done
+  if (!isLoading && !error && initialLoadComplete && Date.now() - (hasStartedLoading ? 3000 : 0) > 0) {
     return (
       <NoResultsMessage
         searchTerm={searchTerm}
@@ -103,20 +125,13 @@ export const ResultsListView = ({
     );
   }
 
+  // Fallback loading state if none of the above conditions are met
   return (
-    <ResultsList
-      loadedApplications={loadedApplications}
-      applications={applications}
-      allApplications={allApplications}
-      onSeeOnMap={onSeeOnMap}
-      selectedId={selectedId}
-      coordinates={coordinates}
-      handleMarkerClick={handleMarkerClick}
-      isLoading={isLoading}
-      postcode={postcode}
-      isLastPage={isLastPage}
+    <LoadingState
+      isLongSearchDetected={isLongSearchDetected}
       onRetry={onRetry}
-      handleLoadMore={handleLoadMore}
+      showErrorMessage={showErrorMessage}
+      error={error || null}
     />
   );
 };
