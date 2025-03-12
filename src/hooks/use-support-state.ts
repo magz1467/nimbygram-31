@@ -28,7 +28,7 @@ export const useSupportState = (applicationId: number, user: any) => {
         
         if (columnCheckError) {
           console.warn('Could not check if column exists:', columnCheckError);
-          // Fall back to trying the query
+          // Fall back to using default values
           setSupportCount(0);
           setIsSupportedByUser(false);
           setTableExists(false);
