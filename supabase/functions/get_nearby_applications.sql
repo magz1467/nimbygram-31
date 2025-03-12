@@ -1,92 +1,34 @@
 
--- Function to get nearby applications within a radius using PostGIS
+-- Simple and reliable function to get nearby applications
 CREATE OR REPLACE FUNCTION get_nearby_applications(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
-  radius_km DOUBLE PRECISION DEFAULT 10,
-  result_limit INTEGER DEFAULT 200
+  radius_km DOUBLE PRECISION DEFAULT 5
 )
 RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  -- Variables for improved performance
-  search_point GEOGRAPHY;
-  lat_min DOUBLE PRECISION;
-  lat_max DOUBLE PRECISION;
-  lng_min DOUBLE PRECISION;
-  lng_max DOUBLE PRECISION;
 BEGIN
-  -- Log the search parameters for debugging
-  RAISE NOTICE 'Executing spatial search with lat: %, lng: %, radius: %km, limit: %', 
-               center_lat, center_lng, radius_km, result_limit;
-               
-  -- Input validation to prevent errors
-  IF center_lat IS NULL OR center_lng IS NULL THEN
-    RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
-  END IF;
-  
-  IF radius_km <= 0 OR radius_km > 50 THEN
-    -- Enforce reasonable radius limits
-    radius_km := GREATEST(LEAST(radius_km, 50), 0.5);
-    RAISE NOTICE 'Adjusted radius to within valid range: %km', radius_km;
-  END IF;
-  
-  -- Create a geography point from the input coordinates
-  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
-  
-  -- Calculate bounding box for pre-filtering (faster than full spatial calculations)
-  -- Use more precise calculations depending on latitude
-  lat_min := center_lat - (radius_km/111.0);
-  lat_max := center_lat + (radius_km/111.0);
-  
-  -- Longitude degrees per km varies with latitude
-  lng_min := center_lng - (radius_km/(111.0 * COS(RADIANS(center_lat))));
-  lng_max := center_lng + (radius_km/(111.0 * COS(RADIANS(center_lat))));
-  
-  RAISE NOTICE 'Bounding box: lat(% to %), lng(% to %)', lat_min, lat_max, lng_min, lng_max;
-  
-  -- Use a two-step process: first filter by bounding box (fast), then refine with exact distance (slower)
+  -- Simple bounding box calculation for better performance
   RETURN QUERY
-  WITH bbox_filtered AS (
-    -- Fast pre-filtering using bounding box
-    SELECT *
-    FROM crystal_roof
-    WHERE 
-      latitude IS NOT NULL AND
-      longitude IS NOT NULL AND
-      latitude BETWEEN lat_min AND lat_max AND
-      longitude BETWEEN lng_min AND lng_max
-    LIMIT result_limit * 2  -- Get more than needed for the next filtering step
-  )
-  SELECT *
-  FROM bbox_filtered
+  SELECT cr.*
+  FROM crystal_roof cr
   WHERE 
-    -- Only include points within the actual radius
-    ST_DWithin(
-      search_point,
-      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY,
-      radius_km * 1000  -- Convert km to meters
-    )
+    cr.latitude IS NOT NULL 
+    AND cr.longitude IS NOT NULL
+    AND cr.latitude BETWEEN (center_lat - radius_km/111.0) AND (center_lat + radius_km/111.0)
+    AND cr.longitude BETWEEN (center_lng - radius_km/(111.0 * COS(RADIANS(center_lat)))) 
+                        AND (center_lng + radius_km/(111.0 * COS(RADIANS(center_lat))))
   ORDER BY
-    -- Order by actual distance for better results
-    ST_Distance(
-      search_point,
-      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY
-    ) ASC
-  LIMIT LEAST(result_limit, 100);  -- Ensure we don't return too many results
-  
-  -- Log the completion of the query
-  RAISE NOTICE 'Spatial search completed';
+    (cr.latitude - center_lat)^2 + (cr.longitude - center_lng)^2 ASC
+  LIMIT 100;
 END;
 $$;
 
--- Set timeout to 15 seconds
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
-
--- Add permissions for anonymous and authenticated users
+-- Grant access to the function
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
--- Optimize index for fast bounding box searches
-CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);
+-- Create an index to speed up queries
+CREATE INDEX IF NOT EXISTS idx_crystal_roof_coordinates 
+ON crystal_roof(latitude, longitude);
