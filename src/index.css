@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
@@ -58,6 +59,11 @@
   
   /* Make sure header aligns properly with content */
   header .container {
+    @apply px-8 md:px-12 lg:px-16;
+  }
+  
+  /* Make sure footer aligns properly with content */
+  footer .container {
     @apply px-8 md:px-12 lg:px-16;
   }
 }

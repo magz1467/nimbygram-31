@@ -1,10 +1,11 @@
+
 import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
     <footer className="bg-[#221F26] text-white mt-24">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="container mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 py-12">
           <div>
             <h3 className="font-bold mb-4">About Us</h3>
             <ul className="space-y-2">
@@ -40,7 +41,7 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-gray-700 mt-8 pt-8 text-sm text-gray-400">
+        <div className="border-t border-gray-700 pt-8 pb-8 text-sm text-gray-400">
           <p>© {new Date().getFullYear()} NimbyGram Ltd. All rights reserved.</p>
           <p className="mt-2">NimbyGram Ltd is registered in England and Wales.</p>
         </div>
