@@ -76,7 +76,7 @@ export async function performSpatialSearch(
         return {
           ...app,
           distance: `${distanceMiles.toFixed(1)} mi`,
-          coordinates: [Number(app.latitude), Number(app.longitude)]
+          coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
         };
       })
       .sort((a: any, b: any) => {

@@ -2,46 +2,52 @@
 import { Application } from "@/types/planning";
 
 /**
- * Transforms raw application data from the database into a consistent format
+ * Transforms raw application data into the Application type
+ * with proper type conversions and formatting
  */
 export function transformApplicationData(rawData: any): Application {
-  // Ensure we have valid coordinates if provided
-  const lat = typeof rawData.latitude === 'number' ? rawData.latitude : null;
-  const lng = typeof rawData.longitude === 'number' ? rawData.longitude : null;
+  if (!rawData) return {} as Application;
   
-  // Extract the coordinates if both values exist
-  const coordinates = (lat !== null && lng !== null) ? [lat, lng] : null;
+  // Ensure coordinates are properly formatted as [number, number]
+  let coordinates: [number, number] | null = null;
   
+  // Handling different coordinate formats
+  if (Array.isArray(rawData.coordinates) && rawData.coordinates.length === 2) {
+    coordinates = [Number(rawData.coordinates[0]), Number(rawData.coordinates[1])];
+  } else if (typeof rawData.latitude === 'number' && typeof rawData.longitude === 'number') {
+    coordinates = [Number(rawData.latitude), Number(rawData.longitude)];
+  }
+  
+  // Transform the raw data to match Application type
   return {
     id: rawData.id,
+    application_id: rawData.application_id || rawData.id?.toString(),
     reference: rawData.reference || '',
-    title: rawData.title || 'Unknown Application',
-    description: rawData.description || '',
+    proposal: rawData.proposal || rawData.description || '',
     address: rawData.address || '',
-    status: rawData.status || 'Unknown',
-    applicant: rawData.applicant || '',
-    decision: rawData.decision || '',
-    type: rawData.type || '',
-    validatedDate: rawData.validated_date || rawData.validatedDate || null,
-    applicationDate: rawData.application_date || rawData.applicationDate || null,
-    decisionDate: rawData.decision_date || rawData.decisionDate || null,
-    appealDate: rawData.appeal_date || rawData.appealDate || null,
     coordinates: coordinates,
-    latitude: lat,
-    longitude: lng,
+    status: rawData.status || 'Unknown',
+    type: rawData.type || '',
     url: rawData.url || '',
-    authority: rawData.authority || '',
+    date_received: rawData.date_received || null,
+    decision_date: rawData.decision_date || null,
+    title: rawData.title || rawData.proposal || '',
+    local_authority: rawData.local_authority || '',
+    latitude: typeof rawData.latitude === 'number' ? rawData.latitude : null,
+    longitude: typeof rawData.longitude === 'number' ? rawData.longitude : null,
     distance: rawData.distance || null,
-    images: rawData.images || [],
+    image_url: rawData.image_url || null,
     documents: rawData.documents || [],
-    staticMapUrl: rawData.static_map_url || rawData.staticMapUrl || null,
+    description: rawData.description || rawData.proposal || '',
+    // Add any other fields needed
   };
 }
 
 /**
- * Maps an array of raw application data to Application objects
+ * Transforms an array of raw application data into Application objects
  */
-export function mapApplications(data: any[]): Application[] {
-  if (!data || !Array.isArray(data)) return [];
-  return data.map(item => transformApplicationData(item));
+export function transformApplicationsData(rawDataArray: any[]): Application[] {
+  if (!Array.isArray(rawDataArray)) return [];
+  
+  return rawDataArray.map(transformApplicationData);
 }

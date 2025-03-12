@@ -58,6 +58,16 @@ export const SearchViewContent = ({
     }
   }, [applications, isLoading]);
 
+  // Calculate status counts for the header
+  const statusCounts = applications.reduce((counts: Record<string, number>, app) => {
+    const status = app.status || 'Other';
+    const category = status.includes('Under Review') ? 'Under Review' :
+                    status.includes('Approved') ? 'Approved' :
+                    status.includes('Declined') ? 'Declined' : 'Other';
+    counts[category] = (counts[category] || 0) + 1;
+    return counts;
+  }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
+
   return (
     <div className="max-w-4xl mx-auto pb-16 pt-0">
       <ResultsHeader 
@@ -70,12 +80,7 @@ export const SearchViewContent = ({
         activeFilters={filters}
         onFilterChange={onFilterChange}
         onSortChange={(sortType) => setActiveSort(sortType)}
-        statusCounts={{
-          'Under Review': 0,
-          'Approved': 0,
-          'Declined': 0,
-          'Other': 0
-        }}
+        statusCounts={statusCounts}
       />
 
       <div className="px-4 lg:px-6">

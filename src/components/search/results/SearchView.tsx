@@ -7,6 +7,7 @@ import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
 import { ErrorType } from "@/utils/errors";
+import { isNonCriticalError } from "@/utils/errors";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -75,20 +76,6 @@ export const SearchView = ({
       }, 0);
     }
   }, [isLoadingResults, isLoadingCoords, coordinates, applications, onSearchComplete]);
-
-  // Helper to check if the error is a non-critical infrastructure message
-  function isNonCriticalError(err: any): boolean {
-    if (!err) return true;
-    
-    const errorMessage = err.message ? err.message.toLowerCase() : '';
-    return (
-      errorMessage.includes('support table') || 
-      errorMessage.includes('function does not exist') ||
-      errorMessage.includes('searches') ||
-      errorMessage.includes('get_nearby_applications') ||
-      errorMessage.includes('crystal_roof.support_count')
-    );
-  }
 
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;

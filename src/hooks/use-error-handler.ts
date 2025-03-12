@@ -2,11 +2,10 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  handleError, 
-  ErrorOptions, 
   ErrorType, 
-  AppError,
-  isNonCriticalError
+  isNonCriticalError,
+  formatErrorMessage,
+  detectErrorType
 } from "@/utils/errors";
 
 /**
@@ -15,11 +14,21 @@ import {
 export function useErrorHandler() {
   const { toast } = useToast();
   
-  const handleAppError = useCallback((
-    error: any,
-    options: ErrorOptions = {}
-  ): AppError => {
-    return handleError(error, toast, options);
+  const handleAppError = useCallback((error: any, options: any = {}) => {
+    console.error('Error:', error);
+    
+    if (toast && !isNonCriticalError(error)) {
+      toast({
+        title: "Error",
+        description: formatErrorMessage(error),
+        variant: "destructive",
+      });
+    }
+    
+    return {
+      message: formatErrorMessage(error),
+      type: detectErrorType(error)
+    };
   }, [toast]);
   
   const isNonCritical = useCallback((error: any): boolean => {
