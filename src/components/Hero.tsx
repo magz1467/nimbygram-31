@@ -1,15 +1,18 @@
+
 import { HeroContent } from "./hero/HeroContent";
 import { HeroImage } from "./hero/HeroImage";
 
 export const Hero = () => {
   return (
-    <div className="bg-background py-8 md:py-16 font-sans">
+    <section className="py-8 md:py-12 lg:py-16 relative">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <HeroContent />
-          <HeroImage />
+          <div className="hidden md:block">
+            <HeroImage />
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
