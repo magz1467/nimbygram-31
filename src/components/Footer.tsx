@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#221F26] text-white mt-24">
+    <footer className="bg-[#221F26] text-black mt-24">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 py-12">
           <div>
@@ -41,7 +41,7 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-gray-700 pt-8 pb-8 text-sm text-gray-400">
+        <div className="border-t border-gray-700 pt-8 pb-8 text-sm text-gray-600">
           <p>© {new Date().getFullYear()} NimbyGram Ltd. All rights reserved.</p>
           <p className="mt-2">NimbyGram Ltd is registered in England and Wales.</p>
         </div>
