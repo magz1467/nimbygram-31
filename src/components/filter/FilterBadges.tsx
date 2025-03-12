@@ -1,9 +1,10 @@
 
-import { type SortType } from "@/types/application-types";
+import { type SortType, type StatusCounts } from "@/types/application-types";
+import { Badge } from "@/components/ui/badge";
 
 interface FilterBadgesProps {
   activeFilters: Record<string, any>;
-  activeSort: SortType; // Add activeSort to props
+  activeSort: SortType;
   onFilterChange: (type: string, value: any) => void;
   statusCounts: StatusCounts;
 }

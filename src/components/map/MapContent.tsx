@@ -8,6 +8,7 @@ interface MapContentProps {
   applications: Application[];
   selectedId: number | null;
   coordinates: [number, number];
+  searchLocation: [number, number]; // Added searchLocation prop
   isMobile: boolean;
   isMapView: boolean;
   onMarkerClick: (id: number) => void;
@@ -19,6 +20,7 @@ export const MapContent = ({
   applications,
   selectedId,
   coordinates,
+  searchLocation, // Add searchLocation to props
   isMobile,
   isMapView,
   onMarkerClick,
@@ -84,6 +86,7 @@ export const MapContent = ({
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}
+        searchLocation={searchLocation} // Pass searchLocation
         onMarkerClick={onMarkerClick}
       />
       

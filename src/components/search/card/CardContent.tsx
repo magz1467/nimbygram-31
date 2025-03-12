@@ -1,3 +1,4 @@
+
 import { formatStorybook } from "@/utils/storybook-formatter";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
@@ -55,7 +56,9 @@ export const CardContent = ({
     }
   };
 
-  if (!formattedStorybook?.content) {
+  const storyContent = formatStorybook(storybook);
+
+  if (!storyContent?.content) {
     // Even if no storybook content, still show the See on Map button
     return (
       <div className="mt-4">
@@ -106,7 +109,7 @@ export const CardContent = ({
         <div className="bg-primary/5 rounded-lg p-4">
           <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
           <div className="text-gray-700">
-            {parseHtmlContent(formattedStorybook.content.split('The Details:')[0])}
+            {parseHtmlContent(storyContent.content.split('The Details:')[0])}
           </div>
         </div>
       </div>
@@ -114,7 +117,7 @@ export const CardContent = ({
       <div className="space-y-4">
         <h3 className="font-semibold text-gray-900">Key Details</h3>
         <div className="grid gap-4">
-          {getKeyDetails(formattedStorybook.content).map((detail, index) => (
+          {getKeyDetails(storyContent.content).map((detail, index) => (
             <div key={index} className="flex gap-3 items-start">
               <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
               <p className="text-gray-700 flex-1">{parseHtmlContent(detail)}</p>
@@ -123,13 +126,13 @@ export const CardContent = ({
         </div>
       </div>
 
-      {formattedStorybook.content.includes('Nimbywatch:') && (
+      {storyContent.content.includes('Nimbywatch:') && (
         <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
             🏘️ Nimbywatch
           </h3>
           <div className="space-y-2 text-white/90">
-            {formattedStorybook.content
+            {storyContent.content
               .split('Nimbywatch:')[1]
               .split('•')
               .filter(Boolean)

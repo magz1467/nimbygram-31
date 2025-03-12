@@ -24,6 +24,7 @@ export const MapView = memo(({
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}
+        searchLocation={coordinates} // Pass coordinates as searchLocation
         onMarkerClick={onMarkerClick}
         onCenterChange={onCenterChange}
       />

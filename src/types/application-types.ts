@@ -1,6 +1,7 @@
+
 import { Application } from "./planning";
 
-export type SortType = 'distance' | 'date' | 'impact';
+export type SortType = 'distance' | 'newest' | 'closingSoon';
 
 export type FilterType = {
   status?: string;

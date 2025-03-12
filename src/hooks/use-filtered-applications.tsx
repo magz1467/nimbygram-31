@@ -44,6 +44,12 @@ export const useFilteredApplications = (
         const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
         return dateB - dateA;
       });
+    } else if (activeSort === 'closingSoon') {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.consultationEnd ? new Date(a.consultationEnd).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.consultationEnd ? new Date(b.consultationEnd).getTime() : Number.MAX_SAFE_INTEGER;
+        return dateA - dateB;
+      });
     }
 
     // Calculate pagination
