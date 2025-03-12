@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { useApplicationsData } from "@/components/applications/dashboard/hooks/useApplicationsData";
 import { useCoordinates } from "@/hooks/use-coordinates";
@@ -9,6 +10,7 @@ import { useFilterState } from "./use-filter-state";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { useNavigate } from "react-router-dom";
+import { Application } from "@/types/planning";
 
 export const useDashboardState = () => {
   const { 
@@ -36,10 +38,15 @@ export const useDashboardState = () => {
   const { 
     applications, 
     isLoading: isLoadingApps, 
-    fetchApplicationsInRadius,
-    statusCounts,
     error
-  } = useApplicationsData();
+  } = useApplicationsData({ postcode: postcode });
+
+  // Function to manually fetch applications in radius
+  const fetchApplicationsInRadius = async (coords: [number, number], radius: number) => {
+    console.log('Fetching applications at coordinates:', coords, 'with radius:', radius);
+    // This is just a placeholder - the actual fetching is handled by useApplicationsData
+    setSearchPoint(coords);
+  };
 
   // Show error toast if there's an error fetching applications
   useEffect(() => {
@@ -161,7 +168,7 @@ export const useDashboardState = () => {
         setIsSearching(false);
       }
     }
-  }, [coordinates, isInitialSearch, isNewSearch, fetchApplicationsInRadius, toast]);
+  }, [coordinates, isInitialSearch, isNewSearch]);
 
   useEffect(() => {
     if (searchStartTime && !isLoadingApps && !isLoadingCoords) {
@@ -180,14 +187,24 @@ export const useDashboardState = () => {
     activeSort
   );
 
-  // Memoize the status counts to prevent unnecessary re-renders
-  const defaultStatusCounts = useMemo(() => ({
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0,
-    ...statusCounts
-  }), [statusCounts]);
+  // Calculate status counts manually
+  const statusCounts = useMemo(() => {
+    const counts = {
+      'Under Review': 0,
+      'Approved': 0,
+      'Declined': 0,
+      'Other': 0
+    };
+
+    safeApplications.forEach(app => {
+      if (app.status === 'Under Review') counts['Under Review']++;
+      else if (app.status === 'Approved') counts['Approved']++;
+      else if (app.status === 'Declined') counts['Declined']++;
+      else counts['Other']++;
+    });
+
+    return counts;
+  }, [safeApplications]);
 
   return {
     selectedId,
@@ -200,10 +217,11 @@ export const useDashboardState = () => {
     isLoading: isLoadingCoords || isLoadingApps,
     applications: safeApplications,
     filteredApplications,
-    statusCounts: defaultStatusCounts,
+    statusCounts,
     handleMarkerClick,
     handleFilterChange,
     handlePostcodeSelect,
     handleSortChange,
+    fetchApplicationsInRadius
   };
 };
