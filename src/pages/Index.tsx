@@ -14,9 +14,9 @@ import { PageSeparator } from "@/components/ui/page-separator";
 const Index = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
       <PageSeparator />
-      <main className="flex-grow container mx-auto px-4 md:px-6 lg:px-8">
+      <Header />
+      <main className="flex-grow container mx-auto px-4 md:px-6 lg:px-8 z-10 relative">
         <Hero />
         <Features />
         <QuoteSection />

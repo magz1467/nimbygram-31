@@ -8,10 +8,12 @@ interface PageSeparatorProps {
 
 export function PageSeparator({ className }: PageSeparatorProps) {
   return (
-    <div className={cn("relative w-full py-4", className)}>
-      <div className="absolute inset-0 bg-gray-100/40"></div>
-      <div className="container mx-auto relative">
-        <div className="h-px w-full bg-primary/20"></div>
+    <div className={cn("fixed inset-y-0 w-full pointer-events-none z-0", className)}>
+      <div className="container h-full mx-auto relative">
+        {/* Left separator */}
+        <div className="absolute left-0 inset-y-0 w-px bg-primary/20"></div>
+        {/* Right separator */}
+        <div className="absolute right-0 inset-y-0 w-px bg-primary/20"></div>
       </div>
     </div>
   );

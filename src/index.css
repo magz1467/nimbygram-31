@@ -28,6 +28,7 @@
     --ring: 146 25% 24%;
     --radius: 0.75rem;
     --separator-bg: 220 14% 96%;
+    --margin-bg: 40 20% 95%;
   }
 }
 
@@ -36,7 +37,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-[#F6F6F7] text-foreground font-sans;
   }
   
   /* Update scaling to 80% for zoom effect */
@@ -50,7 +51,9 @@
   
   /* Add additional container padding for better spacing */
   .container {
-    @apply px-8 md:px-12 lg:px-16;
+    @apply px-8 md:px-12 lg:px-16 bg-background relative;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
+    max-width: 1280px !important; /* Ensure container has max width */
   }
 }
 
