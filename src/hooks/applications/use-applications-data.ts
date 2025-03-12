@@ -69,19 +69,21 @@ export function useApplicationsData(initialParams: any = {}) {
           return false;
         }
         
-        // Apply classification filter
-        if (filters.classification && 
-            filters.classification !== 'All' && 
-            app.classification !== filters.classification) {
+        // Apply type filter instead of classification
+        if (filters.type && 
+            filters.type !== 'All' && 
+            app.type !== filters.type) {
           return false;
         }
         
         // Apply date range filter if needed
-        if (filters.dateFrom && new Date(app.date_received || '') < new Date(filters.dateFrom)) {
+        if (filters.dateFrom && app.submissionDate && 
+            new Date(app.submissionDate) < new Date(filters.dateFrom)) {
           return false;
         }
         
-        if (filters.dateTo && new Date(app.date_received || '') > new Date(filters.dateTo)) {
+        if (filters.dateTo && app.submissionDate && 
+            new Date(app.submissionDate) > new Date(filters.dateTo)) {
           return false;
         }
         

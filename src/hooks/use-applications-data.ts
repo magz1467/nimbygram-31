@@ -1,8 +1,11 @@
+
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
-import { fetchApplicationsInRadius } from './applications/use-applications-fetch';
-import { calculateStatusCounts, StatusCounts } from './applications/use-status-counts';
+import { useApplicationsFetch } from './applications/use-applications-fetch';
+import { useStatusCounts } from './applications/use-status-counts';
+import { StatusCounts } from '@/types/application-types';
+import { handleError } from '@/utils/errors/centralized-handler';
 
 export interface ApplicationError {
   message: string;
@@ -21,7 +24,10 @@ export const useApplicationsData = () => {
     'Other': 0
   });
 
-  const fetchApplications = async (
+  const { fetchApplications } = useApplicationsFetch();
+  const { fetchStatusCounts } = useStatusCounts();
+
+  const fetchApplicationsData = async (
     center: LatLngTuple,
     radius: number,
     page = 0,
@@ -31,29 +37,27 @@ export const useApplicationsData = () => {
     setError(null);
 
     try {
-      const { applications: fetchedApps, totalCount: count } = 
-        await fetchApplicationsInRadius({ center, radius, page, pageSize });
+      const fetchedApps = await fetchApplications({ 
+        limit: pageSize, 
+        orderBy: 'received_date' 
+      });
       
       setApplications(fetchedApps);
-      setTotalCount(count);
-      setStatusCounts(calculateStatusCounts(fetchedApps));
-      console.log('📊 Status counts:', statusCounts);
+      setTotalCount(fetchedApps.length);
+      
+      const counts = await fetchStatusCounts();
+      setStatusCounts(counts);
 
     } catch (error: any) {
       console.error('Failed to fetch applications:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      handleError(error);
+      
       setError({
         message: 'Failed to fetch applications',
         details: error.message
       });
     } finally {
       setIsLoading(false);
-      console.log('🏁 Fetch completed');
     }
   };
 
@@ -63,6 +67,6 @@ export const useApplicationsData = () => {
     totalCount,
     statusCounts,
     error,
-    fetchApplicationsInRadius: fetchApplications,
+    fetchApplicationsInRadius: fetchApplicationsData,
   };
 };

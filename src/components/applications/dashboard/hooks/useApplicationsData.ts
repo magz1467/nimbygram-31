@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
 import { fetchApplicationsInRadius } from './use-applications-fetch';
-import { calculateStatusCounts, StatusCounts } from './use-status-counts';
+import { calculateStatusCounts } from './use-status-counts';
+import { StatusCounts } from "@/types/application-types";
 import { handleError } from '@/utils/errors/centralized-handler';
 
 export interface ApplicationError {
@@ -39,16 +40,9 @@ export const useApplicationsData = () => {
       setApplications(fetchedApps);
       setTotalCount(count);
       setStatusCounts(calculateStatusCounts(fetchedApps));
-      console.log('📊 Status counts:', statusCounts);
 
     } catch (error: any) {
       console.error('Failed to fetch applications:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       
       handleError(error, { context: 'useApplicationsData' });
       
@@ -58,7 +52,6 @@ export const useApplicationsData = () => {
       });
     } finally {
       setIsLoading(false);
-      console.log('🏁 Fetch completed');
     }
   };
 
