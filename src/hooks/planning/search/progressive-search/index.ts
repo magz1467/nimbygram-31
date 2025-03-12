@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { ProgressiveSearchState, ProgressiveSearchOptions } from './types';
+import { ProgressiveSearchState, ProgressiveSearchOptions, ProgressiveSearchParams } from './types';
 import { checkCache } from './cache-handler';
 import { performQuickSearch } from './quick-search';
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';

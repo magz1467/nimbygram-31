@@ -38,3 +38,9 @@ export interface SearchError extends Error {
   type?: string;
   context?: any;
 }
+
+// Add the ProgressiveSearchState interface that was missing
+export interface ProgressiveSearchState {
+  results: Application[];
+  isLoading: boolean;
+}
