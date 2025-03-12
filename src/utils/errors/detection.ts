@@ -1,101 +1,134 @@
 
-import { AppError, ErrorType } from './types';
+import { ErrorType } from './types';
 
 /**
- * Automatically detect the type of error based on message and properties
+ * Detect the type of error based on error properties
  */
 export function detectErrorType(error: any): ErrorType {
-  if (!error) return ErrorType.UNKNOWN;
-
-  // Extract message for easier pattern matching
-  const message = error.message?.toLowerCase() || '';
+  // Handle null or undefined errors
+  if (!error) {
+    return ErrorType.UNKNOWN;
+  }
   
-  // Check for network-related errors
+  // Extract error message for easier checking
+  const errorMessage = typeof error === 'string' 
+    ? error.toLowerCase() 
+    : (error.message ? error.message.toLowerCase() : '');
+  
+  // Check for explicit error codes
+  const errorCode = error.code || error.status || error.statusCode;
+  
+  // Timeout errors - check first as they're critical for UX
   if (
-    message.includes('network') || 
-    message.includes('fetch') ||
-    message.includes('internet') ||
-    message.includes('offline') ||
+    errorCode === 'ETIMEDOUT' ||
+    errorCode === '57014' ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('timed out') ||
+    errorMessage.includes('too long') ||
+    errorMessage.includes('canceling statement') ||
+    error.name === 'TimeoutError'
+  ) {
+    return ErrorType.TIMEOUT;
+  }
+
+  // Network errors
+  if (
+    error.name === 'NetworkError' ||
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('failed to fetch') ||
+    errorMessage.includes('network request failed') ||
     !navigator.onLine
   ) {
     return ErrorType.NETWORK;
   }
-  
-  // Check for timeout errors
+
+  // Authentication errors
   if (
-    error.code === '57014' || // PostgreSQL statement_timeout
-    error.name === 'AbortError' ||
-    message.includes('timeout') ||
-    message.includes('timed out') ||
-    message.includes('too long') ||
-    message.includes('took too long') ||
-    message.includes('canceling statement')
-  ) {
-    return ErrorType.TIMEOUT;
-  }
-  
-  // Check for not found errors
-  if (
-    message.includes('not found') ||
-    message.includes('does not exist') ||
-    message.includes('404') ||
-    error.status === 404
-  ) {
-    return ErrorType.NOT_FOUND;
-  }
-  
-  // Check for authentication errors
-  if (
-    message.includes('login') ||
-    message.includes('authentication') ||
-    message.includes('unauthenticated') ||
-    message.includes('401') ||
-    error.status === 401
+    errorCode === 401 ||
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('authentication') ||
+    errorMessage.includes('auth')
   ) {
     return ErrorType.AUTHENTICATION;
   }
-  
-  // Check for permission/authorization errors
+
+  // Authorization errors
   if (
-    message.includes('permission') ||
-    message.includes('unauthorized') ||
-    message.includes('403') ||
-    error.status === 403
+    errorCode === 403 ||
+    errorMessage.includes('forbidden') ||
+    errorMessage.includes('permission')
   ) {
-    return ErrorType.PERMISSION;
+    return ErrorType.AUTHORIZATION;
   }
-  
-  // Check for validation errors
+
+  // Not found errors
   if (
-    message.includes('validation') ||
-    message.includes('invalid') ||
-    message.includes('required field') ||
-    message.includes('constraint') ||
-    error.status === 400
+    errorCode === 404 ||
+    errorMessage.includes('not found') ||
+    errorMessage.includes('no results') ||
+    errorMessage.includes('empty response')
+  ) {
+    return ErrorType.NOT_FOUND;
+  }
+
+  // Validation errors
+  if (
+    errorCode === 422 ||
+    errorMessage.includes('validation') ||
+    errorMessage.includes('required field') ||
+    errorMessage.includes('invalid')
   ) {
     return ErrorType.VALIDATION;
   }
-  
-  // Check for database errors
+
+  // Database errors
   if (
-    message.includes('database') ||
-    message.includes('db error') ||
-    message.includes('sql') ||
-    (error.code && error.code.startsWith('22')) ||
-    (error.code && error.code.startsWith('23'))
+    errorMessage.includes('database') ||
+    errorMessage.includes('sql') ||
+    errorMessage.includes('query')
   ) {
     return ErrorType.DATABASE;
   }
-  
-  // Check for server errors
+
+  // Server errors
   if (
-    message.includes('server') ||
-    message.includes('5xx') ||
-    error.status >= 500
+    (errorCode && errorCode >= 500) ||
+    errorMessage.includes('server')
   ) {
     return ErrorType.SERVER;
   }
-  
-  // Default to unknown
+
   return ErrorType.UNKNOWN;
+}
+
+/**
+ * Check if an error is non-critical (e.g. missing optional functionality)
+ */
+export function isNonCriticalError(error: any): boolean {
+  if (!error) return true;
+  
+  const errorMessage = typeof error === 'string' 
+    ? error.toLowerCase() 
+    : (error.message ? error.message.toLowerCase() : '');
+  
+  // Infrastructure setup errors
+  if (
+    errorMessage.includes('support table') ||
+    errorMessage.includes('extension') ||
+    errorMessage.toLowerCase().includes('function') ||
+    errorMessage.includes('not supported')
+  ) {
+    return true;
+  }
+  
+  // Missing data that's not essential
+  if (
+    errorMessage.includes('no results') ||
+    errorMessage.includes('empty response')
+  ) {
+    return true;
+  }
+  
+  return false;
 }

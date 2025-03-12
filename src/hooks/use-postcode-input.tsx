@@ -1,20 +1,10 @@
+
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchAddressSuggestions } from "@/services/address/postcode-autocomplete";
 import { placeIdToReadableAddress } from "@/services/address/utils/places-details-fetcher";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
-import { 
-  detectLocationType, 
-  fetchCoordinatesByLocationName, 
-  fetchCoordinatesFromPlaceId,
-  fetchCoordinatesFromPostcodesIo
-} from "@/services/coordinates";
-import {
-  cacheCoordinates,
-  getCachedCoordinates,
-  hasCoordinatesInCache
-} from "@/services/coordinates/coordinates-cache";
 
 interface UsePostcodeInputProps {
   onSelect: (postcode: string) => void;
@@ -26,7 +16,6 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const commandRef = useRef<HTMLDivElement>(null);
   const debouncedSearch = useDebounce(search, 300);
-  const [prefetchedSuggestions, setPrefetchedSuggestions] = useState<Set<string>>(new Set());
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -61,74 +50,37 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     retryDelay: 1000,
   });
 
-  // Prefetch coordinates for suggestions to make searches faster
+  // Log suggestions for debugging
   useEffect(() => {
-    if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {
-      return;
+    console.log('🔍 Current search term:', debouncedSearch);
+    console.log('📋 Suggestions state:', suggestions ? `${suggestions.length} items` : 'none');
+    
+    if (suggestions && suggestions.length > 0) {
+      console.log('📋 Suggestions available:', suggestions.length);
     }
+  }, [suggestions, debouncedSearch]);
 
-    // Reset the prefetched suggestions
-    setPrefetchedSuggestions(new Set());
-
-    // Take the top 3 suggestions to prefetch
-    const suggestionsToProcess = suggestions.slice(0, 3);
-    let newPrefetchedSuggestions = new Set<string>();
-
-    // Process each suggestion
-    suggestionsToProcess.forEach(async (suggestion) => {
-      const address = suggestion.address || suggestion.postcode || '';
-      if (!address) return;
-
-      // If coordinates are already cached, mark as prefetched
-      if (hasCoordinatesInCache(address)) {
-        newPrefetchedSuggestions.add(address);
-        setPrefetchedSuggestions(prev => new Set([...prev, address]));
-        return;
-      }
-
-      // Otherwise, fetch coordinates in the background
-      try {
-        // Determine the type of location
-        const locationType = detectLocationType(address);
-        
-        // Fetch coordinates based on location type
-        let coordinates: [number, number] | null = null;
-        
-        switch (locationType) {
-          case 'PLACE_ID':
-            coordinates = await fetchCoordinatesFromPlaceId(address);
-            break;
-          case 'LOCATION_NAME':
-            coordinates = await fetchCoordinatesByLocationName(address);
-            break;
-          case 'POSTCODE':
-            coordinates = await fetchCoordinatesFromPostcodesIo(address);
-            break;
-        }
-        
-        if (coordinates) {
-          // Cache the coordinates
-          cacheCoordinates(address, coordinates);
-          
-          // Mark as prefetched
-          newPrefetchedSuggestions.add(address);
-          setPrefetchedSuggestions(prev => new Set([...prev, address]));
-        }
-      } catch (error) {
-        console.warn('Error prefetching coordinates for', address, error);
-      }
-    });
-  }, [suggestions]);
-
-  // Select handler with optimized coordinate resolution
   const handleSelect = useCallback(async (value: string) => {
     setSearch(value);
     setOpen(false);
     
-    console.log('📍 Selected address:', value);
+    // Check if this is a Google Place ID (starts with "ChIJ" typically)
+    if (value.startsWith("ChIJ") || value.includes("place_id:")) {
+      console.log('🔍 Detected place ID, fetching detailed place information:', value);
+      
+      try {
+        // Get a readable address from the place ID
+        const readableAddress = await placeIdToReadableAddress(value);
+        console.log('✅ Converted place ID to readable address:', readableAddress);
+        onSelect(readableAddress);
+        return;
+      } catch (error) {
+        console.error('Error fetching place details:', error);
+      }
+    }
     
-    // Always pass the selected value directly to onSelect
-    // This ensures the search form gets the exact selection
+    // If not a place ID or couldn't get details, just use the value directly
+    console.log('📍 Selecting address:', value);
     onSelect(value);
   }, [onSelect]);
 
@@ -159,6 +111,5 @@ export const usePostcodeInput = ({ onSelect }: UsePostcodeInputProps) => {
     handleSelect,
     handleSearchClick,
     handleInputChange,
-    prefetchedSuggestions
   };
 };

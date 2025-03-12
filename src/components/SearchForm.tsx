@@ -5,7 +5,6 @@ import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useToast } from "@/hooks/use-toast";
 import { logSearch } from "@/utils/searchLogger";
 import { SearchButton } from "@/components/search/SearchButton";
-import { getCachedCoordinates } from "@/services/coordinates/coordinates-cache";
 
 interface SearchFormProps {
   activeTab?: string;
@@ -18,9 +17,7 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault(); // Prevent default form submission behavior
-    
+  const handleSubmit = async () => {
     const searchTerm = postcode.trim();
     
     if (!searchTerm || isSubmitting) {
@@ -36,13 +33,27 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
     console.log(`🔄 Starting search for location:`, searchTerm);
 
     try {
-      // Log search but don't wait for it to complete
-      logSearch(searchTerm, 'location', activeTab).catch(logError => {
+      // Log search but don't wait for it to complete - this was causing issues
+      logSearch(searchTerm, 'postcode', activeTab).catch(logError => {
         console.error('Error logging search:', logError);
         // Continue with search even if logging fails
       });
       
+      // Clear any existing search state from session storage
+      sessionStorage.removeItem('lastSearchLocation');
+      
+      // Clear query cache for fresh search results
+      const cacheKeys = Object.keys(sessionStorage).filter(key => 
+        key.startsWith('tanstack-query-')
+      );
+      
+      cacheKeys.forEach(key => {
+        sessionStorage.removeItem(key);
+      });
+      
       // Extract a readable name from the search term
+      // If it's a Place ID (starts with ChIJ), use just the first part of the term
+      // or the whole term if it doesn't contain a comma
       const displayTerm = searchTerm.startsWith('ChIJ') && searchTerm.includes(',')
         ? searchTerm.split(',')[0].trim()
         : searchTerm;
@@ -53,26 +64,20 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(searchTerm);
       }
 
-      // Check if we already have coordinates for this location in cache
-      const cachedCoordinates = getCachedCoordinates(searchTerm);
-      
       console.log('🧭 Navigating to search results with state:', {
-        searchType: 'location',
+        searchType: 'postcode',
         searchTerm,
         displayTerm,
-        timestamp: Date.now(),
-        cachedCoordinates: cachedCoordinates ? 'available' : 'not available'
+        timestamp: Date.now()
       });
 
-      // Use React Router navigation to prevent full page reloads
+      // Navigate to search results with state
       navigate('/search-results', {
         state: {
-          searchType: 'location',
+          searchType: 'postcode',
           searchTerm,
-          displayTerm,
-          timestamp: Date.now(),
-          // Include cached coordinates if available to skip geocoding step
-          ...(cachedCoordinates && { coordinates: cachedCoordinates })
+          displayTerm, // Add a more readable display term
+          timestamp: Date.now()
         },
         replace: false
       });
@@ -91,19 +96,17 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <form onSubmit={handleSubmit} className="w-full">
-        <div className="mb-4">
-          <PostcodeSearch
-            onSelect={(value) => {
-              console.log('📮 Location selected:', value);
-              setPostcode(value);
-            }}
-            placeholder="Search by postcode, street name or area"
-            className="flex-1"
-          />
-        </div>
-        <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
-      </form>
+      <div className="mb-4">
+        <PostcodeSearch
+          onSelect={(value) => {
+            console.log('📮 Location selected:', value);
+            setPostcode(value);
+          }}
+          placeholder="Search by postcode, street name or area"
+          className="flex-1"
+        />
+      </div>
+      <SearchButton isSubmitting={isSubmitting} onClick={handleSubmit} />
     </div>
   );
 };

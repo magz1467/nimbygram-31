@@ -1,37 +1,34 @@
 
+import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { AppError, createAppError, handleError, ErrorHandlerOptions } from "@/utils/errors";
+import { 
+  handleError, 
+  ErrorOptions, 
+  ErrorType, 
+  AppError,
+  isNonCriticalError
+} from "@/utils/errors";
 
 /**
- * Hook to provide consistent error handling throughout the application
+ * Hook that provides access to error handling functionality
  */
-export const useErrorHandler = () => {
+export function useErrorHandler() {
   const { toast } = useToast();
   
-  /**
-   * Handle any error with consistent UI feedback and logging
-   */
-  const handleAppError = (error: Error | unknown, options?: ErrorHandlerOptions) => {
-    // Convert to AppError and handle centrally
-    if (error instanceof Error) {
-      handleError(error, toast, options);
-    } else {
-      handleError(new Error(String(error)), toast, options);
-    }
-  };
-
-  /**
-   * Create an AppError from any error source
-   */
-  const createError = (error: Error | unknown, context?: string): AppError => {
-    if (error instanceof Error) {
-      return createAppError(error, context);
-    }
-    return createAppError(new Error(String(error)), context);
-  };
-
+  const handleAppError = useCallback((
+    error: any,
+    options: ErrorOptions = {}
+  ): AppError => {
+    return handleError(error, toast, options);
+  }, [toast]);
+  
+  const isNonCritical = useCallback((error: any): boolean => {
+    return isNonCriticalError(error);
+  }, []);
+  
   return {
     handleError: handleAppError,
-    createError
+    isNonCritical,
+    ErrorType
   };
-};
+}

@@ -1,91 +1,111 @@
 
-import { AppError, ErrorType } from './types';
-import { logError } from './formatting';
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { AppError, ErrorOptions, ErrorType } from './types';
 import { detectErrorType } from './detection';
+import { formatErrorMessage, logError } from './formatting';
+import React from 'react';
 
-export interface ErrorHandlerOptions {
-  context?: string;
-  silent?: boolean;
-  retry?: boolean; // Changed from function type to boolean
+/**
+ * Create a standardized AppError from any error
+ */
+export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
+  if (error instanceof AppError) {
+    return error;
+  }
+  
+  // Use provided errorType if available, otherwise detect it
+  const type = errorType !== undefined ? errorType : detectErrorType(error);
+  const message = formatErrorMessage(error, context);
+  
+  return new AppError(message, type, error, context);
 }
 
 /**
- * Create a standardized application error from any error source
+ * Handle errors in a standardized way across the application
  */
-export function createAppError(err: any, context?: string): AppError {
-  // If it's already an AppError, just return it
-  if (err instanceof AppError) {
-    return err;
+export function handleError(
+  error: any, 
+  toast: ReturnType<typeof useToast>["toast"],
+  options: ErrorOptions = {}
+): AppError {
+  const { type, context, retry, silent = false, logToServer = false } = options;
+  
+  // Create standardized app error
+  const appError = error instanceof AppError 
+    ? error 
+    : new AppError(
+        formatErrorMessage(error, context), 
+        type || detectErrorType(error), 
+        error, 
+        context
+      );
+  
+  // Always log to console
+  logError(appError, context);
+  
+  // Show toast notification if not silent
+  if (!silent) {
+    toast({
+      title: context ? `Error in ${context}` : "Error",
+      description: appError.message,
+      variant: "destructive",
+      action: retry ? (
+        <ToastAction altText="Retry" onClick={retry}>
+          Retry
+        </ToastAction>
+      ) : undefined
+    });
   }
   
-  // Detect the error type
-  const errorType = detectErrorType(err);
-  
-  // Create a new AppError with the error message and context
-  const appError = new AppError(
-    err?.message || 'An unknown error occurred',
-    errorType,
-    context
-  );
-  
-  // Keep a reference to the original error
-  appError.originalError = err;
-  
-  // Copy the stack if available
-  if (err?.stack) {
-    appError.stack = err.stack;
+  // Track errors for analytics
+  if (logToServer) {
+    try {
+      // In a real implementation, this would send to an analytics service
+      console.info('Error tracked for analytics:', { 
+        type: appError.type,
+        message: appError.message,
+        context: context,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      });
+      
+      // Implementation for server logging would go here
+      // e.g., sendToErrorTracking(appError, context);
+    } catch (trackingError) {
+      // Don't let tracking errors break the app
+      console.error('Error during error tracking:', trackingError);
+    }
   }
   
   return appError;
 }
 
 /**
- * Centralized error handler for consistent error handling
+ * Optional: Send error to a tracking service
+ * This is just a placeholder - implement with your preferred service
  */
-export function handleError(
-  error: Error | AppError, 
-  toast: any,
-  options: ErrorHandlerOptions = {}
-): void {
-  // Log the error with detailed information
-  logError(error, options.context);
+function sendToErrorTracking(error: AppError, context?: string): void {
+  // Example implementations:
+  // 1. Send to Sentry
+  // if (typeof window !== 'undefined' && window.Sentry) {
+  //   window.Sentry.captureException(error.originalError || error, {
+  //     tags: { context, errorType: error.type }
+  //   });
+  // }
   
-  // Skip toast notification if silent is true
-  if (options.silent) {
-    return;
-  }
-  
-  // Convert to AppError if needed
-  const appError = error instanceof AppError 
-    ? error 
-    : createAppError(error, options.context);
-  
-  // Show toast notification with appropriate styling based on error type
-  toast({
-    title: getErrorTitle(appError),
-    description: appError.message,
-    variant: "destructive",
-  });
-}
-
-/**
- * Get a user-friendly error title based on error type
- */
-function getErrorTitle(error: AppError): string {
-  switch (error.type) {
-    case ErrorType.NETWORK:
-      return 'Connection Error';
-    case ErrorType.TIMEOUT:
-      return 'Request Timeout';
-    case ErrorType.NOT_FOUND:
-      return 'Not Found';
-    case ErrorType.DATABASE:
-      return 'Database Error';
-    case ErrorType.PERMISSION:
-      return 'Permission Denied';
-    case ErrorType.VALIDATION:
-      return 'Invalid Input';
-    default:
-      return 'Error';
-  }
+  // 2. Send to custom endpoint
+  // fetch('/api/log-error', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({
+  //     message: error.message,
+  //     type: error.type,
+  //     context,
+  //     stack: error.stack,
+  //     timestamp: new Date().toISOString(),
+  //     url: window.location.href
+  //   })
+  // }).catch(e => console.error('Failed to log error to server:', e));
 }

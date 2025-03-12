@@ -1,4 +1,3 @@
-
 import { Stats } from "@/components/Stats";
 import { SearchForm } from "@/components/SearchForm";
 import { HeroTitle } from "./HeroTitle";
@@ -16,7 +15,7 @@ export const HeroContent = () => {
       </div>
       <div className="md:hidden mb-4">
         <Image 
-          src="/lovable-uploads/26ba5eea-80ae-45a6-bd31-5afb74bbcc15.png"
+          src="/lovable-uploads/877d91fe-eb57-49a6-915a-a9d063ce98b1.png"
           alt="Couple standing in front of a countryside house" 
           className="rounded-lg shadow-sm w-full h-[300px] object-cover"
           loading="eager"

@@ -29,7 +29,6 @@ export const PostcodeSearch = ({
     handleSelect,
     handleSearchClick,
     handleInputChange,
-    prefetchedSuggestions
   } = usePostcodeInput({ onSelect });
 
   return (
@@ -74,7 +73,6 @@ export const PostcodeSearch = ({
           error={error}
           onSelect={handleSelect}
           commandRef={commandRef}
-          prefetchedSuggestions={prefetchedSuggestions}
         />
       </div>
     </div>

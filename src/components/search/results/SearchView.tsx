@@ -1,12 +1,15 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
 import { NoSearchStateView } from "./NoSearchStateView";
 import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
-import { ErrorType } from "@/utils/errors";
+import { ErrorType, AppError } from "@/utils/errors";
+import { detectErrorType } from "@/utils/errors/detection";
+import { useToast } from '@/hooks/use-toast';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface SearchViewProps {
   initialSearch?: {
@@ -26,28 +29,65 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
-  const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
+  const { toast } = useToast();
+  const { handleError: handleAppError } = useErrorHandler();
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  
+  // Start timing when initialSearch changes
+  useEffect(() => {
+    if (initialSearch?.searchTerm) {
+      setSearchStartTime(Date.now());
+    }
+  }, [initialSearch?.searchTerm]);
+  
+  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
 
   const { 
     applications, 
     isLoading: isLoadingResults,
-    error: searchError,
+    error,
     filters,
     setFilters
-  } = usePlanningSearch(coordinates, initialSearch?.searchTerm);
+  } = usePlanningSearch(coordinates);
 
-  // Combine errors from coordinates and search
-  const error = coordsError || searchError;
+  // Log search performance metrics when search completes
+  useEffect(() => {
+    if (!isLoadingResults && !isLoadingCoords && searchStartTime) {
+      const searchDuration = Date.now() - searchStartTime;
+      console.log(`Search completed in ${searchDuration}ms`);
+      
+      // If search is slow (> 3s), log it for performance tracking
+      if (searchDuration > 3000) {
+        console.info('Slow search metrics:', {
+          duration: searchDuration,
+          resultsCount: applications?.length || 0,
+          searchTerm: initialSearch?.searchTerm,
+          coordinates
+        });
+      }
+      
+      // Reset the timer
+      setSearchStartTime(null);
+    }
+  }, [isLoadingResults, isLoadingCoords, searchStartTime, applications?.length, initialSearch?.searchTerm, coordinates]);
 
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
-    if (onError && error && !isNonCriticalError(error)) {
+    if (onError && error && !error.message?.toLowerCase().includes('support table')) {
       console.log('🚨 Search error:', error);
+      
+      // Handle the error to show a toast
+      handleAppError(error, {
+        context: 'search',
+        silent: true // Don't show duplicate toast, SearchErrorView will handle display
+      });
+      
+      // Propagate the error up to the parent component
       onError(error);
     }
-  }, [error, onError]);
+  }, [error, onError, handleAppError]);
 
   useEffect(() => {
     if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
@@ -55,37 +95,21 @@ export const SearchView = ({
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);
 
-  // Helper to check if the error is a non-critical infrastructure message
-  function isNonCriticalError(err: any): boolean {
-    if (!err) return true;
-    return typeof err.message === 'string' && (
-      err.message.toLowerCase().includes('support table') || 
-      err.message.toLowerCase().includes('function does not exist')
-    );
-  }
-
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
   // Only show error view for real errors, not infrastructure messages
-  if (error && !isNonCriticalError(error) && !applications.length) {
+  if (error && !error.message?.toLowerCase().includes('support table') && !applications.length) {
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
     
-    if ('type' in error && error.type) {
-      // If the error already has a type property, use it
-      errorType = error.type as ErrorType;
-    } else if (
-      error.message?.includes('timeout') || 
-      error.message?.includes('too long') ||
-      error.message?.includes('canceling statement')
-    ) {
-      errorType = ErrorType.TIMEOUT;
-    } else if (error.message?.includes('network') || !navigator.onLine) {
-      errorType = ErrorType.NETWORK;
-    } else if (error.message?.includes('not found') || error.message?.includes('no results')) {
-      errorType = ErrorType.NOT_FOUND;
+    // Check if error is an AppError type that has the type property
+    if ((error as AppError).type !== undefined) {
+      errorType = (error as AppError).type;
+    } else {
+      // Use the detectErrorType utility to determine the error type
+      errorType = detectErrorType(error);
     }
     
     return (

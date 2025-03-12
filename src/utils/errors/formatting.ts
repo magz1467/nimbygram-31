@@ -1,45 +1,52 @@
 
-/**
- * Utility functions for error formatting and logging
- */
+import { AppError, ErrorType } from './types';
 
 /**
- * Format and log errors with detailed information
+ * Format error messages consistently
  */
-export function logError(error: any, context?: string): void {
-  console.error(`Error in ${context || 'application'}:`, error);
-  
-  if (error?.stack) {
-    console.error('Stack trace:', error.stack);
+export function formatErrorMessage(error: any, context?: string): string {
+  if (error instanceof AppError) {
+    return error.message;
   }
   
-  // Log extra attributes for AppErrors
-  if (error?.type) {
-    console.log('Error type:', error.type);
+  if (error instanceof Error) {
+    return error.message;
   }
   
-  if (error?.originalError) {
-    console.log('Original error:', error.originalError);
+  if (typeof error === 'string') {
+    return error;
   }
+  
+  return 'An unknown error occurred';
 }
 
 /**
- * Format an error message for display based on context
+ * Log errors to console with consistent formatting
  */
-export function formatErrorMessage(error: Error, friendlyMessage?: string): string {
-  if (friendlyMessage) {
-    return friendlyMessage;
+export function logError(error: any, context?: string): void {
+  const errorObject = error instanceof AppError ? error : error;
+  
+  console.group('🚨 Application Error');
+  console.error(`Error ${context ? `in ${context}` : ''}:`, errorObject);
+  
+  if (error.stack) {
+    console.error('Stack trace:', error.stack);
   }
   
-  const message = error.message || 'An unexpected error occurred';
+  console.groupEnd();
+}
+
+// NOTE: This function is deprecated - use createAppError from handler.tsx instead
+// @deprecated
+export function createAppError(error: any, context?: string): AppError {
+  console.warn('This createAppError function in formatting.ts is deprecated. Use the one from handler.tsx instead.');
   
-  // Don't expose internal error details to users in production
-  if (process.env.NODE_ENV === 'production') {
-    return message.includes('Error:') 
-      ? message
-      : `Error: ${message}`;
+  if (error instanceof AppError) {
+    return error;
   }
   
-  // In development, show more details
-  return `${error.name}: ${message}`;
+  let errorType = ErrorType.UNKNOWN;
+  let message = formatErrorMessage(error, context);
+  
+  return new AppError(message, errorType, error, context);
 }

@@ -72,6 +72,19 @@ export const ErrorMessage = ({
     }
   };
 
+  // Log error for analytics
+  React.useEffect(() => {
+    if (errorType !== ErrorType.NOT_FOUND) {
+      console.info('UI Error displayed:', {
+        title,
+        message,
+        errorType,
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      });
+    }
+  }, [title, message, errorType]);
+
   // For inline variants, use a more compact layout
   if (variant === 'inline') {
     return (
