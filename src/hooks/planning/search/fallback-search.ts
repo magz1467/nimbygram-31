@@ -67,8 +67,7 @@ export async function performFallbackSearch(
         .lte('latitude', lat + reducedLatDelta)
         .gte('longitude', lng - reducedLngDelta)
         .lte('longitude', lng + reducedLngDelta)
-        .limit(100)
-        .timeout(30); // Increase timeout to 30 seconds
+        .limit(100);
       
       const { data: reducedData, error: reducedError } = await reducedQuery;
       
