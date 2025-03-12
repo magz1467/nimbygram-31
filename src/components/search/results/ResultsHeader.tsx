@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PostcodeSearch } from '@/components/PostcodeSearch';
 import { Application } from '@/types/planning';
@@ -6,6 +7,7 @@ import { FilterControls } from '@/components/map/filter/FilterControls';
 import { SortType } from '@/types/application-types';
 import { Filter, ArrowDownUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cacheCoordinates } from '@/services/coordinates/coordinates-cache';
 
 interface ResultsHeaderProps {
   searchTerm?: string;
@@ -54,6 +56,13 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({
     'Other': 0
   }
 }) => {
+  // Cache the coordinates when they become available (to speed up future searches)
+  React.useEffect(() => {
+    if (searchTerm && coordinates) {
+      cacheCoordinates(searchTerm, coordinates, displayTerm || searchTerm);
+    }
+  }, [searchTerm, coordinates, displayTerm]);
+
   return (
     <div className="border-b">
       {/* Logo header row with white background */}

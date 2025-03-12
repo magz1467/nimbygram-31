@@ -8,6 +8,7 @@ import {
   extractPlaceName
 } from '@/services/coordinates';
 import { useToast } from '@/hooks/use-toast';
+import { getCachedCoordinates, cacheCoordinates } from '@/services/coordinates/coordinates-cache';
 
 // Helper function to implement timeout for promises
 const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
@@ -19,8 +20,8 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage:
   ]) as Promise<T>;
 };
 
-export const useCoordinates = (searchTerm: string | undefined) => {
-  const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+export const useCoordinates = (searchTerm: string | undefined, initialCoordinates?: [number, number] | null) => {
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(initialCoordinates || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
@@ -34,10 +35,24 @@ export const useCoordinates = (searchTerm: string | undefined) => {
         return;
       }
       
+      // If we have initial coordinates (passed from navigation state), use them
+      if (initialCoordinates) {
+        console.log('✅ Using initial coordinates from navigation:', initialCoordinates);
+        setCoordinates(initialCoordinates);
+        return;
+      }
+      
+      // Check if we have the coordinates in cache first
+      const cachedCoords = getCachedCoordinates(searchTerm);
+      if (cachedCoords) {
+        console.log('✅ Using cached coordinates for:', searchTerm, cachedCoords);
+        setCoordinates(cachedCoords);
+        return;
+      }
+      
       // Reset state on new request
       setIsLoading(true);
       setError(null);
-      setCoordinates(null);
       
       console.log('🔍 useCoordinates: Fetching coordinates for:', searchTerm);
       
@@ -54,7 +69,11 @@ export const useCoordinates = (searchTerm: string | undefined) => {
               10000,
               "Timeout while retrieving location details"
             );
-            if (isMounted) setCoordinates(placeCoords);
+            if (isMounted) {
+              setCoordinates(placeCoords);
+              // Cache the coordinates for future use
+              cacheCoordinates(searchTerm, placeCoords);
+            }
             break;
             
           case 'LOCATION_NAME':
@@ -72,6 +91,8 @@ export const useCoordinates = (searchTerm: string | undefined) => {
               if (isMounted && locationCoords) {
                 console.log('✅ Found coordinates for location:', locationCoords);
                 setCoordinates(locationCoords);
+                // Cache the coordinates for future use
+                cacheCoordinates(searchTerm, locationCoords);
               }
             } catch (locationError) {
               console.warn('⚠️ Location search failed:', locationError.message);
@@ -90,6 +111,9 @@ export const useCoordinates = (searchTerm: string | undefined) => {
                   if (isMounted && fallbackCoords) {
                     console.log('✅ Found coordinates for simplified location:', fallbackCoords);
                     setCoordinates(fallbackCoords);
+                    // Cache both versions
+                    cacheCoordinates(searchTerm, fallbackCoords);
+                    cacheCoordinates(placeName, fallbackCoords);
                   }
                 } catch (fallbackError) {
                   console.error('❌ Both direct and simplified location searches failed');
@@ -109,7 +133,11 @@ export const useCoordinates = (searchTerm: string | undefined) => {
               10000,
               "Timeout while looking up postcode"
             );
-            if (isMounted) setCoordinates(postcodeCoords);
+            if (isMounted) {
+              setCoordinates(postcodeCoords);
+              // Cache the coordinates for future use
+              cacheCoordinates(searchTerm, postcodeCoords);
+            }
             break;
         }
       } catch (error) {
@@ -147,7 +175,7 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       console.log('🔇 useCoordinates: Cleanup');
       isMounted = false;
     };
-  }, [searchTerm, toast]);
+  }, [searchTerm, toast, initialCoordinates]);
 
   return { coordinates, isLoading, error };
 };

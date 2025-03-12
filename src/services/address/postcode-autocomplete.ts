@@ -15,18 +15,30 @@ export const fetchAddressSuggestions = async (searchTerm: string): Promise<Postc
   }
 
   try {
-    // First try to get postcode autocomplete results
+    // First try to get postcode autocomplete results (prioritize UK postcodes)
     const postcodeSuggestions = await getPostcodeAutocomplete(searchTerm);
     
-    // If no postcode matches are found, try searching for location names
-    if (postcodeSuggestions.length === 0) {
-      const locationSuggestions = await searchLocationsByName(searchTerm);
+    // Always fetch location suggestions in parallel to improve user experience
+    let locationSuggestions: PostcodeSuggestion[] = [];
+    
+    // If the search term appears to be a location rather than a postcode
+    // (contains a space, doesn't match UK postcode format), prioritize location search
+    const isLikelyLocationName = searchTerm.includes(' ') && 
+                                !/^[A-Z]{1,2}[0-9][A-Z0-9]?/.test(searchTerm.toUpperCase());
+    
+    if (isLikelyLocationName || postcodeSuggestions.length === 0) {
+      locationSuggestions = await searchLocationsByName(searchTerm);
       console.log('📋 Fetched location suggestions count:', locationSuggestions.length);
-      return locationSuggestions;
     }
     
-    console.log('📋 Fetched address suggestions count:', postcodeSuggestions.length);
-    return postcodeSuggestions;
+    // Combine the results, but always put postcodes first if available
+    const combinedResults = [...postcodeSuggestions, ...locationSuggestions];
+    
+    // Remove duplicates (if a location appears in both lists)
+    const uniqueResults = removeDuplicates(combinedResults);
+    
+    console.log('📋 Final address suggestions count:', uniqueResults.length);
+    return uniqueResults;
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
     return [];
@@ -127,7 +139,7 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     console.log('🔍 Searching for locations by name:', searchTerm);
     
     // Use the "query" endpoint for searching places by name
-    const url = `https://api.postcodes.io/places?q=${encodeURIComponent(searchTerm)}&limit=10`;
+    const url = `https://api.postcodes.io/places?q=${encodeURIComponent(searchTerm)}&limit=15`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -175,4 +187,20 @@ const searchLocationsByName = async (searchTerm: string): Promise<PostcodeSugges
     console.error('Error searching for locations by name:', error);
     return [];
   }
+};
+
+/**
+ * Remove duplicate suggestions based on address field
+ */
+const removeDuplicates = (suggestions: PostcodeSuggestion[]): PostcodeSuggestion[] => {
+  const uniqueAddresses = new Set<string>();
+  return suggestions.filter(suggestion => {
+    const address = suggestion.address || suggestion.postcode || '';
+    if (uniqueAddresses.has(address)) {
+      return false;
+    } else {
+      uniqueAddresses.add(address);
+      return true;
+    }
+  });
 };

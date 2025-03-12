@@ -2,7 +2,7 @@
 import React from "react";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
 import { Command } from "@/components/ui/command";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Check } from "lucide-react";
 import { CommandList, CommandItem } from "@/components/ui/command";
 
 interface SuggestionsListProps {
@@ -14,6 +14,7 @@ interface SuggestionsListProps {
   error: Error | null;
   onSelect: (value: string) => void;
   commandRef: React.RefObject<HTMLDivElement>;
+  prefetchedSuggestions?: Set<string>;
 }
 
 export const SuggestionsList = ({
@@ -25,6 +26,7 @@ export const SuggestionsList = ({
   error,
   onSelect,
   commandRef,
+  prefetchedSuggestions = new Set()
 }: SuggestionsListProps) => {
   // Early return if not open
   if (!isOpen) {
@@ -36,10 +38,10 @@ export const SuggestionsList = ({
     isOpen, 
     searchLength: search?.length,
     suggestionsCount: suggestions?.length || 0,
+    prefetchedCount: prefetchedSuggestions?.size || 0,
     isLoading,
     isFetching,
-    error: error ? 'Error present' : 'No error',
-    suggestions: suggestions || 'No suggestions'
+    error: error ? 'Error present' : 'No error'
   });
 
   // Check if we have valid suggestions
@@ -87,26 +89,37 @@ export const SuggestionsList = ({
               : "No locations found. Try a different search term."}
           </div>
         ) : (
-          suggestions.map((suggestion) => (
-            <CommandItem
-              key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
-              value={suggestion.address || suggestion.postcode}
-              onSelect={() => onSelect(suggestion.address || suggestion.postcode || '')}
-              className="flex cursor-pointer flex-col items-start p-2 text-sm hover:bg-gray-100"
-            >
-              <div className="flex w-full items-center">
-                <MapPin className="h-4 w-4 min-w-4 mr-2 text-gray-500" />
-                <div className="flex flex-col items-start">
-                  <div className="font-medium text-left">
-                    {suggestion.postcode}
+          suggestions.map((suggestion) => {
+            const address = suggestion.address || suggestion.postcode || '';
+            const isPrefetched = prefetchedSuggestions.has(address);
+            
+            return (
+              <CommandItem
+                key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
+                value={address}
+                onSelect={() => onSelect(address)}
+                className="flex cursor-pointer flex-col items-start p-2 text-sm hover:bg-gray-100"
+              >
+                <div className="flex w-full items-center">
+                  <MapPin className="h-4 w-4 min-w-4 mr-2 text-gray-500" />
+                  <div className="flex flex-col items-start flex-1">
+                    <div className="font-medium text-left">
+                      {suggestion.postcode}
+                    </div>
+                    <div className="text-xs text-gray-500 text-left">
+                      {formatLocationDetails(suggestion)}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 text-left">
-                    {formatLocationDetails(suggestion)}
-                  </div>
+                  {isPrefetched && (
+                    <div className="ml-2 text-xs text-green-600 flex items-center">
+                      <Check className="h-3 w-3 mr-1" />
+                      <span>Ready</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CommandItem>
-          ))
+              </CommandItem>
+            );
+          })
         )}
       </CommandList>
     </Command>

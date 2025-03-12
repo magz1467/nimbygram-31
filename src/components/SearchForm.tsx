@@ -5,6 +5,7 @@ import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useToast } from "@/hooks/use-toast";
 import { logSearch } from "@/utils/searchLogger";
 import { SearchButton } from "@/components/search/SearchButton";
+import { getCachedCoordinates } from "@/services/coordinates/coordinates-cache";
 
 interface SearchFormProps {
   activeTab?: string;
@@ -52,20 +53,26 @@ export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
         onSearch(searchTerm);
       }
 
+      // Check if we already have coordinates for this location in cache
+      const cachedCoordinates = getCachedCoordinates(searchTerm);
+      
       console.log('🧭 Navigating to search results with state:', {
         searchType: 'location',
         searchTerm,
         displayTerm,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        cachedCoordinates: cachedCoordinates ? 'available' : 'not available'
       });
 
-      // Use React Router navigation instead of forcing a page reload
+      // Use React Router navigation to prevent full page reloads
       navigate('/search-results', {
         state: {
           searchType: 'location',
           searchTerm,
           displayTerm,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          // Include cached coordinates if available to skip geocoding step
+          ...(cachedCoordinates && { coordinates: cachedCoordinates })
         },
         replace: false
       });
