@@ -136,7 +136,7 @@ export const FilterDropdown = memo(({
             <span>Date filter</span>
             {activeFilters.date && <span className="text-xs">Since {activeFilters.date}</span>}
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="p-0">
+          <DropdownMenuSubContent className="p-0 z-[99999]">
             <div className="p-2">
               <Calendar
                 mode="single"

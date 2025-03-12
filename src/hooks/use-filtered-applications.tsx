@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Application } from "@/types/planning";
 import { SortType } from "@/types/application-types";
 import { sortApplicationsByDistance } from '@/utils/distance';
-import { isAfter, parseISO } from 'date-fns';
+import { isAfter, isSameDay, parseISO } from 'date-fns';
 
 interface ActiveFilters {
   status?: string;
@@ -43,7 +43,9 @@ export const useFilteredApplications = (
         try {
           const filterDate = parseISO(activeFilters.date);
           const appValidDate = parseISO(app.valid_date);
-          if (!isAfter(appValidDate, filterDate) && !app.valid_date.startsWith(activeFilters.date)) {
+          
+          // Only include applications whose valid_date is same as or after the filter date
+          if (!isAfter(appValidDate, filterDate) && !isSameDay(appValidDate, filterDate)) {
             return false;
           }
         } catch (error) {
