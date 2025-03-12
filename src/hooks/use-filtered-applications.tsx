@@ -8,7 +8,6 @@ interface ActiveFilters {
   status?: string;
   type?: string;
   search?: string;
-  classification?: string;
 }
 
 export const useFilteredApplications = (
@@ -31,9 +30,6 @@ export const useFilteredApplications = (
         return false;
       }
       if (activeFilters.type && !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
-        return false;
-      }
-      if (activeFilters.classification && !app.classification?.toLowerCase().includes(activeFilters.classification.toLowerCase())) {
         return false;
       }
       return true;

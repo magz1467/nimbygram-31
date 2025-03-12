@@ -9,7 +9,6 @@ import { performFallbackSearch } from './search/fallback-search';
 export interface SearchFilters {
   status?: string;
   type?: string;
-  classification?: string;
 }
 
 export const usePlanningSearch = (coordinates: [number, number] | null) => {

@@ -24,7 +24,6 @@ interface FilterControlsProps {
   };
   isMapView?: boolean;
   onToggleView?: () => void;
-  showCategoryFiltersOnly?: boolean;
 }
 
 export const FilterControls = ({
@@ -41,8 +40,7 @@ export const FilterControls = ({
     'Other': 0
   },
   isMapView,
-  onToggleView,
-  showCategoryFiltersOnly = false
+  onToggleView
 }: FilterControlsProps) => {
   const isMobileDetected = useIsMobile();
   const isMobile = forceMobile !== undefined ? forceMobile : isMobileDetected;
@@ -54,14 +52,6 @@ export const FilterControls = ({
   const handleSortChange = useCallback((sortType: SortType) => {
     onSortChange(sortType);
   }, [onSortChange]);
-
-  if (showCategoryFiltersOnly) {
-    return (
-      <div className="flex items-center space-x-2 w-full overflow-x-auto hide-scrollbar">
-        {/* Removed ClassificationFilters component */}
-      </div>
-    );
-  }
 
   return (
     <div className={`flex items-center space-x-2 ${isMobile ? 'w-full overflow-x-auto hide-scrollbar' : ''}`}>

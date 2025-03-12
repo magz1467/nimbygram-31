@@ -1,3 +1,4 @@
+
 export interface Application {
   id: number;
   title?: string;
@@ -46,7 +47,6 @@ export interface Application {
     };
   };
   application_type_full?: string;
-  classification?: string | null;
   final_impact_score?: number | null;
   engaging_title?: string | null;
   feedback_stats?: {

@@ -30,14 +30,14 @@ export const useMapApplications = (coordinates?: [number, number] | null) => {
       } catch (err) {
         console.error('Error fetching applications:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
-        handleMapError(err, toast);
+        handleMapError(err);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchApplications();
-  }, [coordinates, toast]);
+  }, [coordinates]);
 
   return { applications, isLoading, error };
 };

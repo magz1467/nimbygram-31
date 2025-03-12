@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,6 @@ export const PlanningApplicationDetails = ({
   useEffect(() => {
     console.log('PlanningApplicationDetails - Application Data:', {
       id: application?.id,
-      class_3: application?.class_3,
       title: application?.title
     });
     
