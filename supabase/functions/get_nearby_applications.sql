@@ -82,7 +82,7 @@ BEGIN
 END;
 $$;
 
--- Set a statement timeout to prevent long-running queries (increased to 15 seconds)
+-- Set timeout to 15 seconds
 ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
 
 -- Add permissions for anonymous and authenticated users

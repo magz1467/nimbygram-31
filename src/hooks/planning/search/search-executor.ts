@@ -1,3 +1,4 @@
+
 import { performSpatialSearch } from "./spatial-search";
 import { performFallbackSearch } from "./fallback-search";
 import { SearchMethod, SearchParams } from "./types";
@@ -118,27 +119,4 @@ export async function executeSearch(
     
     throw error;
   }
-}
-
-/**
- * Check if the coordinates are in a known high-density area
- * that requires special handling
- */
-function isKnownProblematicLocation(lat: number, lng: number): boolean {
-  // HP22 6JJ area (Wendover, Buckinghamshire)
-  const isHp226jjArea = 
-    lat >= 51.755 && lat <= 51.775 && 
-    lng >= -0.755 && lng <= -0.735;
-    
-  // Amersham area (known to have many planning applications)
-  const isAmershamArea = 
-    lat >= 51.65 && lat <= 51.68 && 
-    lng >= -0.63 && lng <= -0.57;
-    
-  // Bath city center (known to have many planning applications)
-  const isBathCityCenter =
-    lat >= 51.37 && lat <= 51.39 && 
-    lng >= -2.37 && lng <= -2.34;
-  
-  return isHp226jjArea || isAmershamArea || isBathCityCenter;
 }
