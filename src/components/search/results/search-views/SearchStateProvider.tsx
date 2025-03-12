@@ -86,7 +86,7 @@ export function SearchStateProvider({
       performanceTracker.mark('coordinatesError');
       performanceTracker.addMetadata('coordinatesError', coordsError.message);
       
-      handleError(coordsError, 'coordinates-resolution', {
+      handleError(coordsError, {
         performanceData: performanceTracker.getReport()
       });
       
@@ -129,7 +129,7 @@ export function SearchStateProvider({
       performanceTracker.mark('searchError');
       performanceTracker.addMetadata('searchError', searchError.message);
       
-      handleError(searchError, 'search-execution', {
+      handleError(searchError, {
         performanceData: performanceTracker.getReport()
       });
       

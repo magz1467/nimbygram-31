@@ -18,7 +18,6 @@ export interface ErrorHandlerOptions {
  */
 export function handleError(
   error: unknown,
-  source: string = 'unknown',
   options: ErrorHandlerOptions = { showToast: true, logToConsole: true }
 ): { message: string; type: ErrorType } {
   const { showToast = true, logToConsole = true, performanceData } = options;
@@ -31,7 +30,7 @@ export function handleError(
   
   // Always log errors to console with context
   if (logToConsole) {
-    console.error(`Error [${timestamp}] in ${source}:`, error);
+    console.error(`Error [${timestamp}]:`, error);
     if (performanceData) {
       console.info(`Performance data for error context:`, performanceData);
     }

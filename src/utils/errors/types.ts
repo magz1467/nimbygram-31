@@ -25,6 +25,11 @@ export interface AppError extends Error {
   context?: Record<string, any>;
 }
 
+export type ErrorOptions = {
+  showToast?: boolean;
+  critical?: boolean;
+};
+
 /**
  * Create a typed application error
  */

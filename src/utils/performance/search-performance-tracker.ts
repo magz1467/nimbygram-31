@@ -90,7 +90,7 @@ export class SearchPerformanceTracker {
   /**
    * Log the performance report to console
    */
-  public logReport(): void {
+  public logReport(): Record<string, any> {
     const report = this.getReport();
     console.info(`📊 Performance Report [${this.context}]:`, report);
     return report;
@@ -107,7 +107,7 @@ export function getSearchPerformanceTracker(context?: string): SearchPerformance
     activeTracker = new SearchPerformanceTracker('global');
   } else if (context && context !== activeTracker.getReport().context) {
     // If context changes, create a new tracker but log the old one first
-    const oldReport = activeTracker.logReport();
+    activeTracker.logReport();
     activeTracker = new SearchPerformanceTracker(context);
   }
   

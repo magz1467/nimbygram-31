@@ -66,34 +66,7 @@ export function formatErrorMessage(error: unknown): string {
   return 'An unexpected error occurred';
 }
 
-/**
- * Handle error with optional toast notification
- */
-export function handleError(error: unknown, toast?: any): any {
-  console.error('Error:', error);
-  
-  if (toast && !isNonCriticalError(error)) {
-    toast({
-      title: "Error",
-      description: formatErrorMessage(error),
-      variant: "destructive",
-    });
-  }
-  
-  return {
-    message: formatErrorMessage(error),
-    type: detectErrorType(error)
-  };
-}
-
-export type ErrorOptions = {
-  showToast?: boolean;
-  critical?: boolean;
-};
-
-export type AppError = {
-  message: string;
-  type: ErrorType;
-};
-
+// Export types
 export { ErrorType };
+export type { AppError } from './errors/types';
+export type { ErrorOptions } from './errors/types';

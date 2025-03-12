@@ -4,6 +4,7 @@ import { Application } from "@/types/planning";
 import { ResultsHeader } from "@/components/search/results/ResultsHeader";
 import { ResultsContainer } from "@/components/search/results/ResultsContainer";
 import { SortType } from "@/types/application-types";
+import { StatusCounts } from "@/types/application-types";
 
 interface ResultsViewProps {
   applications: Application[];
@@ -18,14 +19,20 @@ export function ResultsView({ applications, searchTerm, filters, onFilterChange 
   const [activeSort, setActiveSort] = useState<SortType>('distance');
   
   // Calculate status counts for the header with default values
-  const statusCounts = applications.reduce((counts: Record<string, number>, app) => {
+  const statusCounts: StatusCounts = applications.reduce((counts: StatusCounts, app) => {
+    // Initialize with default values if this is the first iteration
+    if (!counts['Under Review']) counts['Under Review'] = 0;
+    if (!counts['Approved']) counts['Approved'] = 0;
+    if (!counts['Declined']) counts['Declined'] = 0;
+    if (!counts['Other']) counts['Other'] = 0;
+    
     const status = app.status || 'Other';
     const category = status.includes('Under Review') ? 'Under Review' :
                     status.includes('Approved') ? 'Approved' :
                     status.includes('Declined') ? 'Declined' : 'Other';
     counts[category] = (counts[category] || 0) + 1;
     return counts;
-  }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
+  }, {} as StatusCounts);
   
   return (
     <div>
