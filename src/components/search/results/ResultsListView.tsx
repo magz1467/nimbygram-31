@@ -5,7 +5,6 @@ import { LoadingState } from "./components/LoadingState";
 import { TimeoutErrorMessage } from "./components/TimeoutErrorMessage";
 import { NoResultsMessage } from "./components/NoResultsMessage";
 import { ResultsList } from "./components/ResultsList";
-import { useEffect, useState } from "react";
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -92,7 +91,7 @@ export const ResultsListView = ({
   }
 
   // Second priority: Show loading state while searching or if we haven't completed initial load
-  if (isLoading || isSearchInProgress || (!initialLoadComplete && hasStartedLoading) || searchDuration < 15000) {
+  if (isLoading || isSearchInProgress || (!initialLoadComplete && hasStartedLoading)) {
     return (
       <LoadingState
         isLongSearchDetected={isLongSearchDetected}
@@ -118,27 +117,15 @@ export const ResultsListView = ({
     );
   }
 
-  // Fourth priority: Show "still searching" if search has just completed but we're still waiting
-  if (!isLoading && !error && initialLoadComplete && searchDuration < 15000) {
-    return (
-      <NoResultsMessage
-        searchTerm={searchTerm}
-        displayTerm={displayTerm}
-        postcode={postcode}
-        onRetry={onRetry}
-        isStillSearching={true}
-      />
-    );
-  }
-
-  // Final case: No results found after thorough search
+  // Fourth priority: Show "no results" with appropriate messaging
+  // We don't check searchDuration here to avoid component switching
   return (
     <NoResultsMessage
       searchTerm={searchTerm}
       displayTerm={displayTerm}
       postcode={postcode}
       onRetry={onRetry}
-      isStillSearching={false}
+      isStillSearching={searchDuration < 15000}
     />
   );
 };

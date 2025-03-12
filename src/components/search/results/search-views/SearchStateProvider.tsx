@@ -152,7 +152,8 @@ export function SearchStateProvider({
     
     getSearchPerformanceTracker(`search-retry-${Date.now()}`);
     
-    window.location.reload();
+    // Removed window.location.reload() to prevent page reload
+    console.log('Retry search requested');
   }, []);
   
   const value = {
