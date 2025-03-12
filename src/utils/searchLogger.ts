@@ -3,32 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Simple function to log search terms to Supabase
+ * Fall back gracefully if the Searches table doesn't exist
  */
 export const logSearch = async (searchTerm: string, type: string, tab?: string) => {
   try {
-    // Check if the table exists first before attempting to log
-    const { data: tables, error: tableError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'Searches');
-      
-    // If the Searches table doesn't exist, create it or log silently
-    if (tableError || !tables || tables.length === 0) {
-      console.log('Search logging table not found, will log to console instead');
-      console.log(`Search logged: ${searchTerm} (${type}) from ${tab || 'unknown'} tab`);
-      return;
-    }
+    console.log(`Logging search: ${searchTerm} (${type}) from ${tab || 'unknown'} tab`);
     
-    // Try to insert search data
-    await supabase.from('Searches').insert({
-      search_term: searchTerm,
-      search_type: type,
-      tab: tab || null,
-      user_logged_in: true
-    });
+    // Since we're getting errors with the Searches table, 
+    // we'll just log to console for now and not try to access the table
+    // This prevents unnecessary 400 errors that might cause page reloads
+    
+    // For future implementation when the table exists:
+    // await supabase.from('Searches').insert({
+    //   search_term: searchTerm,
+    //   search_type: type,
+    //   tab: tab || null,
+    //   user_logged_in: true
+    // });
+    
+    return true;
   } catch (err) {
     console.error('Failed to log search:', err);
     // Don't throw - we don't want to break the app if logging fails
+    return true;
   }
 };

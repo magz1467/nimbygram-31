@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
@@ -17,9 +16,19 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5);
   const { toast } = useToast();
+  const previousCoordinatesRef = useRef<string | null>(null);
+  
+  const queryKey = coordinates ? 
+    ['planning-applications', coordinates.join(','), JSON.stringify(filters), searchRadius.toString()] : 
+    ['planning-applications', 'no-coordinates'];
+    
+  const coordinatesString = coordinates ? coordinates.join(',') : null;
+  useEffect(() => {
+    previousCoordinatesRef.current = coordinatesString;
+  }, [coordinatesString]);
   
   const { data: applications = [], isLoading, error } = useQuery({
-    queryKey: ['planning-applications', coordinates?.join(','), filters, searchRadius],
+    queryKey,
     queryFn: async () => {
       if (!coordinates) return [];
       
@@ -28,7 +37,15 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const [lat, lng] = coordinates;
         
-        // Always use fallback search since spatial search is failing with 404
+        try {
+          const spatialResults = await performSpatialSearch(lat, lng, searchRadius, filters);
+          if (spatialResults && spatialResults.length > 0) {
+            return spatialResults;
+          }
+        } catch (spatialError) {
+          console.log('Spatial search failed, using fallback search instead:', spatialError);
+        }
+        
         return await performFallbackSearch(lat, lng, searchRadius, filters);
       } catch (err) {
         return handleSearchError(err, toast);
@@ -37,6 +54,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     enabled: !!coordinates,
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   return {

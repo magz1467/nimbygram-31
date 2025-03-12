@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SearchViewContent } from "./SearchViewContent";
@@ -26,6 +26,9 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
+  // Use a ref to prevent multiple error callbacks
+  const hasReportedError = useRef(false);
+  
   const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
   );
@@ -43,14 +46,16 @@ export const SearchView = ({
 
   useEffect(() => {
     // Only propagate meaningful errors, not infrastructure setup messages
-    if (onError && error && !isNonCriticalError(error)) {
+    // And only report an error once to prevent loops
+    if (onError && error && !isNonCriticalError(error) && !hasReportedError.current) {
       console.log('🚨 Search error:', error);
+      hasReportedError.current = true;
       onError(error);
     }
   }, [error, onError]);
 
   useEffect(() => {
-    if (!isLoadingResults && !isLoadingCoords && onSearchComplete) {
+    if (!isLoadingResults && !isLoadingCoords && onSearchComplete && !hasReportedError.current) {
       onSearchComplete();
     }
   }, [isLoadingResults, isLoadingCoords, onSearchComplete]);

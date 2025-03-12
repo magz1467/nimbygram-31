@@ -26,17 +26,16 @@ export async function performFallbackSearch(
     
     console.log(`Search bounds: lat ${minLat} to ${maxLat}, lng ${minLng} to ${maxLng}`);
     
-    // Create query
+    // Create query with proper typings for the filter conditions
     let query = supabase
       .from('crystal_roof')
       .select('*');
     
-    // Add lat/lng filters using gt/lt operators instead of gte/lte
-    query = query.gt('latitude', minLat);
-    query = query.lt('latitude', maxLat);
-    query = query.gt('longitude', minLng);
-    query = query.lt('longitude', maxLng);
-    query = query.limit(50);
+    // Add lat/lng filters using gt/lt operators
+    query = query.gte('latitude', minLat);
+    query = query.lte('latitude', maxLat);
+    query = query.gte('longitude', minLng);
+    query = query.lte('longitude', maxLng);
     
     // Add other filters
     if (filters.status) {
@@ -44,8 +43,15 @@ export async function performFallbackSearch(
     }
     
     if (filters.type) {
-      query = query.or(`type.ilike.%${filters.type}%`);
+      query = query.ilike('type', `%${filters.type}%`);
     }
+    
+    if (filters.classification) {
+      query = query.ilike('classification', `%${filters.classification}%`);
+    }
+    
+    // Limit to a reasonable number
+    query = query.limit(50);
     
     // Execute query
     const { data, error } = await query;
