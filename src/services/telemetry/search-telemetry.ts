@@ -88,6 +88,7 @@ class SearchTelemetryService {
             console.error('Error logging telemetry:', response.error);
           }
         })
+        // Explicitly handle promise rejection
         .catch((error) => {
           console.error('Error logging telemetry:', error);
         });
@@ -125,7 +126,6 @@ class SearchTelemetryService {
       }
     } catch (err) {
       console.error('Error logging telemetry:', err);
-      // Don't throw, just log the error
     }
   }
 

@@ -145,6 +145,7 @@ class ErrorReportingService {
           console.error('Failed to log error to Supabase:', result.error);
         }
       })
+      // Explicitly handle promise rejection
       .catch((err) => {
         console.error('Failed to log error to Supabase:', err);
       });
