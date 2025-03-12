@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";

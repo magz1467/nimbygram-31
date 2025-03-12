@@ -52,10 +52,10 @@ export const ResultsListView = ({
   // Effect to detect long-running searches
   useEffect(() => {
     if (isLoading) {
-      // Set a timeout to detect long-running searches (more than 5 seconds)
+      // Set a timeout to detect long-running searches (more than 15 seconds)
       const timeoutId = setTimeout(() => {
         setIsLongSearchDetected(true);
-      }, 5000);
+      }, 15000); // Increased from 5000 to 15000 (15 seconds)
       
       // Clean up the timeout if the loading state changes before the timeout
       return () => clearTimeout(timeoutId);
@@ -181,3 +181,4 @@ export const ResultsListView = ({
     </div>
   );
 };
+
