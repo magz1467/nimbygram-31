@@ -24,7 +24,10 @@ export const useErrorHandler = () => {
    * Create an AppError from any error source
    */
   const createError = (error: Error | unknown, context?: string): AppError => {
-    return createAppError(error, context);
+    if (error instanceof Error) {
+      return createAppError(error, context);
+    }
+    return createAppError(new Error(String(error)), context);
   };
 
   return {

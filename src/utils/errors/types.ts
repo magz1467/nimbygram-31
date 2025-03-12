@@ -9,7 +9,10 @@ export enum ErrorType {
   DATABASE = 'database',
   PERMISSION = 'permission',
   VALIDATION = 'validation',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
+  AUTHENTICATION = 'authentication',
+  AUTHORIZATION = 'authorization',
+  SERVER = 'server'
 }
 
 /**

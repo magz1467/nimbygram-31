@@ -56,17 +56,17 @@ export function handleSearchError(
     console.log('Error stack:', err.stack);
   }
   
-  // Log browser and performance information
+  // Log browser and performance information - with type safety
   const performanceInfo = {
     memory: typeof window.performance !== 'undefined' && 
-            'memory' in window.performance ? 
+            typeof (window.performance as any).memory !== 'undefined' ? 
             {
               jsHeapSizeLimit: (window.performance as any).memory?.jsHeapSizeLimit,
               totalJSHeapSize: (window.performance as any).memory?.totalJSHeapSize,
               usedJSHeapSize: (window.performance as any).memory?.usedJSHeapSize
             } : 'Not available',
     connection: typeof navigator !== 'undefined' && 
-                'connection' in navigator ? 
+                typeof (navigator as any).connection !== 'undefined' ? 
                 {
                   effectiveType: (navigator as any).connection?.effectiveType,
                   downlink: (navigator as any).connection?.downlink,

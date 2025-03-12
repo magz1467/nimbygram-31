@@ -41,7 +41,18 @@ export function detectErrorType(error: any): ErrorType {
     return ErrorType.NOT_FOUND;
   }
   
-  // Check for permission errors
+  // Check for authentication errors
+  if (
+    message.includes('login') ||
+    message.includes('authentication') ||
+    message.includes('unauthenticated') ||
+    message.includes('401') ||
+    error.status === 401
+  ) {
+    return ErrorType.AUTHENTICATION;
+  }
+  
+  // Check for permission/authorization errors
   if (
     message.includes('permission') ||
     message.includes('unauthorized') ||
@@ -71,6 +82,15 @@ export function detectErrorType(error: any): ErrorType {
     (error.code && error.code.startsWith('23'))
   ) {
     return ErrorType.DATABASE;
+  }
+  
+  // Check for server errors
+  if (
+    message.includes('server') ||
+    message.includes('5xx') ||
+    error.status >= 500
+  ) {
+    return ErrorType.SERVER;
   }
   
   // Default to unknown

@@ -56,7 +56,8 @@ export const performFallbackSearch = async (
     // Track query performance
     const startTime = Date.now();
     
-    // Use fetch with AbortController for timeout
+    // Use fetch with AbortController for timeout - note we don't pass the controller to Supabase
+    // as it doesn't support it directly, but we'll abort the operation ourselves if needed
     const { data, error } = await query;
     
     // Clear timeout
