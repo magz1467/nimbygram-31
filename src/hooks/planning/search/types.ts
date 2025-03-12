@@ -1,4 +1,8 @@
 
+import { Application } from "@/types/planning";
+
+export type SearchMethod = 'spatial' | 'fallback' | 'cache' | 'paginated' | 'emergency';
+
 export interface SearchFilters {
   status?: string;
   type?: string;
@@ -6,34 +10,31 @@ export interface SearchFilters {
   [key: string]: string | undefined;
 }
 
-export type SearchMethod = 'spatial' | 'fallback' | 'cache';
-
 export interface SearchParams {
   coordinates: [number, number];
   radius: number;
-  filters: SearchFilters;
+  filters?: SearchFilters;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface SearchOptions {
-  coordinates: [number, number];
-  radius: number;
-  filters: SearchFilters;
+  useCache?: boolean;
+  retryCount?: number;
+  timeout?: number;
 }
 
 export interface SearchResult {
-  applications: any[];
-  searchMethod: SearchMethod;
+  applications: Application[];
+  method: SearchMethod;
+  timing?: {
+    startTime: number;
+    endTime: number;
+    duration: number;
+  };
 }
 
-export interface ProgressiveSearchState {
-  results: any[];
-  isLoading: boolean;
-}
-
-export enum SearchErrorType {
-  NETWORK = 'network',
-  TIMEOUT = 'timeout',
-  COORDINATES = 'coordinates',
-  NO_RESULTS = 'no_results',
-  UNKNOWN = 'unknown'
+export interface SearchError extends Error {
+  type?: string;
+  context?: any;
 }

@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info } from "lucide-react";
+import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info, MapPin } from "lucide-react";
 import { ErrorType } from "@/utils/errors";
 import { useState } from "react";
 import { formatErrorMessage } from "@/utils/errors";
@@ -21,13 +21,21 @@ export const SearchErrorView = ({
   // Format error message to avoid [object Object]
   const formattedErrorDetails = formatErrorMessage(errorDetails);
   
+  // Determine if this is a timeout with a specific area
+  const isLocationTimeout = errorType === ErrorType.TIMEOUT && 
+    (formattedErrorDetails?.includes('Amersham') || 
+     formattedErrorDetails?.includes('reduced area') ||
+     formattedErrorDetails?.includes('search area'));
+  
   // Select the appropriate icon based on error type
   const ErrorIcon = () => {
     switch (errorType) {
       case ErrorType.NETWORK:
         return <WifiOff className="h-16 w-16 text-red-500 mb-4" />;
       case ErrorType.TIMEOUT:
-        return <Clock className="h-16 w-16 text-amber-500 mb-4" />;
+        return isLocationTimeout ? 
+          <MapPin className="h-16 w-16 text-amber-500 mb-4" /> : 
+          <Clock className="h-16 w-16 text-amber-500 mb-4" />;
       case ErrorType.NOT_FOUND:
         return <Search className="h-16 w-16 text-blue-500 mb-4" />;
       default:
@@ -41,7 +49,7 @@ export const SearchErrorView = ({
       case ErrorType.NETWORK:
         return "Connection Problem";
       case ErrorType.TIMEOUT:
-        return "Search Timeout";
+        return isLocationTimeout ? "Area Search Timeout" : "Search Timeout";
       case ErrorType.NOT_FOUND:
         return "No Results Found";
       default:
@@ -51,13 +59,15 @@ export const SearchErrorView = ({
 
   // Get a helpful message based on error type
   const getErrorMessage = () => {
-    if (formattedErrorDetails) return formattedErrorDetails;
+    if (formattedErrorDetails && !isLocationTimeout) return formattedErrorDetails;
     
     switch (errorType) {
       case ErrorType.NETWORK:
         return "We're having trouble connecting to our servers. Please check your internet connection and try again.";
       case ErrorType.TIMEOUT:
-        return "The search took too long to complete. Please try a more specific location or different filters.";
+        return isLocationTimeout ? 
+          "This area has too many planning applications to search all at once. Please try searching a more specific location within Amersham." :
+          "The search took too long to complete. Please try a more specific location or different filters.";
       case ErrorType.NOT_FOUND:
         return "We couldn't find any planning applications matching your search criteria.";
       default:
@@ -69,7 +79,12 @@ export const SearchErrorView = ({
   const getSuggestions = () => {
     switch (errorType) {
       case ErrorType.TIMEOUT:
-        return [
+        return isLocationTimeout ? [
+          "Try searching for a specific street in Amersham",
+          "Add 'Amersham High Street' or another landmark instead",
+          "Use a full postcode instead of just 'Amersham'",
+          "Try a smaller search radius once you search again"
+        ] : [
           "Use a more specific location (e.g., full postcode instead of just 'Bath')",
           "Try adding filters like application status or type",
           "Search for a smaller area or specific street name"

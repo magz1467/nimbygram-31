@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
@@ -8,6 +9,7 @@ import { MobileDetector } from "@/components/map/mobile/MobileDetector";
 import { ErrorType } from "@/utils/errors";
 import { isNonCriticalError } from "@/utils/errors";
 import { LoadingSkeletons } from "./components/LoadingSkeletons";
+import { useToast } from "@/hooks/use-toast";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -31,6 +33,7 @@ export const SearchView = ({
   const hasReportedError = useRef(false);
   const [localError, setLocalError] = useState<Error | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(true);
+  const { toast } = useToast();
   
   const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
@@ -43,7 +46,9 @@ export const SearchView = ({
     error: searchError,
     hasResults,
     filters,
-    setFilters
+    setFilters,
+    searchRadius,
+    setSearchRadius
   } = usePlanningSearch(coordinates);
 
   // Show skeletons for a minimum time to avoid flickering UI
@@ -91,6 +96,18 @@ export const SearchView = ({
     }
   }, [isLoadingResults, isLoadingCoords, coordinates, applications, onSearchComplete]);
 
+  // If we found some applications using the emergency search
+  // but the search itself reported an error
+  useEffect(() => {
+    if (error && applications.length > 0) {
+      toast({
+        title: "Limited Results",
+        description: "We found some results, but had to limit our search. For better results, try a more specific location.",
+        duration: 6000,
+      });
+    }
+  }, [error, applications.length, toast]);
+
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
@@ -107,6 +124,7 @@ export const SearchView = ({
   }
 
   // Only show error view for real errors, not infrastructure messages
+  // Also don't show error view if we have some applications to show
   if (error && !isNonCriticalError(error) && !applications.length) {
     // Determine error type for proper display
     let errorType = ErrorType.UNKNOWN;
@@ -117,7 +135,8 @@ export const SearchView = ({
     } else if (
       error.message?.includes('timeout') || 
       error.message?.includes('too long') ||
-      error.message?.includes('canceling statement')
+      error.message?.includes('canceling statement') ||
+      error.message?.includes('reduced area')
     ) {
       errorType = ErrorType.TIMEOUT;
     } else if (error.message?.includes('network') || !navigator.onLine) {
