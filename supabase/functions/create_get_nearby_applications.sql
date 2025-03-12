@@ -60,8 +60,8 @@ $$;
 -- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
--- Set timeout to prevent long-running queries (10 seconds)
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '10s';
+-- Set timeout to prevent long-running queries (increased to 30 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '30s';
 
 -- Create index on latitude and longitude for faster searches
 CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 

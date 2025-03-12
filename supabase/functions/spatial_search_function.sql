@@ -53,5 +53,5 @@ GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 
 ON crystal_roof (latitude, longitude);
 
--- Set timeout to prevent long-running queries
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
+-- Set timeout to prevent long-running queries - increased from 15s to 30s
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '30s';

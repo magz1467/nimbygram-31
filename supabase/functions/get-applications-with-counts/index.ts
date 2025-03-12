@@ -58,7 +58,7 @@ serve(async (req) => {
         .lte('latitude', maxLat)
         .gte('longitude', minLng)
         .lte('longitude', maxLng)
-        .timeout(5); // 5 second timeout
+        .timeout(10); // Increased from 5 to 10 second timeout
         
       if (countResult.count !== null) {
         totalCount = countResult.count;
@@ -81,7 +81,7 @@ serve(async (req) => {
         .gte('longitude', minLng)
         .lte('longitude', maxLng)
         .range(offset, offset + pageSize - 1)
-        .timeout(10); // 10 second timeout
+        .timeout(20); // Increased from 10 to 20 second timeout
       
       if (result.error) {
         throw result.error;
@@ -131,7 +131,7 @@ serve(async (req) => {
           .gte('longitude', center_lng - (radius_km * 0.5)/(111.32 * Math.cos(center_lat * Math.PI / 180)))
           .lte('longitude', center_lng + (radius_km * 0.5)/(111.32 * Math.cos(center_lat * Math.PI / 180)))
           .limit(50)
-          .timeout(5);
+          .timeout(15); // Increased from 5 to 15 second timeout
           
         if (fallbackResult.data && fallbackResult.data.length > 0) {
           applications = fallbackResult.data;
