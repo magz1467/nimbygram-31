@@ -46,6 +46,7 @@ export const ResultsListView = ({
   // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
+  const [hasData, setHasData] = useState(false);
   const pageSize = 10;
 
   // Effect to detect long-running searches
@@ -66,7 +67,9 @@ export const ResultsListView = ({
 
   // Update loaded applications when new applications come in
   useEffect(() => {
-    if (applications && applications.length > 0 && !isLoading) {
+    if (applications && applications.length > 0) {
+      setHasData(true);
+      
       if (currentPage === 0) {
         // Reset for new search
         setLoadedApplications(applications.slice(0, pageSize));
@@ -81,7 +84,7 @@ export const ResultsListView = ({
         });
       }
     }
-  }, [applications, currentPage, isLoading, pageSize]);
+  }, [applications, currentPage, pageSize]);
 
   // Function to handle loading more results
   const handleLoadMore = async () => {
@@ -90,8 +93,8 @@ export const ResultsListView = ({
     }
   };
 
-  // If initial loading, show skeleton cards
-  if (isLoading && currentPage === 0) {
+  // If loading and we've never had data, show skeleton cards
+  if (isLoading && !hasData) {
     return (
       <div>
         <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />
@@ -113,8 +116,8 @@ export const ResultsListView = ({
      error.message.includes('57014') || 
      error.message.includes('canceling statement'));
 
-  // If error or no applications found, show empty state
-  if (error || (!applications?.length && !loadedApplications?.length)) {
+  // If error or no applications found (and we're not loading), show empty state
+  if (error || (!applications?.length && !loadedApplications?.length && !isLoading)) {
     return (
       <ErrorMessage 
         title={isTimeoutError ? "Search Timeout" : (error ? "Error loading results" : "No results found")}
@@ -133,6 +136,14 @@ export const ResultsListView = ({
 
   return (
     <div className="py-4">
+      {/* Show loading indicator at the top if we're loading more data but already have some */}
+      {isLoading && hasData && (
+        <div className="mb-6 text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading more results...</p>
+        </div>
+      )}
+
       {/* Display all loaded applications in a single column layout with reduced width */}
       <div className="max-w-lg mx-auto space-y-6">
         {loadedApplications.map((application) => (

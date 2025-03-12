@@ -4,10 +4,10 @@ import { performSpatialSearch } from './spatial-search';
 import { performFallbackSearch } from './fallback-search';
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';
 import { withRetry } from '@/utils/retry';
-import { SearchOptions, SearchResult, SearchFilters } from './types';
+import { SearchParams, SearchResult, SearchFilters } from './types';
 
 export async function executeSearch(
-  options: SearchOptions,
+  options: SearchParams,
   searchMethodRef: React.MutableRefObject<'spatial' | 'fallback' | null>
 ): Promise<SearchResult> {
   if (!options.coordinates) {
@@ -19,7 +19,7 @@ export async function executeSearch(
   // Try cache first
   if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
     const cachedResults = searchCache.get(options.coordinates, options.radius, options.filters);
-    if (cachedResults) {
+    if (cachedResults && cachedResults.length > 0) {
       console.log('Using cached results:', cachedResults.length);
       return {
         applications: cachedResults,
@@ -44,7 +44,7 @@ export async function executeSearch(
         spatialResults = await withRetry(spatialSearchFn, {
           maxRetries: 2,
           retryableErrors: (err) => {
-            const errMsg = err?.message?.toLowerCase() || '';
+            const errMsg = String(err?.message || '').toLowerCase();
             return (
               errMsg.includes('network') ||
               errMsg.includes('timeout') ||
@@ -68,7 +68,7 @@ export async function executeSearch(
       }
     }
     
-    if (spatialResults !== null) {
+    if (spatialResults !== null && Array.isArray(spatialResults)) {
       console.log('Using spatial search results:', spatialResults.length);
       
       if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
@@ -96,7 +96,7 @@ export async function executeSearch(
     fallbackResults = await withRetry(fallbackSearchFn, {
       maxRetries: 2,
       retryableErrors: (err) => {
-        const errMsg = err?.message?.toLowerCase() || '';
+        const errMsg = String(err?.message || '').toLowerCase();
         return (
           errMsg.includes('network') ||
           errMsg.includes('timeout') ||
@@ -113,12 +113,12 @@ export async function executeSearch(
   
   console.log('Got fallback results:', fallbackResults.length);
   
-  if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE)) {
+  if (featureFlags.isEnabled(FeatureFlags.USE_SEARCH_CACHE) && Array.isArray(fallbackResults)) {
     searchCache.set(options.coordinates, options.radius, options.filters, fallbackResults);
   }
   
   return {
-    applications: fallbackResults,
+    applications: fallbackResults || [],
     searchMethod: 'fallback'
   };
 }

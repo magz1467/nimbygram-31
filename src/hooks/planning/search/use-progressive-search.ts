@@ -15,6 +15,9 @@ export function useProgressiveSearch(
   const [isLoadingProgressive, setIsLoadingProgressive] = useState<boolean>(false);
   
   useEffect(() => {
+    // Reset state when coordinates change
+    setProgressiveResults([]);
+    
     if (!coordinates || !featureFlags.isEnabled(FeatureFlags.ENABLE_PROGRESSIVE_LOADING)) {
       return;
     }
@@ -23,6 +26,7 @@ export function useProgressiveSearch(
       searchCache.get(coordinates, searchRadius, filters) : null;
     
     if (cachedResults && cachedResults.length > 0) {
+      console.log('Using cached results for progressive search:', cachedResults.length);
       setProgressiveResults(cachedResults);
     } else {
       const quickSearchRadius = Math.max(1, Math.floor(searchRadius / 2));
@@ -31,11 +35,15 @@ export function useProgressiveSearch(
       const performQuickSearch = async () => {
         try {
           const [lat, lng] = coordinates;
+          console.log('Performing quick search for progressive results');
           
           const quickResults = await performFallbackSearch(lat, lng, quickSearchRadius, filters);
           
           if (quickResults.length > 0) {
+            console.log('Quick search found results:', quickResults.length);
             setProgressiveResults(quickResults);
+          } else {
+            console.log('Quick search found no results');
           }
         } catch (err) {
           console.error('Quick search error:', err);
@@ -46,6 +54,11 @@ export function useProgressiveSearch(
       
       performQuickSearch();
     }
+    
+    // Cleanup function to reset results when coordinates change
+    return () => {
+      setProgressiveResults([]);
+    };
   }, [coordinates, searchRadius, filters]);
   
   return {

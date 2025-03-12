@@ -8,6 +8,7 @@ import { SearchErrorView } from "./SearchErrorView";
 import { MobileDetector } from "@/components/map/mobile/MobileDetector";
 import { ErrorType } from "@/utils/errors";
 import { isNonCriticalError } from "@/utils/errors";
+import { LoadingSkeletons } from "./components/LoadingSkeletons";
 
 interface SearchViewProps {
   initialSearch?: {
@@ -30,6 +31,7 @@ export const SearchView = ({
   // Use a ref to prevent multiple error callbacks
   const hasReportedError = useRef(false);
   const [localError, setLocalError] = useState<Error | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   
   const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
@@ -38,10 +40,23 @@ export const SearchView = ({
   const { 
     applications, 
     isLoading: isLoadingResults,
+    isFetching,
     error: searchError,
+    hasResults,
     filters,
     setFilters
   } = usePlanningSearch(coordinates);
+
+  // Show skeletons for a minimum time to avoid flickering UI
+  useEffect(() => {
+    if (coordinates && !isLoadingCoords) {
+      const timer = setTimeout(() => {
+        setShowSkeleton(false);
+      }, 1500); // Keep skeleton for at least 1.5 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [coordinates, isLoadingCoords]);
 
   // Combine errors from coordinates and search
   const error = localError || coordsError || searchError;
@@ -81,6 +96,17 @@ export const SearchView = ({
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
+  // Show loading state when we're still getting coordinates or results
+  if ((isLoadingCoords || (isLoadingResults && showSkeleton)) && !hasResults) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h2 className="text-2xl font-semibold mb-4">Searching for planning applications...</h2>
+        <p className="text-gray-600 mb-6">Looking for planning applications near {initialSearch.displayTerm || initialSearch.searchTerm}</p>
+        <LoadingSkeletons count={5} isLongSearch={false} />
+      </div>
+    );
+  }
+
   // Only show error view for real errors, not infrastructure messages
   if (error && !isNonCriticalError(error) && !applications.length) {
     // Determine error type for proper display
@@ -114,7 +140,7 @@ export const SearchView = ({
     );
   }
 
-  const isLoading = isLoadingCoords || isLoadingResults;
+  const isLoading = isLoadingCoords || isLoadingResults || isFetching;
 
   return (
     <SearchViewContent

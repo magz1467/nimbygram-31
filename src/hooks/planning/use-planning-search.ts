@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Application } from "@/types/planning";
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';
@@ -14,6 +14,7 @@ export type { SearchFilters } from './search/types';
 export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5);
+  const [hasResults, setHasResults] = useState<boolean>(false);
   
   const { logSearchCompleted } = useSearchTelemetry();
   const { handleSearchError, errorRef, searchMethodRef } = useSearchErrorHandler(
@@ -32,6 +33,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     const radiusString = searchRadius.toString();
     const coordString = coordinates.join(',');
     
+    // Only update the query key if the search parameters have changed
     if (
       queryKey.current[1] !== coordString || 
       queryKey.current[2] !== filterString || 
@@ -41,7 +43,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     }
   }
   
-  const { data: applications = [], isLoading, error: queryError } = useQuery({
+  const {
+    data: applications = [],
+    isLoading,
+    isFetching,
+    error: queryError
+  } = useQuery({
     queryKey: queryKey.current,
     queryFn: async () => {
       if (!coordinates) return [];
@@ -54,6 +61,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           searchMethodRef
         );
         
+        // Log telemetry data about the search
         logSearchCompleted(
           coordinates,
           searchRadius,
@@ -62,10 +70,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
           result.searchMethod
         );
         
+        // Update the hasResults state based on whether we got any results
+        setHasResults(result.applications.length > 0);
+        
         return result.applications;
       } catch (err) {
         handleSearchError(err);
-        return [];
+        return progressiveResults.length > 0 ? progressiveResults : [];
       }
     },
     enabled: !!coordinates,
@@ -76,15 +87,25 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     refetchOnReconnect: false,
   });
 
+  // Once we have results, we want to maintain them even if there's an error
+  useEffect(() => {
+    if (applications && applications.length > 0) {
+      setHasResults(true);
+    }
+  }, [applications]);
+
   const error = queryError || errorRef.current;
   
+  // If we have progressive results and we're loading, use those to show something to the user
   const finalApplications = (isLoading && progressiveResults.length > 0) 
     ? progressiveResults 
     : (applications || []);
 
   return {
     applications: finalApplications,
+    hasResults,
     isLoading: isLoading && !isLoadingProgressive,
+    isFetching,
     isLoadingProgressive,
     error,
     filters,

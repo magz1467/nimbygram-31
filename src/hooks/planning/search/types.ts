@@ -14,9 +14,20 @@ export interface SearchParams {
   filters: SearchFilters;
 }
 
+export interface SearchOptions {
+  coordinates: [number, number];
+  radius: number;
+  filters: SearchFilters;
+}
+
 export interface SearchResult {
   applications: any[];
   searchMethod: SearchMethod;
+}
+
+export interface ProgressiveSearchState {
+  results: any[];
+  isLoading: boolean;
 }
 
 export enum SearchErrorType {
