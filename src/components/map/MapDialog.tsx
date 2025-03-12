@@ -10,13 +10,15 @@ interface MapDialogProps {
   onClose: () => void;
   application: Application;
   allApplications?: Application[];
+  searchCoordinates?: [number, number]; // Added search coordinates prop
 }
 
 export const MapDialog = ({
   isOpen,
   onClose,
   application,
-  allApplications = []
+  allApplications = [],
+  searchCoordinates // Use this for the blue dot location
 }: MapDialogProps) => {
   // If no coordinates are available for the application, we can't show the map
   if (!application.coordinates) {
@@ -47,8 +49,8 @@ export const MapDialog = ({
           <MapContainer
             applications={mapApplications}
             selectedId={application.id}
-            coordinates={application.coordinates}
-            searchLocation={application.coordinates}
+            coordinates={application.coordinates} // Center map on application
+            searchLocation={searchCoordinates || application.coordinates} // Use search coordinates for blue dot if available
             onMarkerClick={() => {}}
           />
         </div>

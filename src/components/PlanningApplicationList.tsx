@@ -11,13 +11,16 @@ interface PlanningApplicationListProps {
   onSelectApplication: (id: number | null) => void;
   activeSort?: SortType;
   onFeedback?: (applicationId: number, type: 'yimby' | 'nimby') => void;
+  coordinates?: [number, number] | null; // Added search coordinates prop
 }
 
 export const PlanningApplicationList = ({
   applications,
+  postcode,
   onSelectApplication,
   activeSort,
-  onFeedback
+  onFeedback,
+  coordinates // Original search coordinates
 }: PlanningApplicationListProps) => {
   const sortedApplications = useApplicationSorting({
     type: activeSort || null,
@@ -39,6 +42,7 @@ export const PlanningApplicationList = ({
           onSelect={onSelectApplication}
           onFeedback={onFeedback}
           allApplications={applications} // Pass all applications for map context
+          searchCoordinates={coordinates || undefined} // Pass search coordinates
         />
       ))}
     </div>

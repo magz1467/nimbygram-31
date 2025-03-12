@@ -14,13 +14,15 @@ interface ApplicationListItemProps {
   onSelect: (id: number) => void;
   onFeedback?: (applicationId: number, type: 'yimby' | 'nimby') => void;
   allApplications?: Application[];
+  searchCoordinates?: [number, number]; // Added search coordinates prop
 }
 
 export const ApplicationListItem = ({ 
   application,
   onSelect,
   onFeedback,
-  allApplications = []
+  allApplications = [],
+  searchCoordinates // Original search coordinates
 }: ApplicationListItemProps) => {
   const [showMap, setShowMap] = useState(false);
   
@@ -91,6 +93,7 @@ export const ApplicationListItem = ({
           onClose={() => setShowMap(false)}
           application={application}
           allApplications={allApplications}
+          searchCoordinates={searchCoordinates} // Pass search coordinates
         />
       )}
     </>
