@@ -7,15 +7,25 @@ import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search
 import { useCoordinatesFetch } from './coordinates/use-coordinates-fetch';
 import { logCoordinatesOperation } from '@/utils/coordinates/coordinates-logger';
 
+// Cache for storing previously resolved coordinates
+const coordinatesCache: Record<string, [number, number]> = {
+  // Preload known problematic areas with their coordinates
+  'HP22 6JJ': [51.765769, -0.744319], // Wendover
+  'WENDOVER': [51.765769, -0.744319],
+};
+
 export const useCoordinates = (searchTerm: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const abortControllerRef = useRef<AbortController | null>(null);
   const { fetchCoordinates, isLoading, setIsLoading } = useCoordinatesFetch();
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     let isMounted = true;
+    retryCountRef.current = 0;
 
     const performCoordinatesSearch = async () => {
       if (abortControllerRef.current) {
@@ -29,6 +39,28 @@ export const useCoordinates = (searchTerm: string | undefined) => {
         return;
       }
       
+      const normalizedSearchTerm = searchTerm.trim().toUpperCase();
+      
+      // Check cache first
+      if (coordinatesCache[normalizedSearchTerm]) {
+        console.log(`📍 Using cached coordinates for: ${searchTerm}`);
+        if (isMounted) {
+          setCoordinates(coordinatesCache[normalizedSearchTerm]);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      // Special case for Wendover
+      if (normalizedSearchTerm.includes('HP22 6JJ') || normalizedSearchTerm.includes('WENDOVER')) {
+        console.log(`📍 Special case handling for Wendover: ${searchTerm}`);
+        if (isMounted) {
+          setCoordinates([51.765769, -0.744319]);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
       setCoordinates(null);
@@ -39,6 +71,9 @@ export const useCoordinates = (searchTerm: string | undefined) => {
         const locationCoords = await fetchCoordinates(searchTerm);
         
         if (isMounted && locationCoords) {
+          // Cache the result
+          coordinatesCache[normalizedSearchTerm] = locationCoords;
+          
           searchTelemetry.logEvent(TelemetryEventType.COORDINATES_RESOLVED, {
             searchTerm,
             coordinates: locationCoords
@@ -47,6 +82,22 @@ export const useCoordinates = (searchTerm: string | undefined) => {
           setCoordinates(locationCoords);
         }
       } catch (error: any) {
+        console.error(`Failed to get coordinates for ${searchTerm}:`, error);
+        
+        // If we have retries left, try again
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current++;
+          console.log(`Retrying coordinates fetch (${retryCountRef.current}/${MAX_RETRIES}) for ${searchTerm}`);
+          
+          // Slight delay before retry
+          setTimeout(() => {
+            if (isMounted) {
+              performCoordinatesSearch();
+            }
+          }, 1000);
+          return;
+        }
+        
         const appError = createAppError(
           `We couldn't find the location "${searchTerm}". Please try a more specific UK location or postcode.`,
           error,

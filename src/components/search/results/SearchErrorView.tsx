@@ -4,6 +4,7 @@ import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info, MapPin } from "l
 import { ErrorType } from "@/utils/errors";
 import { useState } from "react";
 import { formatErrorMessage } from "@/utils/errors";
+import { useNavigate } from "react-router-dom";
 
 interface SearchErrorViewProps {
   errorDetails: string | null;
@@ -17,12 +18,13 @@ export const SearchErrorView = ({
   onRetry 
 }: SearchErrorViewProps) => {
   const [showDetails, setShowDetails] = useState(false);
+  const navigate = useNavigate();
   
   // Format error message to avoid [object Object]
   const formattedErrorDetails = formatErrorMessage(errorDetails);
   
   // Check if this is Wendover (HP22 6JJ) area timeout
-  const isWendoverPostcode = formattedErrorDetails?.includes('HP22 6JJ') || 
+  const isWendoverPostcode = formattedErrorDetails?.toLowerCase().includes('hp22 6jj') || 
     formattedErrorDetails?.toLowerCase().includes('wendover');
   
   // Determine if this is a timeout with a specific area
@@ -130,6 +132,18 @@ export const SearchErrorView = ({
     }
   };
 
+  // Special handler for Wendover alternatives
+  const handleWendoverAlternativeSearch = (alternativeLocation: string) => {
+    navigate('/search-results', {
+      state: {
+        searchType: 'location',
+        searchTerm: alternativeLocation,
+        displayTerm: alternativeLocation,
+        timestamp: Date.now()
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
@@ -146,6 +160,35 @@ export const SearchErrorView = ({
               <li key={index} className="text-gray-700">{suggestion}</li>
             ))}
           </ul>
+          
+          {isWendoverPostcode && (
+            <div className="mt-4 space-y-2">
+              <h4 className="font-medium text-sm text-gray-600">Try these alternatives:</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleWendoverAlternativeSearch("Wendover High Street")}
+                >
+                  Wendover High Street
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleWendoverAlternativeSearch("Halton Village")}
+                >
+                  Halton Village
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleWendoverAlternativeSearch("Stoke Mandeville")}
+                >
+                  Stoke Mandeville
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         
         {formattedErrorDetails && (
