@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useSpatialSearch } from "@/hooks/use-spatial-search";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SearchCoordinates } from "@/types/search";
+import { SearchCoordinates, SEARCH_RADIUS } from "@/types/search";
 import { Loader2, MapPin, AlertCircle } from "lucide-react";
 import ResultsContainer from "./results/ResultsContainer";
 import { searchDiagnostics } from "@/utils/search-diagnostics";
@@ -19,11 +19,11 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   // Log search diagnostics
   useEffect(() => {
     if (coordinates) {
-      // Properly log coordinates regardless of format
-      const coordsArray = Array.isArray(coordinates) 
-        ? coordinates 
+      // Ensure coordinates are converted to a proper tuple
+      const coordsArray: [number, number] = Array.isArray(coordinates) 
+        ? [coordinates[0], coordinates[1]] 
         : [coordinates.lat, coordinates.lng];
-        
+      
       console.log("🔍 Search initiated for coordinates:", coordinates);
       console.log("🔍 Search radius:", SEARCH_RADIUS, "km");
       searchDiagnostics.logSearch(coordsArray, SEARCH_RADIUS);
