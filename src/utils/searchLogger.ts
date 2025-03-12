@@ -1,11 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Keep track of recent search terms to prevent duplicate logging
 const recentSearches = new Map<string, number>();
 
 /**
- * Simple function to log search terms to console only
- * We'll avoid any Supabase calls since the Searches table doesn't exist yet
+ * Log search terms to Supabase Searches table and console
  */
 export const logSearch = async (searchTerm: string, type: string, tab?: string) => {
   try {
@@ -19,8 +19,27 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
       return true;
     }
     
-    // Log to console only - no Supabase calls
+    // Log to console
     console.log(`Logging search: ${searchTerm} (${type}) from ${tab || 'unknown'} tab`);
+    
+    // Get current user session (if logged in)
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Insert into Searches table
+    const { error } = await supabase
+      .from('Searches')
+      .insert({
+        search_term: searchTerm,
+        search_type: type,
+        tab: tab || 'unknown',
+        user_id: session?.user?.id || null,
+        timestamp: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Failed to log search to database:', error);
+      // Don't throw - we still want to return true to prevent breaking the app
+    }
     
     // Store this search in recent searches
     recentSearches.set(key, now);
