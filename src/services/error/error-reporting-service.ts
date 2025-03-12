@@ -1,6 +1,10 @@
 
-import { AppError } from '@/utils/errors';
+import { ErrorType } from '@/utils/errors/types';
 import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
+
+interface AppError extends Error {
+  type?: ErrorType;
+}
 
 interface ErrorReportingOptions {
   context?: string;
@@ -61,7 +65,7 @@ function formatErrorDetails(error: unknown): {
     const appError = error as AppError;
     return {
       message: appError.message || 'Unknown error',
-      type: appError.type,
+      type: appError.type?.toString(),
       stack: appError.stack,
       code: (appError as any).code
     };

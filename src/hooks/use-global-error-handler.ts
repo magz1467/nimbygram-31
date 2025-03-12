@@ -3,11 +3,9 @@ import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ErrorType, 
-  AppError, 
-  createAppError, 
+  detectErrorType,
   isNonCriticalError, 
-  formatErrorMessage,
-  detectErrorType 
+  formatErrorMessage
 } from '@/utils/errors';
 import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
 
@@ -17,6 +15,12 @@ interface ErrorHandlerOptions {
   silent?: boolean;
   log?: boolean;
   trackTelemetry?: boolean;
+  userMessage?: string;
+}
+
+interface AppError extends Error {
+  type: ErrorType;
+  context?: Record<string, any>;
   userMessage?: string;
 }
 
@@ -57,15 +61,10 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
     const formattedMessage = formatErrorMessage(error);
     
     // Create standardized error object
-    const appError = createAppError(
-      formattedMessage,
-      error,
-      {
-        type: errorType,
-        context: { context: opts.context },
-        userMessage: opts.userMessage
-      }
-    );
+    const appError = new Error(formattedMessage) as AppError;
+    appError.type = errorType;
+    appError.context = { context: opts.context };
+    appError.userMessage = opts.userMessage;
     
     // Log to telemetry if enabled
     if (opts.trackTelemetry) {
@@ -83,8 +82,7 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
         description: appError.userMessage || formattedMessage,
         variant: "destructive",
         action: opts.retry ? {
-          label: "Retry",
-          onClick: opts.retry
+          element: <button onClick={opts.retry}>Retry</button>
         } : undefined
       });
     }
@@ -92,11 +90,19 @@ export function useGlobalErrorHandler(): GlobalErrorHandler {
     return appError;
   }, [toast]);
 
+  const createError = useCallback((message: string, options: any = {}): AppError => {
+    const error = new Error(message) as AppError;
+    error.type = options.type || ErrorType.UNKNOWN;
+    error.context = options.context || {};
+    error.userMessage = options.userMessage;
+    return error;
+  }, []);
+
   return {
     handleError,
     isNonCritical: isNonCriticalError,
     formatMessage: formatErrorMessage,
-    createError: createAppError,
+    createError,
     ErrorType
   };
 }

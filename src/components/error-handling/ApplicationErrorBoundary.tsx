@@ -3,11 +3,10 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, AlertTriangle, WifiOff, Clock } from "lucide-react";
 import { 
-  ErrorType, 
-  AppError, 
+  ErrorType,
   formatErrorMessage, 
-  detectErrorType, 
-  createAppError 
+  detectErrorType,
+  isNonCriticalError
 } from '@/utils/errors';
 import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
 
@@ -15,13 +14,13 @@ interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   component?: string;
-  onError?: (error: AppError) => void;
+  onError?: (error: any) => void;
   resetOnPropsChange?: boolean;
 }
 
 interface State {
   hasError: boolean;
-  error: AppError | null;
+  error: Error | null;
   errorInfo: ErrorInfo | null;
 }
 
@@ -32,19 +31,10 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
     errorInfo: null
   };
 
-  public static getDerivedStateFromError(error: Error | AppError): Partial<State> {
-    // Convert to AppError if it's not already
-    const appError = 'type' in error 
-      ? error as AppError 
-      : createAppError(
-          formatErrorMessage(error),
-          error,
-          { type: detectErrorType(error) }
-        );
-        
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
       hasError: true, 
-      error: appError 
+      error
     };
   }
 
@@ -64,15 +54,6 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Convert to AppError if it's not already
-    const appError = 'type' in error 
-      ? error as AppError 
-      : createAppError(
-          formatErrorMessage(error),
-          error,
-          { type: detectErrorType(error) }
-        );
-    
     console.error(`Error caught in ${this.props.component || 'component'} boundary:`, error);
     console.error('Component stack:', errorInfo.componentStack);
     
@@ -80,13 +61,13 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
     
     // Call onError callback if provided
     if (this.props.onError) {
-      this.props.onError(appError);
+      this.props.onError(error);
     }
     
     // Log to telemetry
     searchTelemetry.logEvent(TelemetryEventType.SEARCH_ERROR, {
-      errorType: appError.type,
-      errorMessage: appError.message,
+      errorType: detectErrorType(error),
+      errorMessage: formatErrorMessage(error),
       component: this.props.component,
       componentStack: errorInfo.componentStack
     });
@@ -108,7 +89,7 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
       }
       
       // Determine the appropriate icon based on error type
-      const errorType = this.state.error?.type || ErrorType.UNKNOWN;
+      const errorType = this.state.error ? detectErrorType(this.state.error) : ErrorType.UNKNOWN;
       
       const ErrorIcon = () => {
         switch (errorType) {
@@ -141,7 +122,7 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
           <ErrorIcon />
           <h2 className="text-xl font-semibold mb-2">{getErrorTitle()}</h2>
           <p className="text-gray-600 mb-6 text-center max-w-lg">
-            {this.state.error?.userMessage || this.state.error?.message || "We encountered an unexpected error"}
+            {this.state.error?.message || "We encountered an unexpected error"}
           </p>
           
           {process.env.NODE_ENV === 'development' && this.state.error && (

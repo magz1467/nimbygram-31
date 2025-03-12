@@ -1,42 +1,39 @@
 
 import { useState, useEffect } from 'react';
-import { Application } from '@/types/planning';
-import { fetchApplicationsInRadius } from '@/services/applications/application-service';
-import { useGlobalErrorHandler } from '@/hooks/use-global-error-handler';
+import { Application } from "@/types/planning";
+import { fetchApplicationById } from "@/services/applications/application-service";
+import { fetchApplicationsInRadius } from "@/services/applications/application-service"; // Correct import path
 
-export function useApplicationsData(coordinates: [number, number] | null, radius: number = 5) {
+export const useApplicationsData = (
+  coordinates: [number, number] | null,
+  radius: number = 5,
+  limit: number = 100
+) => {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const errorHandler = useGlobalErrorHandler();
 
   useEffect(() => {
-    async function fetchData() {
-      if (!coordinates) {
-        setApplications([]);
-        return;
-      }
+    if (!coordinates) return;
 
-      setIsLoading(true);
+    const fetchData = async () => {
+      setLoading(true);
       setError(null);
 
       try {
         const [lat, lng] = coordinates;
-        const apps = await fetchApplicationsInRadius(lat, lng, radius);
-        setApplications(apps);
+        const results = await fetchApplicationsInRadius(lat, lng, radius, limit);
+        setApplications(results);
       } catch (err) {
-        const appError = errorHandler.handleError(err, {
-          context: 'fetching applications data',
-          silent: true
-        });
-        setError(appError);
+        console.error('Error fetching applications:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch applications'));
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    }
+    };
 
     fetchData();
-  }, [coordinates, radius, errorHandler]);
+  }, [coordinates, radius, limit]);
 
-  return { applications, isLoading, error };
-}
+  return { applications, loading, error };
+};

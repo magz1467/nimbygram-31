@@ -1,24 +1,28 @@
 
-import { Application } from "@/types/planning";
-
 export interface SearchFilters {
   status?: string;
   type?: string;
   classification?: string;
+  [key: string]: string | undefined;
 }
 
-export interface ProgressiveSearchState {
-  results: Application[];
-  isLoading: boolean;
-}
+export type SearchMethod = 'spatial' | 'fallback' | 'cache';
 
-export interface SearchOptions {
-  coordinates: [number, number] | null;
+export interface SearchParams {
+  coordinates: [number, number];
   radius: number;
   filters: SearchFilters;
 }
 
 export interface SearchResult {
-  applications: Application[];
-  searchMethod: 'spatial' | 'fallback' | 'cache';
+  applications: any[];
+  searchMethod: SearchMethod;
+}
+
+export enum SearchErrorType {
+  NETWORK = 'network',
+  TIMEOUT = 'timeout',
+  COORDINATES = 'coordinates',
+  NO_RESULTS = 'no_results',
+  UNKNOWN = 'unknown'
 }
