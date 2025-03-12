@@ -33,18 +33,17 @@ export const MapSplitView = ({
   isSearchInProgress,
   onRetry
 }: MapSplitViewProps) => {
-  const [displayedApplications, setDisplayedApplications] = useState<Application[]>(
-    applications.slice(0, 10)
-  );
   const listContainerRef = useRef<HTMLDivElement>(null);
-
-  // Load 10 more applications when "Load More" is clicked
-  const handleLoadMore = useCallback(async () => {
-    const currentCount = displayedApplications.length;
-    const nextBatch = applications.slice(0, currentCount + 10);
-    setDisplayedApplications(nextBatch);
-    return Promise.resolve();
-  }, [applications, displayedApplications]);
+  
+  // Get the selected application or null if none is selected
+  const selectedApplication = selectedId 
+    ? applications.find(app => app.id === selectedId) 
+    : null;
+  
+  // Applications to display - either just the selected one or all if none selected
+  const displayedApplications = selectedApplication 
+    ? [selectedApplication] 
+    : applications.slice(0, 10);
 
   // Handle clicking on a marker or application in the list
   const handleApplicationSelect = useCallback((id: number) => {
@@ -52,25 +51,25 @@ export const MapSplitView = ({
     onMarkerClick(id);
   }, [setSelectedId, onMarkerClick]);
 
-  // Scroll to the selected application when selectedId changes
-  useEffect(() => {
-    if (selectedId && listContainerRef.current) {
-      // Find the selected application element
-      const selectedElement = listContainerRef.current.querySelector(`[data-application-id="${selectedId}"]`);
-      if (selectedElement) {
-        // Scroll the selected application into view
-        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+  // Load more applications button handler
+  const handleLoadMore = useCallback(async () => {
+    if (!selectedApplication) {
+      const currentCount = displayedApplications.length;
+      const nextBatch = applications.slice(0, currentCount + 10);
+      return Promise.resolve();
     }
-  }, [selectedId]);
+    return Promise.resolve();
+  }, [applications, displayedApplications, selectedApplication]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100vh-200px)]">
-      {/* Left side - Results list */}
+      {/* Left side - Selected application or Results list */}
       <div className="overflow-y-auto border rounded-lg bg-white" ref={listContainerRef}>
         <div className="sticky top-0 bg-white p-3 border-b flex justify-between items-center z-10">
           <h2 className="font-medium">
-            {applications.length} {applications.length === 1 ? 'result' : 'results'}
+            {selectedApplication 
+              ? 'Selected Application' 
+              : `${applications.length} ${applications.length === 1 ? 'result' : 'results'}`}
           </h2>
           <Button 
             variant="outline" 
@@ -110,7 +109,7 @@ export const MapSplitView = ({
           ))}
         </div>
         
-        {displayedApplications.length < applications.length && (
+        {!selectedApplication && displayedApplications.length < applications.length && (
           <div className="p-4 text-center">
             <Button 
               variant="outline" 

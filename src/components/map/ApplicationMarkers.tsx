@@ -26,17 +26,22 @@ const getStatusColor = (status: string): string => {
 
 // Create marker icon with appropriate color and size
 const createMarkerIcon = (color: string, isSelected: boolean) => {
-  const size = isSelected ? 48 : 24; // Larger size for selected marker
+  const size = isSelected ? 40 : 24; // Larger size for selected marker
+  const strokeWidth = isSelected ? 2 : 1;
+  const strokeColor = isSelected ? 'white' : 'rgba(255, 255, 255, 0.8)';
   
   return L.divIcon({
-    className: 'custom-pin custom-marker ' + (isSelected ? 'selected-marker' : ''),
+    className: `custom-pin custom-marker ${isSelected ? 'selected-marker' : ''}`,
     html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="${color}"/>
+      <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" 
+        fill="${color}" 
+        stroke="${strokeColor}" 
+        stroke-width="${strokeWidth}"
+      />
     </svg>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size],
     popupAnchor: [0, -size/2],
-    // Add higher z-index to ensure visibility
   });
 };
 
@@ -52,10 +57,12 @@ export const ApplicationMarkers = ({
     baseCoordinates
   });
 
+  // Create map markers - selected marker should appear last (on top)
   const markers = useMemo(() => {
     console.log('🔍 Creating markers for applications:', applications.length);
     
-    return applications
+    // First create non-selected markers
+    const nonSelectedMarkers = applications
       .filter(app => {
         // Filter out applications without valid coordinates
         if (!app.coordinates) {
@@ -69,18 +76,12 @@ export const ApplicationMarkers = ({
           return false;
         }
         
-        return true;
+        // Filter out the selected app - we'll add it separately at the end
+        return app.id !== selectedId;
       })
       .map(app => {
         const color = getStatusColor(app.status || 'pending');
-        const isSelected = app.id === selectedId;
         
-        console.log(`📍 Creating marker for app ${app.id}:`, { 
-          coords: app.coordinates,
-          isSelected,
-          color
-        });
-
         return (
           <Marker
             key={app.id}
@@ -91,11 +92,43 @@ export const ApplicationMarkers = ({
                 onMarkerClick(app.id);
               }
             }}
-            icon={createMarkerIcon(color, isSelected)}
-            zIndexOffset={isSelected ? 1000 : 0} // Make selected marker appear on top
+            icon={createMarkerIcon(color, false)}
+            zIndexOffset={0}
           />
         );
       });
+    
+    // Now add the selected marker if it exists (to ensure it's on top)
+    const selectedApp = applications.find(app => app.id === selectedId);
+    if (selectedApp && selectedApp.coordinates) {
+      const color = getStatusColor(selectedApp.status || 'pending');
+      
+      console.log(`📍 Creating marker for selected app ${selectedApp.id}:`, { 
+        coords: selectedApp.coordinates,
+        isSelected: true,
+        color
+      });
+      
+      const selectedMarker = (
+        <Marker
+          key={`selected-${selectedApp.id}`}
+          position={selectedApp.coordinates as LatLngTuple}
+          eventHandlers={{
+            click: () => {
+              console.log('🖱️ Selected marker clicked:', selectedApp.id);
+              onMarkerClick(selectedApp.id);
+            }
+          }}
+          icon={createMarkerIcon(color, true)}
+          zIndexOffset={1000} // Ensure selected marker is on top
+        />
+      );
+      
+      // Return with selected marker added at the end (so it will be on top)
+      return [...nonSelectedMarkers, selectedMarker];
+    }
+    
+    return nonSelectedMarkers;
   }, [applications, selectedId, onMarkerClick]);
 
   console.log(`🎯 Rendering ${markers.length} markers`);
