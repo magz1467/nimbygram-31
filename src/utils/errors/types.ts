@@ -1,7 +1,4 @@
 
-/**
- * Types of errors that can occur in the application
- */
 export enum ErrorType {
   UNKNOWN = 'unknown',
   NETWORK = 'network',
@@ -16,15 +13,22 @@ export enum ErrorType {
   AUTHORIZATION = 'authorization'
 }
 
-/**
- * Interface for application errors with proper typing
- */
 export interface AppErrorOptions {
   type?: ErrorType;
   details?: string;
   code?: string;
   context?: Record<string, any>;
+  performanceData?: Record<string, any>;
+  logToConsole?: boolean;
 }
+
+export type ErrorHandlerOptions = {
+  showToast?: boolean;
+  critical?: boolean;
+  context?: Record<string, any>;
+  performanceData?: Record<string, any>;
+  logToConsole?: boolean;
+};
 
 export class AppError extends Error {
   type: ErrorType;
@@ -42,15 +46,6 @@ export class AppError extends Error {
   }
 }
 
-export type ErrorHandlerOptions = {
-  showToast?: boolean;
-  critical?: boolean;
-  context?: Record<string, any>;
-};
-
-/**
- * Create a typed application error
- */
 export function createAppError(
   message: string, 
   options: AppErrorOptions = {}

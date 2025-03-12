@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { withTimeout } from "./fetchUtils";
 import { transformApplicationData } from "./transforms/application-transformer";
@@ -115,3 +114,34 @@ export const fetchApplicationsFromEdge = async (
     return null;
   }
 };
+
+export async function callEdgeFunction(functionName: string, params?: any) {
+  try {
+    const response = await withTimeout(
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(params)
+      }),
+      30000,
+      "Search request timed out. Please try a more specific location."
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Edge function error:', errorText, 'Status:', response.status);
+      throw new Error('Edge function failed: ' + (errorText || response.statusText));
+    }
+    
+    return await response.json();
+  } catch (error) {
+    handleError({
+      error,
+      context: { functionName, params }
+    });
+    throw error;
+  }
+}
