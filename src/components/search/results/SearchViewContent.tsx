@@ -35,28 +35,74 @@ export const SearchViewContent = ({
   onSearchComplete,
   retryCount = 0
 }: SearchViewContentProps) => {
+  const componentId = useRef(`svc-${Math.random().toString(36).substring(2, 9)}`).current;
+  const mountTimeRef = useRef(Date.now());
+  const renderCountRef = useRef(0);
   const hasResultsRef = useRef(false);
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [activeSort, setActiveSort] = useState<SortType>('distance');
+  const onSearchCompleteCalledRef = useRef(false);
   const pageSize = 10;
 
+  // Track renders
+  renderCountRef.current += 1;
+  
+  // Log mount/render information
   useEffect(() => {
-    hasResultsRef.current = applications && applications.length > 0;
-  }, [applications]);
+    console.log(`🟩 SearchViewContent [${componentId}] MOUNTED`, {
+      mountTime: new Date(mountTimeRef.current).toISOString(),
+      searchTerm: initialSearch?.searchTerm,
+      applications: applications.length,
+      renderCount: renderCountRef.current
+    });
+    
+    return () => {
+      console.log(`🟥 SearchViewContent [${componentId}] UNMOUNTED after ${renderCountRef.current} renders`, {
+        lifetime: Date.now() - mountTimeRef.current,
+        unmountTime: new Date().toISOString(),
+        searchTerm: initialSearch?.searchTerm,
+      });
+    };
+  }, [componentId, initialSearch?.searchTerm, applications.length]);
 
+  // Track when applications change
   useEffect(() => {
-    if (onSearchComplete && !isLoading) {
+    console.log(`📊 SearchViewContent applications changed [${componentId}]`, {
+      count: applications.length,
+      isLoading,
+      time: new Date().toISOString(),
+      renderCount: renderCountRef.current
+    });
+    
+    hasResultsRef.current = applications && applications.length > 0;
+  }, [applications, isLoading, componentId]);
+
+  // Track onSearchComplete call
+  useEffect(() => {
+    console.log(`🔍 SearchViewContent checking onSearchComplete [${componentId}]`, {
+      isLoading,
+      hasOnSearchComplete: !!onSearchComplete,
+      alreadyCalled: onSearchCompleteCalledRef.current,
+      time: new Date().toISOString(),
+      renderCount: renderCountRef.current
+    });
+    
+    if (onSearchComplete && !isLoading && !onSearchCompleteCalledRef.current) {
+      console.log(`✅ SearchViewContent calling onSearchComplete [${componentId}]`);
+      onSearchCompleteCalledRef.current = true;
       onSearchComplete();
     }
-  }, [isLoading, onSearchComplete]);
+  }, [isLoading, onSearchComplete, componentId]);
 
+  // Reset page when new results are loaded
   useEffect(() => {
     if (!isLoading && applications.length > 0) {
+      console.log(`📄 SearchViewContent resetting page [${componentId}]`);
       setCurrentPage(0);
     }
-  }, [applications, isLoading]);
+  }, [applications, isLoading, componentId]);
 
   // Calculate status counts for the header with explicit initialization
   const statusCounts = applications.reduce((counts: { 'Under Review': number; 'Approved': number; 'Declined': number; 'Other': number }, app) => {
@@ -77,11 +123,20 @@ export const SearchViewContent = ({
         resultCount={applications?.length || 0}
         isLoading={isLoading}
         isMapVisible={showMap}
-        onToggleMapView={() => setShowMap(!showMap)}
+        onToggleMapView={() => {
+          console.log(`🗺️ SearchViewContent toggling map [${componentId}]`);
+          setShowMap(!showMap);
+        }}
         activeSort={activeSort}
         activeFilters={filters}
-        onFilterChange={onFilterChange}
-        onSortChange={(sortType) => setActiveSort(sortType)}
+        onFilterChange={(type, value) => {
+          console.log(`🔍 SearchViewContent filter changed [${componentId}]`, { type, value });
+          onFilterChange(type, value);
+        }}
+        onSortChange={(sortType) => {
+          console.log(`🔤 SearchViewContent sort changed [${componentId}]`, { sortType });
+          setActiveSort(sortType);
+        }}
         statusCounts={statusCounts}
       />
 
@@ -96,7 +151,10 @@ export const SearchViewContent = ({
           setShowMap={setShowMap}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
-          handleMarkerClick={(id) => setSelectedId(id)}
+          handleMarkerClick={(id) => {
+            console.log(`📌 SearchViewContent marker clicked [${componentId}]`, { id });
+            setSelectedId(id);
+          }}
         />
       </div>
     </div>

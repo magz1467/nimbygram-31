@@ -26,7 +26,30 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const { results: progressiveResults, isLoading: isLoadingProgressive } = 
     useProgressiveSearch(coordinates, searchRadius, filters);
   
+  const componentId = useRef(`search-${Math.random().toString(36).substring(2, 9)}`).current;
+  const mountTimeRef = useRef(Date.now());
+  const renderCountRef = useRef(0);
+  const queryStartTimeRef = useRef<number>(0);
   const queryKey = useRef<string[]>(['planning-applications', 'no-coordinates']);
+  
+  // Track renders
+  renderCountRef.current += 1;
+  
+  // Log mount information
+  useEffect(() => {
+    console.log(`🔎 usePlanningSearch [${componentId}] MOUNTED`, {
+      mountTime: new Date(mountTimeRef.current).toISOString(),
+      hasCoordinates: !!coordinates,
+      coordinates: coordinates?.join(',') || 'none',
+    });
+    
+    return () => {
+      console.log(`🔎 usePlanningSearch [${componentId}] UNMOUNTED after ${renderCountRef.current} renders`, {
+        lifetime: Date.now() - mountTimeRef.current,
+        unmountTime: new Date().toISOString(),
+      });
+    };
+  }, [componentId, coordinates]);
   
   if (coordinates) {
     const filterString = JSON.stringify(filters);
@@ -39,7 +62,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       queryKey.current[2] !== filterString || 
       queryKey.current[3] !== radiusString
     ) {
+      const oldKey = [...queryKey.current];
       queryKey.current = ['planning-applications', coordString, filterString, radiusString];
+      console.log(`🔑 usePlanningSearch [${componentId}] query key changed`, {
+        from: oldKey,
+        to: queryKey.current,
+        renderCount: renderCountRef.current
+      });
     }
   }
   
@@ -54,12 +83,26 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       if (!coordinates) return [];
       
       try {
-        console.log('Searching with coordinates:', coordinates, 'radius:', searchRadius);
+        queryStartTimeRef.current = Date.now();
+        console.log(`🔍 usePlanningSearch [${componentId}] query started`, {
+          coordinates,
+          radius: searchRadius,
+          filters: Object.keys(filters),
+          time: new Date().toISOString(),
+          queryKey: queryKey.current,
+        });
         
         const result = await executeSearch(
           { coordinates, radius: searchRadius, filters },
           searchMethodRef
         );
+        
+        console.log(`✅ usePlanningSearch [${componentId}] query completed`, {
+          method: result.method,
+          resultCount: result.applications.length,
+          duration: Date.now() - queryStartTimeRef.current,
+          time: new Date().toISOString(),
+        });
         
         // Log telemetry data about the search
         logSearchCompleted(
@@ -75,8 +118,16 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         return result.applications;
       } catch (err) {
+        console.error(`❌ usePlanningSearch [${componentId}] query error:`, err);
         handleSearchError(err);
-        return progressiveResults.length > 0 ? progressiveResults : [];
+        
+        const fallbackResults = progressiveResults.length > 0 ? progressiveResults : [];
+        console.log(`⚠️ usePlanningSearch [${componentId}] using fallback results`, {
+          count: fallbackResults.length,
+          time: new Date().toISOString(),
+        });
+        
+        return fallbackResults;
       }
     },
     enabled: !!coordinates,
@@ -86,6 +137,18 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     refetchOnMount: false,
     refetchOnReconnect: false,
   });
+
+  // Track when query state changes
+  useEffect(() => {
+    console.log(`🔄 usePlanningSearch [${componentId}] query state change`, {
+      isLoading,
+      isFetching,
+      hasError: !!queryError,
+      applicationCount: applications?.length || 0,
+      renderCount: renderCountRef.current,
+      time: new Date().toISOString(),
+    });
+  }, [isLoading, isFetching, queryError, applications, componentId]);
 
   // Once we have results, we want to maintain them even if there's an error
   useEffect(() => {
