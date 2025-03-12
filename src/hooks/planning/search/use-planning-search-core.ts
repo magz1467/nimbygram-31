@@ -40,11 +40,11 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     {
       onProgress: updateProgress,
       onMethodChange: updateMethod,
-      onSuccess: (apps) => {
+      onSuccess: () => {
         // We directly use the applications data from the query
         // No need for separate setResults since useSearchCoordinator manages this
       },
-      onError: (error) => {
+      onError: () => {
         // Error handling is managed by useSearchCoordinator
       }
     }
@@ -61,13 +61,6 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
       // Search completion is handled by the coordinator
     }
   );
-  
-  // When we get applications from the query, update our results
-  useEffect(() => {
-    if (applications && applications.length > 0) {
-      // Results are managed by useSearchCoordinator
-    }
-  }, [applications]);
 
   return {
     applications: applications || [],
