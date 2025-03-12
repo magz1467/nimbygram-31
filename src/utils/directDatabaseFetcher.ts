@@ -1,25 +1,31 @@
 
-import { handleError } from "@/utils/errors/centralized-handler";
-import { Database } from '../../supabase/functions/database.types';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { handleError } from './errors/centralized-handler';
 
-export async function fetchFromDatabase(params: any) {
+/**
+ * Direct database fetcher using Supabase client
+ */
+export async function fetchDirectFromDatabase(table: string, query: any) {
   try {
-    const { data, error } = await supabase
-      .from('applications')
-      .select('*')
-      .ilike('postcode', `%${params.postcode}%`)
-      .limit(params.limit || 100);
-
-    if (error) {
-      throw error;
+    let builder = supabase.from(table).select('*');
+    
+    // Apply query parameters if provided
+    if (query.limit) builder = builder.limit(query.limit);
+    if (query.offset) builder = builder.range(query.offset, query.offset + (query.limit || 10) - 1);
+    if (query.orderBy) builder = builder.order(query.orderBy.column, { ascending: query.orderBy.ascending });
+    if (query.filters) {
+      Object.entries(query.filters).forEach(([key, value]) => {
+        builder = builder.eq(key, value);
+      });
     }
-
-    return data as Database['public']['Tables']['applications']['Row'][];
-  } catch (error: any) {
-    handleError(error, {
-      context: { params }
-    });
-    throw error;
+    
+    const { data, error } = await builder;
+    
+    if (error) throw error;
+    
+    return { data, error: null };
+  } catch (error) {
+    handleError(error, { context: 'directDatabaseFetcher' });
+    return { data: null, error };
   }
 }

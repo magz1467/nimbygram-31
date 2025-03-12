@@ -1,5 +1,5 @@
 
-export { ErrorType, AppError, type AppErrorOptions, type ErrorHandlerOptions, createAppError } from './types';
-export { handleError } from './centralized-handler';
 export { detectErrorType } from './detection';
-export { formatErrorMessage } from './formatting';
+export { formatErrorMessage, formatErrorForLogging } from './formatting';
+export { handleError } from './centralized-handler';
+export { ErrorType, AppError, AppErrorOptions, ErrorHandlerOptions, createAppError } from './types';

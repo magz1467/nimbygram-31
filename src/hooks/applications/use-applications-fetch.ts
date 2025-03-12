@@ -1,108 +1,76 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from 'react';
 import { Application } from "@/types/planning";
-import { LatLngTuple } from 'leaflet';
+import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errors/centralized-handler';
 
-export interface FetchApplicationsParams {
-  center: LatLngTuple;
-  radius: number;
-  page?: number;
-  pageSize?: number;
+/**
+ * Transform application data to ensure proper format
+ */
+export function transformApplicationData(applications: any[]): Application[] {
+  return applications.map(app => ({
+    id: app.id,
+    reference: app.reference || '',
+    address: app.address || '',
+    title: app.title || 'No title available',
+    description: app.description || 'No description available',
+    status: app.status || 'Unknown',
+    coordinates: app.coordinates || null,
+    date_received: app.date_received || null,
+    date_validated: app.date_validated || null,
+    decision_date: app.decision_date || null,
+    distance: app.distance || null,
+    applicant: app.applicant || '',
+    classification: app.classification || '',
+    council: app.council || '',
+    image_url: app.image_url || '',
+    document_url: app.document_url || '',
+    source_url: app.source_url || '',
+    external_url: app.external_url || '',
+    latitude: app.latitude || null,
+    longitude: app.longitude || null,
+    impact_score: app.impact_score || null,
+    appeal_status: app.appeal_status || null,
+    committee_date: app.committee_date || null,
+    consultation_end: app.consultation_end || null,
+    decision_issued: app.decision_issued || null,
+    documents: app.documents || [],
+    proposal: app.proposal || '',
+    agent: app.agent || '',
+    ward: app.ward || ''
+  }));
 }
 
-export interface ApplicationsResponse {
-  applications: Application[];
-  totalCount: number;
-  rawData: any;
+export function useApplicationsFetch() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchApplications = async (params: any): Promise<Application[]> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .limit(params.limit || 10)
+        .order(params.orderBy || 'date_received', { ascending: false });
+
+      if (error) throw error;
+      
+      return transformApplicationData(data || []);
+    } catch (err) {
+      handleError(err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch applications'));
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    fetchApplications,
+    loading,
+    error
+  };
 }
-
-export const transformApplicationData = (app: any, center?: LatLngTuple): Application | null => {
-  try {
-    if (!app) return null;
-    
-    // Basic application data transformation
-    return {
-      id: app.id,
-      title: app.title || app.ai_title || 'Unknown Application',
-      address: app.address || 'No address provided',
-      status: app.status || 'Unknown',
-      description: app.description || '',
-      reference: app.reference || app.external_id || '',
-      coordinates: app.lat && app.lng ? [app.lat, app.lng] : undefined,
-      distance: app.distance ? `${Math.round(app.distance)}m` : undefined,
-      // Add other required fields from the Application type
-    } as Application;
-  } catch (error) {
-    console.error('Error transforming application data:', error);
-    return null;
-  }
-};
-
-export const fetchApplicationsInRadius = async ({
-  center,
-  radius,
-  page = 0,
-  pageSize = 100
-}: FetchApplicationsParams): Promise<ApplicationsResponse> => {
-  console.log('🔍 Starting fetch with params:', { 
-    center, 
-    radius, 
-    page, 
-    pageSize,
-    timestamp: new Date().toISOString()
-  });
-
-  try {
-    const { data, error } = await supabase
-      .rpc('get_applications_with_counts_optimized', {
-        center_lng: center[1],
-        center_lat: center[0],
-        radius_meters: radius,
-        page_size: pageSize,
-        page_number: page
-      });
-
-    if (error) {
-      console.error('Error fetching applications:', error);
-      handleError(error, { context: 'fetchApplicationsInRadius' });
-      throw error;
-    }
-
-    if (!data || !data[0]) {
-      console.log('No applications found');
-      return {
-        applications: [],
-        totalCount: 0,
-        rawData: null
-      };
-    }
-
-    const { applications: appsData, total_count } = data[0];
-
-    console.log(`📦 Raw applications data:`, appsData?.map(app => ({
-      id: app.id,
-      class_3: app.class_3,
-      title: app.title,
-      final_impact_score: app.final_impact_score
-    })));
-
-    const transformedApplications = appsData
-      ?.map(app => transformApplicationData(app, center))
-      .filter((app): app is Application => app !== null);
-
-    console.log('✨ Transformed applications:', transformedApplications?.map(app => ({
-      id: app.id,
-      title: app.title,
-    })));
-
-    return {
-      applications: transformedApplications || [],
-      totalCount: total_count || 0,
-      rawData: data[0]
-    };
-  } catch (error) {
-    handleError(error, { context: 'fetchApplicationsInRadius' });
-    throw error;
-  }
-};

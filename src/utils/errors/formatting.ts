@@ -39,8 +39,9 @@ export function formatErrorForLogging(
   if (error instanceof AppError) {
     return {
       ...baseInfo,
-      details: error.details,
+      metadata: error.metadata,
       code: error.code,
+      details: error.details,
       context: error.context
     };
   }

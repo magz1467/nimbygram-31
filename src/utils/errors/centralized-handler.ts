@@ -1,19 +1,19 @@
 
-import { ErrorType, AppError, AppErrorOptions } from './types';
+import { ErrorType, AppError, AppErrorOptions, ErrorHandlerOptions } from './types';
 import { detectErrorType } from './detection';
 import { formatErrorMessage } from './formatting';
 import { toast } from 'sonner';
-
-interface ErrorHandlerOptions {
-  context?: string;
-  silent?: boolean;
-}
 
 /**
  * Centralized error handler for the application
  */
 export function handleError(error: unknown, options: ErrorHandlerOptions = {}) {
-  const { context = 'application', silent = false } = options;
+  const { 
+    context = 'application', 
+    silent = false,
+    logToConsole = true,
+    showToast = !silent
+  } = options;
   
   // Detect error type
   const errorType = 
@@ -26,10 +26,12 @@ export function handleError(error: unknown, options: ErrorHandlerOptions = {}) {
   const errorMessage = formatErrorMessage(error);
   
   // Log error to console
-  console.error(`[${context}] ${errorType}:`, error);
+  if (logToConsole) {
+    console.error(`[${context}] ${errorType}:`, error);
+  }
   
   // Show toast for non-silent errors
-  if (!silent) {
+  if (showToast) {
     toast.error(errorMessage, {
       description: `Error type: ${errorType}`,
       duration: 5000,

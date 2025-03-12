@@ -24,6 +24,19 @@ export interface AppErrorOptions {
   cause?: Error | unknown;
   code?: string;
   metadata?: Record<string, any>;
+  details?: Record<string, any>;
+  context?: string;
+}
+
+/**
+ * Options for error handling
+ */
+export interface ErrorHandlerOptions {
+  context?: string;
+  silent?: boolean;
+  logToConsole?: boolean;
+  performanceData?: Record<string, any>;
+  showToast?: boolean;
 }
 
 /**
@@ -34,6 +47,8 @@ export class AppError extends Error {
   cause?: Error | unknown;
   code?: string;
   metadata?: Record<string, any>;
+  details?: Record<string, any>;
+  context?: string;
 
   constructor(message: string, options: AppErrorOptions = {}) {
     super(message);
@@ -42,6 +57,8 @@ export class AppError extends Error {
     this.cause = options.cause;
     this.code = options.code;
     this.metadata = options.metadata;
+    this.details = options.details;
+    this.context = options.context;
     
     // Set the prototype explicitly to ensure instanceof works properly
     Object.setPrototypeOf(this, AppError.prototype);

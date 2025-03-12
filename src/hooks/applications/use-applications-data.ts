@@ -1,95 +1,102 @@
 
-import { useState } from 'react';
-import { Application } from "@/types/planning";
-import { supabase } from "@/integrations/supabase/client";
-import { transformApplicationData } from '@/utils/applicationTransforms';
-import { calculateStatusCounts, type StatusCounts } from './use-status-counts';
-import { LatLngTuple } from 'leaflet';
+import { useState, useEffect } from 'react';
+import { Application } from '@/types/planning';
+import { StatusCounts } from '@/types/application-types';
+import { useApplicationsFetch } from './use-applications-fetch';
+import { useStatusCounts } from './use-status-counts';
+import { handleError } from '@/utils/errors/centralized-handler';
 
-interface ApplicationError {
-  message: string;
-  details?: string;
+export interface ApplicationsDataState {
+  applications: Application[];
+  filteredApplications: Application[];
+  statusCounts: StatusCounts;
+  loading: boolean;
+  error: Error | null;
 }
 
-export const useApplicationsData = () => {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [error, setError] = useState<ApplicationError | null>(null);
-  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
+export function useApplicationsData(initialParams: any = {}) {
+  const [state, setState] = useState<ApplicationsDataState>({
+    applications: [],
+    filteredApplications: [],
+    statusCounts: {
+      'Under Review': 0,
+      'Approved': 0,
+      'Declined': 0,
+      'Other': 0
+    },
+    loading: true,
+    error: null
   });
 
-  const fetchApplicationsInRadius = async (
-    center: LatLngTuple,
-    radius: number,
-    page = 0,
-    pageSize = 100
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    console.log('🔍 Starting fetch with params:', { 
-      center, 
-      radius, 
-      page, 
-      pageSize,
-      timestamp: new Date().toISOString()
-    });
+  const { fetchApplications } = useApplicationsFetch();
+  const { fetchStatusCounts } = useStatusCounts();
 
-    try {
-      const { data: rawData, error: queryError } = await supabase
-        .from('crystal_roof')
-        .select('*')
-        .order('id');
-
-      if (queryError) {
-        console.error('Error fetching applications:', queryError);
-        throw queryError;
+  useEffect(() => {
+    const loadApplicationsData = async () => {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      try {
+        const [applications, statusCounts] = await Promise.all([
+          fetchApplications(initialParams),
+          fetchStatusCounts()
+        ]);
+        
+        setState({
+          applications,
+          filteredApplications: applications,
+          statusCounts,
+          loading: false,
+          error: null
+        });
+      } catch (err) {
+        handleError(err);
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: err instanceof Error ? err : new Error('Failed to load applications data')
+        }));
       }
+    };
+    
+    loadApplicationsData();
+  }, []);
 
-      const transformedApplications = rawData
-        .map(app => transformApplicationData(app, center))
-        .filter((app): app is Application => app !== null);
-
-      console.log('✨ Transformed applications:', {
-        total: transformedApplications?.length,
-        withStorybook: transformedApplications?.filter(app => app.storybook)?.length,
-        sampleStorybook: transformedApplications?.[0]?.storybook
+  const filterApplications = (filters: Record<string, any>) => {
+    setState(prev => {
+      const filtered = prev.applications.filter(app => {
+        // Apply status filter
+        if (filters.status && filters.status !== 'All' && app.status !== filters.status) {
+          return false;
+        }
+        
+        // Apply classification filter
+        if (filters.classification && 
+            filters.classification !== 'All' && 
+            app.classification !== filters.classification) {
+          return false;
+        }
+        
+        // Apply date range filter if needed
+        if (filters.dateFrom && new Date(app.date_received || '') < new Date(filters.dateFrom)) {
+          return false;
+        }
+        
+        if (filters.dateTo && new Date(app.date_received || '') > new Date(filters.dateTo)) {
+          return false;
+        }
+        
+        return true;
       });
-
-      setApplications(transformedApplications || []);
-      setTotalCount(transformedApplications.length || 0);
-      setStatusCounts(calculateStatusCounts(transformedApplications));
-
-      console.log('📊 Status counts:', statusCounts);
-
-    } catch (error: any) {
-      console.error('Failed to fetch applications:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      setError({
-        message: 'Failed to fetch applications',
-        details: error.message
-      });
-    } finally {
-      setIsLoading(false);
-      console.log('🏁 Fetch completed');
-    }
+      
+      return {
+        ...prev,
+        filteredApplications: filtered
+      };
+    });
   };
 
   return {
-    applications,
-    isLoading,
-    totalCount,
-    statusCounts,
-    error,
-    fetchApplicationsInRadius,
+    ...state,
+    filterApplications
   };
-};
+}

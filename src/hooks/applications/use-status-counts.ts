@@ -1,32 +1,51 @@
 
-import { Application } from "@/types/planning";
-import { useMemo } from "react";
+import { supabase } from '@/integrations/supabase/client';
+import { handleError } from '@/utils/errors/centralized-handler';
+import { StatusCounts } from '@/types/application-types';
 
-export type StatusCounts = {
-  'Under Review': number;
-  'Approved': number;
-  'Declined': number;
-  'Other': number;
-};
+export function useStatusCounts() {
+  const fetchStatusCounts = async (): Promise<StatusCounts> => {
+    try {
+      const { data, error } = await supabase
+        .from('crystal_roof')
+        .select('status')
+        .not('status', 'is', null);
 
-export const calculateStatusCounts = (applications: Application[] = []): StatusCounts => {
-  return {
-    'Under Review': applications?.filter(app => 
-      app.status?.toLowerCase().includes('under consideration'))?.length || 0,
-    'Approved': applications?.filter(app => 
-      app.status?.toLowerCase().includes('approved'))?.length || 0,
-    'Declined': applications?.filter(app => 
-      app.status?.toLowerCase().includes('declined'))?.length || 0,
-    'Other': applications?.filter(app => {
-      if (!app.status) return true;
-      const appStatus = app.status.toLowerCase();
-      return !appStatus.includes('under consideration') && 
-             !appStatus.includes('approved') && 
-             !appStatus.includes('declined');
-    })?.length || 0
+      if (error) throw error;
+
+      // Initialize status counts with zeros
+      const statusCounts: StatusCounts = {
+        'Under Review': 0,
+        'Approved': 0,
+        'Declined': 0,
+        'Other': 0
+      };
+
+      // Count applications by status
+      (data || []).forEach(item => {
+        const status = item.status || 'Other';
+        if (status.includes('Review') || status.includes('Pending')) {
+          statusCounts['Under Review']++;
+        } else if (status.includes('Approved') || status.includes('Granted')) {
+          statusCounts['Approved']++;
+        } else if (status.includes('Declined') || status.includes('Refused') || status.includes('Rejected')) {
+          statusCounts['Declined']++;
+        } else {
+          statusCounts['Other']++;
+        }
+      });
+
+      return statusCounts;
+    } catch (err) {
+      handleError(err);
+      return {
+        'Under Review': 0,
+        'Approved': 0,
+        'Declined': 0,
+        'Other': 0
+      };
+    }
   };
-};
 
-export const useStatusCounts = (applications: Application[] = []) => {
-  return useMemo(() => calculateStatusCounts(applications), [applications]);
-};
+  return { fetchStatusCounts };
+}
