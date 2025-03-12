@@ -4,7 +4,9 @@ import { Application } from "@/types/planning";
 import { calculateDistance } from "../utils/distance-calculator";
 
 /**
- * Performs a spatial search for planning applications using the get_nearby_applications RPC function
+ * Performs a spatial search for planning applications
+ * Since the RPC function might not exist, this function will return null if the function is not available
+ * which will trigger the fallback search method
  */
 export async function performSpatialSearch(
   lat: number, 
@@ -16,19 +18,19 @@ export async function performSpatialSearch(
     console.log('Attempting spatial search with RPC function');
     console.log('Search parameters:', { lat, lng, radiusKm, filters });
     
-    // Query the RPC function - get_nearby_applications is a SQL function that uses PostGIS
+    // Check if the RPC function exists by trying to call it
     let { data, error } = await supabase.rpc('get_nearby_applications', {
       center_lat: lat,
       center_lng: lng,
       radius_km: radiusKm,
-      result_limit: 500 // Request more results to ensure we get enough
+      result_limit: 500
     });
     
-    // Handle errors from RPC function
+    // If the function doesn't exist, return null to trigger fallback
     if (error) {
-      // Check for specific error that indicates the function doesn't exist
-      if (error.message.includes('function') && error.message.includes('does not exist')) {
-        console.log('Spatial search RPC function not available, falling back to bounding box search');
+      if (error.message.includes('Could not find the function') || 
+          error.message.includes('does not exist')) {
+        console.log('Spatial search RPC function not available, will use fallback search');
         return null;
       }
       
@@ -36,7 +38,6 @@ export async function performSpatialSearch(
       throw error;
     }
     
-    // Handle no results
     if (!data || data.length === 0) {
       console.log('No results found in spatial search');
       return [];
@@ -66,16 +67,12 @@ export async function performSpatialSearch(
     // Add distance and sort
     const results = data
       .filter((app: any) => {
-        // Ensure we have coordinates to calculate distance
         return (typeof app.latitude === 'number' && typeof app.longitude === 'number');
       })
       .map((app: any) => {
-        // Calculate distance in kilometers
         const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
-        // Convert to miles for display (UK standard)
         const distanceMiles = distanceKm * 0.621371;
         
-        // Return application with distance
         return {
           ...app,
           distance: `${distanceMiles.toFixed(1)} mi`,
@@ -83,18 +80,15 @@ export async function performSpatialSearch(
         };
       })
       .sort((a: any, b: any) => {
-        // Sort by distance
         const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
         const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
         return distA - distB;
       });
     
     console.log(`Returning ${results.length} filtered and sorted results`);
-    
     return results;
   } catch (error) {
     console.error('Spatial search error:', error);
-    // Return null to indicate fallback should be used
-    return null;
+    return null; // Return null to indicate fallback should be used
   }
 }

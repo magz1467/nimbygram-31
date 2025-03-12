@@ -5,6 +5,7 @@ import { calculateDistance } from "../utils/distance-calculator";
 
 /**
  * Performs a bounding box search when spatial search is unavailable
+ * This is our primary search method since the spatial search function may not exist
  */
 export async function performFallbackSearch(
   lat: number, 
@@ -16,7 +17,7 @@ export async function performFallbackSearch(
     console.log('Performing fallback search with bounding box');
     console.log('Search parameters:', { lat, lng, radiusKm, filters });
     
-    // Calculate bounding box - more accurate calculation
+    // Calculate bounding box - accurate calculation for UK latitudes
     const latDelta = radiusKm / 111.32; // 1 degree latitude is approximately 111.32 km
     const lngDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180)); // Account for longitude distortion
     
@@ -27,7 +28,7 @@ export async function performFallbackSearch(
     
     console.log(`Search bounds: lat ${minLat.toFixed(4)} to ${maxLat.toFixed(4)}, lng ${minLng.toFixed(4)} to ${maxLng.toFixed(4)}`);
     
-    // Create query - directly using crystal_roof table
+    // Create query with smaller batch size to avoid timeouts
     let query = supabase
       .from('crystal_roof')
       .select('*')
@@ -36,7 +37,7 @@ export async function performFallbackSearch(
       .gte('longitude', minLng)
       .lte('longitude', maxLng);
     
-    // Add other filters if they exist and are not empty
+    // Add other filters if they exist
     if (filters?.status && filters.status.trim() !== '') {
       query = query.ilike('status', `%${filters.status}%`);
     }
@@ -45,16 +46,49 @@ export async function performFallbackSearch(
       query = query.ilike('type', `%${filters.type}%`);
     }
     
-    // Increase limit to get more results
-    query = query.limit(1000);
+    // Use a smaller limit to prevent timeout errors
+    query = query.limit(200);
     
-    // Execute query with timeout handling
     console.log('Executing fallback search query');
     const { data, error } = await query;
     
     if (error) {
       console.error('Fallback search error:', error);
-      throw error;
+      
+      // Handle timeout errors specifically
+      if (error.message.includes('timeout') || error.message.includes('canceling statement')) {
+        console.log('Query timeout occurred, reducing search area');
+        
+        // Try a more restricted search area
+        const reducedRadius = radiusKm * 0.5;
+        const reducedLatDelta = reducedRadius / 111.32;
+        const reducedLngDelta = reducedRadius / (111.32 * Math.cos(lat * Math.PI / 180));
+        
+        const reducedQuery = supabase
+          .from('crystal_roof')
+          .select('*')
+          .gte('latitude', lat - reducedLatDelta)
+          .lte('latitude', lat + reducedLatDelta)
+          .gte('longitude', lng - reducedLngDelta)
+          .lte('longitude', lng + reducedLngDelta)
+          .limit(100);
+        
+        const { data: reducedData, error: reducedError } = await reducedQuery;
+        
+        if (reducedError) {
+          console.error('Reduced area search also failed:', reducedError);
+          throw reducedError;
+        }
+        
+        if (!reducedData || reducedData.length === 0) {
+          console.log('No results found in reduced search area');
+          return [];
+        }
+        
+        data = reducedData;
+      } else {
+        throw error;
+      }
     }
     
     if (!data || data.length === 0) {
@@ -62,21 +96,18 @@ export async function performFallbackSearch(
       return [];
     }
     
-    console.log(`Found ${data.length} results in fallback search`);
+    console.log(`Found ${data.length} raw results in fallback search`);
     
-    // Add distance and sort - handle cases where lat/lng might not be numeric
+    // Filter out invalid coordinates and calculate distances
     const results = data
       .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
       .map(app => {
-        // Calculate the actual distance in kilometers
         const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
-        // Convert to miles for display (UK standard)
         const distanceMiles = distanceKm * 0.621371;
         
         return {
           ...app,
           distance: `${distanceMiles.toFixed(1)} mi`,
-          // Add coordinates array for map display
           coordinates: [Number(app.latitude), Number(app.longitude)]
         };
       })
@@ -90,7 +121,7 @@ export async function performFallbackSearch(
     return results;
   } catch (error) {
     console.error('Fallback search failed:', error);
-    // Return empty array instead of throwing
+    // Return empty array instead of throwing to prevent UI crashes
     return [];
   }
 }

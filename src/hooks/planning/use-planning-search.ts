@@ -22,6 +22,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     console.error('Search error:', err);
     errorRef.current = err instanceof Error ? err : new Error(String(err));
     
+    // Don't show errors for missing function
+    if (err?.message?.includes('get_nearby_applications') || 
+        err?.message?.includes('Could not find the function')) {
+      console.log('Not showing error for missing RPC function');
+      return;
+    }
+    
     // Provide user feedback
     toast({
       title: "Search Error",

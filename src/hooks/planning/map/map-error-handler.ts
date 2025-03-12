@@ -28,6 +28,16 @@ export function handleMapError(error: unknown): string {
 
   logError(error)
 
+  // Display toast for significant errors only
+  if (!errorMessage.includes('get_nearby_applications') && 
+      !errorMessage.includes('Could not find the function')) {
+    toast({
+      title: "Map Error",
+      description: errorMessage,
+      variant: "destructive",
+    })
+  }
+
   return getErrorMessage(error)
 }
 
