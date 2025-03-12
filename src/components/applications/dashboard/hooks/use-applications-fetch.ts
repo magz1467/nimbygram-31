@@ -1,81 +1,82 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Application } from "@/types/planning";
+import { useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Application } from '@/types/planning';
 import { handleError } from '@/utils/errors/centralized-handler';
 
-export interface FetchApplicationsParams {
-  center?: [number, number];
-  radius?: number;
-  page?: number;
-  pageSize?: number;
-}
-
-export interface ApplicationsResponse {
-  applications: Application[];
-  totalCount: number;
-}
-
-// Transform application data to ensure proper format
-export function transformApplicationData(applications: any[]): Application[] {
-  return applications.map(app => ({
-    id: app.id,
-    title: app.title || app.ai_title || 'Unknown Application',
-    address: app.address || 'No address provided',
-    status: app.status || 'Unknown',
-    description: app.description || '',
-    reference: app.reference || app.external_id || '',
-    coordinates: app.lat && app.lng ? [app.lat, app.lng] : undefined,
-    distance: app.distance ? `${Math.round(app.distance)}m` : undefined,
-    submissionDate: app.received_date || app.valid_date || app.date_received, 
-    submittedDate: app.received_date || app.valid_date,
-    decisionDue: app.decision_target_date || app.decision_due,
-    type: app.application_type || app.type,
-    ward: app.ward,
-    consultationEnd: app.last_date_consultation_comments,
-    impact_score: app.impact_score
-  }));
-}
-
-export async function fetchApplicationsInRadius({
-  center,
-  radius = 1000,
-  page = 0,
-  pageSize = 100
-}: FetchApplicationsParams): Promise<ApplicationsResponse> {
-  if (!center) {
-    return { applications: [], totalCount: 0 };
-  }
-
-  try {
-    const { data, error } = await supabase
-      .rpc('get_nearby_applications', {
-        center_lng: center[1],
-        center_lat: center[0],
-        radius_meters: radius,
-        page_size: pageSize,
-        page_number: page
-      });
-
-    if (error) {
-      handleError(error, { context: 'fetchApplicationsInRadius' });
-      throw error;
+export const useApplicationsFetch = () => {
+  const fetchCoordinates = useCallback(async (postcode: string): Promise<[number, number] | null> => {
+    try {
+      // Call PostcodesIO API to get coordinates
+      const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+      const data = await response.json();
+      
+      if (!data.result) {
+        throw new Error('Invalid postcode');
+      }
+      
+      return [data.result.latitude, data.result.longitude];
+    } catch (error) {
+      handleError(error, { context: 'fetchCoordinates' });
+      return null;
     }
+  }, []);
 
-    if (!data || data.length === 0) {
-      return {
-        applications: [],
-        totalCount: 0
-      };
+  const fetchApplications = useCallback(async (coordinates: [number, number], radiusKm = 5): Promise<Application[]> => {
+    try {
+      const [lat, lng] = coordinates;
+      
+      // Calculate bounding box for the search area
+      const kmPerDegree = 111.32;
+      const latDiff = radiusKm / kmPerDegree;
+      const lngDiff = radiusKm / (kmPerDegree * Math.cos(lat * Math.PI / 180));
+      
+      // Query with geographic bounds
+      const { data, error } = await supabase
+        .from('crystal_roof')
+        .select('*')
+        .gte('latitude', lat - latDiff)
+        .lte('latitude', lat + latDiff)
+        .gte('longitude', lng - lngDiff)
+        .lte('longitude', lng + lngDiff)
+        .limit(500);
+        
+      if (error) throw error;
+
+      // Transform raw data to Application type
+      return (data || []).map(transformApplicationData);
+    } catch (error) {
+      handleError(error, { context: 'fetchApplications' });
+      return [];
     }
+  }, []);
 
-    const transformedApplications = transformApplicationData(data);
-
+  // Transform raw data to match Application type
+  const transformApplicationData = (item: any): Application => {
     return {
-      applications: transformedApplications,
-      totalCount: transformedApplications.length
+      id: item.id,
+      title: item.description || `Application ${item.id}`,
+      address: item.address || '',
+      status: item.status || 'unknown',
+      coordinates: item.latitude && item.longitude 
+        ? [Number(item.latitude), Number(item.longitude)] 
+        : undefined,
+      reference: item.reference || '',
+      description: item.description || '',
+      applicant: item.applicant || '',
+      submissionDate: item.submission_date || '',
+      submittedDate: item.submission_date || '',
+      decisionDue: item.decision_due || '',
+      type: item.type || '',
+      ward: item.ward || '',
+      received_date: item.received_date || item.received || item.submission_date || null,
+      image_map_url: item.image_map_url || null,
+      postcode: item.postcode || ''
     };
-  } catch (error) {
-    handleError(error, { context: 'fetchApplicationsInRadius' });
-    throw error;
-  }
-}
+  };
+
+  return {
+    fetchCoordinates,
+    fetchApplications
+  };
+};

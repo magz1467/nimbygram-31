@@ -1,72 +1,66 @@
 
-import { useState } from 'react';
-import { Application } from "@/types/planning";
-import { LatLngTuple } from 'leaflet';
-import { useApplicationsFetch } from './applications/use-applications-fetch';
+import { useState, useEffect } from 'react';
+import { Application } from '@/types/planning';
+import { fetchApplicationsInRadius } from './applications/use-applications-fetch';
 import { useStatusCounts } from './applications/use-status-counts';
-import { StatusCounts } from '@/types/application-types';
-import { handleError } from '@/utils/errors/centralized-handler';
 
-export interface ApplicationError {
-  message: string;
-  details?: string;
+interface UseApplicationsDataProps {
+  postcode?: string;
+  radius?: number;
 }
 
-export const useApplicationsData = () => {
+export const useApplicationsData = ({ postcode, radius = 5 }: UseApplicationsDataProps = {}) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [error, setError] = useState<ApplicationError | null>(null);
-  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
+  const [error, setError] = useState<Error | null>(null);
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+  
+  // Get status counts using the hook
+  const { statusCounts } = useStatusCounts(applications);
+
+  useEffect(() => {
+    if (!postcode) return;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch coordinates
+        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+        const data = await response.json();
+        
+        if (!data.result) {
+          throw new Error('Invalid postcode');
+        }
+        
+        const coords: [number, number] = [data.result.latitude, data.result.longitude];
+        setCoordinates(coords);
+        
+        // Fetch applications
+        const apps = await fetchApplicationsInRadius(coords, radius);
+        setApplications(apps);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch data'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [postcode, radius]);
+
+  // Sort applications by received_date
+  const sortedApplications = [...applications].sort((a, b) => {
+    const dateA = a.received_date ? new Date(a.received_date).getTime() : 0;
+    const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
+    return dateB - dateA;
   });
 
-  const { fetchApplications } = useApplicationsFetch();
-  const { fetchStatusCounts } = useStatusCounts();
-
-  const fetchApplicationsData = async (
-    center: LatLngTuple,
-    radius: number,
-    page = 0,
-    pageSize = 100
-  ) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const fetchedApps = await fetchApplications({ 
-        limit: pageSize, 
-        orderBy: 'received_date' 
-      });
-      
-      setApplications(fetchedApps);
-      setTotalCount(fetchedApps.length);
-      
-      const counts = await fetchStatusCounts();
-      setStatusCounts(counts);
-
-    } catch (error: any) {
-      console.error('Failed to fetch applications:', error);
-      handleError(error);
-      
-      setError({
-        message: 'Failed to fetch applications',
-        details: error.message
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
-    applications,
+    applications: sortedApplications,
     isLoading,
-    totalCount,
-    statusCounts,
     error,
-    fetchApplicationsInRadius: fetchApplicationsData,
+    coordinates,
+    statusCounts
   };
 };
