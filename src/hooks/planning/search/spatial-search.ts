@@ -58,12 +58,12 @@ export async function performSpatialSearch(
   });
   
   try {
-    // Add a timeout to the spatial search (increased to 15 seconds for simple postcode searches)
+    // Add a timeout to the spatial search (increased to 14 seconds)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-      console.log('⏱️ Spatial search timeout reached (15 seconds)');
-    }, 15000); // 15 second timeout for better reliability
+      console.log('⏱️ Spatial search timeout reached (14 seconds)');
+    }, 14000); // 14 second timeout - increased from 10s
     
     console.log('Starting spatial search with RPC call');
     const startTime = Date.now();
@@ -75,7 +75,7 @@ export async function performSpatialSearch(
         center_lat: lat,
         center_lng: lng,
         radius_km: radiusKm,
-        result_limit: 100 // Reasonable limit for better performance
+        result_limit: 100 // Reduced limit to improve performance
       })
       .abortSignal(controller.signal);
     

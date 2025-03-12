@@ -126,25 +126,17 @@ export const usePlanningSearch = (coordinates: [number, number] | null, searchTe
           });
         }
         
-        // Log search attempt for analytics (don't await to prevent blocking search)
-        logSearchAttempt(coordinates, filters, searchRadius).catch(err => {
-          console.error('Error logging search attempt:', err);
-        });
+        // Log search attempt for analytics
+        await logSearchAttempt(coordinates, filters, searchRadius);
         
         const [lat, lng] = coordinates;
-        let radiusKm = searchRadius; // Changed from const to let so we can modify it
+        const radiusKm = searchRadius;
         
         // Try spatial search first with a longer timeout
         try {
           console.log('Attempting spatial search with PostGIS...');
           const spatialStartTime = Date.now();
           console.log(`Spatial search started at: ${new Date(spatialStartTime).toISOString()}`);
-          
-          // For simple UK postcodes, always use a reliable radius
-          if (searchTerm && isUKPostcode(searchTerm)) {
-            console.log('Postcode search detected, using standard radius');
-            radiusKm = 5; // Always use standard radius for postcodes
-          }
           
           const spatialResults = await performSpatialSearch(lat, lng, radiusKm, filters);
           
@@ -187,13 +179,8 @@ export const usePlanningSearch = (coordinates: [number, number] | null, searchTe
         const fallbackStartTime = Date.now();
         console.log(`Fallback search started at: ${new Date(fallbackStartTime).toISOString()}`);
         
-        // For simple UK postcodes, use a reliable radius in fallback
-        if (searchTerm && isUKPostcode(searchTerm)) {
-          console.log('Using standard radius for postcode in fallback search');
-          radiusKm = 5; // Standard radius for postcodes in fallback search
-        } 
-        // Only reduce radius for location searches outside primary coverage
-        else if (searchTerm && !isInPrimaryCoverageArea(searchTerm)) {
+        // Use a smaller radius for the fallback search if we're outside primary coverage areas
+        if (searchTerm && !isInPrimaryCoverageArea(searchTerm)) {
           console.log('Using smaller radius for fallback search in non-primary area');
           radiusKm = Math.min(radiusKm, 3);
         }

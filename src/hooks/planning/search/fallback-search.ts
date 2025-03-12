@@ -54,7 +54,7 @@ export const performFallbackSearch = async (
   
   // Set a request timeout using AbortController
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout - increased for simple postcode searches
+  const timeoutId = setTimeout(() => controller.abort(), 18000); // 18 second timeout - increased from 15s
   
   try {
     // Track query performance
@@ -127,7 +127,7 @@ export const performFallbackSearch = async (
     // Handle abort errors separately
     if (error.name === 'AbortError') {
       console.log('Fallback search was aborted due to timeout');
-      throw new Error('Search timed out after 20 seconds. Please try again with more specific criteria.');
+      throw new Error('Search timed out after 18 seconds. Please try again with more specific criteria.');
     }
     
     throw error;
