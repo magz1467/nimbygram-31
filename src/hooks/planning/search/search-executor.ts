@@ -117,7 +117,8 @@ export async function executeSearch(
     
   } catch (error) {
     console.error("Search failed:", error);
-    if (onProgress) onProgress('error', 100);
+    // Fix: Changed 'error' to 'complete' since 'error' is not a valid SearchStage
+    if (onProgress) onProgress('complete', 100);
     throw error;
   }
 }
