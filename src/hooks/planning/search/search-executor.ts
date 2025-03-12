@@ -124,12 +124,12 @@ export async function executeSearch(
     // Check if this was an abort error
     if (error instanceof DOMException && error.name === 'AbortError') {
       console.error("Search timed out after 30 seconds");
-      if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage
+      if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage instead of 'error'
       throw new Error('Search timeout after 30 seconds');
     }
     
     console.error("Search failed:", error);
-    if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage
+    if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage instead of 'error'
     throw error;
   }
 }

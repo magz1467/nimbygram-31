@@ -1,7 +1,8 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Application } from '@/types/planning';
-import { SearchMethod, SearchFilters } from './types';
+import { SearchMethod, SearchFilters, SearchParams } from './types';
+import { executeSearch } from './search-executor';
 
 export type SearchStage = 'idle' | 'coordinates' | 'searching' | 'processing' | 'complete';
 
@@ -15,171 +16,131 @@ export interface SearchState {
   hasResults: boolean;
 }
 
-export interface SearchStateManager {
-  state: SearchState;
-  startSearch: () => void;
-  updateProgress: (stage: SearchStage, progress: number) => void;
-  setSearchMethod: (method: SearchMethod) => void;
-  setResults: (results: Application[]) => void;
-  completeSearch: () => void;
-  failSearch: (error: Error) => void;
-  resetSearch: () => void;
-}
+const initialState: SearchState = {
+  isLoading: false,
+  stage: 'idle',
+  progress: 0,
+  error: null,
+  method: null,
+  results: [],
+  hasResults: false
+};
 
-/**
- * Hook that provides centralized search state management
- * to reduce component rerenders and provide a consistent loading experience
- */
-export function useSearchStateManager(): SearchStateManager {
-  // Create a single source of truth for search state
-  const [state, setState] = useState<SearchState>({
-    isLoading: false,
-    stage: 'idle',
-    progress: 0,
-    error: null,
-    method: null,
-    results: [],
-    hasResults: false
-  });
-
-  // Use refs to track state without causing rerenders
-  const stateRef = useRef(state);
-  stateRef.current = state;
+export function useSearchStateManager() {
+  // Use a single state object to prevent partial updates
+  const [state, setState] = useState<SearchState>(initialState);
   
-  // Track if we've already completed this search to prevent duplicate state updates
-  const searchStartedRef = useRef(false);
-  const searchCompletedRef = useRef(false);
+  // Use refs to track if the search is in progress to prevent race conditions
+  const searchInProgressRef = useRef(false);
   
-  // Only expose controlled methods to update state
-  const startSearch = useCallback(() => {
-    // Prevent duplicate starts
-    if (searchStartedRef.current && stateRef.current.isLoading) {
-      console.log('🔍 Search already in progress, ignoring duplicate start');
-      return;
-    }
-    
-    console.log('🔍 Search state manager: Starting search');
-    searchStartedRef.current = true;
-    searchCompletedRef.current = false;
-    
-    setState({
-      isLoading: true,
-      stage: 'coordinates',
-      progress: 0,
-      error: null,
-      method: null,
-      results: stateRef.current.results, // Preserve previous results until new ones arrive
-      hasResults: stateRef.current.hasResults
-    });
-  }, []);
-
+  // Track the last search params to prevent duplicate searches
+  const lastSearchParamsRef = useRef<SearchParams | null>(null);
+  
+  // Memoize the callback to update progress to prevent rerenders
   const updateProgress = useCallback((stage: SearchStage, progress: number) => {
-    // Skip redundant updates
-    if (
-      stateRef.current.stage === stage && 
-      Math.abs(stateRef.current.progress - progress) < 2
-    ) {
-      return;
-    }
-    
-    console.log(`🔄 Search state manager: Updating progress - ${stage} (${progress}%)`);
     setState(prev => ({
       ...prev,
       stage,
       progress,
-      isLoading: true
+      isLoading: stage !== 'complete' && stage !== 'idle'
     }));
   }, []);
-
-  const setSearchMethod = useCallback((method: SearchMethod) => {
-    // Skip if method hasn't changed
-    if (stateRef.current.method === method) {
-      return;
-    }
-    
-    console.log(`🔍 Search state manager: Setting search method - ${method}`);
+  
+  // Memoize the callback to update method to prevent rerenders
+  const updateMethod = useCallback((method: SearchMethod) => {
     setState(prev => ({
       ...prev,
       method
     }));
   }, []);
-
-  const setResults = useCallback((results: Application[]) => {
-    // Skip if results haven't changed (same length and first/last items)
-    if (
-      stateRef.current.results.length === results.length &&
-      results.length > 0 &&
-      stateRef.current.results.length > 0 &&
-      stateRef.current.results[0].id === results[0].id &&
-      stateRef.current.results[stateRef.current.results.length - 1].id === results[results.length - 1].id
-    ) {
-      return;
-    }
-    
-    console.log(`✅ Search state manager: Setting results - ${results.length} items`);
+  
+  // Handle search errors with a dedicated function
+  const handleSearchError = useCallback((error: Error) => {
+    console.error('Search error:', error);
     setState(prev => ({
       ...prev,
-      results,
-      hasResults: results.length > 0
-    }));
-  }, []);
-
-  const completeSearch = useCallback(() => {
-    // Skip if search is already completed
-    if (searchCompletedRef.current) {
-      return;
-    }
-    
-    console.log('✅ Search state manager: Completing search');
-    searchCompletedRef.current = true;
-    searchStartedRef.current = false;
-    
-    setState(prev => ({
-      ...prev,
-      isLoading: false,
-      stage: 'complete',
-      progress: 100
-    }));
-  }, []);
-
-  const failSearch = useCallback((error: Error) => {
-    console.log('❌ Search state manager: Search failed', error);
-    searchCompletedRef.current = true;
-    searchStartedRef.current = false;
-    
-    setState(prev => ({
-      ...prev,
-      isLoading: false,
-      error,
-      // Keep existing results if we have them, even on error
-      hasResults: prev.results.length > 0
-    }));
-  }, []);
-
-  const resetSearch = useCallback(() => {
-    console.log('🔄 Search state manager: Resetting search state');
-    searchStartedRef.current = false;
-    searchCompletedRef.current = false;
-    
-    setState({
       isLoading: false,
       stage: 'idle',
       progress: 0,
-      error: null,
-      method: null,
-      results: [],
-      hasResults: false
-    });
+      error
+    }));
+    searchInProgressRef.current = false;
   }, []);
-
+  
+  // Start a new search with the given parameters
+  const startSearch = useCallback(async (searchParams: SearchParams) => {
+    // Check if a search is already in progress or if this is a duplicate search
+    if (searchInProgressRef.current) {
+      console.log('Search already in progress, ignoring request');
+      return;
+    }
+    
+    // Compare with last search params to prevent duplicate searches
+    if (lastSearchParamsRef.current && 
+        JSON.stringify(lastSearchParamsRef.current) === JSON.stringify(searchParams)) {
+      console.log('Duplicate search params, skipping search');
+      return;
+    }
+    
+    // Update refs and state
+    searchInProgressRef.current = true;
+    lastSearchParamsRef.current = searchParams;
+    
+    // Reset state to initial values with a single state update
+    setState(prev => ({
+      ...initialState,
+      isLoading: true,
+      stage: 'coordinates',
+      progress: 10
+    }));
+    
+    try {
+      // Execute the search
+      const { applications, method } = await executeSearch(searchParams, {
+        onProgress: updateProgress,
+        onMethodChange: updateMethod
+      });
+      
+      // Update state with results in a single update
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        stage: 'complete',
+        progress: 100,
+        results: applications,
+        hasResults: applications.length > 0,
+        error: null
+      }));
+      
+    } catch (error) {
+      handleSearchError(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      searchInProgressRef.current = false;
+    }
+  }, [updateProgress, updateMethod, handleSearchError]);
+  
+  // Cancel the current search
+  const cancelSearch = useCallback(() => {
+    if (searchInProgressRef.current) {
+      searchInProgressRef.current = false;
+      setState(initialState);
+    }
+  }, []);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Set the ref to false to prevent any pending callbacks from updating state
+      searchInProgressRef.current = false;
+    };
+  }, []);
+  
   return {
-    state,
+    ...state,
     startSearch,
-    updateProgress,
-    setSearchMethod,
-    setResults,
-    completeSearch,
-    failSearch,
-    resetSearch
+    cancelSearch,
+    // Expose for testing/debugging
+    _updateProgress: updateProgress,
+    _updateMethod: updateMethod
   };
 }

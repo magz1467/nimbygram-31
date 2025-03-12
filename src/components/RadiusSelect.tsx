@@ -8,18 +8,14 @@ interface RadiusSelectProps {
 
 /**
  * Simplified RadiusSelect that always displays 5km with no interactivity
+ * Fixed to avoid any state changes or re-renders
  */
 export function RadiusSelect({ className = "" }: RadiusSelectProps) {
   return (
     <div className={`${className}`}>
-      <Select disabled={true} value="5">
-        <SelectTrigger className="w-[160px]">
-          <SelectValue placeholder="Radius: 5km" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="5">5km radius</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="w-[160px] h-10 px-3 py-2 flex items-center rounded-md border border-input bg-transparent text-sm ring-offset-background">
+        <span className="text-sm">Radius: 5km</span>
+      </div>
     </div>
   );
 }
