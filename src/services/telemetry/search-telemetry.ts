@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 
 export enum TelemetryEventType {
   SEARCH_STARTED = 'search-started',
@@ -35,7 +36,7 @@ class SearchTelemetryService {
   private getOrCreateSessionId(): string {
     let sessionId = sessionStorage.getItem('search_session_id');
     if (!sessionId) {
-      sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 7)}`;
+      sessionId = `${Date.now()}-${uuidv4().substring(0, 8)}`;
       sessionStorage.setItem('search_session_id', sessionId);
     }
     return sessionId;

@@ -1,6 +1,17 @@
 
-// Re-export everything from the error utility files
-export { isNonCriticalError, detectErrorType, formatErrorMessage, handleError } from './errors';
-export type { ErrorType, AppError, ErrorOptions } from './types';
-export { createAppError } from './error-factory';
-export { safeStringify } from './types';
+import { ErrorType, AppError, ErrorOptions, safeStringify } from './types';
+import { createAppError } from './error-factory';
+import { isNonCriticalError, detectErrorType, formatErrorMessage, handleError } from './error-utils';
+
+// Re-export everything for easier imports
+export {
+  ErrorType,
+  AppError,
+  ErrorOptions,
+  createAppError,
+  isNonCriticalError,
+  detectErrorType,
+  formatErrorMessage,
+  handleError,
+  safeStringify
+};

@@ -1,86 +1,42 @@
 
-import { useState } from 'react';
-import { Application } from "@/types/planning";
-import { LatLngTuple } from 'leaflet';
-import { fetchApplicationsInRadius } from './use-applications-fetch';
+import { useState, useEffect } from 'react';
+import { Application } from '@/types/planning';
+import { fetchApplicationsInRadius } from '@/services/applications/application-service';
+import { useGlobalErrorHandler } from '@/hooks/use-global-error-handler';
 
-export interface ApplicationError {
-  message: string;
-  details?: string;
-}
-
-export interface StatusCounts {
-  'Under Review': number;
-  'Approved': number;
-  'Declined': number;
-  'Other': number;
-}
-
-export const calculateStatusCounts = (applications: Application[]): StatusCounts => {
-  return applications.reduce((counts: StatusCounts, app) => {
-    const status = app.status || 'Other';
-    const category = status.includes('Under Review') ? 'Under Review' :
-                   status.includes('Approved') ? 'Approved' :
-                   status.includes('Declined') ? 'Declined' : 'Other';
-    counts[category as keyof StatusCounts] = (counts[category as keyof StatusCounts] || 0) + 1;
-    return counts;
-  }, { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 });
-};
-
-export const useApplicationsData = () => {
+export function useApplicationsData(coordinates: [number, number] | null, radius: number = 5) {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [error, setError] = useState<ApplicationError | null>(null);
-  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
-  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const errorHandler = useGlobalErrorHandler();
 
-  const fetchApplications = async (
-    center: LatLngTuple,
-    radius: number,
-    page = 0,
-    pageSize = 100
-  ) => {
-    setIsLoading(true);
-    setError(null);
+  useEffect(() => {
+    async function fetchData() {
+      if (!coordinates) {
+        setApplications([]);
+        return;
+      }
 
-    try {
-      const { applications: fetchedApps, totalCount: count } = 
-        await fetchApplicationsInRadius({ center, radius, page, pageSize });
-      
-      setApplications(fetchedApps);
-      setTotalCount(count);
-      setStatusCounts(calculateStatusCounts(fetchedApps));
-      console.log('📊 Status counts:', statusCounts);
+      setIsLoading(true);
+      setError(null);
 
-    } catch (error: any) {
-      console.error('Failed to fetch applications:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      setError({
-        message: 'Failed to fetch applications',
-        details: error.message
-      });
-    } finally {
-      setIsLoading(false);
-      console.log('🏁 Fetch completed');
+      try {
+        const [lat, lng] = coordinates;
+        const apps = await fetchApplicationsInRadius(lat, lng, radius);
+        setApplications(apps);
+      } catch (err) {
+        const appError = errorHandler.handleError(err, {
+          context: 'fetching applications data',
+          silent: true
+        });
+        setError(appError);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  };
 
-  return {
-    applications,
-    isLoading,
-    totalCount,
-    statusCounts,
-    error,
-    fetchApplicationsInRadius: fetchApplications,
-  };
-};
+    fetchData();
+  }, [coordinates, radius, errorHandler]);
+
+  return { applications, isLoading, error };
+}
