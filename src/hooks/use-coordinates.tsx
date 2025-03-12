@@ -19,7 +19,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage:
   ]) as Promise<T>;
 };
 
-export const useCoordinates = (postcode: string | undefined) => {
+export const useCoordinates = (searchTerm: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -29,8 +29,8 @@ export const useCoordinates = (postcode: string | undefined) => {
     let isMounted = true;
 
     const fetchCoordinates = async () => {
-      if (!postcode) {
-        console.log('❌ useCoordinates: No postcode provided');
+      if (!searchTerm) {
+        console.log('❌ useCoordinates: No search term provided');
         return;
       }
       
@@ -39,18 +39,18 @@ export const useCoordinates = (postcode: string | undefined) => {
       setError(null);
       setCoordinates(null);
       
-      console.log('🔍 useCoordinates: Fetching coordinates for:', postcode);
+      console.log('🔍 useCoordinates: Fetching coordinates for:', searchTerm);
       
       try {
         // Determine what type of location string we have
-        const locationType = detectLocationType(postcode);
+        const locationType = detectLocationType(searchTerm);
         
         // Choose the right method based on what we're dealing with
         switch (locationType) {
           case 'PLACE_ID':
             console.log('🌍 Detected Google Place ID, using Maps API to get coordinates');
             const placeCoords = await withTimeout(
-              fetchCoordinatesFromPlaceId(postcode),
+              fetchCoordinatesFromPlaceId(searchTerm),
               10000,
               "Timeout while retrieving location details"
             );
@@ -58,48 +58,54 @@ export const useCoordinates = (postcode: string | undefined) => {
             break;
             
           case 'LOCATION_NAME':
-            console.log('🏙️ Detected location name:', postcode);
+            console.log('🏙️ Detected location name:', searchTerm);
             
-            // For location names, try the direct approach first - the whole string
             try {
-              console.log('🔍 Searching for exact location name:', postcode);
+              // First try with the full search term
+              console.log('🔍 Searching for exact location name:', searchTerm);
               const locationCoords = await withTimeout(
-                fetchCoordinatesByLocationName(postcode),
+                fetchCoordinatesByLocationName(searchTerm),
                 10000,
                 "Timeout while searching for location"
               );
-              if (isMounted) setCoordinates(locationCoords);
-              return; // Exit if successful
-            } catch (directError) {
-              console.warn('⚠️ Direct location search failed, trying extracted place name');
               
-              // Extract the main location name (before the first comma) as backup
-              const placeName = extractPlaceName(postcode);
-              if (placeName && placeName !== postcode) {
-                console.log('🔍 Searching for extracted place name:', placeName);
+              if (isMounted && locationCoords) {
+                console.log('✅ Found coordinates for location:', locationCoords);
+                setCoordinates(locationCoords);
+              }
+            } catch (locationError) {
+              console.warn('⚠️ Location search failed:', locationError.message);
+              
+              // Extract simplified place name as fallback
+              const placeName = extractPlaceName(searchTerm);
+              if (placeName && placeName !== searchTerm) {
                 try {
-                  const locationCoords = await withTimeout(
+                  console.log('🔍 Trying with simplified place name:', placeName);
+                  const fallbackCoords = await withTimeout(
                     fetchCoordinatesByLocationName(placeName),
                     10000,
                     "Timeout while searching for simplified location"
                   );
-                  if (isMounted) setCoordinates(locationCoords);
-                  return; // Exit if successful with extracted name
-                } catch (extractedError) {
-                  console.error('❌ Both direct and extracted place name searches failed');
-                  // Let it fall through to the error handling
-                  throw directError; // Throw the original error for better context
+                  
+                  if (isMounted && fallbackCoords) {
+                    console.log('✅ Found coordinates for simplified location:', fallbackCoords);
+                    setCoordinates(fallbackCoords);
+                  }
+                } catch (fallbackError) {
+                  console.error('❌ Both direct and simplified location searches failed');
+                  throw fallbackError;
                 }
               } else {
-                throw directError; // Re-throw the original error
+                throw locationError;
               }
             }
+            break;
             
           case 'POSTCODE':
             // Regular UK postcode - use Postcodes.io
             console.log('📫 Regular postcode detected, using Postcodes.io API');
             const postcodeCoords = await withTimeout(
-              fetchCoordinatesFromPostcodesIo(postcode),
+              fetchCoordinatesFromPostcodesIo(searchTerm),
               10000,
               "Timeout while looking up postcode"
             );
@@ -107,19 +113,17 @@ export const useCoordinates = (postcode: string | undefined) => {
             break;
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error("❌ useCoordinates: Error fetching coordinates:", errorMessage);
+        console.error("❌ useCoordinates: Error fetching coordinates:", error.message);
         
-        // Show toast for location errors
+        // Show user-friendly error toast
         toast({
           title: "Location Error",
-          description: `We couldn't find the location "${postcode}". Please try a more specific UK location or postcode.`,
+          description: `We couldn't find the location "${searchTerm}". Please try a more specific UK location or postcode.`,
           variant: "destructive",
         });
         
         if (isMounted) {
           setError(error instanceof Error ? error : new Error(String(error)));
-          // Important: Reset coordinates when there's an error
           setCoordinates(null);
         }
       } finally {
@@ -130,8 +134,8 @@ export const useCoordinates = (postcode: string | undefined) => {
       }
     };
 
-    if (postcode && postcode.trim()) {
-      console.log('🔄 useCoordinates: Postcode changed, fetching new coordinates:', postcode);
+    if (searchTerm && searchTerm.trim()) {
+      console.log('🔄 useCoordinates: Search term changed, fetching new coordinates:', searchTerm);
       fetchCoordinates();
     } else {
       setCoordinates(null);
@@ -143,7 +147,7 @@ export const useCoordinates = (postcode: string | undefined) => {
       console.log('🔇 useCoordinates: Cleanup');
       isMounted = false;
     };
-  }, [postcode, toast]);
+  }, [searchTerm, toast]);
 
   return { coordinates, isLoading, error };
 };
