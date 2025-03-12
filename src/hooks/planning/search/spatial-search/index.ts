@@ -1,9 +1,9 @@
 
 import { Application } from "@/types/planning";
-import { SpatialSearchParams, SpatialSearchResult } from "./types";
+import { SpatialSearchParams } from "./types";
 import { executeQuery } from "./query-executor";
-import { processResults } from "./results-processor";
-import { handleError } from "./error-handler";
+import { processSpatialSearchResults } from "./results-processor";
+import { handleSpatialSearchError } from "./error-handler";
 
 /**
  * Performs a spatial search for planning applications using PostGIS
@@ -30,8 +30,8 @@ export async function performSpatialSearch(
     const data = await executeQuery(params);
     
     // Process the results (filtering, distance calculation)
-    return processResults(data, lat, lng, filters);
+    return processSpatialSearchResults(data, lat, lng, filters);
   } catch (error) {
-    throw handleError(error, { lat, lng, radiusKm, filters });
+    throw handleSpatialSearchError(error, { lat, lng, radiusKm, filters });
   }
 }
