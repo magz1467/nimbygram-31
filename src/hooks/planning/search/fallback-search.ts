@@ -13,21 +13,32 @@ export async function performFallbackSearch(
   filters: any
 ): Promise<Application[]> {
   try {
+    console.log('Performing fallback search with bounding box');
+    
     // Calculate bounding box
     const latDelta = radiusKm / 111;
     const lngDelta = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
     
+    const minLat = lat - latDelta;
+    const maxLat = lat + latDelta;
+    const minLng = lng - lngDelta;
+    const maxLng = lng + lngDelta;
+    
+    console.log(`Search bounds: lat ${minLat} to ${maxLat}, lng ${minLng} to ${maxLng}`);
+    
     // Create query
     let query = supabase
       .from('crystal_roof')
-      .select('*')
-      .gte('latitude', lat - latDelta)
-      .lte('latitude', lat + latDelta)
-      .gte('longitude', lng - lngDelta)
-      .lte('longitude', lng + lngDelta)
-      .limit(50);
+      .select('*');
     
-    // Add filters
+    // Add lat/lng filters using gt/lt operators instead of gte/lte
+    query = query.gt('latitude', minLat);
+    query = query.lt('latitude', maxLat);
+    query = query.gt('longitude', minLng);
+    query = query.lt('longitude', maxLng);
+    query = query.limit(50);
+    
+    // Add other filters
     if (filters.status) {
       query = query.ilike('status', `%${filters.status}%`);
     }
@@ -45,8 +56,11 @@ export async function performFallbackSearch(
     }
     
     if (!data || data.length === 0) {
+      console.log('No results found in fallback search');
       return [];
     }
+    
+    console.log(`Found ${data.length} results in fallback search`);
     
     // Add distance and sort
     return data

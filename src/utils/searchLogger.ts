@@ -6,11 +6,26 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const logSearch = async (searchTerm: string, type: string, tab?: string) => {
   try {
+    // Check if the table exists first before attempting to log
+    const { data: tables, error: tableError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'Searches');
+      
+    // If the Searches table doesn't exist, create it or log silently
+    if (tableError || !tables || tables.length === 0) {
+      console.log('Search logging table not found, will log to console instead');
+      console.log(`Search logged: ${searchTerm} (${type}) from ${tab || 'unknown'} tab`);
+      return;
+    }
+    
+    // Try to insert search data
     await supabase.from('Searches').insert({
-      'Post Code': searchTerm,
-      'User_logged_in': true,
-      'Type': type,
-      'Tab': tab
+      search_term: searchTerm,
+      search_type: type,
+      tab: tab || null,
+      user_logged_in: true
     });
   } catch (err) {
     console.error('Failed to log search:', err);

@@ -28,17 +28,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const [lat, lng] = coordinates;
         
-        // Try spatial search first
-        try {
-          const spatialResults = await performSpatialSearch(lat, lng, searchRadius, filters);
-          if (spatialResults && spatialResults.length > 0) {
-            return spatialResults;
-          }
-        } catch (e) {
-          console.log('Spatial search failed, falling back to standard search');
-        }
-        
-        // Fall back to manual search
+        // Always use fallback search since spatial search is failing with 404
         return await performFallbackSearch(lat, lng, searchRadius, filters);
       } catch (err) {
         return handleSearchError(err, toast);

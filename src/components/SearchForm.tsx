@@ -6,13 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { logSearch } from "@/utils/searchLogger";
 import { SearchButton } from "@/components/search/SearchButton";
 
-export const SearchForm = ({ activeTab, onSearch }) => {
+interface SearchFormProps {
+  activeTab: string;
+  onSearch: (term: string) => void;
+}
+
+export const SearchForm = ({ activeTab, onSearch }: SearchFormProps) => {
   const [postcode, setPostcode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
     if (!postcode.trim() || isSubmitting) {
@@ -28,7 +33,7 @@ export const SearchForm = ({ activeTab, onSearch }) => {
     
     try {
       // Log search
-      logSearch(postcode.trim(), 'location', activeTab);
+      await logSearch(postcode.trim(), 'location', activeTab);
       
       // Call onSearch callback if provided
       if (onSearch) {
