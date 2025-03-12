@@ -45,11 +45,18 @@ export const useResultsListState = ({
     // Only mark initial load as complete when we get results or a definitive empty state
     // after loading has finished with a SIGNIFICANT delay to ensure UI updates smoothly
     if (!isLoading && hasStartedLoading && !initialLoadComplete) {
-      // Use a longer delay (3 seconds) for empty results to ensure search is truly done
-      const delay = applications.length > 0 ? 500 : 3000;
+      // Clear any previous timer
+      if (initialResultsTimerRef.current) {
+        clearTimeout(initialResultsTimerRef.current);
+      }
+      
+      // Use a much longer delay (10 seconds) for empty results to ensure search is truly done
+      // This prevents premature "no results" display
+      const delay = applications.length > 0 ? 500 : 10000;
       
       initialResultsTimerRef.current = setTimeout(() => {
         setInitialLoadComplete(true);
+        initialResultsTimerRef.current = null;
       }, delay);
     }
 
@@ -68,19 +75,24 @@ export const useResultsListState = ({
       setIsLongSearchDetected(false);
       setShowErrorMessage(false);
       
-      // Show "long search" message after 8 seconds - early enough to set expectations
-      // but not so early it creates anxiety
+      // Clear any existing timers
+      if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
+      if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+      
+      // Show "long search" message after 10 seconds - early enough to set expectations
       longSearchTimerRef.current = setTimeout(() => {
         setIsLongSearchDetected(true);
-      }, 8000);
+        longSearchTimerRef.current = null;
+      }, 10000);
       
-      // Only show error message after 20 seconds if we're still loading 
+      // Only show error message after 25 seconds if we're still loading 
       // and have no results - long enough to be patient but not so long users leave
       errorMessageTimerRef.current = setTimeout(() => {
         if (applications.length === 0) {
           setShowErrorMessage(true);
+          errorMessageTimerRef.current = null;
         }
-      }, 20000);
+      }, 25000);
     }
     
     return () => {

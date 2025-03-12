@@ -62,7 +62,19 @@ export const ResultsListView = ({
     onPageChange
   });
 
-  // PRIORITY 1: If we have results, show them immediately regardless of loading state
+  // HIGHEST PRIORITY: If we're loading or not fully completed initial load, always show loading state
+  if (isLoading || (!initialLoadComplete && hasStartedLoading)) {
+    return (
+      <LoadingState
+        isLongSearchDetected={isLongSearchDetected}
+        onRetry={onRetry}
+        showErrorMessage={showErrorMessage}
+        error={error || null}
+      />
+    );
+  }
+
+  // SECOND PRIORITY: If we have results, show them immediately regardless of loading state
   if (applications?.length > 0 || loadedApplications?.length > 0) {
     return (
       <ResultsList
@@ -82,24 +94,7 @@ export const ResultsListView = ({
     );
   }
 
-  // PRIORITY 2: Always show loading skeleton during initial load or active search
-  if (isLoading || (!initialLoadComplete && hasStartedLoading)) {
-    return (
-      <LoadingState
-        isLongSearchDetected={isLongSearchDetected}
-        onRetry={onRetry}
-        showErrorMessage={showErrorMessage}
-        error={error || null}
-      />
-    );
-  }
-
-  // PRIORITY 3: Show error view for timeout errors when we truly have no results
-  const isTimeoutError = error && 
-    (error.message.includes('timeout') || 
-     error.message.includes('57014') || 
-     error.message.includes('canceling statement'));
-
+  // THIRD PRIORITY: Show error view for timeout errors when we truly have no results
   if (!isLoading && error && (!applications?.length && !loadedApplications?.length)) {
     return (
       <TimeoutErrorMessage
@@ -112,9 +107,9 @@ export const ResultsListView = ({
     );
   }
 
-  // PRIORITY 4: Show "no results" message only when initial load is TRULY complete
+  // FOURTH PRIORITY: Show "no results" message only when initial load is TRULY complete
   // and we have waited a significant amount of time to be sure the search is done
-  if (!isLoading && !error && initialLoadComplete && searchDuration > 5000) {
+  if (!isLoading && !error && initialLoadComplete && searchDuration > 12000) {
     return (
       <NoResultsMessage
         searchTerm={searchTerm}
