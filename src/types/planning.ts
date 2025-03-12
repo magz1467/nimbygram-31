@@ -1,4 +1,3 @@
-
 export interface Application {
   id: number;
   title?: string;
@@ -47,7 +46,7 @@ export interface Application {
     };
   };
   application_type_full?: string;
-  class_3?: string | null;
+  classification?: string | null;
   final_impact_score?: number | null;
   engaging_title?: string | null;
   feedback_stats?: {
@@ -61,6 +60,8 @@ export interface Application {
   storybook_header?: string;
   received_date?: string | null;
   notes?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Comment {

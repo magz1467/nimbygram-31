@@ -65,7 +65,7 @@ export const ApplicationListView = ({
                     title={storybook?.header || app.title || ''}
                     applicationId={app.id}
                     coordinates={app.coordinates}
-                    class_3={app.category}
+                    classification={app.category}
                   />
                 </div>
                 <div className="flex-1 min-w-0">

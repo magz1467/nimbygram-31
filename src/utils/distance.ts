@@ -29,9 +29,6 @@ export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): num
   
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
-
-  // Log for debugging
-  console.log(`Distance calculation: From [${lat1.toFixed(6)}, ${lon1.toFixed(6)}] to [${lat2.toFixed(6)}, ${lon2.toFixed(6)}] = ${distance.toFixed(2)}km`);
   
   return distance;
 };
@@ -57,6 +54,7 @@ export const formatDistance = (distanceKm: number): string => {
 
 /**
  * Sort applications by distance using Haversine formula
+ * This is the primary function for ensuring results are ordered by distance
  */
 export const sortApplicationsByDistance = (
   applications: Application[],
@@ -74,14 +72,29 @@ export const sortApplicationsByDistance = (
   
   // Create a copy of applications with calculated distances
   const appsWithDistance = applications.map(app => {
+    // Handle case where application has no coordinates
     if (!app.coordinates) {
-      console.warn(`Application ${app.id} missing coordinates`);
-      return { ...app, _distanceValue: Number.MAX_SAFE_INTEGER };
+      // Check if app has latitude/longitude properties directly
+      if (typeof app.latitude === 'number' && typeof app.longitude === 'number') {
+        // Create coordinates from latitude/longitude
+        app.coordinates = [app.latitude, app.longitude];
+      } else {
+        console.warn(`Application ${app.id} missing coordinates`);
+        return { ...app, _distanceValue: Number.MAX_SAFE_INTEGER };
+      }
     }
     
     // Calculate and store distance
     const distance = calculateDistance(coordinates, app.coordinates);
-    return { ...app, _distanceValue: distance };
+    
+    // Store the formatted distance string
+    const formattedDistance = formatDistance(distance);
+    
+    return { 
+      ...app, 
+      _distanceValue: distance,
+      distance: formattedDistance 
+    };
   });
   
   // Sort by the calculated distance
@@ -93,11 +106,11 @@ export const sortApplicationsByDistance = (
   });
   
   // Log the first few results for debugging
-  console.log("\nSorted applications (first 10):");
-  sortedApps.slice(0, 10).forEach((app, index) => {
+  console.log("\nSorted applications (first 5):");
+  sortedApps.slice(0, 5).forEach((app, index) => {
     // Safely access _distanceValue which we just added
     const dist = (app as any)._distanceValue;
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}, Coordinates: ${app.coordinates?.[0].toFixed(6)},${app.coordinates?.[1].toFixed(6)}`);
+    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}`);
   });
   
   // Return sorted applications without the temporary _distanceValue property

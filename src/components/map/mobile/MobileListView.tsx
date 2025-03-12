@@ -1,107 +1,80 @@
-
 import { Application } from "@/types/planning";
-import { Button } from "@/components/ui/button";
-import { Bell, MapPin, X } from "lucide-react";
-import { useState } from "react";
-import { ImageResolver } from "./components/ImageResolver";
-import { StatusBadge } from "./components/StatusBadge";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
+import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
+import { MapPin } from "lucide-react";
 
 interface MobileListViewProps {
-  postcode: string;
   applications: Application[];
   selectedApplication?: number | null;
+  postcode: string;
   onSelectApplication: (id: number) => void;
   onShowEmailDialog: () => void;
+  onFilterChange?: (filterType: string, value: string) => void;
+  onSortChange?: (sortType: string) => void;
+  activeFilters?: {
+    status?: string;
+    type?: string;
+  };
+  activeSort?: string;
+  statusCounts?: {
+    'Under Review': number;
+    'Approved': number;
+    'Declined': number;
+    'Other': number;
+  };
   hideFilterBar?: boolean;
   onClose?: () => void;
 }
 
 export const MobileListView = ({
-  postcode,
   applications,
   selectedApplication,
+  postcode,
   onSelectApplication,
   onShowEmailDialog,
   hideFilterBar,
   onClose
 }: MobileListViewProps) => {
-  const [showAlerts, setShowAlerts] = useState(true);
-
   return (
-    <div className="absolute inset-0 flex flex-col h-full max-h-[100dvh] overflow-hidden bg-gray-50">
-      {showAlerts && (
-        <div className="p-4 bg-white border-b relative">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-2 top-2 h-8 w-8"
-            onClick={() => setShowAlerts(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <div className="bg-primary/5 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Bell className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-primary">Get Updates for This Area</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Stay informed about new planning applications near {postcode}
-            </p>
-            <Button 
-              className="w-full"
-              onClick={onShowEmailDialog}
-            >
-              Get Alerts
-            </Button>
-          </div>
-        </div>
-      )}
-      <div className="p-4 space-y-4 overflow-y-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto">
         {applications.map((app) => {
-          const storybook = formatStorybook(app.storybook);
-          
           return (
             <div
               key={app.id}
-              className="bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
+              className="py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => onSelectApplication(app.id)}
             >
-              <div className="flex flex-col">
-                <div className="w-full aspect-[4/3] relative">
+              <div className="flex gap-3">
+                <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                   <ImageResolver
                     imageMapUrl={app.image_map_url}
                     image={app.image}
-                    title={storybook?.header || app.title || ''}
+                    title={app.title || ''}
                     applicationId={app.id}
                     coordinates={app.coordinates}
-                    class_3={app.category}
+                    classification={app.category}
                   />
                 </div>
-                <div className="p-4">
-                  {storybook?.header ? (
-                    <h3 className="font-semibold text-primary text-lg mb-2">
-                      {storybook.header}
-                    </h3>
-                  ) : (
-                    <h3 className="font-semibold text-primary">
-                      {app.title || 'Planning Application'}
-                    </h3>
-                  )}
-                  {storybook?.content && (
-                    <div 
-                      className="text-sm text-gray-600 mt-1 whitespace-pre-line leading-relaxed space-y-2"
-                      dangerouslySetInnerHTML={{ 
-                        __html: storybook.content
-                      }}
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-primary">
+                    {app.title || 'Planning Application'}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1 truncate">
+                    {app.description}
+                  </div>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <ApplicationBadges
+                      status={app.status}
+                      lastDateConsultationComments={app.last_date_consultation_comments}
+                      impactScore={app.final_impact_score}
                     />
-                  )}
-                  <div className="flex justify-between items-center mt-4">
-                    <StatusBadge status={app.status} />
                     {app.distance && (
-                      <div className="flex items-center text-xs text-gray-500">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {app.distance}
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-gray-500 flex items-center">
+                          <MapPin className="h-3 w-3 mr-1 text-primary" />
+                          {app.distance}
+                        </span>
                       </div>
                     )}
                   </div>

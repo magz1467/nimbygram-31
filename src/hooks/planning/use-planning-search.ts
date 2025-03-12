@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/types/planning";
@@ -17,6 +17,19 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const [searchRadius, setSearchRadius] = useState<number>(5);
   const { toast } = useToast();
   const errorRef = useRef<Error | null>(null);
+  
+  // Function to handle search errors
+  const handleSearchError = useCallback((err: any) => {
+    console.error('Search error:', err);
+    errorRef.current = err instanceof Error ? err : new Error(String(err));
+    
+    // Provide user feedback
+    toast({
+      title: "Search Error",
+      description: err?.message || "There was an issue with your search. Please try again.",
+      variant: "destructive"
+    });
+  }, [toast]);
   
   // Create a stable query key
   const queryKey = useRef<string[]>(['planning-applications', 'no-coordinates']);
@@ -62,17 +75,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log('Got fallback results:', fallbackResults.length);
         return fallbackResults;
       } catch (err) {
-        console.error('Search error:', err);
-        // Store the error to prevent losing it on re-renders
-        errorRef.current = err instanceof Error ? err : new Error(String(err));
-        
+        handleSearchError(err);
         // Return empty array to prevent component crashes
         return [];
       }
     },
     enabled: !!coordinates,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 1, // Only retry once
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,

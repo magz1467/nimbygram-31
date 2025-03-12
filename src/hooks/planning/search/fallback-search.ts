@@ -14,6 +14,7 @@ export async function performFallbackSearch(
 ): Promise<Application[]> {
   try {
     console.log('Performing fallback search with bounding box');
+    console.log('Search parameters:', { lat, lng, radiusKm, filters });
     
     // Calculate bounding box - more accurate calculation
     const latDelta = radiusKm / 111.32; // 1 degree latitude is approximately 111.32 km
@@ -26,7 +27,7 @@ export async function performFallbackSearch(
     
     console.log(`Search bounds: lat ${minLat.toFixed(4)} to ${maxLat.toFixed(4)}, lng ${minLng.toFixed(4)} to ${maxLng.toFixed(4)}`);
     
-    // Create query - use more specific column names from crystal_roof
+    // Create query - directly using crystal_roof table
     let query = supabase
       .from('crystal_roof')
       .select('*')
@@ -45,17 +46,15 @@ export async function performFallbackSearch(
     }
     
     if (filters?.classification && filters.classification.trim() !== '') {
-      query = query.ilike('classification', `%${filters.classification}%`); // Use classification instead of class_3
+      query = query.ilike('classification', `%${filters.classification}%`);
     }
     
-    // Increase limit for wider search
-    query = query.limit(100);
+    // Increase limit to get more results
+    query = query.limit(1000);
     
     // Execute query with timeout handling
-    const queryPromise = query;
-    
-    // Execute query
-    const { data, error } = await queryPromise;
+    console.log('Executing fallback search query');
+    const { data, error } = await query;
     
     if (error) {
       console.error('Fallback search error:', error);
@@ -81,14 +80,18 @@ export async function performFallbackSearch(
         return {
           ...app,
           distance: `${distanceMiles.toFixed(1)} mi`,
-          // Store the raw distance for sorting
-          _rawDistance: distanceKm
+          // Add coordinates array for map display
+          coordinates: [Number(app.latitude), Number(app.longitude)]
         };
       })
-      .sort((a, b) => (a._rawDistance || Infinity) - (b._rawDistance || Infinity));
+      .sort((a, b) => {
+        const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
+        const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
+        return distA - distB;
+      });
     
-    // Remove the temporary _rawDistance property
-    return results.map(({ _rawDistance, ...app }) => app);
+    console.log(`Returning ${results.length} sorted results`);
+    return results;
   } catch (error) {
     console.error('Fallback search failed:', error);
     // Return empty array instead of throwing
