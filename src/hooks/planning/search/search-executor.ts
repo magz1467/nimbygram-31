@@ -37,7 +37,7 @@ export async function executeSearch(
   try {
     console.log(`Executing spatial search at [${lat}, ${lng}] with 5km radius`);
     
-    // Use the paginated RPC function with proper timeout handling
+    // Use the paginated RPC function
     const { data, error } = await supabase.rpc('get_nearby_applications_paginated', {
       center_lat: lat,
       center_lng: lng,
@@ -45,12 +45,17 @@ export async function executeSearch(
       page_number: 0,
       page_size: 100
     }, { 
-      count: 'exact',
-      signal: controller.signal
+      count: 'exact'
     });
 
     // Clear the timeout if we got a response
     clearTimeout(timeoutId);
+
+    // Check if the search was aborted
+    if (controller.signal.aborted) {
+      console.error("Search timed out after 30 seconds");
+      throw new Error('Search timeout after 30 seconds');
+    }
 
     if (error) {
       console.error("RPC search error:", error);
