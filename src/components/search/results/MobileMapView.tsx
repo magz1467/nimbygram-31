@@ -77,6 +77,7 @@ export const MobileMapView = ({
           applications={applications}
           selectedId={selectedId}
           coordinates={coordinates}
+          searchLocation={coordinates} // Added searchLocation prop
           isMobile={true}
           isMapView={true}
           onMarkerClick={handleMarkerClick}

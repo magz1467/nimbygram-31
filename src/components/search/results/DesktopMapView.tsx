@@ -66,6 +66,7 @@ export const DesktopMapView = ({
           applications={applications}
           selectedId={selectedId}
           coordinates={coordinates}
+          searchLocation={coordinates} // Added searchLocation prop
           onMarkerClick={handleMarkerClick}
         />
       </div>
