@@ -1,52 +1,57 @@
-
-import { AppError, ErrorType } from './types';
+import { ErrorType, AppError } from './types';
 
 /**
- * Format error messages consistently
+ * Formats an error for display to the user
+ * @param error The error object to format
+ * @returns A user-friendly error message
  */
-export function formatErrorMessage(error: any, context?: string): string {
-  if (error instanceof AppError) {
-    return error.message;
+export function formatErrorForUser(error: any): string {
+  // If it's already an AppError, use its userMessage property
+  if (error && typeof error === 'object' && 'userMessage' in error) {
+    return error.userMessage || getUserFriendlyMessage(error.type || ErrorType.UNKNOWN);
   }
   
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  return 'An unknown error occurred';
+  // Otherwise, determine error type and get a message
+  const errorType = getErrorType(error);
+  return getUserFriendlyMessage(errorType, error?.message);
 }
 
 /**
- * Log errors to console with consistent formatting
+ * Gets a user-friendly error message based on error type
+ * @param type The type of error
+ * @param originalMessage The original error message (optional)
+ * @returns A user-friendly error message
  */
-export function logError(error: any, context?: string): void {
-  const errorObject = error instanceof AppError ? error : error;
-  
-  console.group('🚨 Application Error');
-  console.error(`Error ${context ? `in ${context}` : ''}:`, errorObject);
-  
-  if (error.stack) {
-    console.error('Stack trace:', error.stack);
+export function getUserFriendlyMessage(type: ErrorType, originalMessage?: string): string {
+  switch (type) {
+    case ErrorType.NETWORK:
+      return "We're having trouble connecting to our servers. Please check your internet connection and try again.";
+    case ErrorType.TIMEOUT:
+      return "The search took too long to complete. Please try a more specific location or different filters.";
+    case ErrorType.NOT_FOUND:
+      return "We couldn't find any planning applications matching your search criteria.";
+    case ErrorType.PERMISSION:
+      return "You don't have permission to access this information. Please log in or contact support if you believe this is a mistake.";
+    case ErrorType.DATA:
+      return "We encountered an issue with the data. Please try again or contact support if the issue persists.";
+    default:
+      return originalMessage || "We encountered an unexpected issue. Please try again later.";
   }
-  
-  console.groupEnd();
 }
 
-// NOTE: This function is deprecated - use createAppError from handler.tsx instead
-// @deprecated
-export function createAppError(error: any, context?: string): AppError {
-  console.warn('This createAppError function in formatting.ts is deprecated. Use the one from handler.tsx instead.');
+/**
+ * Gets the type of an error
+ * @param error The error object
+ * @returns The error type
+ */
+export function getErrorType(error: any): ErrorType {
+  if (!error) return ErrorType.UNKNOWN;
   
-  if (error instanceof AppError) {
-    return error;
+  // If it's already an AppError, use its type
+  if (typeof error === 'object' && 'type' in error) {
+    return error.type;
   }
   
-  let errorType = ErrorType.UNKNOWN;
-  let message = formatErrorMessage(error, context);
-  
-  return new AppError(message, errorType, error, context);
+  // Default to unknown
+  return ErrorType.UNKNOWN;
 }

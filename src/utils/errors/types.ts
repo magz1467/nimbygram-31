@@ -5,7 +5,12 @@ export enum ErrorType {
   NOT_FOUND = 'not_found',
   DATA = 'data',
   PERMISSION = 'permission',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
+  AUTHENTICATION = 'authentication',
+  AUTHORIZATION = 'authorization',
+  VALIDATION = 'validation',
+  DATABASE = 'database',
+  SERVER = 'server'
 }
 
 export interface AppError extends Error {

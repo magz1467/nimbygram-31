@@ -1,51 +1,48 @@
 
-import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { AppError, ErrorType } from './types';
+import { toast } from "@/components/ui/use-toast";
+import { ErrorType, AppError } from './types';
+import { formatErrorForUser, getErrorType } from './formatting';
 
 /**
- * Create a standardized error
+ * Handles an error by showing a toast notification and optionally logging
+ * @param error The error to handle
+ * @param options Options for handling the error
  */
-export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
-  if (error instanceof AppError) {
-    return error;
+export function handleError(error: any, options: {
+  showToast?: boolean;
+  logToConsole?: boolean;
+  title?: string;
+  callback?: (error: any) => void;
+} = {}): void {
+  const {
+    showToast = true,
+    logToConsole = true,
+    title = "Error",
+    callback
+  } = options;
+  
+  // Default to unknown if no error
+  if (!error) return;
+  
+  // Log to console if requested
+  if (logToConsole) {
+    console.error('Application error:', error);
   }
   
-  const message = error.message || 'An error occurred';
-  return new AppError(message, errorType || ErrorType.UNKNOWN, error, context);
-}
-
-/**
- * Handle errors in a standardized way
- */
-export function handleError(
-  error: any, 
-  toast: ReturnType<typeof useToast>["toast"],
-  options: { context?: string; retry?: () => void; silent?: boolean } = {}
-): AppError {
-  const { context, retry, silent = false } = options;
-  
-  // Create standardized app error
-  const appError = error instanceof AppError 
-    ? error 
-    : createAppError(error, context);
-  
-  // Log to console
-  console.error(`Error${context ? ` in ${context}` : ''}:`, appError);
-  
-  // Show toast notification if not silent
-  if (!silent) {
+  // Show toast if requested
+  if (showToast) {
+    const errorType = getErrorType(error);
+    const message = formatErrorForUser(error);
+    
     toast({
-      title: context ? `Error in ${context}` : "Error",
-      description: appError.message,
+      title,
+      description: message,
       variant: "destructive",
-      action: retry ? (
-        <ToastAction altText="Retry" onClick={retry}>
-          Retry
-        </ToastAction>
-      ) : undefined
     });
   }
   
-  return appError;
+  // Call callback if provided
+  if (callback) {
+    callback(error);
+  }
 }

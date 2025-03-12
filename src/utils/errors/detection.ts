@@ -2,133 +2,108 @@
 import { ErrorType } from './types';
 
 /**
- * Detect the type of error based on error properties
+ * Determines if an error is non-critical and can be ignored for user display
+ * @param error Error object or message
+ * @returns boolean indicating if error is non-critical
  */
-export function detectErrorType(error: any): ErrorType {
-  // Handle null or undefined errors
-  if (!error) {
-    return ErrorType.UNKNOWN;
-  }
+export function isNonCriticalError(error: Error | string): boolean {
+  const errorMessage = typeof error === 'string' ? error : error.message;
   
-  // Extract error message for easier checking
-  const errorMessage = typeof error === 'string' 
-    ? error.toLowerCase() 
-    : (error.message ? error.message.toLowerCase() : '');
-  
-  // Check for explicit error codes
-  const errorCode = error.code || error.status || error.statusCode;
-  
-  // Timeout errors - check first as they're critical for UX
-  if (
-    errorCode === 'ETIMEDOUT' ||
-    errorCode === '57014' ||
-    errorMessage.includes('timeout') ||
-    errorMessage.includes('timed out') ||
-    errorMessage.includes('too long') ||
-    errorMessage.includes('canceling statement') ||
-    error.name === 'TimeoutError'
-  ) {
-    return ErrorType.TIMEOUT;
-  }
-
-  // Network errors
-  if (
-    error.name === 'NetworkError' ||
-    errorMessage.includes('network') ||
-    errorMessage.includes('fetch') ||
-    errorMessage.includes('failed to fetch') ||
-    errorMessage.includes('network request failed') ||
-    !navigator.onLine
-  ) {
-    return ErrorType.NETWORK;
-  }
-
-  // Authentication errors
-  if (
-    errorCode === 401 ||
-    errorMessage.includes('unauthorized') ||
-    errorMessage.includes('authentication') ||
-    errorMessage.includes('auth')
-  ) {
-    return ErrorType.AUTHENTICATION;
-  }
-
-  // Authorization errors
-  if (
-    errorCode === 403 ||
-    errorMessage.includes('forbidden') ||
-    errorMessage.includes('permission')
-  ) {
-    return ErrorType.AUTHORIZATION;
-  }
-
-  // Not found errors
-  if (
-    errorCode === 404 ||
-    errorMessage.includes('not found') ||
-    errorMessage.includes('no results') ||
-    errorMessage.includes('empty response')
-  ) {
-    return ErrorType.NOT_FOUND;
-  }
-
-  // Validation errors
-  if (
-    errorCode === 422 ||
-    errorMessage.includes('validation') ||
-    errorMessage.includes('required field') ||
-    errorMessage.includes('invalid')
-  ) {
-    return ErrorType.VALIDATION;
-  }
-
-  // Database errors
-  if (
-    errorMessage.includes('database') ||
-    errorMessage.includes('sql') ||
-    errorMessage.includes('query')
-  ) {
-    return ErrorType.DATABASE;
-  }
-
-  // Server errors
-  if (
-    (errorCode && errorCode >= 500) ||
-    errorMessage.includes('server')
-  ) {
-    return ErrorType.SERVER;
-  }
-
-  return ErrorType.UNKNOWN;
-}
-
-/**
- * Check if an error is non-critical (e.g. missing optional functionality)
- */
-export function isNonCriticalError(error: any): boolean {
-  if (!error) return true;
-  
-  const errorMessage = typeof error === 'string' 
-    ? error.toLowerCase() 
-    : (error.message ? error.message.toLowerCase() : '');
-  
-  // Infrastructure setup errors
-  if (
-    errorMessage.includes('support table') ||
-    errorMessage.includes('extension') ||
-    errorMessage.toLowerCase().includes('function') ||
-    errorMessage.includes('not supported')
-  ) {
-    return true;
-  }
-  
-  // Missing data that's not essential
-  if (
-    errorMessage.includes('no results') ||
-    errorMessage.includes('empty response')
-  ) {
+  // Infrastructure setup or missing function errors should be ignored
+  if (errorMessage.includes('get_nearby_applications') || 
+      errorMessage.includes('Could not find the function') ||
+      errorMessage.includes('does not exist') ||
+      errorMessage.includes('search_applications') ||
+      errorMessage.includes('RPC') ||
+      errorMessage.includes('supabase_functions')) {
     return true;
   }
   
   return false;
+}
+
+/**
+ * Detects the type of error based on its message or properties
+ * @param error The error object or message
+ * @returns The detected error type
+ */
+export function detectErrorType(error: any): ErrorType {
+  const errorMsg = typeof error === 'string' 
+    ? error.toLowerCase() 
+    : ((error?.message || '').toLowerCase());
+  
+  // Network errors
+  if (!navigator.onLine || 
+      errorMsg.includes('network') || 
+      errorMsg.includes('fetch') ||
+      errorMsg.includes('connection') ||
+      error instanceof TypeError) {
+    return ErrorType.NETWORK;
+  }
+  
+  // Authentication errors
+  if (errorMsg.includes('authentication') ||
+      errorMsg.includes('login') ||
+      errorMsg.includes('not logged in') ||
+      errorMsg.includes('unauthenticated') ||
+      errorMsg.includes('auth')) {
+    return ErrorType.AUTHENTICATION;
+  }
+  
+  // Authorization errors
+  if (errorMsg.includes('authorization') ||
+      errorMsg.includes('forbidden') ||
+      errorMsg.includes('permission') ||
+      errorMsg.includes('not allowed') ||
+      errorMsg.includes('unauthorized')) {
+    return ErrorType.PERMISSION;
+  }
+  
+  // Timeout errors
+  if (errorMsg.includes('timeout') || 
+      errorMsg.includes('timed out') ||
+      errorMsg.includes('too long') ||
+      errorMsg.includes('canceling statement') ||
+      errorMsg.includes('57014')) {
+    return ErrorType.TIMEOUT;
+  }
+  
+  // Validation errors
+  if (errorMsg.includes('validation') ||
+      errorMsg.includes('invalid') ||
+      errorMsg.includes('not valid') ||
+      errorMsg.includes('required')) {
+    return ErrorType.VALIDATION;
+  }
+  
+  // Database errors
+  if (errorMsg.includes('database') ||
+      errorMsg.includes('db error') ||
+      errorMsg.includes('sql') ||
+      errorMsg.includes('query')) {
+    return ErrorType.DATABASE;
+  }
+  
+  // Server errors
+  if (errorMsg.includes('server') ||
+      errorMsg.includes('500') ||
+      errorMsg.includes('internal')) {
+    return ErrorType.SERVER;
+  }
+  
+  // Not found errors
+  if (errorMsg.includes('not found') || 
+      errorMsg.includes('no results') ||
+      errorMsg.includes('404')) {
+    return ErrorType.NOT_FOUND;
+  }
+  
+  // Data errors
+  if (errorMsg.includes('data') ||
+      errorMsg.includes('parse') ||
+      errorMsg.includes('syntax')) {
+    return ErrorType.DATA;
+  }
+  
+  return ErrorType.UNKNOWN;
 }
