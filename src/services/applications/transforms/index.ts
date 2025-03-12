@@ -1,3 +1,8 @@
 
-export { filterByLocationRelevance } from './location-filter';
-export { transformApplicationsData } from './applications-transformer';
+import { transformApplicationsData } from './applications-transformer';
+import { filterByLocationRelevance } from './location-filter';
+
+export {
+  transformApplicationsData,
+  filterByLocationRelevance
+};
