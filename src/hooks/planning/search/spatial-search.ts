@@ -25,8 +25,7 @@ export async function performSpatialSearch(
         center_lng: lng,
         radius_km: radiusKm,
         result_limit: 25 // Small limit for fast initial results
-      },
-      { count: 'exact' }
+      }
     );
     
     // Add timeout by using AbortController

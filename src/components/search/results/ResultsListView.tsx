@@ -48,7 +48,15 @@ export const ResultsListView = ({
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const pageSize = 10;
+
+  // Track if loading has ever started to prevent showing "no results" too early
+  useEffect(() => {
+    if (isLoading && !hasStartedLoading) {
+      setHasStartedLoading(true);
+    }
+  }, [isLoading]);
 
   // Reset search timer when a new search starts
   useEffect(() => {
@@ -105,7 +113,7 @@ export const ResultsListView = ({
   };
 
   // Show loading skeletons during active search
-  if (isLoading && currentPage === 0) {
+  if (isLoading || (hasStartedLoading && applications.length === 0 && !error)) {
     return (
       <div>
         <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />
@@ -165,7 +173,7 @@ export const ResultsListView = ({
   }
 
   // Show "no results" message only when we're not loading and truly have no results
-  if (!isLoading && !error && (!applications?.length && !loadedApplications?.length)) {
+  if (!isLoading && !error && (!applications?.length && !loadedApplications?.length) && hasStartedLoading) {
     return (
       <div className="p-8 text-center">
         <h3 className="text-lg font-medium mb-2">No results found</h3>
@@ -224,3 +232,4 @@ export const ResultsListView = ({
     </div>
   );
 };
+
