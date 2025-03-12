@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from 'uuid';
 
 export enum TelemetryEventType {
   SEARCH_STARTED = 'search-started',
@@ -67,7 +66,7 @@ class SearchTelemetryService {
     console.log(`Telemetry: ${eventType}`, event);
     
     try {
-      // Store in Supabase - Fix: Use .then().catch() pattern rather than .catch
+      // Store in Supabase with proper Promise handling
       supabase
         .from('search_telemetry')
         .insert([{
@@ -82,8 +81,10 @@ class SearchTelemetryService {
           device_info: this.getDeviceInfo(),
           timestamp: new Date().toISOString()
         }])
-        .then(() => {
-          // Successfully logged telemetry
+        .then((response) => {
+          if (response.error) {
+            console.error('Error logging telemetry:', response.error);
+          }
         })
         .catch(error => {
           console.error('Error logging telemetry:', error);

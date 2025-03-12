@@ -19,13 +19,7 @@ export const SearchErrorView = ({
   const [showDetails, setShowDetails] = useState(false);
   
   // Format error message to avoid [object Object]
-  const formattedErrorDetails = typeof errorDetails === 'string' 
-    ? errorDetails 
-    : errorDetails instanceof Error 
-      ? errorDetails.message 
-      : errorDetails && typeof errorDetails === 'object' 
-        ? JSON.stringify(errorDetails, null, 2)
-        : 'Unknown error';
+  const formattedErrorDetails = formatErrorMessage(errorDetails);
   
   // Select the appropriate icon based on error type
   const ErrorIcon = () => {
