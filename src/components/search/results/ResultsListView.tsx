@@ -49,14 +49,21 @@ export const ResultsListView = ({
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const pageSize = 10;
 
   // Track if loading has ever started to prevent showing "no results" too early
   useEffect(() => {
     if (isLoading && !hasStartedLoading) {
       setHasStartedLoading(true);
+      setInitialLoadComplete(false);
     }
-  }, [isLoading]);
+    
+    // When loading completes after having started, mark initial load as complete
+    if (!isLoading && hasStartedLoading && !initialLoadComplete) {
+      setInitialLoadComplete(true);
+    }
+  }, [isLoading, hasStartedLoading, initialLoadComplete]);
 
   // Reset search timer when a new search starts
   useEffect(() => {
@@ -112,8 +119,8 @@ export const ResultsListView = ({
     }
   };
 
-  // Show loading skeletons during active search
-  if (isLoading || (hasStartedLoading && applications.length === 0 && !error)) {
+  // Always show loading skeleton during initial load or active search
+  if (isLoading || (!initialLoadComplete && hasStartedLoading)) {
     return (
       <div>
         <LoadingSkeletons isLongSearch={isLongSearchDetected} onRetry={onRetry} />
@@ -172,8 +179,8 @@ export const ResultsListView = ({
     );
   }
 
-  // Show "no results" message only when we're not loading and truly have no results
-  if (!isLoading && !error && (!applications?.length && !loadedApplications?.length) && hasStartedLoading) {
+  // Show "no results" message only when initial load is complete and we have no results
+  if (!isLoading && !error && (!applications?.length && !loadedApplications?.length) && initialLoadComplete) {
     return (
       <div className="p-8 text-center">
         <h3 className="text-lg font-medium mb-2">No results found</h3>
@@ -232,4 +239,3 @@ export const ResultsListView = ({
     </div>
   );
 };
-
