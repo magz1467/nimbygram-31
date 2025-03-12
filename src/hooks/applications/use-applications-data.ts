@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import { Application } from "@/types/planning";
 import { LatLngTuple } from 'leaflet';
-import { fetchApplicationsInRadius } from './applications/use-applications-fetch';
-import { transformApplicationData } from '@/utils/transformApplicationData';
+import { fetchApplicationsInRadius } from './use-applications-fetch';
 
 export interface ApplicationError {
   message: string;

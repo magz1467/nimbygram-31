@@ -1,5 +1,5 @@
 
 // This file is now a simple re-export for backward compatibility
-import { transformApplicationData } from './transforms/application-transformer';
+import { transformApplicationFromDatabase } from './transforms/application-transformer';
 
-export { transformApplicationData };
+export { transformApplicationFromDatabase as transformApplicationData };
