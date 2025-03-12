@@ -5,38 +5,24 @@ import { SearchCoordinates, SearchResult, SEARCH_TIMEOUT } from '@/types/search'
 import { Application } from '@/types/planning';
 import { withTimeout } from '@/utils/coordinates/timeout-handler';
 
-async function performSpatialSearch(coordinates: SearchCoordinates): Promise<SearchResult> {
+async function performSpatialSearch(coordinates: SearchCoordinates | [number, number]): Promise<SearchResult> {
   console.log('🔍 Starting spatial search with coordinates:', coordinates);
   
   const startTime = Date.now();
   
   try {
-    // Extract coordinates correctly based on format
-    let lat, lng;
-    
-    if (Array.isArray(coordinates)) {
-      // Handle array format [lat, lng]
-      [lat, lng] = coordinates;
-    } else if (typeof coordinates === 'object') {
-      // Handle object format {lat, lng}
-      lat = coordinates.lat;
-      lng = coordinates.lng;
-    } else {
-      throw new Error('Invalid coordinates format');
-    }
+    // Handle both array and object formats
+    const [lat, lng] = Array.isArray(coordinates) 
+      ? coordinates 
+      : [coordinates.lat, coordinates.lng];
     
     console.log(`🔍 Using coordinates: lat=${lat}, lng=${lng}`);
     
-    // Call the function without throwOnError for better error handling
-    const { data, error } = await withTimeout(
-      supabase.rpc('get_nearby_applications', {
-        latitude: lat,
-        longitude: lng,
-        radius_km: 10
-      }),
-      SEARCH_TIMEOUT,
-      'Spatial search timed out after 30 seconds'
-    );
+    const { data, error } = await supabase.rpc('get_nearby_applications', {
+      latitude: lat,
+      longitude: lng,
+      radius_km: 10
+    });
 
     if (error) {
       console.error('❌ Supabase RPC error:', error);
@@ -65,7 +51,7 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
   }
 }
 
-export function useSpatialSearch(coordinates: SearchCoordinates | null) {
+export function useSpatialSearch(coordinates: SearchCoordinates | [number, number] | null) {
   return useQuery({
     queryKey: ['spatial-search', coordinates],
     queryFn: () => {

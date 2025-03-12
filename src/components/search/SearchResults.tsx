@@ -3,13 +3,13 @@ import React, { useEffect } from "react";
 import { useSpatialSearch } from "@/hooks/use-spatial-search";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SearchCoordinates, SEARCH_RADIUS } from "@/types/search";
+import { SearchCoordinates } from "@/types/search";
 import { Loader2, MapPin, AlertCircle } from "lucide-react";
 import ResultsContainer from "./results/ResultsContainer";
 import { searchDiagnostics } from "@/utils/search-diagnostics";
 
 interface SearchResultsProps {
-  coordinates: SearchCoordinates | null;
+  coordinates: SearchCoordinates | [number, number] | null;
   onRetry: () => void;
 }
 
