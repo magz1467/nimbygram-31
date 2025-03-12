@@ -29,13 +29,11 @@ export async function performFallbackSearch(
     // Create query with proper typings for the filter conditions
     let query = supabase
       .from('crystal_roof')
-      .select('*');
-    
-    // Add lat/lng filters using gt/lt operators
-    query = query.gte('latitude', minLat);
-    query = query.lte('latitude', maxLat);
-    query = query.gte('longitude', minLng);
-    query = query.lte('longitude', maxLng);
+      .select('*')
+      .gte('latitude', minLat)
+      .lte('latitude', maxLat)
+      .gte('longitude', minLng)
+      .lte('longitude', maxLng);
     
     // Add other filters
     if (filters.status) {
@@ -57,8 +55,9 @@ export async function performFallbackSearch(
     const { data, error } = await query;
     
     if (error) {
+      // Log the error but don't throw - we'll return an empty array instead
       console.error('Fallback search error:', error);
-      throw error;
+      return [];
     }
     
     if (!data || data.length === 0) {
@@ -68,8 +67,9 @@ export async function performFallbackSearch(
     
     console.log(`Found ${data.length} results in fallback search`);
     
-    // Add distance and sort
+    // Add distance and sort - handle cases where lat/lng might not be numeric
     return data
+      .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
       .map(app => ({
         ...app,
         distance: calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude))
@@ -77,6 +77,7 @@ export async function performFallbackSearch(
       .sort((a, b) => a.distance - b.distance);
   } catch (error) {
     console.error('Fallback search failed:', error);
+    // Return empty array instead of throwing
     return [];
   }
 }
