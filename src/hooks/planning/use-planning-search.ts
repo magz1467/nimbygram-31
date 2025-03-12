@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Application } from "@/types/planning";
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';
-import type { SearchFilters } from './search/types';
-import { useProgressiveSearch } from './search/use-progressive-search';
+import type { SearchFilters, SearchMethod } from './search/types';
+import { useProgressiveSearch } from './search/progressive-search';
 import { useSearchErrorHandler } from './search/use-search-error-handler';
 import { useSearchTelemetry } from './search/use-search-telemetry';
 import { executeSearch } from './search/search-executor';
@@ -58,7 +58,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         
         const result = await executeSearch(
           { coordinates, radius: searchRadius, filters },
-          searchMethodRef
+          searchMethodRef as React.MutableRefObject<'spatial' | 'fallback' | 'cache' | null>
         );
         
         // Log telemetry data about the search

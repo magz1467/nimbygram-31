@@ -1,27 +1,31 @@
 
-import { SearchFilters, SearchParams } from '../types';
+import { Application } from "@/types/planning";
+import { SearchFilters } from "../types";
+import { ErrorType } from "@/utils/errors/types";
+
+export interface FallbackSearchParams {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  filters: SearchFilters;
+}
+
+export interface FallbackSearchOptions {
+  reduced?: boolean;
+  lastResort?: boolean;
+}
 
 export interface UserErrorMessages {
-  INVALID_COORDINATES: string;
-  BOUNDARY_ERROR: string;
-  DATABASE_ERROR: string;
-  TIMEOUT_ERROR: string;
-  NO_RESULTS: string;
-  UNKNOWN_ERROR: string;
+  [ErrorType.NETWORK]: string;
+  [ErrorType.TIMEOUT]: string;
+  [ErrorType.NOT_FOUND]: string;
+  [ErrorType.COORDINATES]: string;
+  [ErrorType.DATABASE]: string;
+  [ErrorType.PERMISSION]: string;
+  [ErrorType.UNKNOWN]: string;
 }
 
-export interface FallbackSearchDependencies {
-  supabase: any;
-  calculateDistance: (lat1: number, lng1: number, lat2: number, lng2: number) => number;
-}
-
-export type BoundingBox = {
-  minLat: number;
-  maxLat: number;
-  minLng: number;
-  maxLng: number;
+export type FallbackSearchResult = {
+  applications: Application[];
+  searchMethod: 'fallback';
 };
-
-export interface FallbackSearchOptions extends SearchParams {
-  resultLimit?: number;
-}

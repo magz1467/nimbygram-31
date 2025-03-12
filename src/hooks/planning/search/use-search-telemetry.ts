@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { searchTelemetry, TelemetryEventType } from '@/services/telemetry/search-telemetry';
-import { SearchFilters } from './types';
+import { SearchFilters, SearchMethod } from './types';
 import { ErrorType } from '@/utils/errors/types';
 
 export function useSearchTelemetry() {
@@ -18,7 +18,7 @@ export function useSearchTelemetry() {
     radius: number, 
     filters: SearchFilters,
     resultCount: number,
-    searchMethod: 'spatial' | 'fallback' | 'cache'
+    searchMethod: SearchMethod
   ) => {
     searchTelemetry.logEvent(TelemetryEventType.SEARCH_COMPLETED, {
       coordinates,

@@ -3,9 +3,9 @@ import { useCallback, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { createAppError } from '@/utils/errors/error-factory';
 import { ErrorType } from '@/utils/errors/types';
+import { isNonCriticalError } from '@/utils/errors';
 import { useSearchTelemetry } from './use-search-telemetry';
 import { SearchFilters, SearchMethod } from './types';
-import { isNonCriticalError } from '@/utils/errors';
 
 export interface SearchErrorHandlerContext {
   coordinates: [number, number] | null;
@@ -49,14 +49,26 @@ export function useSearchErrorHandler(
     errorRef.current = appError;
     
     // Log search error telemetry
-    logSearchError(
-      coordinates,
-      searchRadius,
-      filters,
-      appError.type as ErrorType,
-      appError.message,
-      searchMethodRef.current
-    );
+    if (searchMethodRef.current === 'spatial' || searchMethodRef.current === 'fallback') {
+      logSearchError(
+        coordinates,
+        searchRadius,
+        filters,
+        appError.type as ErrorType,
+        appError.message,
+        searchMethodRef.current
+      );
+    } else {
+      // Handle 'cache' method or null case
+      logSearchError(
+        coordinates,
+        searchRadius,
+        filters,
+        appError.type as ErrorType,
+        appError.message,
+        null
+      );
+    }
     
     // Only show toast notifications for errors that are meaningful to users
     if (!isNonCriticalError(err)) {

@@ -4,12 +4,11 @@ import { performSpatialSearch } from './spatial-search';
 import { performFallbackSearch } from './fallback-search';
 import { featureFlags, FeatureFlags } from '@/config/feature-flags';
 import { withRetry } from '@/utils/retry';
-import { SearchParams, SearchResult, SearchFilters } from './types';
-import { toast } from '@/components/ui/use-toast';
+import { SearchParams, SearchResult, SearchFilters, SearchMethod } from './types';
 
 export async function executeSearch(
   options: SearchParams,
-  searchMethodRef: React.MutableRefObject<'spatial' | 'fallback' | null>
+  searchMethodRef: React.MutableRefObject<SearchMethod | null>
 ): Promise<SearchResult> {
   if (!options.coordinates) {
     throw new Error('Cannot search without coordinates');
@@ -22,6 +21,7 @@ export async function executeSearch(
     const cachedResults = searchCache.get(options.coordinates, options.radius, options.filters);
     if (cachedResults && cachedResults.length > 0) {
       console.log(`Using ${cachedResults.length} cached results`);
+      searchMethodRef.current = 'cache';
       return {
         applications: cachedResults,
         searchMethod: 'cache'

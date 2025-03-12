@@ -1,24 +1,29 @@
 
 import { Application } from "@/types/planning";
-import { ErrorType } from "@/utils/errors/types";
+import { SearchFilters } from "../types";
 
 export interface SpatialSearchParams {
   lat: number;
   lng: number;
   radiusKm: number;
-  filters: any;
-  page?: number;
-  pageSize?: number;
+  filters: SearchFilters;
+  page: number;
+  pageSize: number;
 }
 
 export interface SpatialSearchResult {
   applications: Application[];
-  method: 'spatial';
+  searchMethod: 'spatial';
 }
 
 export interface SpatialSearchError {
   message: string;
-  type: ErrorType;
-  context?: any;
-  userMessage?: string;
+  context: {
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
+    filters?: SearchFilters;
+    [key: string]: any;
+  };
+  type: string;
 }

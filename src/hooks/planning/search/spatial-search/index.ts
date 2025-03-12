@@ -1,10 +1,12 @@
 
 import { Application } from "@/types/planning";
-import { executeSpatialQuery } from "./query-executor";
-import { SpatialSearchParams } from "./types";
+import { SpatialSearchParams, SpatialSearchResult } from "./types";
+import { executeQuery } from "./query-executor";
+import { processResults } from "./results-processor";
+import { handleError } from "./error-handler";
 
 /**
- * Performs a spatial search for planning applications using the paginated RPC function
+ * Performs a spatial search for planning applications using PostGIS
  */
 export async function performSpatialSearch(
   lat: number, 
@@ -13,25 +15,23 @@ export async function performSpatialSearch(
   filters: any,
   page: number = 0,
   pageSize: number = 50
-): Promise<Application[] | null> {
-  console.log('Attempting paginated spatial search');
-  console.log('Search parameters:', { lat, lng, radiusKm, filters, page, pageSize });
-  
-  const searchParams: SpatialSearchParams = {
-    lat,
-    lng,
-    radiusKm,
-    filters,
-    page,
-    pageSize
-  };
-  
+): Promise<Application[]> {
   try {
-    const results = await executeSpatialQuery(searchParams);
-    console.log(`Got ${results.length} spatial search results`);
-    return results;
+    const params: SpatialSearchParams = {
+      lat,
+      lng,
+      radiusKm,
+      filters,
+      page,
+      pageSize
+    };
+    
+    // Execute the query
+    const data = await executeQuery(params);
+    
+    // Process the results (filtering, distance calculation)
+    return processResults(data, lat, lng, filters);
   } catch (error) {
-    console.error('Spatial search failed:', error);
-    throw error;
+    throw handleError(error, { lat, lng, radiusKm, filters });
   }
 }
