@@ -50,7 +50,7 @@ export async function performFallbackSearch(
     query = query.limit(200);
     
     console.log('Executing fallback search query');
-    const { data, error } = await query;
+    let { data, error } = await query;
     
     if (error) {
       console.error('Fallback search error:', error);

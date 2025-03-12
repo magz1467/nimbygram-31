@@ -66,6 +66,3 @@ ALTER FUNCTION get_nearby_applications SET statement_timeout = '10s';
 -- Create index on latitude and longitude for faster searches
 CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng 
 ON crystal_roof (latitude, longitude);
-
--- Note: You may need to create PostGIS extension if you want more advanced spatial features
--- CREATE EXTENSION IF NOT EXISTS postgis;

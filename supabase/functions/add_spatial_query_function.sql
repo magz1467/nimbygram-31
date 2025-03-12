@@ -10,13 +10,8 @@ RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  search_point GEOGRAPHY;
 BEGIN
-  -- Create a geography point from the input coordinates
-  search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
-  
-  -- Use a simple bounding box search for better performance, avoiding complex spatial calculations
+  -- Use a simple bounding box search for better performance
   -- The bounding box is approximately the radius in degrees
   RETURN QUERY
   SELECT cr.*

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -6,6 +7,7 @@ import { ResultsContainer } from "./ResultsContainer";
 import { ResultsHeader } from "./ResultsHeader";
 import { Application } from "@/types/planning";
 import { SearchFilters } from "@/hooks/planning/use-planning-search";
+import { SortType } from "@/types/application-types";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -37,6 +39,7 @@ export const SearchViewContent = ({
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [activeSort, setActiveSort] = useState<SortType>('distance');
   const pageSize = 10;
 
   useEffect(() => {
@@ -59,13 +62,20 @@ export const SearchViewContent = ({
     <div className="max-w-4xl mx-auto pb-16 pt-0">
       <ResultsHeader 
         searchTerm={initialSearch.searchTerm}
-        displayTerm={initialSearch.displayTerm}
-        resultsCount={applications?.length || 0}
+        resultCount={applications?.length || 0}
         isLoading={isLoading}
-        hasSearched={true}
+        isMapVisible={showMap}
+        onToggleMapView={() => setShowMap(!showMap)}
+        activeSort={activeSort}
         activeFilters={filters}
         onFilterChange={onFilterChange}
-        applications={applications}
+        onSortChange={(sortType) => setActiveSort(sortType)}
+        statusCounts={{
+          'Under Review': 0,
+          'Approved': 0,
+          'Declined': 0,
+          'Other': 0
+        }}
       />
 
       <div className="px-4 lg:px-6">
@@ -73,7 +83,6 @@ export const SearchViewContent = ({
           applications={applications}
           isLoading={isLoading}
           searchTerm={initialSearch.searchTerm}
-          displayTerm={initialSearch.displayTerm}
           displayApplications={applications}
           coordinates={null}
           showMap={showMap}

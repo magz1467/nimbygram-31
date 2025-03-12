@@ -2,65 +2,46 @@
 import { Application } from "@/types/planning";
 
 /**
- * Transforms raw database objects into well-formed Application objects
+ * Transforms raw application data from the database into a consistent format
  */
-export function transformDatabaseRecordToApplication(record: any): Application {
-  // Ensure all required fields are present
-  if (!record || typeof record !== 'object') {
-    console.error('Invalid record data:', record);
-    throw new Error('Invalid application data');
-  }
+export function transformApplicationData(rawData: any): Application {
+  // Ensure we have valid coordinates if provided
+  const lat = typeof rawData.latitude === 'number' ? rawData.latitude : null;
+  const lng = typeof rawData.longitude === 'number' ? rawData.longitude : null;
   
-  // Basic validation
-  if (!record.id) {
-    console.warn('Application record missing ID', record);
-  }
+  // Extract the coordinates if both values exist
+  const coordinates = (lat !== null && lng !== null) ? [lat, lng] : null;
   
-  // Transform coordinates if present
-  let coordinates: [number, number] | undefined;
-  if (
-    typeof record.latitude === 'number' && 
-    typeof record.longitude === 'number' &&
-    !isNaN(record.latitude) && 
-    !isNaN(record.longitude)
-  ) {
-    coordinates = [Number(record.latitude), Number(record.longitude)];
-  }
-  
-  // Ensure address is a string
-  const address = typeof record.address === 'string' 
-    ? record.address 
-    : record.address?.toString() || 'No address provided';
-  
-  // Create formatted application object
-  const application: Application = {
-    id: record.id,
-    title: record.title || record.description || `Application ${record.id}`,
-    address: address,
-    status: record.status || 'Unknown',
-    reference: record.reference || '',
-    description: record.description || '',
+  return {
+    id: rawData.id,
+    reference: rawData.reference || '',
+    title: rawData.title || 'Unknown Application',
+    description: rawData.description || '',
+    address: rawData.address || '',
+    status: rawData.status || 'Unknown',
+    applicant: rawData.applicant || '',
+    decision: rawData.decision || '',
+    type: rawData.type || '',
+    validatedDate: rawData.validated_date || rawData.validatedDate || null,
+    applicationDate: rawData.application_date || rawData.applicationDate || null,
+    decisionDate: rawData.decision_date || rawData.decisionDate || null,
+    appealDate: rawData.appeal_date || rawData.appealDate || null,
     coordinates: coordinates,
-    distance: record.distance || '',
-    applicant: record.applicant || '',
-    submissionDate: record.submission_date || record.received_date || '',
-    decisionDue: record.decision_due || '',
-    type: record.type || record.application_type_full || '',
-    image: record.image || record.image_map_url || '',
-    ward: record.ward || '',
-    postcode: record.postcode || '',
-    received_date: record.received_date || null,
-    latitude: record.latitude,
-    longitude: record.longitude,
+    latitude: lat,
+    longitude: lng,
+    url: rawData.url || '',
+    authority: rawData.authority || '',
+    distance: rawData.distance || null,
+    images: rawData.images || [],
+    documents: rawData.documents || [],
+    staticMapUrl: rawData.static_map_url || rawData.staticMapUrl || null,
   };
-  
-  // Add optional fields if present
-  if (record.ai_title) application.ai_title = record.ai_title;
-  if (record.engaging_title) application.engaging_title = record.engaging_title;
-  if (record.impact_score) application.impact_score = record.impact_score;
-  if (record.impact_score_details) application.impact_score_details = record.impact_score_details;
-  if (record.streetview_url) application.streetview_url = record.streetview_url;
-  if (record.image_map_url) application.image_map_url = record.image_map_url;
-  
-  return application;
+}
+
+/**
+ * Maps an array of raw application data to Application objects
+ */
+export function mapApplications(data: any[]): Application[] {
+  if (!data || !Array.isArray(data)) return [];
+  return data.map(item => transformApplicationData(item));
 }
