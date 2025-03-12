@@ -58,7 +58,7 @@ export async function performSpatialSearch(
   });
   
   try {
-    // Add a timeout to the spatial search (increased to 14 seconds)
+    // Add a timeout to the spatial search
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
