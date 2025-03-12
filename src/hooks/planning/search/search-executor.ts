@@ -40,18 +40,30 @@ export async function executeSearch(
       radius_km: radius,
       page_number: 0,
       page_size: 100
-    }, { count: 'exact', headers: { 'Prefer': 'count=exact' } })
-    .timeout(30000); // 30-second timeout
+    }, { 
+      count: 'exact' 
+    });
 
-    if (error) {
-      console.error("RPC search error:", error);
-      throw error;
+    // Set a timeout manually since the direct timeout method is not available
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Search timeout after 30 seconds')), 30000);
+    });
+
+    // Race between the actual query and the timeout
+    const result = await Promise.race([
+      Promise.resolve({ data, error }),
+      timeoutPromise
+    ]);
+
+    if ('error' in result && result.error) {
+      console.error("RPC search error:", result.error);
+      throw result.error;
     }
 
     if (onProgress) onProgress('processing', 70);
 
     // Filter results if needed
-    let applications = data || [];
+    let applications = result.data || [];
     if (filters && Object.keys(filters).length > 0) {
       applications = applications.filter(app => {
         if (filters.status && app.status && !app.status.toLowerCase().includes(filters.status.toLowerCase())) {
