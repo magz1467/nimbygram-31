@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLoadingState, LoadingStage } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
@@ -46,19 +45,16 @@ export function SearchStateProvider({
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Performance tracking
   const performanceTracker = useMemo(() => 
     getSearchPerformanceTracker(`search-${initialSearch?.timestamp || Date.now()}`),
     [initialSearch?.timestamp]
   );
   
-  // Centralized loading state
   const loadingState = useLoadingState({
-    timeout: 45000, // 45 second timeout for the entire search flow
-    longRunningThreshold: 8000, // Show long-running UI after 8 seconds
+    timeout: 45000,
+    longRunningThreshold: 20000,
     onTimeout: () => {
       const timeoutError = new Error('Search operation timed out');
-      // @ts-ignore - Adding type property to Error
       timeoutError.type = ErrorType.TIMEOUT;
       setError(timeoutError);
       performanceTracker.addMetadata('timeout', true);
@@ -66,14 +62,12 @@ export function SearchStateProvider({
     }
   });
   
-  // Get coordinates from search term
   const { 
     coordinates, 
     isLoading: isLoadingCoords, 
     error: coordsError 
   } = useCoordinates(initialSearch?.searchTerm || '');
   
-  // Track coordinates loading
   useEffect(() => {
     if (initialSearch?.searchTerm && !coordinates && isLoadingCoords) {
       performanceTracker.mark('coordinatesStart');
@@ -95,7 +89,6 @@ export function SearchStateProvider({
     }
   }, [coordinates, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
   
-  // Perform search when coordinates are available
   const { 
     applications, 
     isLoading: isLoadingResults,
@@ -104,7 +97,6 @@ export function SearchStateProvider({
     setFilters: updateFilters
   } = usePlanningSearch(coordinates);
   
-  // Track search loading
   useEffect(() => {
     if (coordinates && isLoadingResults) {
       performanceTracker.mark('searchStart');
@@ -113,7 +105,6 @@ export function SearchStateProvider({
       performanceTracker.addMetadata('resultsCount', applications.length);
       loadingState.setStage('rendering');
       
-      // Complete loading after a short delay to allow rendering
       setTimeout(() => {
         loadingState.completeLoading();
         setHasSearched(true);
@@ -123,7 +114,6 @@ export function SearchStateProvider({
     }
   }, [coordinates, isLoadingResults, applications]);
   
-  // Handle search errors
   useEffect(() => {
     if (searchError && !error) {
       performanceTracker.mark('searchError');
@@ -138,29 +128,24 @@ export function SearchStateProvider({
     }
   }, [searchError]);
   
-  // Start rendering
   useEffect(() => {
     if (applications.length > 0 && !isLoadingResults) {
       performanceTracker.mark('renderStart');
     }
   }, [applications, isLoadingResults]);
   
-  // Method to set filters
   const setFilters = useCallback((type: string, value: any) => {
     updateFilters({ ...filters, [type]: value });
     performanceTracker.addMetadata('filters', { ...filters, [type]: value });
   }, [filters, updateFilters]);
   
-  // Method to retry
   const retry = useCallback(() => {
     setError(null);
     loadingState.startLoading('coordinates');
     setHasSearched(false);
     
-    // Reset performance tracker
     getSearchPerformanceTracker(`search-retry-${Date.now()}`);
     
-    // Force reload to restart the entire flow
     window.location.reload();
   }, []);
   

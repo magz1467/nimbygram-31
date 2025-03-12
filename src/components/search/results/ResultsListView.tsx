@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { useEffect, useState } from "react";
@@ -43,35 +42,27 @@ export const ResultsListView = ({
   onPageChange,
   totalCount = 0
 }: ResultsListViewProps) => {
-  // State to track all loaded applications
   const [loadedApplications, setLoadedApplications] = useState<Application[]>([]);
   const [isLongSearchDetected, setIsLongSearchDetected] = useState(false);
   const pageSize = 10;
 
-  // Effect to detect long-running searches
   useEffect(() => {
     if (isLoading) {
-      // Set a timeout to detect long-running searches (more than 5 seconds)
       const timeoutId = setTimeout(() => {
         setIsLongSearchDetected(true);
-      }, 5000);
+      }, 20000);
       
-      // Clean up the timeout if the loading state changes before the timeout
       return () => clearTimeout(timeoutId);
     } else {
-      // Reset the long search state when loading is complete
       setIsLongSearchDetected(false);
     }
   }, [isLoading]);
 
-  // Update loaded applications when new applications come in
   useEffect(() => {
     if (applications && applications.length > 0 && !isLoading) {
       if (currentPage === 0) {
-        // Reset for new search
         setLoadedApplications(applications.slice(0, pageSize));
       } else {
-        // Append new results
         setLoadedApplications(prev => {
           const existingIds = new Set(prev.map(app => app.id));
           const uniqueNewApps = applications
@@ -83,14 +74,12 @@ export const ResultsListView = ({
     }
   }, [applications, currentPage, isLoading, pageSize]);
 
-  // Function to handle loading more results
   const handleLoadMore = async () => {
     if (onPageChange && currentPage < Math.ceil(applications.length / pageSize) - 1) {
       onPageChange(currentPage + 1);
     }
   };
 
-  // If initial loading, show skeleton cards
   if (isLoading && currentPage === 0) {
     return (
       <div>
@@ -107,13 +96,11 @@ export const ResultsListView = ({
     );
   }
 
-  // Check for timeout-specific errors
   const isTimeoutError = error && 
     (error.message.includes('timeout') || 
      error.message.includes('57014') || 
      error.message.includes('canceling statement'));
 
-  // If error or no applications found, show empty state
   if (error || (!applications?.length && !loadedApplications?.length)) {
     return (
       <ErrorMessage 
@@ -133,7 +120,6 @@ export const ResultsListView = ({
 
   return (
     <div className="py-4">
-      {/* Display all loaded applications in a single column layout with reduced width */}
       <div className="max-w-lg mx-auto space-y-6">
         {loadedApplications.map((application) => (
           <div 
@@ -154,7 +140,6 @@ export const ResultsListView = ({
         ))}
       </div>
 
-      {/* Load More Button */}
       {applications.length > loadedApplications.length && (
         <div className="mt-8 max-w-lg mx-auto">
           <LoadMoreButton 
