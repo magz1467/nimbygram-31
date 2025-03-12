@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Application } from "@/types/planning";
 import { fetchApplicationById } from "@/services/applications/application-service";
-import { fetchApplicationsInRadius } from "@/services/applications/application-service"; // Correct import path
+import { fetchApplicationsByLocation } from "@/services/applications/application-service";
 
 export const useApplicationsData = (
   coordinates: [number, number] | null,
@@ -22,8 +22,8 @@ export const useApplicationsData = (
 
       try {
         const [lat, lng] = coordinates;
-        const results = await fetchApplicationsInRadius(lat, lng, radius, limit);
-        setApplications(results);
+        const results = await fetchApplicationsByLocation(lat, lng, radius);
+        setApplications(results.slice(0, limit));
       } catch (err) {
         console.error('Error fetching applications:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch applications'));

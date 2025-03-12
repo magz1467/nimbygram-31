@@ -1,5 +1,6 @@
 
-import { ErrorType, AppError, safeStringify } from "./errors/types";
+import { ErrorType, AppError, safeStringify, ErrorOptions } from "./errors/types";
+import { createAppError } from "./errors/error-factory";
 
 /**
  * Checks if an error is non-critical (can be safely ignored in the UI)
@@ -93,9 +94,6 @@ export function handleError(error: unknown, toast?: any): any {
   };
 }
 
-export type ErrorOptions = {
-  showToast?: boolean;
-  critical?: boolean;
-};
-
-export { ErrorType };
+// Export everything from types as well
+export type { AppError, ErrorOptions };
+export { ErrorType, createAppError };

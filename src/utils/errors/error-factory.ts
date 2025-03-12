@@ -31,7 +31,7 @@ function detectErrorType(originalError: any, message: string = ''): ErrorType {
   
   // Network errors
   if (
-    !navigator.onLine || 
+    (!navigator?.onLine) || 
     lowerCaseMsg.includes('network') || 
     lowerCaseMsg.includes('fetch') ||
     lowerCaseMsg.includes('connection') ||

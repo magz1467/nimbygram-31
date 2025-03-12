@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Application } from '@/types/planning';
 
@@ -11,25 +12,39 @@ export const fetchApplicationsByLocation = async (
     const filtersObject = buildFiltersObject(filters);
     
     let query = supabase
-      .from('applications')
+      .from('crystal_roof')
       .select('*')
-      .range(0, 200)
-      .order('application_id', { ascending: false });
+      .order('application_id', { ascending: false })
+      .limit(200);
     
     // Apply filters from the filters object
     for (const key in filtersObject) {
-      if (filtersObject.hasOwnProperty(key) && filtersObject[key]) {
+      if (Object.prototype.hasOwnProperty.call(filtersObject, key) && filtersObject[key]) {
         query = query.eq(key, filtersObject[key]);
       }
     }
-
-    // Use PostGIS functions for spatial filtering
-    const distance = radius * 1000; // Convert radius from kilometers to meters
-    query = query.rpc('get_nearby_applications', {
-      latitude: latitude,
-      longitude: longitude,
-      distance: distance
-    });
+    
+    // Try to use a stored procedure if available, otherwise use manual filtering
+    try {
+      // Use PostGIS functions for spatial filtering if available
+      const distance = radius * 1000; // Convert radius from kilometers to meters
+      const { data: nearbyData, error: nearbyError } = await supabase.rpc(
+        'get_nearby_applications',
+        {
+          lat: latitude,
+          lng: longitude,
+          distance_meters: distance
+        }
+      );
+      
+      if (!nearbyError && nearbyData) {
+        return nearbyData;
+      }
+      
+      console.log('RPC method not available, falling back to manual filtering');
+    } catch (rpcError) {
+      console.log('RPC method failed, falling back to manual filtering:', rpcError);
+    }
     
     const { data: applicationsData, error } = await query;
     
@@ -53,7 +68,7 @@ export const fetchApplicationsByLocation = async (
 export const fetchApplicationById = async (applicationId: string): Promise<Application | null> => {
   try {
     const { data, error } = await supabase
-      .from('applications')
+      .from('crystal_roof')
       .select('*')
       .eq('id', applicationId)
       .single();
