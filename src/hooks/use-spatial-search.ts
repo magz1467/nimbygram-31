@@ -5,26 +5,19 @@ import { SearchCoordinates, SearchResult, SEARCH_TIMEOUT } from '@/types/search'
 import { Application } from '@/types/planning';
 import { withTimeout } from '@/utils/coordinates/timeout-handler';
 
-// More robust function to call Supabase RPC with improved error handling
 async function performSpatialSearch(coordinates: SearchCoordinates): Promise<SearchResult> {
-  console.log('🔍 Performing spatial search with coordinates:', coordinates);
+  console.log('🔍 Starting spatial search with coordinates:', coordinates);
   
   const startTime = Date.now();
   
   try {
-    // Convert the Supabase query to a Promise that resolves with the response
-    const supabasePromise = new Promise<{ data: any; error: any }>((resolve) => {
-      supabase.rpc('get_nearby_applications', {
-        center_lat: coordinates.lat,
-        center_lng: coordinates.lng,
-        radius_km: 10 // Increased to 10km radius for better results
-      })
-      .then(response => resolve(response));
-    });
-
-    // Use the withTimeout utility to prevent long-running queries
+    // Direct RPC call - Supabase already returns a Promise
     const { data, error } = await withTimeout(
-      supabasePromise,
+      supabase.rpc('get_nearby_applications', {
+        latitude: coordinates[0],  // Using array index for lat
+        longitude: coordinates[1], // Using array index for lng
+        radius_km: 10
+      }),
       SEARCH_TIMEOUT,
       'Spatial search timed out after 30 seconds'
     );
@@ -39,34 +32,10 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
     
     console.log(`✅ Found ${data?.length || 0} applications in ${duration}ms`);
     
-    if (!data || data.length === 0) {
-      console.log('⚠️ No results found, might need to increase search radius');
-    }
-    
     const applications = data as Application[];
     
-    // Enhance applications with distance information
-    const enhancedApplications = applications.map(app => {
-      if (app.latitude && app.longitude) {
-        // Calculate distance using Haversine formula
-        const distance = calculateDistance(
-          coordinates.lat, 
-          coordinates.lng,
-          app.latitude,
-          app.longitude
-        );
-        
-        return {
-          ...app,
-          distance: `${distance.toFixed(1)}km`,
-          coordinates: [app.latitude, app.longitude] as [number, number]
-        };
-      }
-      return app;
-    });
-    
     return {
-      applications: enhancedApplications,
+      applications,
       method: 'spatial',
       timing: {
         start: startTime,
@@ -80,24 +49,6 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
   }
 }
 
-// Simple Haversine formula distance calculator
-function calculateDistance(
-  lat1: number, 
-  lon1: number, 
-  lat2: number, 
-  lon2: number
-): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
 export function useSpatialSearch(coordinates: SearchCoordinates | null) {
   return useQuery({
     queryKey: ['spatial-search', coordinates],
@@ -108,8 +59,8 @@ export function useSpatialSearch(coordinates: SearchCoordinates | null) {
       return performSpatialSearch(coordinates);
     },
     enabled: !!coordinates,
-    retry: 3, // Increased retries
-    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000),
+    staleTime: 1000 * 60 * 5,
   });
 }
