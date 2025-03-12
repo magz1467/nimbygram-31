@@ -1,4 +1,3 @@
-
 import { performSpatialSearch } from "./spatial-search";
 import { performFallbackSearch } from "./fallback-search";
 import { SearchMethod, SearchParams } from "./types";
@@ -23,9 +22,9 @@ export async function executeSearch(
       const { data, error } = await supabase.rpc('get_nearby_applications_paginated', {
         center_lat: lat,
         center_lng: lng,
-        radius_km: radius,
+        radius_km: Math.min(radius, 10), // Cap at 10km
         page_number: 0,
-        page_size: 50
+        page_size: 10
       });
       
       if (error) {
@@ -49,50 +48,12 @@ export async function executeSearch(
       console.log('Paginated search returned no results, trying spatial search');
     } catch (paginatedError) {
       console.warn('Paginated search error:', paginatedError);
-      // Continue to next search method
     }
     
-    // If paginated search fails, check if this is a known high-density area
-    const isHighDensityArea = isKnownProblematicLocation(lat, lng);
-    
-    if (isHighDensityArea) {
-      console.log('Known high-density area detected, using optimized fallback search');
-      // Use fallback search with a smaller radius but don't skip straight to it
-      const adjustedRadius = Math.min(radius, 1.5);
-      console.log(`Using adjusted radius of ${adjustedRadius}km instead of ${radius}km`);
-      
-      // Try spatial search with reduced radius first
-      try {
-        const spatialResults = await performSpatialSearch(lat, lng, adjustedRadius, filters);
-        
-        if (searchMethodRef) {
-          searchMethodRef.current = 'spatial';
-        }
-        
-        return {
-          applications: spatialResults,
-          method: 'spatial'
-        };
-      } catch (spatialError) {
-        console.warn('Spatial search failed for high-density area:', spatialError);
-      }
-      
-      // If spatial search fails, then use fallback
-      const fallbackResults = await performFallbackSearch(lat, lng, adjustedRadius, filters);
-      
-      if (searchMethodRef) {
-        searchMethodRef.current = 'fallback';
-      }
-      
-      return {
-        applications: fallbackResults,
-        method: 'fallback'
-      };
-    }
-    
-    // For non-high-density areas, try normal spatial search
+    // For non-high-density areas, try normal spatial search with reasonable radius
     try {
-      const spatialResults = await performSpatialSearch(lat, lng, radius, filters);
+      const adjustedRadius = Math.min(radius, 10); // Cap at 10km
+      const spatialResults = await performSpatialSearch(lat, lng, adjustedRadius, filters);
       
       if (searchMethodRef) {
         searchMethodRef.current = 'spatial';
@@ -105,7 +66,8 @@ export async function executeSearch(
     } catch (spatialError) {
       console.warn('Spatial search failed, falling back to bounding box search:', spatialError);
       
-      const fallbackResults = await performFallbackSearch(lat, lng, radius, filters);
+      // Use fallback search with capped radius
+      const fallbackResults = await performFallbackSearch(lat, lng, Math.min(radius, 10), filters);
       
       if (searchMethodRef) {
         searchMethodRef.current = 'fallback';
@@ -134,7 +96,7 @@ export async function executeSearch(
         .lte('latitude', lat + (smallRadius/111.0))
         .gte('longitude', lng - (smallRadius/(111.0 * Math.cos(Math.PI * lat/180))))
         .lte('longitude', lng + (smallRadius/(111.0 * Math.cos(Math.PI * lat/180))))
-        .limit(20);
+        .limit(10);
         
       if (error) throw error;
       

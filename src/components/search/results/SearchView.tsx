@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
@@ -29,11 +28,11 @@ export const SearchView = ({
   onError,
   onSearchComplete
 }: SearchViewProps) => {
-  // Use a ref to prevent multiple error callbacks
   const hasReportedError = useRef(false);
   const [localError, setLocalError] = useState<Error | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const { toast } = useToast();
+  const searchCompleteRef = useRef(false);
   
   const { coordinates, isLoading: isLoadingCoords, error: coordsError } = useCoordinates(
     initialSearch?.searchTerm || ''
@@ -51,48 +50,43 @@ export const SearchView = ({
     setSearchRadius
   } = usePlanningSearch(coordinates);
 
-  // Show skeletons for a minimum time to avoid flickering UI
+  // Show skeletons for a minimum time
   useEffect(() => {
     if (coordinates && !isLoadingCoords) {
       const timer = setTimeout(() => {
         setShowSkeleton(false);
-      }, 1500); // Keep skeleton for at least 1.5 seconds
+      }, 1000); // Reduced to 1 second
       
       return () => clearTimeout(timer);
     }
   }, [coordinates, isLoadingCoords]);
 
-  // Combine errors from coordinates and search
+  // Combine errors
   const error = localError || coordsError || searchError;
 
+  // Handle errors
   useEffect(() => {
-    // Store any error in local state to prevent loss during rerenders
     if ((coordsError || searchError) && !localError) {
       setLocalError(coordsError || searchError);
     }
   }, [coordsError, searchError, localError]);
 
+  // Error reporting
   useEffect(() => {
-    // Only propagate meaningful errors, not infrastructure setup messages
-    // And only report an error once to prevent loops
     if (onError && error && !isNonCriticalError(error) && !hasReportedError.current) {
       console.log('🚨 Search error:', error);
       hasReportedError.current = true;
-      
-      // Safely call onError, avoiding state updates during render
-      setTimeout(() => {
-        onError(error);
-      }, 0);
+      onError(error);
     }
   }, [error, onError]);
 
+  // Search completion
   useEffect(() => {
-    // Only call onSearchComplete when everything is truly done
-    if (!isLoadingResults && !isLoadingCoords && coordinates && applications && onSearchComplete && !hasReportedError.current) {
-      // Safely call completion callback
-      setTimeout(() => {
-        if (onSearchComplete) onSearchComplete();
-      }, 0);
+    if (!isLoadingResults && !isLoadingCoords && coordinates && applications && !searchCompleteRef.current) {
+      searchCompleteRef.current = true;
+      if (onSearchComplete) {
+        onSearchComplete();
+      }
     }
   }, [isLoadingResults, isLoadingCoords, coordinates, applications, onSearchComplete]);
 
