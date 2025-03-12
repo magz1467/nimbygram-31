@@ -9,7 +9,7 @@ type ProgressCallback = (stage: SearchStage, progress: number) => void;
 type MethodCallback = (method: SearchMethod) => void;
 
 /**
- * Simplified central search function using RPC with geometry and a 5km radius
+ * Simplified central search function using RPC with a fixed 5km radius
  */
 export async function executeSearch(
   searchParams: SearchParams,
@@ -30,10 +30,14 @@ export async function executeSearch(
   if (onProgress) onProgress('searching', 20);
   if (onMethodChange) onMethodChange('spatial');
 
+  // Create an AbortController for timeout management
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
     console.log(`Executing spatial search at [${lat}, ${lng}] with 5km radius`);
     
-    // Use the paginated RPC function with a 30-second timeout
+    // Use the paginated RPC function with proper timeout handling
     const { data, error } = await supabase.rpc('get_nearby_applications_paginated', {
       center_lat: lat,
       center_lng: lng,
@@ -41,29 +45,22 @@ export async function executeSearch(
       page_number: 0,
       page_size: 100
     }, { 
-      count: 'exact' 
+      count: 'exact',
+      signal: controller.signal
     });
 
-    // Set a timeout manually since the direct timeout method is not available
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Search timeout after 30 seconds')), 30000);
-    });
+    // Clear the timeout if we got a response
+    clearTimeout(timeoutId);
 
-    // Race between the actual query and the timeout
-    const result = await Promise.race([
-      Promise.resolve({ data, error }),
-      timeoutPromise
-    ]);
-
-    if ('error' in result && result.error) {
-      console.error("RPC search error:", result.error);
-      throw result.error;
+    if (error) {
+      console.error("RPC search error:", error);
+      throw error;
     }
 
     if (onProgress) onProgress('processing', 70);
 
     // Filter results if needed
-    let applications = result.data || [];
+    let applications = data || [];
     if (filters && Object.keys(filters).length > 0) {
       applications = applications.filter(app => {
         if (filters.status && app.status && !app.status.toLowerCase().includes(filters.status.toLowerCase())) {
@@ -80,10 +77,10 @@ export async function executeSearch(
       });
     }
 
-    // Add formatted distance
+    // Process all results in a single operation
     applications = applications.map(app => {
-      if (!app.distance_km && app.latitude && app.longitude) {
-        // If distance is not already calculated by the database function
+      let distance_km = app.distance_km;
+      if (!distance_km && app.latitude && app.longitude) {
         const R = 6371; // Earth's radius in km
         const dLat = (app.latitude - lat) * Math.PI / 180;
         const dLon = (app.longitude - lng) * Math.PI / 180;
@@ -92,18 +89,18 @@ export async function executeSearch(
           Math.cos(lat * Math.PI / 180) * Math.cos(app.latitude * Math.PI / 180) * 
           Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = R * c;
-        app.distance_km = distance;
+        distance_km = R * c;
       }
       
       return {
         ...app,
-        distance: app.distance || formatDistance(app.distance_km || 0),
+        distance_km,
+        distance: app.distance || formatDistance(distance_km || 0),
         coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
       };
     });
 
-    // Sort by distance
+    // Sort by distance once
     applications.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
 
     if (onProgress) onProgress('complete', 100);
@@ -116,8 +113,18 @@ export async function executeSearch(
     };
     
   } catch (error) {
+    // Clear the timeout to prevent memory leaks
+    clearTimeout(timeoutId);
+    
+    // Check if this was an abort error
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.error("Search timed out after 30 seconds");
+      if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage
+      throw new Error('Search timeout after 30 seconds');
+    }
+    
     console.error("Search failed:", error);
-    if (onProgress) onProgress('complete', 100);
+    if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage
     throw error;
   }
 }

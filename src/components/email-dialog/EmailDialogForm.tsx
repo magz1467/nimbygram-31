@@ -12,8 +12,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
+// Simplified form schema - radius is always 5km
 const formSchema = z.object({
-  radius: z.string(),
+  radius: z.string().default("5"),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -40,14 +41,10 @@ export const EmailDialogForm = ({
         <FormField
           control={form.control}
           name="radius"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormControl>
-                <RadiusSelect 
-                  value={field.value}
-                  onChange={(value) => field.onChange(value.toString())}
-                  className="w-full"
-                />
+                <RadiusSelect className="w-full" />
               </FormControl>
               <FormMessage />
             </FormItem>

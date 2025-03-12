@@ -18,7 +18,7 @@ BEGIN
     RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
   END IF;
   
-  -- Force radius to be 5km for consistency
+  -- Force radius to be 5km for consistency - ignore input parameter
   radius_km := 5;
   
   -- Validate and limit pagination parameters

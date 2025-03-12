@@ -1,46 +1,52 @@
-
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Application } from '@/types/planning';
-import { useSearchTelemetry } from './use-search-telemetry';
 import { SearchFilters, SearchMethod } from './types';
 
 /**
- * Hook to handle search completion and telemetry logging
+ * Simple hook to handle search completion telemetry
+ * Using fixed 5km radius
  */
 export function useSearchCompletionHandler(
-  debouncedCoordinates: [number, number] | null,
-  searchRadius: number,
+  coordinates: [number, number] | null,
   filters: SearchFilters,
   applications: Application[],
   searchMethod: SearchMethod | null,
   isLoading: boolean,
-  searchComplete: () => void
+  onComplete: () => void
 ) {
-  const { logSearchCompleted } = useSearchTelemetry();
+  const hasCalledComplete = useRef(false);
+  const previousResults = useRef<Application[]>([]);
   
-  // Log telemetry when search completes
+  // Reset when coordinates change
   useEffect(() => {
-    if (!isLoading && debouncedCoordinates && applications.length > 0 && searchMethod) {
-      // Log telemetry data about the search
-      logSearchCompleted(
-        debouncedCoordinates,
-        searchRadius,
-        filters,
-        applications.length,
-        searchMethod
-      );
-      
-      // Mark search as complete
-      searchComplete();
+    if (coordinates) {
+      hasCalledComplete.current = false;
     }
-  }, [
-    debouncedCoordinates, 
-    searchRadius, 
-    filters, 
-    applications, 
-    searchMethod, 
-    isLoading, 
-    logSearchCompleted, 
-    searchComplete
-  ]);
+  }, [coordinates]);
+  
+  // Call onComplete when search finishes with results
+  useEffect(() => {
+    const hasResults = applications && applications.length > 0;
+    const resultsChanged = previousResults.current !== applications;
+    
+    // Keep track of the latest results
+    previousResults.current = applications;
+    
+    // Only call onComplete when:
+    // 1. We have results
+    // 2. We're not currently loading
+    // 3. We have a search method (search was performed)
+    // 4. We haven't already called onComplete for this search
+    if (hasResults && !isLoading && searchMethod && !hasCalledComplete.current) {
+      console.log('Search completion handler: Calling onComplete', {
+        resultCount: applications.length,
+        method: searchMethod,
+      });
+      
+      hasCalledComplete.current = true;
+      onComplete();
+    }
+  }, [applications, isLoading, searchMethod, onComplete]);
+  
+  return null;
 }

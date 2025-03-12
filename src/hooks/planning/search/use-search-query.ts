@@ -7,11 +7,11 @@ import { useSearchErrorHandler } from './use-search-error-handler';
 
 /**
  * Hook to execute the simplified search query with proper error handling
+ * Using fixed 5km radius
  */
 export function useSearchQuery(
   queryKey: string[],
   debouncedCoordinates: [number, number] | null,
-  searchRadius: number, // This parameter is kept for backward compatibility but not used
   filters: SearchFilters,
   queryStartTimeRef: React.MutableRefObject<number>,
   options: {
@@ -23,7 +23,6 @@ export function useSearchQuery(
 ) {
   const { handleSearchError } = useSearchErrorHandler(
     debouncedCoordinates, 
-    5, // Fixed 5km radius
     filters
   );
   

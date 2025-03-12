@@ -7,10 +7,10 @@ import { Application } from '@/types/planning';
 
 /**
  * Hook to coordinate search queries and state based on coordinates changes
+ * Simplified with fixed 5km radius
  */
 export function useSearchCoordinator(
   coordinates: [number, number] | null,
-  searchRadius: number,
   filters: SearchFilters
 ) {
   // Get search state management functions

@@ -3,29 +3,16 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface RadiusSelectProps {
-  radius?: number;
-  onChange?: (radius: number) => void;
   className?: string;
-  disabled?: boolean;
-  value?: string;
 }
 
 /**
- * Simplified RadiusSelect that always displays 5km
+ * Simplified RadiusSelect that always displays 5km with no interactivity
  */
-export function RadiusSelect({ 
-  className = "", 
-  disabled = false,
-  onChange,
-  value = "5" 
-}: RadiusSelectProps) {
+export function RadiusSelect({ className = "" }: RadiusSelectProps) {
   return (
     <div className={`${className}`}>
-      <Select 
-        disabled={true} 
-        value="5"
-        onValueChange={(value) => onChange?.(parseInt(value, 10))}
-      >
+      <Select disabled={true} value="5">
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Radius: 5km" />
         </SelectTrigger>

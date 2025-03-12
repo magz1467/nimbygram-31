@@ -1,147 +1,39 @@
 
-import { useCallback, useRef } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { createAppError } from '@/utils/errors/error-factory';
-import { ErrorType } from '@/utils/errors/types';
-import { isNonCriticalError } from '@/utils/errors';
-import { useSearchTelemetry } from './use-search-telemetry';
-import { SearchFilters, SearchMethod } from './types';
+import { useCallback } from 'react';
+import { SearchFilters } from './types';
 
-export interface SearchErrorHandlerContext {
-  coordinates: [number, number] | null;
-  searchRadius: number;
-  filters: SearchFilters;
-  searchMethod?: SearchMethod | null;
-  additionalContext?: Record<string, any>;
-}
-
+/**
+ * Hook to handle search errors with appropriate user messaging
+ * Using fixed 5km radius
+ */
 export function useSearchErrorHandler(
   coordinates: [number, number] | null,
-  searchRadius: number,
   filters: SearchFilters
 ) {
-  const { toast } = useToast();
-  const errorRef = useRef<Error | null>(null);
-  const searchMethodRef = useRef<SearchMethod | null>(null);
-  const { logSearchError } = useSearchTelemetry();
-  
-  const handleSearchError = useCallback((err: any, context: Record<string, any> = {}) => {
-    console.error('Search error:', err);
+  // Process search errors to provide more user-friendly messages
+  const handleSearchError = useCallback((error: unknown) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // Create a structured app error with all the context
-    const appError = createAppError(
-      err?.message || 'Unknown search error',
-      err,
-      {
-        type: err?.type || detectSearchErrorType(err),
-        context: {
-          coordinates,
-          filters,
-          searchRadius,
-          searchMethod: searchMethodRef.current,
-          ...context
-        },
-        recoverable: isRecoverableSearchError(err)
-      }
-    );
+    console.error(`Search error handler: ${errorMessage}`, {
+      coordinates,
+      filterCount: Object.keys(filters).length,
+    });
     
-    // Store the error for reference
-    errorRef.current = appError;
+    // Determine if this is a timeout error
+    const isTimeout = 
+      errorMessage.includes('timeout') || 
+      errorMessage.includes('abort') || 
+      errorMessage.includes('cancelled');
     
-    // Log search error telemetry
-    if (searchMethodRef.current === 'spatial' || searchMethodRef.current === 'fallback') {
-      logSearchError(
-        coordinates,
-        searchRadius,
-        filters,
-        appError.type as ErrorType,
-        appError.message,
-        searchMethodRef.current
-      );
-    } else {
-      // Handle 'cache' method or null case
-      logSearchError(
-        coordinates,
-        searchRadius,
-        filters,
-        appError.type as ErrorType,
-        appError.message,
-        null
-      );
+    // Create a more specific error for timeouts
+    if (isTimeout) {
+      const area = coordinates ? `[${coordinates[0].toFixed(4)}, ${coordinates[1].toFixed(4)}]` : 'unknown';
+      console.warn(`Search timeout detected for area: ${area}`);
+      return new Error(`The search took too long to complete. This area may have too many planning applications. Please try a more specific location.`);
     }
     
-    // Only show toast notifications for errors that are meaningful to users
-    if (!isNonCriticalError(err)) {
-      toast({
-        title: "Search Error",
-        description: appError.userMessage || "There was an issue with your search. Please try again.",
-        variant: "destructive"
-      });
-    }
-    
-    return appError;
-  }, [toast, coordinates, filters, searchRadius, logSearchError]);
-  
-  return {
-    handleSearchError,
-    errorRef,
-    searchMethodRef
-  };
-}
+    return error;
+  }, [coordinates, filters]);
 
-// Helper functions that can be used without the hook context
-
-/**
- * Detect error type specific to search functionality
- */
-export function detectSearchErrorType(error: any): ErrorType {
-  if (!error) return ErrorType.UNKNOWN;
-  
-  const message = typeof error === 'string' 
-    ? error.toLowerCase() 
-    : error instanceof Error 
-      ? error.message.toLowerCase()
-      : '';
-  
-  if (message.includes('coordinates') || message.includes('location')) {
-    return ErrorType.COORDINATES;
-  }
-  
-  if (message.includes('timeout') || 
-      message.includes('too long') || 
-      message.includes('canceling statement') ||
-      message.includes('statement_timeout')) {
-    return ErrorType.TIMEOUT;
-  }
-  
-  if (message.includes('get_nearby_applications')) {
-    return ErrorType.SEARCH;
-  }
-  
-  // Fallback to generic error detection
-  if (message.includes('network') || message.includes('fetch') || !navigator?.onLine) {
-    return ErrorType.NETWORK;
-  } else if (message.includes('not found') || message.includes('no results')) {
-    return ErrorType.NOT_FOUND;
-  } else if (message.includes('database') || message.includes('sql')) {
-    return ErrorType.DATABASE;
-  } else if (message.includes('permission') || message.includes('access')) {
-    return ErrorType.PERMISSION;
-  }
-  
-  return ErrorType.SEARCH;
-}
-
-/**
- * Determine if a search error is recoverable
- */
-export function isRecoverableSearchError(error: any): boolean {
-  const type = detectSearchErrorType(error);
-  
-  // Network, timeout, and some database errors are potentially recoverable
-  return (
-    type === ErrorType.NETWORK || 
-    type === ErrorType.TIMEOUT ||
-    (type === ErrorType.DATABASE && error?.message?.includes('statement_timeout'))
-  );
+  return { handleSearchError };
 }

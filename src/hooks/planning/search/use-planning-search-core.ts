@@ -7,11 +7,11 @@ import { useSearchQuery } from './use-search-query';
 import { useSearchCompletionHandler } from './use-search-completion-handler';
 
 /**
- * Simplified core implementation of the planning search hook
+ * Simplified core implementation of the planning search hook with fixed 5km radius
  */
 export function usePlanningSearchCore(coordinates: [number, number] | null) {
   const [filters, setFilters] = useState<SearchFilters>({});
-  // Always use 5km radius for simplicity
+  // Always use 5km radius - no need for state or props
   const searchRadius = 5;
   
   // Get search coordination functions
@@ -25,7 +25,7 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     completeSearch,
     failSearch,
     queryStartTimeRef
-  } = useSearchCoordinator(coordinates, searchRadius, filters);
+  } = useSearchCoordinator(coordinates, filters);
   
   // Execute the main search query
   const {
@@ -34,7 +34,6 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
   } = useSearchQuery(
     queryKey,
     debouncedCoordinates,
-    searchRadius,
     filters,
     queryStartTimeRef,
     {
@@ -48,7 +47,6 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
   // Handle search completion telemetry
   useSearchCompletionHandler(
     debouncedCoordinates,
-    searchRadius,
     filters,
     applications,
     searchState.method,
