@@ -80,6 +80,7 @@ export const MapViewLayout = ({
               applications={applications}
               selectedId={selectedId}
               coordinates={coordinates}
+              searchLocation={coordinates} // Added searchLocation
               isMobile={isMobile}
               isMapView={true}
               onMarkerClick={onMarkerClick}

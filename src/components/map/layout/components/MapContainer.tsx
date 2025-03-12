@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { MapContainer as MapContainerBase } from "../../MapContainer";
 import { MobileApplicationCards } from "../../mobile/MobileApplicationCards";
@@ -35,6 +36,7 @@ export const MapContainer = ({
       <div className="absolute inset-0">
         <MapContainerBase
           coordinates={coordinates}
+          searchLocation={coordinates} // Add searchLocation prop
           applications={applications}
           selectedId={selectedApplication}
           onMarkerClick={onMarkerClick}

@@ -38,7 +38,7 @@ export const useFilteredApplications = (
     // Apply sorting
     if (coordinates && activeSort === 'distance') {
       filtered = sortApplicationsByDistance(filtered, coordinates);
-    } else if (activeSort === 'newest') {
+    } else if (activeSort === 'newest' || activeSort === 'date') {
       filtered = [...filtered].sort((a, b) => {
         const dateA = a.received_date ? new Date(a.received_date).getTime() : 0;
         const dateB = b.received_date ? new Date(b.received_date).getTime() : 0;
@@ -49,6 +49,12 @@ export const useFilteredApplications = (
         const dateA = a.consultationEnd ? new Date(a.consultationEnd).getTime() : Number.MAX_SAFE_INTEGER;
         const dateB = b.consultationEnd ? new Date(b.consultationEnd).getTime() : Number.MAX_SAFE_INTEGER;
         return dateA - dateB;
+      });
+    } else if (activeSort === 'impact') {
+      filtered = [...filtered].sort((a, b) => {
+        const impactA = a.impact_score || 0;
+        const impactB = b.impact_score || 0;
+        return impactB - impactA;
       });
     }
 

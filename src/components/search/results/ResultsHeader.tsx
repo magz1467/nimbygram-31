@@ -103,19 +103,19 @@ export const ResultsHeader = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className={
-                    activeSort === "date" ? "bg-gray-100 font-medium" : ""
+                    activeSort === "newest" ? "bg-gray-100 font-medium" : ""
                   }
-                  onClick={() => onSortChange("date")}
+                  onClick={() => onSortChange("newest")}
                 >
                   Most recent
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className={
-                    activeSort === "impact" ? "bg-gray-100 font-medium" : ""
+                    activeSort === "closingSoon" ? "bg-gray-100 font-medium" : ""
                   }
-                  onClick={() => onSortChange("impact")}
+                  onClick={() => onSortChange("closingSoon")}
                 >
-                  Highest impact
+                  Closing soon
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

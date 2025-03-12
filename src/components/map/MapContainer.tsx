@@ -10,7 +10,7 @@ import "leaflet/dist/leaflet.css";
 interface MapContainerProps {
   applications: Application[];
   coordinates: [number, number];
-  searchLocation: [number, number]; // Add search location prop
+  searchLocation: [number, number]; // Search location prop
   selectedId?: number | null;
   onMarkerClick: (id: number) => void;
   onCenterChange?: (center: [number, number]) => void;
@@ -19,7 +19,7 @@ interface MapContainerProps {
 
 export const MapContainer = memo(({
   coordinates,
-  searchLocation, // Add search location
+  searchLocation, // Added search location
   applications,
   selectedId,
   onMarkerClick,

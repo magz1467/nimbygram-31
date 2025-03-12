@@ -77,7 +77,7 @@ export const DesktopMapDialog = ({
             <MapContent 
               applications={applications}
               selectedId={selectedId}
-              coordinates={searchLocation} // Use search location for map center
+              coordinates={coordinates}
               searchLocation={searchLocation} // Pass search location to show blue pin
               isMobile={false}
               isMapView={true}

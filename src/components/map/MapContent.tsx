@@ -20,7 +20,7 @@ export const MapContent = ({
   applications,
   selectedId,
   coordinates,
-  searchLocation, // Add searchLocation to props
+  searchLocation, // Added searchLocation to props
   isMobile,
   isMapView,
   onMarkerClick,

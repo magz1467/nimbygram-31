@@ -1,3 +1,4 @@
+
 import { MapContainer } from "@/components/map/MapContainer";
 import { Application } from "@/types/planning";
 import { memo } from "react";
@@ -23,6 +24,7 @@ export const MapView = memo(({
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}
+        searchLocation={coordinates} // Add searchLocation prop
         onMarkerClick={onMarkerClick}
         onCenterChange={onCenterChange}
       />
