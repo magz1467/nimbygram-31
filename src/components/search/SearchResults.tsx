@@ -4,7 +4,7 @@ import { useSpatialSearch } from "@/hooks/use-spatial-search";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { SearchCoordinates, SEARCH_RADIUS } from "@/types/search";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, AlertCircle } from "lucide-react";
 import ResultsContainer from "./results/ResultsContainer";
 import { searchDiagnostics } from "@/utils/search-diagnostics";
 
@@ -19,12 +19,15 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   // Log search diagnostics
   useEffect(() => {
     if (coordinates) {
+      console.log("🔍 Search initiated for coordinates:", coordinates);
       searchDiagnostics.logSearch([coordinates.lat, coordinates.lng], SEARCH_RADIUS);
     }
     if (data) {
+      console.log(`📊 Search results: ${data.applications.length} applications found via ${data.method} method`);
       searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
     }
     if (isError) {
+      console.error("❌ Search error:", error);
       searchDiagnostics.logError(error);
     }
   }, [coordinates, data, isError, error]);
@@ -32,7 +35,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin mr-2" />
+        <Loader2 className="h-8 w-8 animate-spin mr-2 text-primary" />
         <span>Searching for planning applications...</span>
       </div>
     );
@@ -41,12 +44,19 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   if (isError) {
     return (
       <Alert variant="destructive" className="m-4">
+        <AlertCircle className="h-4 w-4" />
         <AlertTitle>Search Error</AlertTitle>
         <AlertDescription>
-          <p className="mb-4">Failed to retrieve planning applications. Please try again.</p>
-          <Button onClick={onRetry} variant="outline" size="sm">
-            Retry Search
-          </Button>
+          <p className="mb-4">
+            {error instanceof Error 
+              ? error.message 
+              : "Failed to retrieve planning applications. Please try again."}
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={onRetry} variant="outline" size="sm">
+              Retry Search
+            </Button>
+          </div>
         </AlertDescription>
       </Alert>
     );
@@ -55,10 +65,18 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   if (!data?.applications.length) {
     return (
       <div className="text-center p-8">
-        <h3 className="font-medium mb-2">No Results Found</h3>
-        <p className="text-sm text-muted-foreground">
-          No planning applications found within {SEARCH_RADIUS}km radius.
+        <div className="mb-4 flex justify-center">
+          <MapPin className="h-12 w-12 text-gray-400" />
+        </div>
+        <h3 className="font-medium text-xl mb-2">No Results Found</h3>
+        <p className="text-muted-foreground mb-6">
+          No planning applications found within 10km of this location.
+          <br />
+          Try searching for a different location or postcode.
         </p>
+        <Button onClick={onRetry} variant="outline" size="sm">
+          Try Another Search
+        </Button>
       </div>
     );
   }
