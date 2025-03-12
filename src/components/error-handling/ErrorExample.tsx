@@ -1,111 +1,103 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { ApplicationErrorBoundary } from './ApplicationErrorBoundary';
-import { useGlobalErrorHandler } from '@/hooks/use-global-error-handler';
-import { tryCatch } from '@/utils/errors/async-error-handler';
+import { createAppError, ErrorType } from '@/utils/errors';
 
-// Example component that demonstrates error handling
-export function ErrorHandlingExample() {
-  const [count, setCount] = useState(0);
-  const errorHandler = useGlobalErrorHandler();
+export const ErrorExample = () => {
+  const [showError, setShowError] = useState(false);
   
-  // Example function that might throw an error
-  const maybeThrowError = () => {
-    if (Math.random() > 0.5) {
-      throw new Error('This is a simulated error');
-    }
-    return 'Success!';
-  };
-  
-  // Example of handling synchronous errors
-  const handleSyncError = () => {
-    try {
-      const result = maybeThrowError();
-      alert(`Operation successful: ${result}`);
-    } catch (error) {
-      errorHandler.handleError(error, {
-        context: 'sync operation example',
-        userMessage: 'The operation failed, but we handled it gracefully.'
-      });
-    }
-  };
-  
-  // Example of handling async errors
-  const handleAsyncError = async () => {
-    // Simulated API call that might fail
-    const simulateApiCall = async () => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (Math.random() > 0.5) {
-        throw new Error('API call failed');
-      }
-      return { data: 'API data received' };
-    };
-    
-    const [result, error] = await tryCatch(
-      simulateApiCall,
+  const triggerNetworkError = () => {
+    throw createAppError(
+      "Unable to connect to the server",
       null,
-      { 
-        context: 'API call example',
-        retry: true,
-        maxRetries: 2 
-      }
+      { type: ErrorType.NETWORK }
     );
-    
-    if (error) {
-      errorHandler.handleError(error, {
-        context: 'async operation example'
-      });
-      return;
-    }
-    
-    alert(`API call succeeded: ${result?.data}`);
   };
   
-  // Example that definitely throws an error
-  const throwUnhandledError = () => {
-    throw errorHandler.createError('This error was explicitly thrown', {
-      type: errorHandler.ErrorType.VALIDATION,
-      userMessage: 'This is a demonstration of an unhandled error that gets caught by the ErrorBoundary'
-    });
+  const triggerTimeoutError = () => {
+    throw createAppError(
+      "The operation took too long to complete",
+      null,
+      { type: ErrorType.TIMEOUT }
+    );
   };
-
+  
+  const triggerReferenceError = () => {
+    // @ts-expect-error - Intentionally accessing undefined variable
+    console.log(undefinedVariable);
+  };
+  
+  const triggerTypeError = () => {
+    // Safely create an object that we know is not iterable
+    const nonIterableObject = { data: "string" };
+    // @ts-expect-error - Intentionally treating non-iterable as iterable
+    for (const item of nonIterableObject) {
+      console.log(item);
+    }
+  };
+  
+  const triggerContextError = () => {
+    // Create context with invalid value
+    const context: Record<string, any> = {};
+    // @ts-expect-error - Intentionally assigning string to Record
+    context = "Invalid context";
+    console.log(context);
+  };
+  
   return (
-    <ApplicationErrorBoundary component="ErrorHandlingExample">
-      <div className="p-6 border rounded-lg space-y-4">
-        <h2 className="text-xl font-bold">Error Handling Examples</h2>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Error Handling Examples</h1>
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Trigger Errors</CardTitle>
+            <CardDescription>Click the buttons below to trigger different types of errors</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button variant="destructive" onClick={triggerNetworkError}>Network Error</Button>
+            <Button variant="destructive" onClick={triggerTimeoutError}>Timeout Error</Button>
+            <Button variant="destructive" onClick={triggerReferenceError}>Reference Error</Button>
+            <Button variant="destructive" onClick={triggerTypeError}>Type Error</Button>
+          </CardContent>
+        </Card>
         
-        <div className="space-y-2">
-          <p>Counter: {count}</p>
-          <Button onClick={() => setCount(count + 1)}>Increment (Safe)</Button>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="font-semibold">Error Handling Demos:</h3>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleSyncError}
-            >
-              Try Sync Operation (50% Chance of Error)
+        <Card>
+          <CardHeader>
+            <CardTitle>Error Boundary Example</CardTitle>
+            <CardDescription>Error boundaries catch errors in child components</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApplicationErrorBoundary>
+              {showError ? (
+                <div>
+                  {/* This will throw an error */}
+                  {triggerNetworkError()}
+                </div>
+              ) : (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Click the button to show an error</AlertTitle>
+                  <AlertDescription>
+                    The error will be caught by the error boundary.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </ApplicationErrorBoundary>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => setShowError(!showError)}>
+              {showError ? "Reset" : "Show Error"}
             </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={handleAsyncError}
-            >
-              Try Async Operation (50% Chance of Error)
-            </Button>
-            
-            <Button 
-              variant="destructive"
-              onClick={throwUnhandledError}
-            >
-              Throw Unhandled Error (Will Trigger ErrorBoundary)
-            </Button>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
       </div>
-    </ApplicationErrorBoundary>
+    </div>
   );
-}
+};
+
+export default ErrorExample;

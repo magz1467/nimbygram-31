@@ -1,106 +1,97 @@
+import { supabase } from '@/integrations/supabase/client';
+import { Application } from '@/types/planning';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Application } from "@/types/planning";
-import { calculateDistance } from "@/hooks/planning/utils/distance-calculator";
-import { tryCatch } from "@/utils/errors/async-error-handler";
-
-/**
- * Fetches applications within a radius of coordinates
- */
-export async function fetchApplicationsInRadius(
-  lat: number,
-  lng: number,
-  radiusKm: number = 5,
-  limit: number = 200
-): Promise<Application[]> {
-  // Calculate bounding box for better performance
-  const latDelta = radiusKm / 111.32; // 1 degree latitude is approximately 111.32 km
-  const lngDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180));
-  
-  const minLat = lat - latDelta;
-  const maxLat = lat + latDelta;
-  const minLng = lng - lngDelta;
-  const maxLng = lng + lngDelta;
-  
-  console.log(`Fetching applications in radius ${radiusKm}km from [${lat}, ${lng}]`);
-  
-  const [result, error] = await tryCatch(async () => {
-    const { data, error } = await supabase
-      .from('crystal_roof')
+export const fetchApplicationsByLocation = async (
+  latitude: number, 
+  longitude: number, 
+  radius: number = 1,
+  filters: Record<string, string> = {}
+): Promise<any[]> => {
+  try {
+    const filtersObject = buildFiltersObject(filters);
+    
+    let query = supabase
+      .from('applications')
       .select('*')
-      .gte('latitude', minLat)
-      .lte('latitude', maxLat)
-      .gte('longitude', minLng)
-      .lte('longitude', maxLng)
-      .limit(limit);
-      
-    if (error) throw error;
-    return data || [];
-  }, [], { context: 'fetchApplicationsInRadius' });
-  
-  if (error) {
-    console.error('Error fetching applications:', error);
-    return [];
-  }
-  
-  // Filter, calculate distance and sort applications
-  return result
-    .filter((app: any) => {
-      // Ensure application has valid coordinates
-      return (
-        typeof app.latitude === 'number' && 
-        typeof app.longitude === 'number' && 
-        !isNaN(app.latitude) && 
-        !isNaN(app.longitude)
-      );
-    })
-    .map((app: any) => {
-      // Calculate distance
-      const distanceKm = calculateDistance(
-        lat, 
-        lng, 
-        Number(app.latitude), 
-        Number(app.longitude)
-      );
-      
-      const distanceMiles = distanceKm * 0.621371;
-      
-      return {
-        ...app,
-        distance: `${distanceMiles.toFixed(1)} mi`,
-        distance_km: distanceKm,
-        coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
-      };
-    })
-    .sort((a: any, b: any) => {
-      // Sort by distance
-      return (a.distance_km || Infinity) - (b.distance_km || Infinity);
-    })
-    .filter((app: any) => {
-      // Only include applications within the specified radius
-      return app.distance_km <= radiusKm;
+      .range(0, 200)
+      .order('application_id', { ascending: false });
+    
+    // Apply filters from the filters object
+    for (const key in filtersObject) {
+      if (filtersObject.hasOwnProperty(key) && filtersObject[key]) {
+        query = query.eq(key, filtersObject[key]);
+      }
+    }
+
+    // Use PostGIS functions for spatial filtering
+    const distance = radius * 1000; // Convert radius from kilometers to meters
+    query = query.rpc('get_nearby_applications', {
+      latitude: latitude,
+      longitude: longitude,
+      distance: distance
     });
-}
+    
+    const { data: applicationsData, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching applications:', error);
+      throw error;
+    }
+    
+    if (!applicationsData || !Array.isArray(applicationsData)) {
+      console.error('Invalid response format:', applicationsData);
+      return [];
+    }
+    
+    return applicationsData;
+  } catch (error) {
+    console.error('Error fetching applications by location:', error);
+    throw error;
+  }
+};
 
-/**
- * Fetch a single application by ID
- */
-export async function fetchApplicationById(id: number): Promise<Application | null> {
-  const [result, error] = await tryCatch(async () => {
+export const fetchApplicationById = async (applicationId: string): Promise<Application | null> => {
+  try {
     const { data, error } = await supabase
-      .from('crystal_roof')
+      .from('applications')
       .select('*')
-      .eq('id', id)
+      .eq('id', applicationId)
       .single();
-      
-    if (error) throw error;
+
+    if (error) {
+      console.error('Error fetching application by ID:', error);
+      return null;
+    }
+
     return data as Application;
-  }, null, { context: 'fetchApplicationById' });
-  
-  if (error) {
-    console.error(`Error fetching application with ID ${id}:`, error);
+  } catch (error) {
+    console.error('Error fetching application by ID:', error);
     return null;
   }
+};
+
+export const transformApplication = (application: any): any => {
+  if (!application) return null;
   
-  return result;
-}
+  try {
+    const transformedApp = { ...application };
+    
+    return transformedApp;
+  } catch (error) {
+    console.error('Error transforming application:', error);
+    return application;
+  }
+};
+
+export const buildFiltersObject = (filters: any): Record<string, any> => {
+  if (!filters) return {};
+  if (typeof filters === 'string') {
+    try {
+      return JSON.parse(filters);
+    } catch (e) {
+      console.error('Invalid filter string:', filters);
+      return {};
+    }
+  }
+  return filters;
+};

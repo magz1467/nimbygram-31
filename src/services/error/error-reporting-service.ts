@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorType, AppError, formatErrorMessage } from "@/utils/errors";
 
@@ -153,3 +152,38 @@ class ErrorReportingService {
 
 // Export singleton instance
 export const errorReporting = new ErrorReportingService();
+
+export const reportErrorToServer = async (error: any, context: Record<string, any> = {}): Promise<void> => {
+  try {
+    // Format error for reporting
+    const errorData = {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error.type || 'unknown',
+      context: {
+        ...context,
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Send error to your error tracking endpoint
+    const response = await fetch('/api/report-error', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(errorData)
+    });
+
+    if (!response.ok) {
+      console.error('Failed to report error:', await response.text());
+    }
+  } catch (err) {
+    console.error('Error while reporting error:', err);
+  }
+  
+  // Return a resolved promise
+  return Promise.resolve();
+};

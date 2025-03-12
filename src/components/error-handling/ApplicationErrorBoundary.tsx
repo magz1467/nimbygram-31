@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { formatErrorMessage, ErrorType, AppError } from '@/utils/errors';
+import { ErrorType, AppError, formatErrorMessage, detectErrorType } from '@/utils/errors';
 import { toast } from '@/hooks/use-toast';
 
 interface Props {
@@ -62,28 +62,15 @@ export class ApplicationErrorBoundary extends Component<Props, State> {
   }
 
   private detectErrorType(error: Error): ErrorType {
-    const errorMessage = error.message.toLowerCase();
-    
-    if (errorMessage.includes('network') || !navigator.onLine) {
-      return ErrorType.NETWORK;
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('too long')) {
-      return ErrorType.TIMEOUT;
-    } else if (errorMessage.includes('not found')) {
-      return ErrorType.NOT_FOUND;
-    }
-    
-    // If the error has a type property (AppError), use it
-    if ((error as AppError).type) {
-      return (error as AppError).type;
-    }
-    
-    return ErrorType.UNKNOWN;
+    // Use the utility function from utils/errors
+    return detectErrorType(error);
   }
   
   private getUserFriendlyMessage(error: Error, errorType: ErrorType): string {
-    // If it's an AppError with a userMessage, use it
-    if ((error as AppError).userMessage) {
-      return (error as AppError).userMessage;
+    // Check if it's our AppError type and has a userMessage
+    const appError = error as Partial<AppError>;
+    if (appError.userMessage) {
+      return appError.userMessage;
     }
     
     // Otherwise generate a message based on the error type

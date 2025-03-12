@@ -1,86 +1,75 @@
-
 import { useState, useEffect } from 'react';
-import { Application } from "@/types/planning";
-import { useErrorHandler } from '@/hooks/use-error-handler';
-import { supabase } from "@/integrations/supabase/client";
+import { Application } from '@/types/planning';
+import { fetchApplicationsInArea } from './use-applications-fetch';
+import { ErrorType } from '@/utils/errors/types';
+import { createAppError } from '@/utils/errors/error-factory';
 
-export interface ApplicationsDataParams {
-  coordinates?: [number, number];
-  radius?: number;
-  limit?: number;
-  filters?: Record<string, any>;
-}
-
-export function useApplicationsData(params: ApplicationsDataParams) {
+export function useApplicationsData(
+  coordinates: [number, number] | null,
+  radius: number = 1,
+  filters: Record<string, string> = {}
+) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const { handleError } = useErrorHandler();
-  
+  const [hasResults, setHasResults] = useState<boolean>(false);
+
   useEffect(() => {
-    if (!params.coordinates) {
+    if (!coordinates) {
+      setApplications([]);
+      setError(null);
+      setHasResults(false);
       return;
     }
-    
-    async function fetchData() {
+
+    const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        const [lat, lng] = params.coordinates || [0, 0];
-        const radius = params.radius || 5;
-        const limit = params.limit || 100;
+        // Fetch applications in the specified area
+        const [lat, lng] = coordinates;
+        console.log(`Fetching applications: lat=${lat}, lng=${lng}, radius=${radius}km`);
         
-        // Attempt to use spatial search function if available
-        try {
-          const { data, error } = await supabase.rpc('get_nearby_applications', { 
-            center_lat: lat,
-            center_lng: lng,
-            radius_km: radius,
-            result_limit: limit
-          });
-          
-          if (error) {
-            // If specific RPC function error, use fallback
-            if (error.message.includes('function') || error.message.includes('does not exist')) {
-              console.log('Spatial search not available, using fallback');
-              throw new Error('Spatial search not available');
-            }
-            throw error;
-          }
-          
-          setApplications(data || []);
-        } catch (spatialError) {
-          // Fallback to manual bounding box search
-          console.log('Using fallback search method');
-          
-          // Calculate bounding box (simple approximation)
-          const latDelta = radius / 111; // ~111km per degree of latitude
-          const lngDelta = radius / (111 * Math.cos(lat * Math.PI / 180)); // Adjust for longitude
-          
-          const { data, error } = await supabase
-            .from('crystal_roof')
-            .select('*')
-            .gte('latitude', lat - latDelta)
-            .lte('latitude', lat + latDelta)
-            .gte('longitude', lng - lngDelta)
-            .lte('longitude', lng + lngDelta)
-            .limit(limit);
-            
-          if (error) throw error;
-          
-          setApplications(data || []);
+        const results = await fetchApplicationsInArea(lat, lng, radius, filters);
+        
+        if (results && Array.isArray(results)) {
+          console.log(`Found ${results.length} applications`);
+          setApplications(results);
+          setHasResults(results.length > 0);
+        } else {
+          console.log('No applications found or invalid response');
+          setApplications([]);
+          setHasResults(false);
         }
-      } catch (err) {
-        const appError = handleError(err, { title: 'Error fetching applications' });
-        setError(appError as Error);
+      } catch (err: any) {
+        console.error('Error fetching applications:', err);
+        
+        // Create a proper error object
+        const appError = createAppError(
+          err?.message || 'Error fetching planning applications',
+          err,
+          { type: err?.type || ErrorType.UNKNOWN }
+        );
+        
+        setError(appError);
+        
+        // Keep any previous results if we have them
+        if (!applications.length) {
+          setHasResults(false);
+        }
       } finally {
         setIsLoading(false);
       }
-    }
-    
+    };
+
     fetchData();
-  }, [params.coordinates, params.radius, params.limit, params.filters, handleError]);
-  
-  return { applications, isLoading, error };
+  }, [coordinates, radius, JSON.stringify(filters)]);
+
+  return {
+    applications,
+    isLoading,
+    error,
+    hasResults
+  };
 }

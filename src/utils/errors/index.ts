@@ -1,8 +1,11 @@
 
-import { ErrorType, AppError, ErrorOptions, safeStringify } from './types';
+import { ErrorType, AppError, safeStringify } from './types';
 import { createAppError } from './error-factory';
-import { isNonCriticalError, detectErrorType, formatErrorMessage, handleError } from './error-utils';
 
-// Re-export everything for easier imports
-export { ErrorType, createAppError, isNonCriticalError, detectErrorType, formatErrorMessage, handleError, safeStringify };
-export type { AppError, ErrorOptions };
+// Re-export types
+export type { ErrorType, AppError };
+export { safeStringify, createAppError };
+
+// Re-export utility functions for handling errors
+export { isNonCriticalError } from '../errors';
+export { detectErrorType, formatErrorMessage } from '../errors';

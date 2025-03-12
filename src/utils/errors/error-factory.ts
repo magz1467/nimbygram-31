@@ -81,6 +81,14 @@ function detectErrorType(originalError: any, message: string = ''): ErrorType {
     return ErrorType.DATA;
   }
   
+  // Coordinates errors
+  if (
+    lowerCaseMsg.includes('coordinates') ||
+    lowerCaseMsg.includes('location')
+  ) {
+    return ErrorType.COORDINATES;
+  }
+  
   return ErrorType.UNKNOWN;
 }
 
@@ -101,6 +109,8 @@ function getUserFriendlyMessage(type: ErrorType, originalMessage: string): strin
       return "You don't have permission to access this information. Please log in or contact support if you believe this is a mistake.";
     case ErrorType.DATA:
       return "We encountered an issue with the data. Please try again or contact support if the issue persists.";
+    case ErrorType.COORDINATES:
+      return "We couldn't determine the location from the information provided. Please try a different address or postcode.";
     default:
       return "We encountered an unexpected issue. Please try again later.";
   }
