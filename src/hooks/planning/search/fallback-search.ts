@@ -1,244 +1,128 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { SearchFilters } from "../use-planning-search";
 import { calculateDistance } from "../utils/distance-calculator";
-
-// Performance and error tracking
-let globalQueryTimes: number[] = [];
-let globalErrorCounts = {
-  timeout: 0,
-  database: 0,
-  network: 0,
-  unknown: 0
-};
+import { SearchFilters } from "../use-planning-search";
 
 /**
- * Log search metrics to console for analysis
+ * Fallback search with manual bounding box for when the spatial function isn't available
  */
-function logSearchMetrics() {
-  const avgTime = globalQueryTimes.reduce((sum, time) => sum + time, 0) / 
-                 (globalQueryTimes.length || 1);
-                 
-  console.log('📊 Fallback Search Metrics:');
-  console.log(`Average query time: ${avgTime.toFixed(2)}ms`);
-  console.log(`Query time samples: ${globalQueryTimes.length}`);
-  console.log('Error counts:', globalErrorCounts);
-}
-
-/**
- * Performs a manual bounding box search as a fallback when spatial search is unavailable
- * With significantly improved performance through query optimization and detailed diagnostics
- */
-export async function performFallbackSearch(
-  lat: number, 
-  lng: number, 
-  radiusKm: number,
-  filters: SearchFilters
-): Promise<Application[]> {
-  console.group('🔍 Fallback Search - DETAILED DIAGNOSTICS');
-  const startTime = Date.now();
+export const performFallbackSearch = async (
+  lat: number,
+  lng: number,
+  radius: number,
+  filters: SearchFilters = {}
+): Promise<Application[]> => {
+  // Calculate bounding box
+  const kmPerDegree = 111.32; // Approximate km per degree at the equator
+  const latDiff = radius / kmPerDegree;
   
-  console.log('Starting fallback search with params:', { lat, lng, radiusKm, filters });
+  // Longitude degrees per km varies with latitude
+  const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
   
-  // For large cities like Bath, reduce the initial search radius to improve performance
-  // We'll determine if the location is likely a city by checking for common indicators
-  const isMajorLocation = radiusKm >= 5; // Consider any 5km+ radius search as potentially a city
+  const minLat = lat - latDiff;
+  const maxLat = lat + latDiff;
+  const minLng = lng - lngDiff;
+  const maxLng = lng + lngDiff;
   
-  // Use a smaller radius for the initial search if this appears to be a city
-  const searchRadiusKm = isMajorLocation ? Math.min(radiusKm, 2) : radiusKm;
-  
-  console.log(`Adjusted radius: ${searchRadiusKm}km (originally ${radiusKm}km)`);
-  console.log('Major location detection:', isMajorLocation);
-  
-  // Calculate bounding box (with more precise calculations)
-  const latDegPerKm = 1 / 111;
-  const lngDegPerKm = 1 / (111 * Math.cos(lat * Math.PI / 180));
-  
-  const latMin = lat - (searchRadiusKm * latDegPerKm);
-  const latMax = lat + (searchRadiusKm * latDegPerKm);
-  const lngMin = lng - (searchRadiusKm * lngDegPerKm);
-  const lngMax = lng + (searchRadiusKm * lngDegPerKm);
-  
-  console.log('Bounding box parameters:', { latMin, latMax, lngMin, lngMax });
-  
-  // Log database info
-  console.log('Connection status before query:', navigator.onLine ? 'online' : 'offline');
-  
-  // Create base query
+  // Build query
   let query = supabase
     .from('crystal_roof')
-    .select('*', { count: 'exact' })
-    .not('latitude', 'is', null)
-    .not('longitude', 'is', null)
-    .gte('latitude', latMin)
-    .lte('latitude', latMax)
-    .gte('longitude', lngMin)
-    .lte('longitude', lngMax);
+    .select('*')
+    .gte('latitude', minLat)
+    .lte('latitude', maxLat)
+    .gte('longitude', minLng)
+    .lte('longitude', maxLng)
+    .limit(500); // Limit to 500 results for performance
   
-  console.log('Starting with base query');
-  
-  // Add optional filters
-  if (filters.status) {
-    console.log('Adding status filter:', filters.status);
-    query = query.ilike('status', `%${filters.status}%`);
+  // Add filters if provided
+  if (filters.status && filters.status !== 'all') {
+    query = query.eq('status', filters.status);
   }
   
-  if (filters.type) {
-    console.log('Adding type filter:', filters.type);
-    query = query.or(`type.ilike.%${filters.type}%`);
+  if (filters.type && filters.type !== 'all') {
+    query = query.eq('application_type', filters.type);
   }
   
-  if (filters.classification) {
-    console.log('Adding classification filter:', filters.classification);
-    query = query.ilike('class_3', `%${filters.classification}%`);
+  if (filters.classification && filters.classification !== 'all') {
+    query = query.eq('class_3', filters.classification);
   }
+  
+  // Set a request timeout using AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
   
   try {
-    // Add strict limit to prevent timeouts
-    const queryLimit = 35; // Further reduced limit for reliability
-    console.log(`Executing fallback search query with limit ${queryLimit}`);
+    // Track query performance
+    const startTime = Date.now();
     
-    // Log the SQL query if possible
-    try {
-      const queryObject = query.limit(queryLimit);
-      console.log('Query SQL (if available):', (queryObject as any)?.query?.toString() || 'Not available');
-    } catch (e) {
-      console.log('Could not extract SQL query');
-    }
+    // Use fetch with AbortController for timeout
+    const { data, error } = await query;
     
-    const queryStartTime = Date.now();
-    console.log(`Query started at: ${new Date(queryStartTime).toISOString()}`);
+    // Clear timeout
+    clearTimeout(timeoutId);
     
-    const { data, error, count } = await query.limit(queryLimit).timeout(15);
-    
-    const queryEndTime = Date.now();
-    const queryDuration = queryEndTime - queryStartTime;
-    console.log(`Query execution time: ${queryDuration}ms`);
-    console.log(`Query completed at: ${new Date(queryEndTime).toISOString()}`);
-    
-    // Track query times for metrics
-    globalQueryTimes.push(queryDuration);
-    if (globalQueryTimes.length > 50) globalQueryTimes.shift(); // Keep last 50 only
-    
+    // Handle errors
     if (error) {
-      console.error('Supabase query error details:', {
-        code: error.code,
-        message: error.message,
-        hint: error.hint,
-        details: error.details,
-        queryTime: `${queryDuration}ms`
-      });
-      
-      // Track error types
-      if (error.code === '57014' || (error.message && error.message.includes('timeout'))) {
-        globalErrorCounts.timeout++;
-      } else if (error.code?.startsWith('5') || error.code?.startsWith('53')) {
-        globalErrorCounts.database++;
-      } else {
-        globalErrorCounts.unknown++;
-      }
-      
-      // Log error metrics
-      logSearchMetrics();
-      
-      // Handle timeout errors with a more specific error
-      if (error.code === '57014' || (error.message && error.message.includes('timeout'))) {
-        const timeoutError = new Error('The search took too long to complete. Please try a more specific location or different filters.');
-        timeoutError.name = 'SearchTimeoutError';
-        (timeoutError as any).code = error.code || 'TIMEOUT';
-        (timeoutError as any).originalError = error;
-        throw timeoutError;
-      }
-      
+      console.error('Fallback search error:', error);
       throw error;
     }
     
+    // Calculate execution time
+    const executionTime = Date.now() - startTime;
+    console.log(`Fallback search executed in ${executionTime}ms, returned ${data?.length || 0} results`);
+    
+    // No results
     if (!data || data.length === 0) {
-      console.log('No results found for the search criteria', { lat, lng, radiusKm, filters });
-      console.log('Exact record count:', count);
-      console.groupEnd();
       return [];
     }
     
-    // Calculate distance for each application and sort by distance
-    console.log(`Processing ${data.length} results from fallback search`);
-    const processingStartTime = Date.now();
-    
-    const results = data.map(app => {
-      if (!app.latitude || !app.longitude) {
-        console.warn('Application missing coordinates:', app.id);
-        return { ...app, distance: Number.MAX_SAFE_INTEGER };
-      }
+    // Calculate distances and transform to Application objects
+    return data.map((item: any) => {
+      // Calculate distance (if coordinates exist)
+      const distance = item.latitude && item.longitude
+        ? calculateDistance(lat, lng, Number(item.latitude), Number(item.longitude))
+        : Number.MAX_SAFE_INTEGER;
       
-      const distance = calculateDistance(
-        lat,
-        lng,
-        Number(app.latitude),
-        Number(app.longitude)
-      );
-      return { ...app, distance };
-    }).sort((a, b) => a.distance - b.distance);
-    
-    const processingEndTime = Date.now();
-    console.log(`Results processing time: ${processingEndTime - processingStartTime}ms`);
-    
-    console.log(`✅ Found ${results.length} planning applications with fallback query`);
-    if (results.length > 0) {
-      console.log('First result:', {
-        id: results[0].id,
-        distance: results[0].distance,
-        coordinates: [results[0].latitude, results[0].longitude]
-      });
-      console.log('Last result:', {
-        id: results[results.length-1].id,
-        distance: results[results.length-1].distance,
-        coordinates: [results[results.length-1].latitude, results[results.length-1].longitude]
-      });
-    }
-    
-    // If we got close to the limit and used a reduced radius, warn the user
-    if (results.length >= queryLimit-5 && isMajorLocation) {
-      console.log('Results limited for performance. Consider a more specific search location.');
-    }
-    
-    const endTime = Date.now();
-    console.log(`Total fallback search time: ${endTime - startTime}ms`);
-    
-    // Log search metrics periodically
-    if (globalQueryTimes.length % 5 === 0) {
-      logSearchMetrics();
-    }
-    
-    console.groupEnd();
-    return results;
-  } catch (error) {
-    console.error('Detailed error in fallback search:', {
-      error,
-      errorName: error.name,
-      errorMessage: error.message,
-      errorStack: error.stack,
-      searchParams: { lat, lng, radiusKm, filters },
-      timestamp: new Date().toISOString()
+      const distanceMiles = distance * 0.621371; // Convert to miles
+      
+      // Return application with distance
+      return {
+        id: item.id,
+        address: item.address || 'Unknown location',
+        title: item.description || `Application ${item.reference || item.id}`,
+        description: item.description,
+        status: item.status || 'Unknown',
+        reference: item.reference,
+        type: item.application_type,
+        submissionDate: item.submitted_date,
+        submittedDate: item.submitted_date,
+        decisionDue: item.decision_due,
+        officer: item.officer,
+        consultationEnd: item.consultation_end,
+        coordinates: item.latitude && item.longitude ? [Number(item.latitude), Number(item.longitude)] : undefined,
+        distance: `${distanceMiles.toFixed(1)} mi`,
+        category: item.class_3,
+        postcode: item.postcode,
+        ward: item.ward,
+        // Include any other fields needed
+      } as Application;
+    })
+    .sort((a: Application, b: Application) => {
+      // Sort by distance (ascending)
+      const distA = parseFloat(a.distance?.replace(' mi', '') || '9999');
+      const distB = parseFloat(b.distance?.replace(' mi', '') || '9999');
+      return distA - distB;
     });
+  } catch (error) {
+    // Clear timeout
+    clearTimeout(timeoutId);
     
-    if (navigator.onLine === false) {
-      globalErrorCounts.network++;
-      console.error('Browser is offline - likely network error');
-    } else {
-      globalErrorCounts.unknown++;
+    // Handle abort errors separately
+    if (error.name === 'AbortError') {
+      throw new Error('Search timed out after 15 seconds. Please try again with more specific criteria.');
     }
     
-    // Log metrics on error
-    logSearchMetrics();
-    
-    // Provide better error messages for common issues
-    if (error.message?.includes('timeout') || error.message?.includes('too long')) {
-      console.groupEnd();
-      throw new Error('The search took too long to complete. Please try a more specific location or different filters.');
-    }
-    
-    console.groupEnd();
-    throw new Error(`Fallback search failed: ${error.message}`);
+    throw error;
   }
 }

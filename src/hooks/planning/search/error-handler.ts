@@ -58,17 +58,21 @@ export function handleSearchError(
   
   // Log browser and performance information
   const performanceInfo = {
-    memory: window.performance?.memory ? {
-      jsHeapSizeLimit: window.performance.memory.jsHeapSizeLimit,
-      totalJSHeapSize: window.performance.memory.totalJSHeapSize,
-      usedJSHeapSize: window.performance.memory.usedJSHeapSize
-    } : 'Not available',
-    connection: navigator.connection ? {
-      effectiveType: navigator.connection.effectiveType,
-      downlink: navigator.connection.downlink,
-      rtt: navigator.connection.rtt,
-      saveData: navigator.connection.saveData
-    } : 'Not available',
+    memory: typeof window.performance !== 'undefined' && 
+            'memory' in window.performance ? 
+            {
+              jsHeapSizeLimit: (window.performance as any).memory?.jsHeapSizeLimit,
+              totalJSHeapSize: (window.performance as any).memory?.totalJSHeapSize,
+              usedJSHeapSize: (window.performance as any).memory?.usedJSHeapSize
+            } : 'Not available',
+    connection: typeof navigator !== 'undefined' && 
+                'connection' in navigator ? 
+                {
+                  effectiveType: (navigator as any).connection?.effectiveType,
+                  downlink: (navigator as any).connection?.downlink,
+                  rtt: (navigator as any).connection?.rtt,
+                  saveData: (navigator as any).connection?.saveData
+                } : 'Not available',
     hardwareConcurrency: navigator.hardwareConcurrency,
     deviceMemory: (navigator as any).deviceMemory || 'Not available',
     onLine: navigator.onLine

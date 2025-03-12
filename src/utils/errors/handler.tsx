@@ -1,9 +1,12 @@
+
 import { AppError, ErrorType } from './types';
 import { logError } from './formatting';
+import { detectErrorType } from './detection';
 
-interface ErrorHandlerOptions {
+export interface ErrorHandlerOptions {
   context?: string;
   silent?: boolean;
+  retry?: boolean;
 }
 
 /**
@@ -15,10 +18,13 @@ export function createAppError(err: any, context?: string): AppError {
     return err;
   }
   
+  // Detect the error type
+  const errorType = detectErrorType(err);
+  
   // Create a new AppError with the error message and context
   const appError = new AppError(
     err?.message || 'An unknown error occurred',
-    ErrorType.UNKNOWN,
+    errorType,
     context
   );
   
