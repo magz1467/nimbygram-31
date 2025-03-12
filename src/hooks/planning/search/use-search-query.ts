@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { executeSearch } from './search-executor';
 import { Application } from '@/types/planning';
-import { SearchFilters } from './types';
+import { SearchFilters, SearchResult } from './types';
 import { useSearchErrorHandler } from './use-search-error-handler';
 
 export function useSearchQuery(
@@ -21,12 +21,12 @@ export function useSearchQuery(
     filters
   );
   
-  return useQuery({
+  return useQuery<SearchResult>({
     queryKey,
     queryFn: async () => {
       if (!debouncedCoordinates) {
         console.log('No coordinates available, skipping search');
-        return [];
+        return { applications: [], method: 'none' };
       }
       
       try {
@@ -36,7 +36,7 @@ export function useSearchQuery(
         options.onProgress('coordinates', 10);
         
         const result = await executeSearch(
-          { coordinates: debouncedCoordinates, radius: 5, filters },
+          { lat: debouncedCoordinates[0], lng: debouncedCoordinates[1], radius: 5, filters },
           {
             onProgress: options.onProgress,
             onMethodChange: options.onMethodChange
@@ -48,16 +48,16 @@ export function useSearchQuery(
           resultCount: result.applications.length
         });
         
-        return result.applications;
+        return result;
       } catch (err) {
         console.error('Search query failed:', err);
-        handleSearchError(err);
-        options.onError(err instanceof Error ? err : new Error(String(err)));
-        return [];
+        const error = handleSearchError(err);
+        options.onError(error);
+        return { applications: [], method: 'error' };
       }
     },
     enabled: !!debouncedCoordinates,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

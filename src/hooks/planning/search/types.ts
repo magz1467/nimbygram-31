@@ -1,7 +1,6 @@
-
 import { Application } from "@/types/planning";
 
-export type SearchMethod = 'spatial' | 'fallback' | 'cache' | 'paginated' | 'emergency';
+export type SearchMethod = 'spatial' | 'fallback' | 'cache' | 'paginated' | 'emergency' | 'none' | 'error';
 
 export interface SearchFilters {
   status?: string;
@@ -11,17 +10,12 @@ export interface SearchFilters {
 }
 
 export interface SearchParams {
-  coordinates: [number, number];
+  lat: number;
+  lng: number;
   radius: number;
   filters?: SearchFilters;
   page?: number;
   pageSize?: number;
-}
-
-export interface SearchOptions {
-  useCache?: boolean;
-  retryCount?: number;
-  timeout?: number;
 }
 
 export interface SearchResult {
@@ -32,11 +26,6 @@ export interface SearchResult {
     endTime: number;
     duration: number;
   };
-}
-
-export interface SearchError extends Error {
-  type?: string;
-  context?: any;
 }
 
 // Add the ProgressiveSearchState interface that was missing

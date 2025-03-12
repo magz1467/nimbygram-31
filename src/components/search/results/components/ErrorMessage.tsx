@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Search, RotateCw, AlertTriangle, WifiOff, Clock, Database } from "lucide-react";
 import { ErrorType, isNonCriticalError } from "@/utils/errors";
@@ -26,12 +25,11 @@ export const ErrorMessage = ({
   // Format error message properly
   const formattedMessage = formatErrorMessage(message);
   
-  // Skip rendering if message contains known ignorable patterns
   if (isNonCriticalError(formattedMessage)) {
     console.log('Skipping error display for non-critical error:', formattedMessage);
     return null;
   }
-  
+
   // Select appropriate icon based on error type
   const Icon = () => {
     switch (errorType) {
@@ -78,7 +76,7 @@ export const ErrorMessage = ({
     }
   };
 
-  // For inline variants, use a more compact layout
+  // Update the message display in both inline and default variants
   if (variant === 'inline') {
     return (
       <div className={`my-4 p-4 border rounded-md ${getBackgroundColor()} ${className}`}>
@@ -86,7 +84,7 @@ export const ErrorMessage = ({
           <Icon />
           <div className="ml-3">
             <h3 className={`text-base font-semibold ${getTextColor()} mb-1`}>{title}</h3>
-            <p className="text-sm text-gray-700 mb-2">{message}</p>
+            <p className="text-sm text-gray-700 mb-2">{formattedMessage}</p>
             {onRetry && (
               <Button 
                 variant="outline" 
@@ -114,7 +112,7 @@ export const ErrorMessage = ({
           <Icon />
           <div className="ml-3">
             <h3 className="font-semibold mb-1">{title}</h3>
-            <p className="text-sm opacity-90 mb-2">{message}</p>
+            <p className="text-sm opacity-90 mb-2">{formattedMessage}</p>
             {onRetry && (
               <Button 
                 variant="secondary" 
