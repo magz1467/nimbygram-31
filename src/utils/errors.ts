@@ -33,11 +33,21 @@ export function isNonCriticalError(errorOrMessage: unknown): boolean {
 export function detectErrorType(error: unknown): ErrorType {
   if (!error) return ErrorType.UNKNOWN;
   
+  // Check if it's a Supabase error with a code
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const supabaseError = error as any;
+    if (supabaseError.code && supabaseError.code.startsWith('PGRST')) {
+      return ErrorType.DATABASE;
+    }
+  }
+  
   const message = typeof error === 'string' 
     ? error.toLowerCase() 
     : error instanceof Error 
       ? error.message.toLowerCase()
-      : '';
+      : typeof error === 'object' && error !== null
+        ? JSON.stringify(error).toLowerCase()
+        : '';
   
   if (message.includes('timeout') || message.includes('too long') || message.includes('canceling statement')) {
     return ErrorType.TIMEOUT;
@@ -47,7 +57,7 @@ export function detectErrorType(error: unknown): ErrorType {
     return ErrorType.NOT_FOUND;
   } else if (message.includes('coordinates') || message.includes('location')) {
     return ErrorType.COORDINATES;
-  } else if (message.includes('database') || message.includes('sql')) {
+  } else if (message.includes('database') || message.includes('sql') || message.includes('function')) {
     return ErrorType.DATABASE;
   } else if (message.includes('permission') || message.includes('access')) {
     return ErrorType.PERMISSION;
@@ -70,8 +80,26 @@ export function formatErrorMessage(error: unknown): string {
     return error.message || 'An unexpected error occurred';
   }
   
-  // Safely convert objects to strings to avoid [object Object]
-  return safeStringify(error);
+  // Specially handle Supabase errors
+  if (typeof error === 'object' && error !== null) {
+    if ('code' in error && 'message' in error) {
+      const supabaseError = error as any;
+      let message = supabaseError.message || 'Database error';
+      
+      // Include hint if available
+      if (supabaseError.hint) {
+        message = `${message} (${supabaseError.hint})`;
+      }
+      
+      return message;
+    }
+    
+    // For other objects, safely convert to string
+    return safeStringify(error);
+  }
+  
+  // Fallback
+  return String(error);
 }
 
 /**

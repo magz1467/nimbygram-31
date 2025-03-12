@@ -1,11 +1,12 @@
 
 -- Rename function to match what's expected in Supabase
 CREATE OR REPLACE FUNCTION get_applications_in_bounds_paginated(
-  center_lat DOUBLE PRECISION,
-  center_lng DOUBLE PRECISION,
-  radius_km DOUBLE PRECISION DEFAULT 5, -- Default set to 5km
+  ne_lat DOUBLE PRECISION,
+  ne_lng DOUBLE PRECISION,
   page_number INTEGER DEFAULT 0,
-  page_size INTEGER DEFAULT 50
+  page_size INTEGER DEFAULT 50,
+  sw_lat DOUBLE PRECISION,
+  sw_lng DOUBLE PRECISION
 )
 RETURNS SETOF crystal_roof
 LANGUAGE plpgsql
@@ -13,14 +14,18 @@ SECURITY DEFINER
 AS $$
 DECLARE
   offset_val INTEGER;
+  center_lat DOUBLE PRECISION;
+  center_lng DOUBLE PRECISION;
+  radius_km DOUBLE PRECISION DEFAULT 5; -- Always use 5km
 BEGIN
   -- Input validation
-  IF center_lat IS NULL OR center_lng IS NULL THEN
-    RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
+  IF ne_lat IS NULL OR ne_lng IS NULL OR sw_lat IS NULL OR sw_lng IS NULL THEN
+    RAISE EXCEPTION 'Invalid coordinates: all boundary coordinates must be provided';
   END IF;
   
-  -- Force radius to be 5km for consistency - ignore input parameter
-  radius_km := 5;
+  -- Calculate center point from the bounding box
+  center_lat := (ne_lat + sw_lat) / 2;
+  center_lng := (ne_lng + sw_lng) / 2;
   
   -- Validate and limit pagination parameters
   page_size := LEAST(page_size, 100); -- Cap page size at 100
@@ -30,8 +35,8 @@ BEGIN
   offset_val := page_number * page_size;
   
   -- Log query parameters
-  RAISE NOTICE 'Executing paginated search with lat: %, lng: %, radius: %km, page: %, page_size: %', 
-               center_lat, center_lng, radius_km, page_number, page_size;
+  RAISE NOTICE 'Executing paginated search with bounds NE: (%, %), SW: (%, %), center: (%, %), page: %, page_size: %',
+               ne_lat, ne_lng, sw_lat, sw_lng, center_lat, center_lng, page_number, page_size;
   
   -- Use bounding box for initial filtering (faster)
   RETURN QUERY
@@ -46,9 +51,8 @@ BEGIN
     WHERE 
       cr.latitude IS NOT NULL AND
       cr.longitude IS NOT NULL AND
-      cr.latitude BETWEEN (center_lat - radius_km/111.0) AND (center_lat + radius_km/111.0) AND
-      cr.longitude BETWEEN (center_lng - radius_km/(111.0 * COS(RADIANS(center_lat)))) 
-                      AND (center_lng + radius_km/(111.0 * COS(RADIANS(center_lat))))
+      cr.latitude BETWEEN sw_lat AND ne_lat AND
+      cr.longitude BETWEEN sw_lng AND ne_lng
   )
   SELECT *
   FROM bounded_results

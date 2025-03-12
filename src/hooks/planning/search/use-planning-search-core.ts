@@ -6,6 +6,7 @@ import { useSearchCoordinator } from './use-search-coordinator';
 import { useSearchQuery } from './use-search-query';
 import { useSearchCompletionHandler } from './use-search-completion-handler';
 import { toast } from '@/components/ui/use-toast';
+import { formatErrorMessage } from '@/utils/errors';
 
 /**
  * Simplified core implementation of the planning search hook with fixed 5km radius
@@ -46,45 +47,53 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
       onError: (error) => {
         console.error('Search query error:', error);
         
-        // More robust error handling for specific errors
-        const errorMsg = error?.message || String(error);
-        const isSupabaseError = typeof error === 'object' && error !== null && 'code' in error;
-        
-        if (isSupabaseError) {
-          // Handle specific Supabase errors more gracefully
-          const supabaseError = error as any;
-          console.error('Supabase error details:', {
-            code: supabaseError.code,
-            message: supabaseError.message,
-            details: supabaseError.details,
-            hint: supabaseError.hint
-          });
+        // Properly extract and log detailed information for Supabase errors
+        if (typeof error === 'object' && error !== null) {
+          const isSupabaseError = 'code' in error;
           
-          // If there's a helpful hint, use it
-          if (supabaseError.hint) {
-            console.log('Supabase provided hint:', supabaseError.hint);
+          if (isSupabaseError) {
+            const supabaseError = error as any;
+            console.error('Supabase error details:', {
+              code: supabaseError.code,
+              message: supabaseError.message,
+              details: supabaseError.details,
+              hint: supabaseError.hint
+            });
+            
+            // If there's a helpful hint, use it
+            if (supabaseError.hint) {
+              console.log('Supabase provided hint:', supabaseError.hint);
+              
+              // Check if hint suggests a parameter structure mismatch
+              if (supabaseError.hint.includes('perhaps you meant') || 
+                  supabaseError.hint.includes('parameters')) {
+                console.error('Function parameter mismatch detected');
+              }
+            }
           }
         }
       }
     }
   );
 
-  // Show user-friendly toast for non-critical errors
+  // Show user-friendly toast for errors
   useEffect(() => {
     const currentError = queryError || coordinatorError;
     if (currentError && !errorHandled) {
       // Format the error message properly
-      const errorMsg = typeof currentError === 'object' && currentError !== null 
-        ? (currentError.message || JSON.stringify(currentError))
-        : String(currentError);
+      const errorMsg = formatErrorMessage(currentError);
       
       console.log('Error message for toast consideration:', errorMsg);
       
       // Only show toast for specific error types
-      if (errorMsg.includes('timeout') || errorMsg.includes('could not find')) {
+      if (errorMsg.includes('timeout') || 
+          errorMsg.includes('could not find') ||
+          errorMsg.includes('function') ||
+          (typeof currentError === 'object' && 'code' in currentError)) {
+        
         toast({
-          title: "Search issue detected",
-          description: "We're having trouble finding planning applications. Please try again in a moment.",
+          title: "Search error detected",
+          description: "We're having trouble with our search system. Our team has been notified and is working on it.",
           variant: "destructive",
         });
         setErrorHandled(true);

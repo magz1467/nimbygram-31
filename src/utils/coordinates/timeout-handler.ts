@@ -30,8 +30,15 @@ export const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutM
       if (typeof error === 'object' && error !== null) {
         if ('code' in error) {
           console.error(`Enhanced error details - Code: ${error.code}, Message: ${error.message}`);
-          // Convert Supabase error to standard format
-          throw new Error(`Database error: ${error.message || 'Unknown error'}`);
+          
+          // Format Supabase error with full details
+          const formattedError = new Error(error.message || 'Unknown database error');
+          formattedError['code'] = error.code;
+          formattedError['details'] = error.details;
+          formattedError['hint'] = error.hint;
+          formattedError['originalError'] = error;
+          
+          throw formattedError;
         }
       }
       throw error;

@@ -1,11 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Search, RotateCw, AlertTriangle, WifiOff, Clock } from "lucide-react";
+import { Search, RotateCw, AlertTriangle, WifiOff, Clock, Database } from "lucide-react";
 import { ErrorType, isNonCriticalError } from "@/utils/errors";
+import { formatErrorMessage } from "@/utils/errors";
 
 interface ErrorMessageProps {
   title: string;
-  message: string;
+  message: string | Error | unknown;
   errorType?: ErrorType;
   onRetry?: () => void;
   showCoverageInfo?: boolean;
@@ -22,9 +23,12 @@ export const ErrorMessage = ({
   variant = 'default',
   className = ''
 }: ErrorMessageProps) => {
+  // Format error message properly
+  const formattedMessage = formatErrorMessage(message);
+  
   // Skip rendering if message contains known ignorable patterns
-  if (typeof message === 'string' && isNonCriticalError(message)) {
-    console.log('Skipping error display for non-critical error:', message);
+  if (isNonCriticalError(formattedMessage)) {
+    console.log('Skipping error display for non-critical error:', formattedMessage);
     return null;
   }
   
@@ -37,9 +41,11 @@ export const ErrorMessage = ({
         return <Clock className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-amber-600"} />;
       case ErrorType.NOT_FOUND:
         return <Search className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-blue-600"} />;
+      case ErrorType.DATABASE:
+        return <Database className={variant === 'default' ? "h-12 w-12 text-gray-400 mb-4" : "h-5 w-5 text-red-600"} />;
       default:
         return variant === 'default' 
-          ? <Search className="h-12 w-12 text-gray-400 mb-4" /> 
+          ? <AlertTriangle className="h-12 w-12 text-gray-400 mb-4" /> 
           : <AlertTriangle className="h-5 w-5 text-red-600" />;
     }
   };
@@ -131,7 +137,7 @@ export const ErrorMessage = ({
     <div className={`mt-8 text-center flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200 max-w-2xl mx-auto ${className}`}>
       <Icon />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-6 text-center max-w-md mx-auto">{message}</p>
+      <p className="text-gray-600 mb-6 text-center max-w-md mx-auto">{formattedMessage}</p>
       
       <div className="flex flex-col sm:flex-row gap-4">
         {onRetry && (
@@ -156,10 +162,10 @@ export const ErrorMessage = ({
       
       {showCoverageInfo && errorType !== ErrorType.NETWORK && (
         <div className="mt-6 p-4 bg-white rounded border border-amber-200 max-w-md">
-          <h4 className="font-medium text-amber-800 mb-2">Coverage Information</h4>
+          <h4 className="font-medium text-amber-800 mb-2">Search System Information</h4>
           <p className="text-sm text-gray-600">
-            Our planning application database currently has the best coverage in Greater London and the South East of England. 
-            We're working to expand our coverage to more areas of the UK.
+            Our search system may be experiencing technical difficulties. We're working to resolve 
+            this as quickly as possible. Please try again in a few minutes.
           </p>
         </div>
       )}

@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { SearchFilters } from './types';
+import { formatErrorMessage } from '@/utils/errors';
 
 /**
  * Hook to handle search errors with appropriate user messaging
@@ -12,12 +13,28 @@ export function useSearchErrorHandler(
 ) {
   // Process search errors to provide more user-friendly messages
   const handleSearchError = useCallback((error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Properly format the error message
+    const errorMessage = formatErrorMessage(error);
     
     console.error(`Search error handler: ${errorMessage}`, {
       coordinates,
       filterCount: Object.keys(filters).length,
     });
+    
+    // Extract additional details for Supabase errors
+    let enhancedMessage = errorMessage;
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      const supabaseError = error as any;
+      enhancedMessage = `${supabaseError.message || 'Database error'}`;
+      
+      if (supabaseError.hint) {
+        console.log(`Error hint: ${supabaseError.hint}`);
+      }
+      
+      if (supabaseError.code === 'PGRST202') {
+        return new Error('Database configuration issue. Our team has been notified and is working on it.');
+      }
+    }
     
     // Determine if this is a timeout error
     const isTimeout = 
@@ -32,7 +49,12 @@ export function useSearchErrorHandler(
       return new Error(`The search took too long to complete. This area may have too many planning applications. Please try a more specific location.`);
     }
     
-    return error;
+    // If it's a function not found error, provide a clear message
+    if (errorMessage.includes('function') && errorMessage.includes('not found')) {
+      return new Error('Search system unavailable. Our team has been notified of this issue.');
+    }
+    
+    return new Error(enhancedMessage);
   }, [coordinates, filters]);
 
   return { handleSearchError };

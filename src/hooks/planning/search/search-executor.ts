@@ -1,136 +1,89 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Application } from "@/types/planning";
-import { SearchMethod, SearchParams } from "./types";
-import { SearchStage } from "./use-search-state-manager";
-import { formatDistance } from "@/utils/distance";
+import { supabase } from '@/integrations/supabase/client';
+import { withTimeout } from '@/utils/coordinates/timeout-handler';
+import { calculateDistance } from '@/hooks/planning/utils/distance-calculator';
+import { Application } from '@/types/planning';
+import { SearchFilters } from './types';
 
-type ProgressCallback = (stage: SearchStage, progress: number) => void;
-type MethodCallback = (method: SearchMethod) => void;
+// Default timeout for search queries (15 seconds)
+const SEARCH_TIMEOUT_MS = 15000;
+
+// Default search radius (fixed at 5km)
+const DEFAULT_RADIUS_KM = 5;
 
 /**
- * Simplified central search function using RPC with a fixed 5km radius
+ * Execute a spatial search using the RPC function
+ * @param coordinates Latitude and longitude
+ * @param filters Optional search filters
+ * @param pageNumber Page number for pagination
+ * @param pageSize Page size for pagination
+ * @returns Promise with the search results
  */
-export async function executeSearch(
-  searchParams: SearchParams,
-  options: {
-    onProgress?: ProgressCallback,
-    onMethodChange?: MethodCallback
-  } = {}
-): Promise<{
-  applications: Application[],
-  method: SearchMethod
-}> {
-  const { coordinates, filters } = searchParams;
+export const executeSearch = async (
+  coordinates: [number, number], 
+  filters: SearchFilters = {},
+  pageNumber: number = 0,
+  pageSize: number = 50
+): Promise<Application[]> => {
   const [lat, lng] = coordinates;
-  const radius = 5; // Fixed 5km radius for all searches
-  const { onProgress, onMethodChange } = options;
   
-  // Start progress
-  if (onProgress) onProgress('searching', 20);
-  if (onMethodChange) onMethodChange('spatial');
-
-  // Create an AbortController for timeout management
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+  // Calculate bounding box coordinates for a 5km radius
+  // This is a simplification - 1 degree of latitude is ~111km
+  const latDelta = DEFAULT_RADIUS_KM / 111.0;
+  const lngDelta = DEFAULT_RADIUS_KM / (111.0 * Math.cos(lat * Math.PI / 180));
+  
+  const ne_lat = lat + latDelta;
+  const ne_lng = lng + lngDelta;
+  const sw_lat = lat - latDelta;
+  const sw_lng = lng - lngDelta;
+  
   try {
-    console.log(`Executing spatial search at [${lat}, ${lng}] with 5km radius`);
+    console.log(`Executing spatial search at [${lat}, ${lng}] with 5km radius using bounding box`);
     
-    // Use the correct function name that exists in Supabase
-    // Changed from 'get_nearby_applications_paginated' to 'get_applications_in_bounds_paginated'
+    // Use the correct function name and parameter structure
     const { data, error } = await supabase.rpc('get_applications_in_bounds_paginated', {
-      center_lat: lat,
-      center_lng: lng,
-      radius_km: radius,
-      page_number: 0,
-      page_size: 100
-    }, { 
-      count: 'exact'
+      ne_lat,
+      ne_lng,
+      sw_lat,
+      sw_lng,
+      page_number: pageNumber,
+      page_size: pageSize
     });
 
-    // Clear the timeout if we got a response
-    clearTimeout(timeoutId);
-
-    // Check if the search was aborted
-    if (controller.signal.aborted) {
-      console.error("Search timed out after 30 seconds");
-      throw new Error('Search timeout after 30 seconds');
-    }
-
     if (error) {
-      console.error("RPC search error:", error);
+      console.error('RPC search error:', error);
       throw error;
     }
 
-    if (onProgress) onProgress('processing', 70);
-
-    // Filter results if needed
-    let applications = data || [];
-    if (filters && Object.keys(filters).length > 0) {
-      applications = applications.filter(app => {
-        if (filters.status && app.status && !app.status.toLowerCase().includes(filters.status.toLowerCase())) {
-          return false;
-        }
-        if (filters.type && app.type && !app.type.toLowerCase().includes(filters.type.toLowerCase())) {
-          return false;
-        }
-        if (filters.classification && app.classification && 
-            !app.classification.toLowerCase().includes(filters.classification.toLowerCase())) {
-          return false;
-        }
-        return true;
-      });
+    if (!data) {
+      console.warn('Search returned no data');
+      return [];
     }
-
-    // Process all results in a single operation
-    applications = applications.map(app => {
-      let distance_km = app.distance_km;
-      if (!distance_km && app.latitude && app.longitude) {
-        const R = 6371; // Earth's radius in km
-        const dLat = (app.latitude - lat) * Math.PI / 180;
-        const dLon = (app.longitude - lng) * Math.PI / 180;
-        const a = 
-          Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(lat * Math.PI / 180) * Math.cos(app.latitude * Math.PI / 180) * 
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        distance_km = R * c;
-      }
-      
-      return {
-        ...app,
-        distance_km,
-        distance: app.distance || formatDistance(distance_km || 0),
-        coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
-      };
-    });
-
-    // Sort by distance once
-    applications.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
-
-    if (onProgress) onProgress('complete', 100);
     
-    console.log(`Search completed, found ${applications.length} results`);
-    
-    return {
-      applications,
-      method: 'spatial'
-    };
-    
+    return data as Application[];
   } catch (error) {
-    // Clear the timeout to prevent memory leaks
-    clearTimeout(timeoutId);
-    
-    // Check if this was an abort error
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      console.error("Search timed out after 30 seconds");
-      if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage instead of 'error'
-      throw new Error('Search timeout after 30 seconds');
-    }
-    
-    console.error("Search failed:", error);
-    if (onProgress) onProgress('complete', 100); // Use valid 'complete' stage instead of 'error'
+    console.error('Search failed:', error);
     throw error;
   }
-}
+};
+
+/**
+ * Execute a search with timeout
+ * @param coordinates Latitude and longitude
+ * @param filters Optional search filters
+ * @param pageNumber Page number for pagination
+ * @param pageSize Page size for pagination
+ * @returns Promise with the search results
+ */
+export const executeSearchWithTimeout = async (
+  coordinates: [number, number],
+  filters: SearchFilters = {},
+  pageNumber: number = 0,
+  pageSize: number = 50
+): Promise<Application[]> => {
+  return withTimeout(
+    executeSearch(coordinates, filters, pageNumber, pageSize),
+    SEARCH_TIMEOUT_MS,
+    `Search timeout after ${SEARCH_TIMEOUT_MS / 1000}s at coordinates [${coordinates[0]}, ${coordinates[1]}]`
+  );
+};
