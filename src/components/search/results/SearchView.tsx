@@ -60,26 +60,20 @@ export const SearchView = ({
   
   const combinedError = coordsError || searchError || searchState.error || error;
   const isLoading = isLoadingCoords || isLoadingResults || isFetching;
-  const shouldShowSkeletons = isLoading && !hasResults;
 
-  const handleSearchComplete = useCallback(() => {
-    if (!isLoading && coordinates && applications && !searchCompleteRef.current && hasResults) {
-      console.log(`✅ Search complete [${componentId}] - calling onSearchComplete`);
-      searchCompleteRef.current = true;
+  // Handle search completion
+  useEffect(() => {
+    if (!isLoading && coordinates && hasResults) {
       onSearchComplete?.();
     }
-  }, [isLoading, coordinates, applications, onSearchComplete, componentId, hasResults]);
-
-  useEffect(() => {
-    handleSearchComplete();
-  }, [handleSearchComplete]);
+  }, [isLoading, coordinates, hasResults, onSearchComplete]);
 
   if (!searchTerm) {
-    console.log(`⭕ Returning NoSearchStateView [${componentId}]`);
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
 
-  if (shouldShowSkeletons) {
+  // Show loading state during initial search
+  if (isLoading && !hasResults) {
     return (
       <SearchLoadingState 
         stage={stage}
@@ -90,6 +84,7 @@ export const SearchView = ({
     );
   }
 
+  // Show error state if there's an error and no results
   if (combinedError && !hasResults) {
     return (
       <SearchErrorView 
@@ -103,6 +98,7 @@ export const SearchView = ({
     );
   }
 
+  // Show results
   return (
     <SearchViewContent
       initialSearch={initialSearch!}

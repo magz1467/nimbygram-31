@@ -16,12 +16,11 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
   const {
     debouncedCoordinates,
     queryKey,
-    isLoading,
     stage,
     progress,
-    error,
+    error: coordinatorError,
     method,
-    results,
+    results: coordinatorResults,
     hasResults,
     updateProgress,
     updateMethod,
@@ -31,7 +30,9 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
   // Execute the main search query
   const {
     data: applications = [],
-    isFetching
+    isFetching,
+    error: queryError,
+    isLoading: isQueryLoading
   } = useSearchQuery(
     queryKey,
     debouncedCoordinates,
@@ -40,31 +41,21 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
     {
       onProgress: updateProgress,
       onMethodChange: updateMethod,
-      onSuccess: () => {
-        // We directly use the applications data from the query
-        // No need for separate setResults since useSearchCoordinator manages this
-      },
-      onError: () => {
-        // Error handling is managed by useSearchCoordinator
+      onError: (error) => {
+        console.error('Search query error:', error);
       }
     }
   );
+
+  // Combine loading states
+  const isLoading = isFetching || isQueryLoading;
   
-  // Handle search completion telemetry
-  useSearchCompletionHandler(
-    debouncedCoordinates,
-    filters,
-    applications,
-    method,
-    isLoading,
-    () => {
-      // Search completion is handled by the coordinator
-    }
-  );
+  // Combine errors
+  const error = queryError || coordinatorError;
 
   return {
-    applications: applications || [],
-    hasResults,
+    applications,
+    hasResults: applications.length > 0,
     isLoading,
     isFetching,
     error,

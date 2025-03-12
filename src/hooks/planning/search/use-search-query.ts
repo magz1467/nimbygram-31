@@ -5,10 +5,6 @@ import { Application } from '@/types/planning';
 import { SearchFilters } from './types';
 import { useSearchErrorHandler } from './use-search-error-handler';
 
-/**
- * Hook to execute the simplified search query with proper error handling
- * Using fixed 5km radius
- */
 export function useSearchQuery(
   queryKey: string[],
   debouncedCoordinates: [number, number] | null,
@@ -17,7 +13,6 @@ export function useSearchQuery(
   options: {
     onProgress: (stage: string, progress: number) => void,
     onMethodChange: (method: string) => void,
-    onSuccess: (applications: Application[]) => void,
     onError: (error: Error) => void
   }
 ) {
@@ -27,59 +22,45 @@ export function useSearchQuery(
   );
   
   return useQuery({
-    queryKey: queryKey,
+    queryKey,
     queryFn: async () => {
-      if (!debouncedCoordinates) return [];
+      if (!debouncedCoordinates) {
+        console.log('No coordinates available, skipping search');
+        return [];
+      }
       
       try {
+        console.log('Starting search with coordinates:', debouncedCoordinates);
         queryStartTimeRef.current = Date.now();
-        console.log(`🔍 useSearchQuery query started`, {
-          coordinates: debouncedCoordinates,
-          radius: 5, // Fixed 5km radius
-          filters: Object.keys(filters),
-          time: new Date().toISOString(),
-          queryKey: queryKey,
-        });
         
         options.onProgress('coordinates', 10);
         
         const result = await executeSearch(
-          { coordinates: debouncedCoordinates, radius: 5, filters }, // Fixed 5km radius
+          { coordinates: debouncedCoordinates, radius: 5, filters },
           {
             onProgress: options.onProgress,
             onMethodChange: options.onMethodChange
           }
         );
         
-        // Process the results
-        options.onProgress('processing', 90);
-        
-        console.log(`✅ useSearchQuery query completed`, {
+        console.log('Search completed successfully:', {
           method: result.method,
-          resultCount: result.applications.length,
-          duration: Date.now() - queryStartTimeRef.current,
-          time: new Date().toISOString(),
+          resultCount: result.applications.length
         });
-        
-        // Update results in the search state manager
-        options.onSuccess(result.applications);
         
         return result.applications;
       } catch (err) {
-        console.error(`❌ useSearchQuery query error:`, err);
+        console.error('Search query failed:', err);
         handleSearchError(err);
-        
-        // Mark the search as failed
         options.onError(err instanceof Error ? err : new Error(String(err)));
-        
         return [];
       }
     },
     enabled: !!debouncedCoordinates,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: false
   });
 }
