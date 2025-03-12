@@ -11,13 +11,15 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
 
   try {
     // Try spatial search first using PostGIS
-    const spatialPromise = supabase.rpc('get_nearby_applications', {
-      center_lat: coordinates.lat,
-      center_lng: coordinates.lng,
-      radius_km: SEARCH_RADIUS
-    }).then((response) => response);
+    const spatialPromise = new Promise<PostgrestResponse<any>>((resolve) => {
+      supabase.rpc('get_nearby_applications', {
+        center_lat: coordinates.lat,
+        center_lng: coordinates.lng,
+        radius_km: SEARCH_RADIUS
+      }).then(response => resolve(response));
+    });
     
-    // Convert PostgrestFilterBuilder to Promise with withTimeout
+    // Convert to Promise with withTimeout
     const result = await withTimeout<PostgrestResponse<any>>(
       spatialPromise, 
       SEARCH_TIMEOUT, 
@@ -42,17 +44,19 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
     const latDiff = SEARCH_RADIUS / 111.32; // approx km per degree
     const lngDiff = SEARCH_RADIUS / (111.32 * Math.cos(coordinates.lat * (Math.PI / 180)));
 
-    const fallbackPromise = supabase
-      .from('crystal_roof')
-      .select('*')
-      .gte('latitude', coordinates.lat - latDiff)
-      .lte('latitude', coordinates.lat + latDiff)
-      .gte('longitude', coordinates.lng - lngDiff)
-      .lte('longitude', coordinates.lng + lngDiff)
-      .limit(100)
-      .then((response) => response);
+    const fallbackPromise = new Promise<PostgrestResponse<any>>((resolve) => {
+      supabase
+        .from('crystal_roof')
+        .select('*')
+        .gte('latitude', coordinates.lat - latDiff)
+        .lte('latitude', coordinates.lat + latDiff)
+        .gte('longitude', coordinates.lng - lngDiff)
+        .lte('longitude', coordinates.lng + lngDiff)
+        .limit(100)
+        .then(response => resolve(response));
+    });
       
-    // Convert PostgrestFilterBuilder to Promise with withTimeout
+    // Convert to Promise with withTimeout
     const fallbackResult = await withTimeout<PostgrestResponse<any>>(
       fallbackPromise,
       SEARCH_TIMEOUT,
