@@ -123,6 +123,8 @@ export async function executeSearch(
     try {
       console.log('Attempting emergency limited search...');
       
+      const { coordinates, radius } = searchParams;
+      const [lat, lng] = coordinates;
       const smallRadius = Math.min(radius * 0.2, 1); // 20% of original radius or max 1km
       
       const { data, error } = await supabase
