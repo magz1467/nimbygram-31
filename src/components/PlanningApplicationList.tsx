@@ -38,6 +38,7 @@ export const PlanningApplicationList = ({
           application={application}
           onSelect={onSelectApplication}
           onFeedback={onFeedback}
+          allApplications={applications} // Pass all applications for map context
         />
       ))}
     </div>
