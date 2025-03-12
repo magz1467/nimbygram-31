@@ -11,16 +11,12 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
   const startTime = Date.now();
   
   try {
-    // Direct RPC call - Supabase already returns a Promise
-    const { data, error } = await withTimeout(
-      supabase.rpc('get_nearby_applications', {
-        latitude: coordinates[0],  // Using array index for lat
-        longitude: coordinates[1], // Using array index for lng
-        radius_km: 10
-      }),
-      SEARCH_TIMEOUT,
-      'Spatial search timed out after 30 seconds'
-    );
+    // Perform the RPC call to the PostGIS-enabled function
+    const { data, error } = await supabase.rpc('get_nearby_applications', {
+      latitude: coordinates[0],  // Using array index for lat
+      longitude: coordinates[1], // Using array index for lng
+      radius_km: 10
+    }).throwOnError();
 
     if (error) {
       console.error('❌ Supabase RPC error:', error);
