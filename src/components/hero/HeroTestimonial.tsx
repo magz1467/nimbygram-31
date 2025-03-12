@@ -1,3 +1,4 @@
+
 import { Quote } from "lucide-react";
 
 export const HeroTestimonial = () => {
@@ -13,7 +14,7 @@ export const HeroTestimonial = () => {
       
       {/* Testimonial text */}
       <blockquote className="relative z-10 text-foreground font-playfair text-lg italic text-center px-8 font-bold">
-        "I feel too old for TikTok fads and too young for the town hall meetings. NimbyGram is my new fix. It's surprisingly addictive."
+        "By far the best information available online, so much better than endless reference numbers!"
       </blockquote>
     </div>
   );
