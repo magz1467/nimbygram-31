@@ -16,17 +16,18 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
       radius_km: SEARCH_RADIUS
     });
     
-    const { data: spatialData, error: spatialError } = await withTimeout(
+    // Convert PostgrestFilterBuilder to Promise with withTimeout
+    const result = await withTimeout(
       spatialPromise, 
       SEARCH_TIMEOUT, 
       'Spatial search timeout'
     );
 
-    if (spatialError) throw spatialError;
+    if (result.error) throw result.error;
 
-    if (spatialData && spatialData.length > 0) {
+    if (result.data && result.data.length > 0) {
       return {
-        applications: spatialData as Application[],
+        applications: result.data as Application[],
         method: 'spatial',
         timing: {
           start: startTime,
@@ -49,16 +50,17 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
       .lte('longitude', coordinates.lng + lngDiff)
       .limit(100);
       
-    const { data: fallbackData, error: fallbackError } = await withTimeout(
+    // Convert PostgrestFilterBuilder to Promise with withTimeout
+    const fallbackResult = await withTimeout(
       fallbackPromise,
       SEARCH_TIMEOUT,
       'Fallback search timeout'
     );
 
-    if (fallbackError) throw fallbackError;
+    if (fallbackResult.error) throw fallbackResult.error;
 
     return {
-      applications: fallbackData || [],
+      applications: fallbackResult.data || [],
       method: 'fallback',
       timing: {
         start: startTime,

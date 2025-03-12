@@ -1,4 +1,5 @@
 
+import React, { useEffect } from "react";
 import { useSpatialSearch } from "@/hooks/use-spatial-search";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   const { data, isLoading, isError, error } = useSpatialSearch(coordinates);
 
   // Log search diagnostics
-  React.useEffect(() => {
+  useEffect(() => {
     if (coordinates) {
       searchDiagnostics.logSearch([coordinates.lat, coordinates.lng], SEARCH_RADIUS);
     }

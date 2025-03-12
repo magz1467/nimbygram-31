@@ -9,6 +9,11 @@ interface SearchResultCardProps {
 }
 
 const SearchResultCard = ({ application }: SearchResultCardProps) => {
+  // Convert string distance to number if it exists
+  const distanceNumber = application.distance 
+    ? parseFloat(application.distance) 
+    : undefined;
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
@@ -24,9 +29,9 @@ const SearchResultCard = ({ application }: SearchResultCardProps) => {
               {application.status}
             </span>
           )}
-          {application.distance && (
+          {distanceNumber !== undefined && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-              {formatDistance(application.distance)}
+              {formatDistance(distanceNumber)}
             </span>
           )}
           {application.type && (
