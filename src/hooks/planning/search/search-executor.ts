@@ -45,8 +45,8 @@ export async function executeSearch(
           50  // Page size
         ),
         {
-          retries: 2,
-          delay: 1000,
+          maxRetries: 2,
+          initialDelayMs: 1000,
           onRetry: (err, attempt) => {
             console.log(`Retrying spatial search (attempt ${attempt}/2)`, err);
             // If it's a timeout, try with a smaller radius
@@ -87,8 +87,8 @@ export async function executeSearch(
     const fallbackResults = await withRetry(
       () => performFallbackSearch(lat, lng, options.radius, options.filters),
       {
-        retries: 2,
-        delay: 1000,
+        maxRetries: 2,
+        initialDelayMs: 1000,
         onRetry: (err, attempt) => {
           console.log(`Retrying fallback search (attempt ${attempt}/2)`, err);
           // If it's a timeout, try with a smaller radius
