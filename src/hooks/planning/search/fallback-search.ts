@@ -10,19 +10,22 @@ interface BoundingBox {
   maxLng: number;
 }
 
+// Pre-calculate bounding box for better performance
 function calculateBoundingBox(lat: number, lng: number, radiusKm: number): BoundingBox {
-  // Calculate bounding box once
-  const latDelta = radiusKm / 111.32;
-  const lngDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180));
+  // More accurate calculation based on the Earth's radius at the given latitude
+  const latRadian = lat * Math.PI / 180;
+  const latDegPerKm = 1 / 110.574; // Degrees per km at the equator
+  const lngDegPerKm = 1 / (111.320 * Math.cos(latRadian)); // Adjust for latitude
   
   return {
-    minLat: lat - latDelta,
-    maxLat: lat + latDelta,
-    minLng: lng - lngDelta,
-    maxLng: lng + lngDelta
+    minLat: lat - (radiusKm * latDegPerKm),
+    maxLat: lat + (radiusKm * latDegPerKm),
+    minLng: lng - (radiusKm * lngDegPerKm),
+    maxLng: lng + (radiusKm * lngDegPerKm)
   };
 }
 
+// Progressive search function that returns results in batches
 export async function performFallbackSearch(
   lat: number, 
   lng: number, 
@@ -31,67 +34,127 @@ export async function performFallbackSearch(
 ): Promise<Application[]> {
   console.log('Performing fallback search with bounding box approach');
   
-  // Calculate bounding box once
+  // Calculate bounding box once for efficiency
   const bbox = calculateBoundingBox(lat, lng, radiusKm);
+  console.log('Search bounding box:', bbox);
+  
+  // Storage for all results
+  let allResults: any[] = [];
   
   try {
-    // Build the query using pre-calculated bounding box
-    let query = supabase
+    // Step 1: Try a small quick query first for fast response
+    const quickQuery = supabase
       .from('crystal_roof')
       .select('*')
       .gte('latitude', bbox.minLat)
       .lte('latitude', bbox.maxLat)
       .gte('longitude', bbox.minLng)
-      .lte('longitude', bbox.maxLng);
+      .lte('longitude', bbox.maxLng)
+      .limit(25);
     
     // Apply filters if provided
     if (filters?.status) {
-      query = query.ilike('status', `%${filters.status}%`);
+      quickQuery.ilike('status', `%${filters.status}%`);
     }
     if (filters?.type) {
-      query = query.ilike('type', `%${filters.type}%`);
+      quickQuery.ilike('type', `%${filters.type}%`);
     }
     
-    // First try with a smaller limit to get quick results
-    const { data: quickData, error: quickError } = await query.limit(50);
+    // Execute the query with timeout
+    const { data: quickData, error: quickError } = await quickQuery.timeout(6000);
     
-    // If we got some initial results, return them while we fetch more
+    // If we got quick results, use them
     if (quickData && quickData.length > 0) {
-      // Process quick results
-      const quickResults = processResults(quickData, lat, lng);
+      console.log(`Got ${quickData.length} quick results from fallback search`);
+      allResults = quickData;
       
-      // Then try to get the full result set in the background
+      // Process and return these initial results while we fetch more
+      const quickResults = processResults(allResults, lat, lng);
+      
+      // Step 2: Try to get more results in a background fetch
       try {
-        const { data: fullData } = await query.limit(200);
+        const fullQuery = supabase
+          .from('crystal_roof')
+          .select('*')
+          .gte('latitude', bbox.minLat)
+          .lte('latitude', bbox.maxLat)
+          .gte('longitude', bbox.minLng)
+          .lte('longitude', bbox.maxLng)
+          .limit(150);
+        
+        // Apply the same filters
+        if (filters?.status) {
+          fullQuery.ilike('status', `%${filters.status}%`);
+        }
+        if (filters?.type) {
+          fullQuery.ilike('type', `%${filters.type}%`);
+        }
+        
+        // Execute with longer timeout
+        const { data: fullData } = await fullQuery.timeout(15000);
+        
         if (fullData && fullData.length > quickData.length) {
+          console.log(`Got ${fullData.length} total results from fallback search`);
           return processResults(fullData, lat, lng);
         }
       } catch (fullError) {
-        console.warn('Full query error, using quick results:', fullError);
-        // Just use the quick results if the full query fails
+        console.warn('Full fallback query failed, using quick results:', fullError);
       }
       
       return quickResults;
     }
     
-    // If no quick results, try the full query
-    const { data, error } = await query.limit(200);
-    
-    if (error) {
-      console.error('Fallback search error:', error);
-      // Instead of throwing, return an empty array
-      return [];
+    // If quick query failed or returned no results, try with tighter bounds
+    if (quickError || !quickData || quickData.length === 0) {
+      console.log('Quick query failed or returned no results, trying with modified bounds');
+      
+      // Reduce the search radius for faster query
+      const tighterBbox = calculateBoundingBox(lat, lng, radiusKm * 0.7);
+      
+      const backupQuery = supabase
+        .from('crystal_roof')
+        .select('*')
+        .gte('latitude', tighterBbox.minLat)
+        .lte('latitude', tighterBbox.maxLat)
+        .gte('longitude', tighterBbox.minLng)
+        .lte('longitude', tighterBbox.maxLng)
+        .limit(75);
+      
+      if (filters?.status) {
+        backupQuery.ilike('status', `%${filters.status}%`);
+      }
+      if (filters?.type) {
+        backupQuery.ilike('type', `%${filters.type}%`);
+      }
+      
+      const { data: backupData, error: backupError } = await backupQuery.timeout(10000);
+      
+      if (backupError) {
+        console.error('Backup query error:', backupError);
+        return [];
+      }
+      
+      if (!backupData || backupData.length === 0) {
+        console.log('No results found in fallback search');
+        return [];
+      }
+      
+      console.log(`Got ${backupData.length} results from backup fallback search`);
+      return processResults(backupData, lat, lng);
     }
     
-    if (!data || data.length === 0) {
-      console.log('No results found in fallback search');
-      return [];
-    }
-    
-    return processResults(data, lat, lng);
+    // This code should never be reached, but just in case
+    return processResults(allResults, lat, lng);
     
   } catch (error) {
     console.error('Error in fallback search:', error);
+    
+    // If we have any results, return them even if partial
+    if (allResults.length > 0) {
+      console.log(`Returning ${allResults.length} partial results from fallback search`);
+      return processResults(allResults, lat, lng);
+    }
+    
     // Return empty array instead of throwing
     return [];
   }

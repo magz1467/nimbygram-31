@@ -17,10 +17,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const { toast } = useToast();
   const errorRef = useRef<Error | null>(null);
   const hasShownErrorToast = useRef<boolean>(false);
+  const hasPartialResults = useRef<boolean>(false);
   
   // Reset error toast flag when coordinates change
   useEffect(() => {
     hasShownErrorToast.current = false;
+    hasPartialResults.current = false;
   }, [coordinates, searchRadius, JSON.stringify(filters)]);
   
   // Function to handle search errors
@@ -35,7 +37,13 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
       return;
     }
     
-    // Don't show timeout errors as toast messages
+    // Don't show toast for timeouts if we have partial results
+    if (hasPartialResults.current) {
+      console.log('Not showing error toast because we have partial results');
+      return;
+    }
+    
+    // Don't show timeout errors as toast messages unless we have no results
     if (err?.message?.includes('timeout') || 
         err?.message?.includes('canceling statement') ||
         err?.message?.includes('57014')) {
@@ -46,7 +54,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     // Only show toast once per search
     if (!hasShownErrorToast.current) {
       toast({
-        title: "Search Issue",
+        title: "Search in Progress",
         description: "Your search is taking longer than expected. We'll show results as they become available.",
         variant: "default",
       });
@@ -81,6 +89,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log('Searching with coordinates:', coordinates, 'radius:', searchRadius);
         
         const [lat, lng] = coordinates;
+        let results: Application[] = [];
         
         // First try spatial search (with PostGIS)
         console.log('Attempting spatial search first...');
@@ -89,6 +98,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         // If spatial search returns results or empty array (not null), use those results
         if (spatialResults !== null) {
           console.log('Using spatial search results:', spatialResults.length);
+          
+          // If we got some results, mark as having partial results
+          if (spatialResults.length > 0) {
+            hasPartialResults.current = true;
+          }
+          
           return spatialResults;
         }
         
@@ -96,6 +111,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         console.log('Spatial search unavailable, using fallback search');
         const fallbackResults = await performFallbackSearch(lat, lng, searchRadius, filters);
         console.log('Got fallback results:', fallbackResults.length);
+        
+        // If we got some results from fallback, mark as having partial results
+        if (fallbackResults.length > 0) {
+          hasPartialResults.current = true;
+        }
+        
         return fallbackResults;
       } catch (err) {
         handleSearchError(err);
@@ -110,6 +131,14 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    // Set progressive loading behavior
+    placeholderData: (previousData) => previousData || [],
+    // Custom timeout handling
+    meta: {
+      onError: (error: Error) => {
+        handleSearchError(error);
+      },
+    },
   });
 
   // Combine stored error with query error
