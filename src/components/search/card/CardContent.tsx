@@ -1,4 +1,3 @@
-
 import { formatStorybook } from "@/utils/storybook-formatter";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
@@ -30,10 +29,12 @@ export const CardContent = ({
   isLoading = false,
   postcode = ""
 }: CardContentProps) => {
-  const formattedStorybook = formatStorybook(storybook);
-  const isMobile = useIsMobile();
   const [showMapDialog, setShowMapDialog] = useState(false);
+  const isMobile = useIsMobile();
   
+  const application = applications.find(app => app.id === applicationId);
+  const applicationCoords = application?.coordinates;
+
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -146,7 +147,8 @@ export const CardContent = ({
         <DesktopMapDialog
           applications={applications}
           selectedId={applicationId}
-          coordinates={coordinates || (applications.find(app => app.id === applicationId)?.coordinates as [number, number]) || [51.5074, -0.1278]}
+          coordinates={applicationCoords as [number, number]}
+          searchLocation={coordinates as [number, number]}
           handleMarkerClick={handleMarkerClick}
           isOpen={showMapDialog}
           onClose={() => setShowMapDialog(false)}

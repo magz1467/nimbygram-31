@@ -10,6 +10,7 @@ import "leaflet/dist/leaflet.css";
 interface MapContainerProps {
   applications: Application[];
   coordinates: [number, number];
+  searchLocation: [number, number]; // Add search location prop
   selectedId?: number | null;
   onMarkerClick: (id: number) => void;
   onCenterChange?: (center: [number, number]) => void;
@@ -18,6 +19,7 @@ interface MapContainerProps {
 
 export const MapContainer = memo(({
   coordinates,
+  searchLocation, // Add search location
   applications,
   selectedId,
   onMarkerClick,
@@ -130,7 +132,7 @@ export const MapContainer = memo(({
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
-        center={centerPoint}
+        center={coordinates}
         zoom={14}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
@@ -145,10 +147,11 @@ export const MapContainer = memo(({
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           maxZoom={19}
         />
-        <SearchLocationPin position={centerPoint} />
+        {/* Show search location pin at search coordinates */}
+        <SearchLocationPin position={searchLocation} />
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={centerPoint}
+          baseCoordinates={coordinates}
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
         />

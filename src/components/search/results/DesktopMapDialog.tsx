@@ -10,6 +10,7 @@ interface DesktopMapDialogProps {
   applications: Application[];
   selectedId: number | null;
   coordinates: [number, number];
+  searchLocation: [number, number]; // Add search location coordinates
   handleMarkerClick: (id: number) => void;
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +22,7 @@ export const DesktopMapDialog = ({
   applications,
   selectedId,
   coordinates,
+  searchLocation, // Add search location
   handleMarkerClick,
   isOpen,
   onClose,
@@ -70,15 +72,13 @@ export const DesktopMapDialog = ({
           </Button>
         </div>
         
-        <div 
-          ref={mapContainerRef} 
-          className="w-full h-full"
-        >
+        <div ref={mapContainerRef} className="w-full h-full">
           {isOpen && (
             <MapContent 
               applications={applications}
               selectedId={selectedId}
-              coordinates={coordinates}
+              coordinates={searchLocation} // Use search location for map center
+              searchLocation={searchLocation} // Pass search location to show blue pin
               isMobile={false}
               isMapView={true}
               onMarkerClick={handleMarkerClick}

@@ -1,16 +1,18 @@
-import { Badge } from "@/components/ui/badge";
+
+import { type SortType } from "@/types/application-types";
 
 interface FilterBadgesProps {
-  activeFilters: {
-    status?: string;
-    type?: string;
-  };
-  onFilterChange: (filterType: string, value: string) => void;
+  activeFilters: Record<string, any>;
+  activeSort: SortType; // Add activeSort to props
+  onFilterChange: (type: string, value: any) => void;
+  statusCounts: StatusCounts;
 }
 
-export const FilterBadges = ({
+export const FilterBadges = ({ 
   activeFilters,
+  activeSort,
   onFilterChange,
+  statusCounts 
 }: FilterBadgesProps) => {
   return (
     <div className="flex-1 overflow-hidden">
