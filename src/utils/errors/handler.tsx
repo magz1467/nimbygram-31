@@ -1,42 +1,37 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { AppError, ErrorOptions, ErrorType } from './types';
-import { detectErrorType } from './detection';
-import { formatErrorMessage, logError } from './formatting';
-import React from 'react';
+import { AppError, ErrorType } from './types';
 
 /**
- * Create a standardized AppError from any error
+ * Create a standardized error
  */
 export function createAppError(error: any, context?: string, errorType?: ErrorType): AppError {
   if (error instanceof AppError) {
     return error;
   }
   
-  const detectedType = errorType || detectErrorType(error);
-  const message = formatErrorMessage(error, context);
-  
-  return new AppError(message, detectedType, error, context);
+  const message = error.message || 'An error occurred';
+  return new AppError(message, errorType || ErrorType.UNKNOWN, error, context);
 }
 
 /**
- * Handle errors in a standardized way across the application
+ * Handle errors in a standardized way
  */
 export function handleError(
   error: any, 
   toast: ReturnType<typeof useToast>["toast"],
-  options: ErrorOptions = {}
+  options: { context?: string; retry?: () => void; silent?: boolean } = {}
 ): AppError {
-  const { context, retry, silent = false, logToServer = false } = options;
+  const { context, retry, silent = false } = options;
   
   // Create standardized app error
   const appError = error instanceof AppError 
     ? error 
     : createAppError(error, context);
   
-  // Always log to console
-  logError(appError, context);
+  // Log to console
+  console.error(`Error${context ? ` in ${context}` : ''}:`, appError);
   
   // Show toast notification if not silent
   if (!silent) {
@@ -50,12 +45,6 @@ export function handleError(
         </ToastAction>
       ) : undefined
     });
-  }
-  
-  // Log to server for important errors (could implement actual server logging here)
-  if (logToServer) {
-    console.info('Would log to server:', { error: appError, context });
-    // Implementation for server logging would go here
   }
   
   return appError;

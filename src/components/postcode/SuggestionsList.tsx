@@ -26,49 +26,16 @@ export const SuggestionsList = ({
   onSelect,
   commandRef,
 }: SuggestionsListProps) => {
-  // Early return if not open
   if (!isOpen) {
     return null;
   }
 
-  // For debugging
-  console.log("SuggestionsList rendering with:", { 
-    isOpen, 
-    searchLength: search?.length,
-    suggestionsCount: suggestions?.length || 0,
-    isLoading,
-    isFetching,
-    error: error ? 'Error present' : 'No error',
-    suggestions: suggestions || 'No suggestions'
-  });
-
-  // Check if we have valid suggestions
-  const hasSuggestions = suggestions && Array.isArray(suggestions) && suggestions.length > 0;
-  
-  // Helper function to format location details
-  const formatLocationDetails = (suggestion: PostcodeSuggestion) => {
-    const parts = [];
-    
-    // For location names (towns, cities, etc.)
-    if (suggestion.isLocationName) {
-      if (suggestion.county) parts.push(suggestion.county);
-      if (suggestion.locality) parts.push(suggestion.locality);
-      return parts.join(', ');
-    }
-    
-    // For postcodes
-    if (suggestion.district) parts.push(suggestion.district);
-    if (suggestion.county) parts.push(suggestion.county);
-    if (suggestion.locality) parts.push(suggestion.locality);
-    if (parts.length === 0 && suggestion.admin_district) parts.push(suggestion.admin_district);
-    
-    return parts.join(', ');
-  };
+  const hasSuggestions = suggestions && suggestions.length > 0;
   
   return (
     <Command
       ref={commandRef}
-      className="w-full overflow-visible rounded-lg border border-gray-200 bg-white shadow-md z-50"
+      className="w-full rounded-lg border border-gray-200 bg-white shadow-md z-50"
     >
       <CommandList className="max-h-[300px] overflow-auto p-2">
         {isLoading || isFetching ? (
@@ -92,17 +59,13 @@ export const SuggestionsList = ({
               key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
               value={suggestion.address || suggestion.postcode}
               onSelect={() => onSelect(suggestion.address || suggestion.postcode || '')}
-              className="flex cursor-pointer flex-col items-start p-2 text-sm hover:bg-gray-100"
+              className="flex cursor-pointer items-center p-2 text-sm hover:bg-gray-100"
             >
-              <div className="flex w-full items-center">
-                <MapPin className="h-4 w-4 min-w-4 mr-2 text-gray-500" />
-                <div className="flex flex-col items-start">
-                  <div className="font-medium text-left">
-                    {suggestion.postcode}
-                  </div>
-                  <div className="text-xs text-gray-500 text-left">
-                    {formatLocationDetails(suggestion)}
-                  </div>
+              <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+              <div>
+                <div className="font-medium">{suggestion.postcode}</div>
+                <div className="text-xs text-gray-500">
+                  {suggestion.county || suggestion.district || ''}
                 </div>
               </div>
             </CommandItem>
