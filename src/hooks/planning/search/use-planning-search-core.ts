@@ -46,9 +46,24 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
       onError: (error) => {
         console.error('Search query error:', error);
         
-        // Handle Wendover area specially
-        if (error.message?.includes('HP22 6JJ') || error.message?.includes('Wendover')) {
-          setErrorHandled(true);
+        // More robust error handling for specific errors
+        const errorMsg = error?.message || String(error);
+        const isSupabaseError = typeof error === 'object' && error !== null && 'code' in error;
+        
+        if (isSupabaseError) {
+          // Handle specific Supabase errors more gracefully
+          const supabaseError = error as any;
+          console.error('Supabase error details:', {
+            code: supabaseError.code,
+            message: supabaseError.message,
+            details: supabaseError.details,
+            hint: supabaseError.hint
+          });
+          
+          // If there's a helpful hint, use it
+          if (supabaseError.hint) {
+            console.log('Supabase provided hint:', supabaseError.hint);
+          }
         }
       }
     }
@@ -58,13 +73,19 @@ export function usePlanningSearchCore(coordinates: [number, number] | null) {
   useEffect(() => {
     const currentError = queryError || coordinatorError;
     if (currentError && !errorHandled) {
+      // Format the error message properly
+      const errorMsg = typeof currentError === 'object' && currentError !== null 
+        ? (currentError.message || JSON.stringify(currentError))
+        : String(currentError);
+      
+      console.log('Error message for toast consideration:', errorMsg);
+      
       // Only show toast for specific error types
-      const errorMsg = currentError.message?.toLowerCase() || '';
-      if (errorMsg.includes('timeout') && !errorMsg.includes('hp22 6jj') && !errorMsg.includes('wendover')) {
+      if (errorMsg.includes('timeout') || errorMsg.includes('could not find')) {
         toast({
-          title: "Search taking longer than expected",
-          description: "We're still trying to find planning applications. You can continue waiting or try a more specific search.",
-          variant: "default",
+          title: "Search issue detected",
+          description: "We're having trouble finding planning applications. Please try again in a moment.",
+          variant: "destructive",
         });
         setErrorHandled(true);
       }

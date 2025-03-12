@@ -1,5 +1,6 @@
 
-CREATE OR REPLACE FUNCTION get_nearby_applications_paginated(
+-- Rename function to match what's expected in Supabase
+CREATE OR REPLACE FUNCTION get_applications_in_bounds_paginated(
   center_lat DOUBLE PRECISION,
   center_lng DOUBLE PRECISION,
   radius_km DOUBLE PRECISION DEFAULT 5, -- Default set to 5km
@@ -62,7 +63,7 @@ END;
 $$;
 
 -- Set timeout to 30 seconds
-ALTER FUNCTION get_nearby_applications_paginated SET statement_timeout = '30s';
+ALTER FUNCTION get_applications_in_bounds_paginated SET statement_timeout = '30s';
 
 -- Grant permissions
-GRANT EXECUTE ON FUNCTION get_nearby_applications_paginated TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION get_applications_in_bounds_paginated TO anon, authenticated;

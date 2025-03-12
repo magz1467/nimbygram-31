@@ -37,8 +37,9 @@ export async function executeSearch(
   try {
     console.log(`Executing spatial search at [${lat}, ${lng}] with 5km radius`);
     
-    // Use the paginated RPC function
-    const { data, error } = await supabase.rpc('get_nearby_applications_paginated', {
+    // Use the correct function name that exists in Supabase
+    // Changed from 'get_nearby_applications_paginated' to 'get_applications_in_bounds_paginated'
+    const { data, error } = await supabase.rpc('get_applications_in_bounds_paginated', {
       center_lat: lat,
       center_lng: lng,
       radius_km: radius,

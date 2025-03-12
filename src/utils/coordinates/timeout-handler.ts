@@ -26,6 +26,14 @@ export const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutM
     })
     .catch(error => {
       clearTimeout(timeoutId);
+      // Enhance error with more information if it's from Supabase
+      if (typeof error === 'object' && error !== null) {
+        if ('code' in error) {
+          console.error(`Enhanced error details - Code: ${error.code}, Message: ${error.message}`);
+          // Convert Supabase error to standard format
+          throw new Error(`Database error: ${error.message || 'Unknown error'}`);
+        }
+      }
       throw error;
     });
   
