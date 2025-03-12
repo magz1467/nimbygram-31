@@ -22,6 +22,17 @@ BEGIN
   RAISE NOTICE 'Executing spatial search with lat: %, lng: %, radius: %km, limit: %', 
                center_lat, center_lng, radius_km, result_limit;
                
+  -- Input validation to prevent errors
+  IF center_lat IS NULL OR center_lng IS NULL THEN
+    RAISE EXCEPTION 'Invalid coordinates: latitude and longitude must be provided';
+  END IF;
+  
+  IF radius_km <= 0 OR radius_km > 50 THEN
+    -- Enforce reasonable radius limits
+    radius_km := GREATEST(LEAST(radius_km, 50), 0.5);
+    RAISE NOTICE 'Adjusted radius to within valid range: %km', radius_km;
+  END IF;
+  
   -- Create a geography point from the input coordinates
   search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326)::GEOGRAPHY;
   
@@ -64,19 +75,18 @@ BEGIN
       search_point,
       ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::GEOGRAPHY
     ) ASC
-  LIMIT result_limit;
+  LIMIT LEAST(result_limit, 100);  -- Ensure we don't return too many results
   
   -- Log the completion of the query
   RAISE NOTICE 'Spatial search completed';
 END;
 $$;
 
--- Set a statement timeout to prevent long-running queries (increased to 12 seconds)
-ALTER FUNCTION get_nearby_applications SET statement_timeout = '12s';
+-- Set a statement timeout to prevent long-running queries (increased to 15 seconds)
+ALTER FUNCTION get_nearby_applications SET statement_timeout = '15s';
 
 -- Add permissions for anonymous and authenticated users
 GRANT EXECUTE ON FUNCTION get_nearby_applications TO anon, authenticated;
 
 -- Optimize index for fast bounding box searches
-DROP INDEX IF EXISTS idx_crystal_roof_lat_lng;
-CREATE INDEX idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_crystal_roof_lat_lng ON crystal_roof (latitude, longitude);

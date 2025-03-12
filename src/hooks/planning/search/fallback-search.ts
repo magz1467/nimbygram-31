@@ -70,8 +70,8 @@ export async function performFallbackSearch(
       }
     }
     
-    // Limit the number of results but allow for a reasonable amount
-    query = query.limit(200);
+    // Limit the number of results to improve performance
+    query = query.limit(100); // Reduced from 200 to 100
     
     console.log('Executing fallback search query');
     let { data, error } = await query;
@@ -83,14 +83,15 @@ export async function performFallbackSearch(
       if (error.message.includes('timeout') || error.message.includes('canceling statement')) {
         console.log('Query timeout occurred, reducing search area');
         
-        // Try a more restricted search area
-        const reducedRadius = Math.max(radiusKm * 0.5, 1); // Ensure minimum 1km radius
+        // Try a more restricted search area - make it even smaller this time
+        const reducedRadius = Math.max(radiusKm * 0.3, 0.5); // Reduced from 0.5 to 0.3, ensure minimum 0.5km radius
         const reducedLatDelta = reducedRadius / 111.32;
         const reducedLngDelta = reducedRadius / (111.32 * Math.cos(lat * Math.PI / 180));
         
         console.log('Retrying with reduced radius:', reducedRadius);
         
         try {
+          // More restricted query with even lower limits
           const reducedQuery = supabase
             .from('crystal_roof')
             .select('*')
@@ -98,31 +99,51 @@ export async function performFallbackSearch(
             .lte('latitude', lat + reducedLatDelta)
             .gte('longitude', lng - reducedLngDelta)
             .lte('longitude', lng + reducedLngDelta)
-            .limit(100);
+            .limit(50); // Reduced from 100 to 50
           
           const { data: reducedData, error: reducedError } = await reducedQuery;
           
           if (reducedError) {
             console.error('Reduced area search also failed:', reducedError);
-            throw createAppError('Search failed after retry with reduced area', reducedError, { 
-              type: ErrorType.TIMEOUT,
-              recoverable: true,
-              userMessage: 'The search took too long. Try a smaller area or a more specific location.'
-            });
-          }
-          
-          if (!reducedData) {
-            console.log('No data returned from reduced search area');
-            return [];
-          }
-          
-          if (reducedData.length === 0) {
+            
+            // Last resort - try an even smaller area with minimal filters
+            console.log('Attempting last resort search with minimal area');
+            
+            try {
+              const lastResortQuery = supabase
+                .from('crystal_roof')
+                .select('id, latitude, longitude, address, title, status')
+                .gte('latitude', lat - (reducedLatDelta * 0.5))
+                .lte('latitude', lat + (reducedLatDelta * 0.5))
+                .gte('longitude', lng - (reducedLngDelta * 0.5))
+                .lte('longitude', lng + (reducedLngDelta * 0.5))
+                .limit(20);
+                
+              const { data: lastResortData, error: lastResortError } = await lastResortQuery;
+              
+              if (lastResortError || !lastResortData || lastResortData.length === 0) {
+                throw createAppError('Search failed after multiple retries', lastResortError || reducedError, { 
+                  type: ErrorType.TIMEOUT,
+                  recoverable: true,
+                  userMessage: 'The search took too long. Please try a smaller area, a more specific location, or try again later.'
+                });
+              }
+              
+              console.log(`Last resort search found ${lastResortData.length} results`);
+              data = lastResortData;
+            } catch (finalError) {
+              throw createAppError('All search attempts failed', finalError, { 
+                type: ErrorType.TIMEOUT,
+                userMessage: 'We had trouble searching this area. Please try a more specific location or try again later.'
+              });
+            }
+          } else if (!reducedData || reducedData.length === 0) {
             console.log('No results found in reduced search area');
             return [];
+          } else {
+            console.log(`Found ${reducedData.length} results in reduced search area`);
+            data = reducedData;
           }
-          
-          console.log(`Found ${reducedData.length} results in reduced search area`);
-          data = reducedData;
         } catch (retryError) {
           // If the retry also fails, throw a more specific error
           throw createAppError('Search failed after retry with reduced area', retryError, {
