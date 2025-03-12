@@ -1,4 +1,3 @@
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
@@ -6,13 +5,13 @@ import { useEffect, useState } from "react";
 interface LoadingSkeletonsProps {
   count: number;
   isLongSearch?: boolean;
+  onRetry?: () => void;
 }
 
-export const LoadingSkeletons = ({ count, isLongSearch = false }: LoadingSkeletonsProps) => {
+export const LoadingSkeletons = ({ count, isLongSearch = false, onRetry }: LoadingSkeletonsProps) => {
   const [loadingMessage, setLoadingMessage] = useState("Loading results...");
   const [artificialProgress, setArtificialProgress] = useState(0);
   
-  // Change message over time for long searches
   useEffect(() => {
     if (!isLongSearch) return;
     
@@ -33,11 +32,9 @@ export const LoadingSkeletons = ({ count, isLongSearch = false }: LoadingSkeleto
     return () => clearInterval(intervalId);
   }, [isLongSearch]);
   
-  // Show artificial progress indicator for long searches
   useEffect(() => {
     if (!isLongSearch) return;
     
-    // Start at 10% and slowly progress to 90%
     setArtificialProgress(10);
     
     const intervalId = setInterval(() => {
@@ -47,7 +44,6 @@ export const LoadingSkeletons = ({ count, isLongSearch = false }: LoadingSkeleto
           return 90;
         }
         
-        // Progress faster at the beginning, slower at the end
         const increment = prev < 30 ? 5 : (prev < 60 ? 3 : 1);
         return prev + increment;
       });
@@ -62,6 +58,14 @@ export const LoadingSkeletons = ({ count, isLongSearch = false }: LoadingSkeleto
         <div className="mb-4">
           <p className="text-sm text-gray-500 mb-2">{loadingMessage}</p>
           <Progress value={artificialProgress} className="h-1" />
+          {onRetry && (
+            <button 
+              onClick={onRetry}
+              className="mt-4 text-sm text-primary hover:text-primary/80"
+            >
+              Try a different search
+            </button>
+          )}
         </div>
       )}
       
