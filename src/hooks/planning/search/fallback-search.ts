@@ -46,47 +46,65 @@ export async function performFallbackSearch(
       }
       
       console.log('Executing fallback search query');
-      const { data, error } = await query.timeout(5000); // 5 second timeout
       
-      if (error) {
-        if (isTimeoutError(error)) {
-          console.log('Query timeout, will retry with smaller radius');
+      // Execute the query with an AbortController for timeout handling
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 5000);
+      
+      try {
+        const { data, error } = await query;
+        
+        // Clear the timeout since the query completed
+        clearTimeout(timeoutId);
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          console.log('No results found in fallback search');
+          return [];
+        }
+        
+        console.log(`Found ${data.length} results in fallback search`);
+        
+        // Process and return the results
+        return data
+          .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
+          .map(app => {
+            const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
+            return {
+              ...app,
+              distance: `${(distanceKm * 0.621371).toFixed(1)} mi`,
+              coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
+            };
+          })
+          .sort((a, b) => {
+            const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
+            const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
+            return distA - distB;
+          });
+      } catch (error) {
+        // Clear the timeout to prevent memory leaks
+        clearTimeout(timeoutId);
+        
+        // If it's an abort error, treat it as a timeout
+        if (error.name === 'AbortError') {
+          console.log('Query timed out, will retry with smaller radius');
           searchRadius = searchRadius * 0.5;
           attempt++;
           continue;
         }
+        
         throw error;
       }
-      
-      if (!data || data.length === 0) {
-        console.log('No results found in fallback search');
-        return [];
-      }
-      
-      console.log(`Found ${data.length} results in fallback search`);
-      
-      // Process and return the results
-      return data
-        .filter(app => typeof app.latitude === 'number' && typeof app.longitude === 'number')
-        .map(app => {
-          const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
-          return {
-            ...app,
-            distance: `${(distanceKm * 0.621371).toFixed(1)} mi`,
-            coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
-          };
-        })
-        .sort((a, b) => {
-          const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
-          const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
-          return distA - distB;
-        });
-        
     } catch (error) {
       console.error(`Search attempt ${attempt + 1} failed:`, error);
+      
       if (!isTimeoutError(error) || attempt === maxAttempts - 1) {
         throw error;
       }
+      
       searchRadius = searchRadius * 0.5;
       attempt++;
     }
