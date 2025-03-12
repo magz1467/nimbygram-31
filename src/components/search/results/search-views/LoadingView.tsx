@@ -14,27 +14,22 @@ interface LoadingViewProps {
 export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: LoadingViewProps) {
   const [dots, setDots] = useState('');
   
-  // Animate loading dots
   useEffect(() => {
     const interval = setInterval(() => {
-      setDots(prev => {
-        if (prev.length >= 3) return '';
-        return prev + '.';
-      });
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
     }, 500);
     
     return () => clearInterval(interval);
   }, []);
   
-  // Determine loading message based on stage
   const getLoadingMessage = () => {
     switch (stage) {
       case 'coordinates':
         return `Finding location "${searchTerm}"${dots}`;
       case 'searching':
-        return `Searching for planning applications${dots}`;
+        return `Finding planning applications${dots}`;
       case 'rendering':
-        return `Preparing results${dots}`;
+        return `Processing results${dots}`;
       default:
         return `Loading${dots}`;
     }
@@ -48,8 +43,8 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
         </h2>
         <p className="text-gray-500 text-sm">
           {stage === 'coordinates' ? 'Converting your location to coordinates...' : 
-           stage === 'searching' ? 'Looking for planning applications in your area...' : 
-           'Processing your results...'}
+           stage === 'searching' ? 'Scanning all local planning applications...' : 
+           'Processing and analyzing results...'}
         </p>
       </div>
       
@@ -57,9 +52,9 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
         <div className="max-w-lg mx-auto mb-8 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
           <Clock className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="font-medium text-amber-800">Search taking longer than usual</h3>
+            <h3 className="font-medium text-amber-800">Still searching...</h3>
             <p className="text-amber-700 text-sm mt-1">
-              This area might have many planning applications. We're still processing your request.
+              There might be many planning applications in this area. First results should appear shortly.
             </p>
           </div>
         </div>

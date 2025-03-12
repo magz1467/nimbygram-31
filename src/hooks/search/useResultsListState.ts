@@ -26,16 +26,19 @@ export const useResultsListState = ({
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Track if loading has ever started to prevent showing "no results" too early
+  // Track if loading has ever started
   useEffect(() => {
     if (isLoading && !hasStartedLoading) {
       setHasStartedLoading(true);
       setInitialLoadComplete(false);
     }
     
-    // When loading completes after having started, mark initial load as complete
+    // Only mark initial load as complete when we get results or a definitive empty state
     if (!isLoading && hasStartedLoading && !initialLoadComplete) {
-      setInitialLoadComplete(true);
+      // Small delay to ensure UI updates smoothly
+      setTimeout(() => {
+        setInitialLoadComplete(true);
+      }, 100);
     }
   }, [isLoading, hasStartedLoading, initialLoadComplete]);
 
@@ -46,18 +49,18 @@ export const useResultsListState = ({
       setIsLongSearchDetected(false);
       setShowErrorMessage(false);
       
-      // After 5 seconds of loading, show "long search" message
+      // Show "long search" message after 8 seconds
       const timeoutId = setTimeout(() => {
         setIsLongSearchDetected(true);
-      }, 5000);
+      }, 8000);
       
-      // Only show error message after 30 seconds if we're still loading 
+      // Only show error message after 20 seconds if we're still loading 
       // and have no results
       const errorTimeoutId = setTimeout(() => {
         if (applications.length === 0) {
           setShowErrorMessage(true);
         }
-      }, 30000);
+      }, 20000);
       
       return () => {
         clearTimeout(timeoutId);
@@ -71,7 +74,6 @@ export const useResultsListState = ({
   // Update loaded applications when the applications array changes
   useEffect(() => {
     if (applications && applications.length > 0 && !isLoading) {
-      // Hide any error messages if we got results
       setShowErrorMessage(false);
       
       if (currentPage === 0) {
