@@ -12,13 +12,19 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
   const startTime = Date.now();
   
   try {
-    // Use the withTimeout utility to prevent long-running queries
-    const { data, error } = await withTimeout(
+    // Convert the Supabase query to a Promise that resolves with the response
+    const supabasePromise = new Promise<{ data: any; error: any }>((resolve) => {
       supabase.rpc('get_nearby_applications', {
         center_lat: coordinates.lat,
         center_lng: coordinates.lng,
         radius_km: 10 // Increased to 10km radius for better results
-      }),
+      })
+      .then(response => resolve(response));
+    });
+
+    // Use the withTimeout utility to prevent long-running queries
+    const { data, error } = await withTimeout(
+      supabasePromise,
       SEARCH_TIMEOUT,
       'Spatial search timed out after 30 seconds'
     );
