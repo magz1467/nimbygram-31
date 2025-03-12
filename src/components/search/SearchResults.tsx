@@ -19,13 +19,22 @@ export function SearchResults({ coordinates, onRetry }: SearchResultsProps) {
   // Log search diagnostics
   useEffect(() => {
     if (coordinates) {
+      // Properly log coordinates regardless of format
+      const coordsArray = Array.isArray(coordinates) 
+        ? coordinates 
+        : [coordinates.lat, coordinates.lng];
+        
       console.log("🔍 Search initiated for coordinates:", coordinates);
-      searchDiagnostics.logSearch([coordinates.lat, coordinates.lng], SEARCH_RADIUS);
+      console.log("🔍 Search radius:", SEARCH_RADIUS, "km");
+      searchDiagnostics.logSearch(coordsArray, SEARCH_RADIUS);
     }
+    
     if (data) {
       console.log(`📊 Search results: ${data.applications.length} applications found via ${data.method} method`);
+      console.log("📊 First few results:", data.applications.slice(0, 3));
       searchDiagnostics.logResults(data.applications, data.method, data.timing?.duration || 0);
     }
+    
     if (isError) {
       console.error("❌ Search error:", error);
       searchDiagnostics.logError(error);

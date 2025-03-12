@@ -11,12 +11,32 @@ async function performSpatialSearch(coordinates: SearchCoordinates): Promise<Sea
   const startTime = Date.now();
   
   try {
-    // Perform the RPC call to the PostGIS-enabled function
-    const { data, error } = await supabase.rpc('get_nearby_applications', {
-      latitude: coordinates[0],  // Using array index for lat
-      longitude: coordinates[1], // Using array index for lng
-      radius_km: 10
-    }).throwOnError();
+    // Extract coordinates correctly based on format
+    let lat, lng;
+    
+    if (Array.isArray(coordinates)) {
+      // Handle array format [lat, lng]
+      [lat, lng] = coordinates;
+    } else if (typeof coordinates === 'object') {
+      // Handle object format {lat, lng}
+      lat = coordinates.lat;
+      lng = coordinates.lng;
+    } else {
+      throw new Error('Invalid coordinates format');
+    }
+    
+    console.log(`🔍 Using coordinates: lat=${lat}, lng=${lng}`);
+    
+    // Call the function without throwOnError for better error handling
+    const { data, error } = await withTimeout(
+      supabase.rpc('get_nearby_applications', {
+        latitude: lat,
+        longitude: lng,
+        radius_km: 10
+      }),
+      SEARCH_TIMEOUT,
+      'Spatial search timed out after 30 seconds'
+    );
 
     if (error) {
       console.error('❌ Supabase RPC error:', error);
