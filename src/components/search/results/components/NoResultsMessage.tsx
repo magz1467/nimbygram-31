@@ -19,8 +19,11 @@ export const NoResultsMessage = ({
   return (
     <div className="p-8 text-center">
       <h3 className="text-lg font-medium mb-2">No results found</h3>
-      <p className="text-gray-600 mb-6">
-        We couldn't find any planning applications for {locationTerm}.
+      <p className="text-gray-600 mb-3">
+        We searched thoroughly but couldn't find any planning applications for {locationTerm}.
+      </p>
+      <p className="text-gray-600 mb-6 text-sm">
+        This may be because there are no applications in this area, or the search radius is too small.
       </p>
       {onRetry && (
         <Button 

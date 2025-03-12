@@ -56,7 +56,7 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
         </h2>
         <p className="text-gray-500 text-sm">
           {stage === 'coordinates' ? 'Converting your location to coordinates...' : 
-           stage === 'searching' ? (showingResults ? 'Results will appear as soon as they are found. Please wait...' : 'Scanning all local planning applications...') : 
+           stage === 'searching' ? (showingResults ? 'Results will appear as they are found. Please wait...' : 'Scanning all local planning applications...') : 
            'Processing and analyzing results...'}
         </p>
       </div>
@@ -67,11 +67,11 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
           <div>
             <h3 className="font-medium text-amber-800">Still searching...</h3>
             <p className="text-amber-700 text-sm mt-1">
-              There might be many planning applications in this area. First results should appear shortly.
+              There might be many planning applications in this area. Results will appear as they become available.
             </p>
-            {showingResults && (
+            {showingResults && !isLongRunning && (
               <p className="text-amber-700 text-sm mt-1">
-                We'll show results as they become available. No applications found yet.
+                We're still searching for applications. This may take a few more moments.
               </p>
             )}
           </div>

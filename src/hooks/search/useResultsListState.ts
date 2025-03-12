@@ -25,6 +25,9 @@ export const useResultsListState = ({
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const searchStartTimeRef = useRef<number | null>(null);
+  const initialResultsTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longSearchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const errorMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track if loading has ever started
   useEffect(() => {
@@ -32,17 +35,30 @@ export const useResultsListState = ({
       setHasStartedLoading(true);
       setInitialLoadComplete(false);
       searchStartTimeRef.current = Date.now();
+      
+      // Clear any existing timers
+      if (initialResultsTimerRef.current) clearTimeout(initialResultsTimerRef.current);
+      if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
+      if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
     }
     
     // Only mark initial load as complete when we get results or a definitive empty state
-    // after loading has finished with a slight delay to ensure UI updates smoothly
+    // after loading has finished with a SIGNIFICANT delay to ensure UI updates smoothly
     if (!isLoading && hasStartedLoading && !initialLoadComplete) {
-      const delay = applications.length > 0 ? 100 : 1000; // Longer delay for empty results
+      // Use a longer delay (3 seconds) for empty results to ensure search is truly done
+      const delay = applications.length > 0 ? 500 : 3000;
       
-      setTimeout(() => {
+      initialResultsTimerRef.current = setTimeout(() => {
         setInitialLoadComplete(true);
       }, delay);
     }
+
+    return () => {
+      // Clear timers on unmount or when dependencies change
+      if (initialResultsTimerRef.current) clearTimeout(initialResultsTimerRef.current);
+      if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
+      if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+    };
   }, [isLoading, hasStartedLoading, initialLoadComplete, applications.length]);
 
   // Reset search timer when a new search starts
@@ -54,23 +70,23 @@ export const useResultsListState = ({
       
       // Show "long search" message after 8 seconds - early enough to set expectations
       // but not so early it creates anxiety
-      const timeoutId = setTimeout(() => {
+      longSearchTimerRef.current = setTimeout(() => {
         setIsLongSearchDetected(true);
       }, 8000);
       
       // Only show error message after 20 seconds if we're still loading 
       // and have no results - long enough to be patient but not so long users leave
-      const errorTimeoutId = setTimeout(() => {
+      errorMessageTimerRef.current = setTimeout(() => {
         if (applications.length === 0) {
           setShowErrorMessage(true);
         }
       }, 20000);
-      
-      return () => {
-        clearTimeout(timeoutId);
-        clearTimeout(errorTimeoutId);
-      };
     }
+    
+    return () => {
+      if (longSearchTimerRef.current) clearTimeout(longSearchTimerRef.current);
+      if (errorMessageTimerRef.current) clearTimeout(errorMessageTimerRef.current);
+    };
   }, [isLoading, applications.length]);
 
   // Update loaded applications when the applications array changes
