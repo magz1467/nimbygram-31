@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useCoordinates } from "@/hooks/use-coordinates";
 import { usePlanningSearch } from "@/hooks/planning/use-planning-search";
@@ -106,7 +105,7 @@ export const SearchView = ({
 
   return (
     <SearchViewContent
-      initialSearch={initialSearch}
+      initialSearch={initialSearch!}
       applications={applications || []}
       isLoading={isLoading}
       onError={handleError}

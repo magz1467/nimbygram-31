@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -8,6 +7,7 @@ import { ResultsHeader } from "./ResultsHeader";
 import { Application } from "@/types/planning";
 import { SearchFilters } from "@/hooks/planning/use-planning-search";
 import { SortType } from "@/types/application-types";
+import { useSearchViewFilters } from "@/hooks/search/useSearchViewFilters";
 
 interface SearchViewContentProps {
   initialSearch: {
@@ -18,8 +18,6 @@ interface SearchViewContentProps {
   };
   applications: Application[];
   isLoading: boolean;
-  filters: SearchFilters;
-  onFilterChange: (type: string, value: any) => void;
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
   retryCount?: number;
@@ -29,8 +27,6 @@ export const SearchViewContent = ({
   initialSearch,
   applications = [],
   isLoading,
-  filters,
-  onFilterChange,
   onError,
   onSearchComplete,
   retryCount = 0
@@ -45,6 +41,9 @@ export const SearchViewContent = ({
   const [activeSort, setActiveSort] = useState<SortType>('distance');
   const onSearchCompleteCalledRef = useRef(false);
   const pageSize = 10;
+
+  // Use our new hook for filter state management
+  const { filters, handleFilterChange } = useSearchViewFilters();
 
   // Track renders
   renderCountRef.current += 1;
@@ -129,10 +128,7 @@ export const SearchViewContent = ({
         }}
         activeSort={activeSort}
         activeFilters={filters}
-        onFilterChange={(type, value) => {
-          console.log(`🔍 SearchViewContent filter changed [${componentId}]`, { type, value });
-          onFilterChange(type, value);
-        }}
+        onFilterChange={handleFilterChange}
         onSortChange={(sortType) => {
           console.log(`🔤 SearchViewContent sort changed [${componentId}]`, { sortType });
           setActiveSort(sortType);
