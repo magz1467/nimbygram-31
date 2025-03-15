@@ -132,4 +132,3 @@ export const resetGoogleMapsLoader = () => {
   loadError = null;
   console.log('Google Maps loader has been reset');
 };
-
