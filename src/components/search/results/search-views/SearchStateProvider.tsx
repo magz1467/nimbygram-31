@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLoadingState, LoadingStage } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
@@ -99,7 +98,19 @@ export function SearchStateProvider({
   }, [coordinates, postcode, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
   
   // Use postcode for search if available, otherwise fallback to coordinates
-  const searchParam = postcode || coordinates;
+  // Create a properly typed search parameter
+  const searchParam = useMemo(() => {
+    // If we have a postcode, use that as a string
+    if (postcode) {
+      return postcode;
+    }
+    // If we have coordinates, use those
+    if (coordinates) {
+      return coordinates;
+    }
+    // Otherwise return null
+    return null;
+  }, [postcode, coordinates]);
   
   const { 
     applications, 
@@ -109,7 +120,7 @@ export function SearchStateProvider({
     setFilters: updateFilters,
     hasPartialResults,
     isSearchInProgress
-  } = usePlanningSearch(searchParam);
+  } = usePlanningSearch(searchParam as [number, number] | string | null);
   
   useEffect(() => {
     if (searchParam && isLoadingResults) {
