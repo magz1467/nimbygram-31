@@ -51,6 +51,7 @@ DECLARE
   lat_max DOUBLE PRECISION;
   lng_min DOUBLE PRECISION;
   lng_max DOUBLE PRECISION;
+  is_large_area BOOLEAN;
 BEGIN
   -- Start performance timing
   start_time := clock_timestamp();
@@ -59,9 +60,18 @@ BEGIN
   search_point := ST_SetSRID(ST_MakePoint(center_lng, center_lat), 4326);
   search_radius_meters := radius_km * 1000;
   
-  -- Set a more generous statement timeout to prevent long-running queries from failing
-  -- but not so long that users are waiting forever
-  SET LOCAL statement_timeout = '30s';
+  -- Determine if this is a large area search (cities, towns)
+  -- Cheltenham is about 40 sq km, so anything above 30 sq km is considered large
+  is_large_area := (3.14159 * radius_km * radius_km) > 30;
+  
+  -- Set different timeout based on area size
+  IF is_large_area THEN
+    -- For larger areas, allow more time (50s)
+    SET LOCAL statement_timeout = '50000';
+  ELSE
+    -- For normal searches, use standard timeout (30s)
+    SET LOCAL statement_timeout = '30000';
+  END IF;
   
   -- Pre-calculate bounding box coordinates for more efficient filtering
   -- 1 degree latitude is approximately 111.32 km
@@ -76,7 +86,7 @@ BEGIN
   bbox := ST_MakeEnvelope(lng_min, lat_min, lng_max, lat_max, 4326);
   
   -- Log query parameters for debugging
-  RAISE NOTICE 'Searching near (%, %) with radius % km', center_lat, center_lng, radius_km;
+  RAISE NOTICE 'Searching near (%, %) with radius % km, is_large_area: %', center_lat, center_lng, radius_km, is_large_area;
   
   -- Use a multi-stage query approach for better performance:
   -- 1. First filter by bounding box (uses spatial index, very fast)
@@ -100,7 +110,8 @@ BEGIN
           longitude BETWEEN lng_min AND lng_max
         )
       )
-    LIMIT result_limit * 2  -- Get more than needed for the final distance filter
+    -- For large areas, increase the intermediate limit to catch more results
+    LIMIT CASE WHEN is_large_area THEN result_limit * 4 ELSE result_limit * 2 END
   ),
   distance_calculated AS (
     SELECT 
