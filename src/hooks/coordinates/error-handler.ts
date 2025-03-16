@@ -1,15 +1,46 @@
 
-import { useToast } from '@/hooks/use-toast';
+import { Toast } from "@/hooks/use-toast";
 
-export function handleCoordinateError(error: any, searchTerm: string, toast: ReturnType<typeof useToast>['toast']) {
-  console.error("❌ useCoordinates: Error fetching coordinates:", error.message);
-        
-  // Show user-friendly error toast
-  toast({
-    title: "Location Error",
-    description: error instanceof Error 
-      ? error.message
-      : `We couldn't find the location "${searchTerm}". Please try a specific UK postcode instead.`,
-    variant: "destructive",
-  });
-}
+export const handleCoordinateError = (error: any, searchTerm: string, toast: Toast) => {
+  console.error('Coordinate error:', error);
+  
+  // Determine more specific error type
+  const errorMessage = error?.message || 'Unknown error';
+  
+  if (errorMessage.includes('Invalid postcode') && !errorMessage.includes('Invalid outcode')) {
+    console.log('Invalid postcode error detected, showing toast');
+    toast({
+      title: "Location not found",
+      description: `We couldn't find "${searchTerm}". Please try a different location or postcode.`,
+      variant: "destructive",
+    });
+  } else if (errorMessage.includes('No valid coordinates')) {
+    console.log('No coordinates error detected, showing toast');
+    toast({
+      title: "Location not found",
+      description: `We couldn't find coordinates for "${searchTerm}". Please try a different search term.`,
+      variant: "destructive",
+    });
+  } else if (errorMessage.includes('ZERO_RESULTS')) {
+    console.log('Zero results error detected, showing toast');
+    toast({
+      title: "No results found",
+      description: `We couldn't find "${searchTerm}". Please try a different location name.`,
+      variant: "destructive",
+    });
+  } else if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
+    console.log('Network/timeout error detected, showing toast');
+    toast({
+      title: "Connection error",
+      description: "Please check your internet connection and try again.",
+      variant: "destructive",
+    });
+  } else {
+    console.log('General error detected, showing toast');
+    toast({
+      title: "Search error",
+      description: "An error occurred while searching. Please try again.",
+      variant: "destructive",
+    });
+  }
+};

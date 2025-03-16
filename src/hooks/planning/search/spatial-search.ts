@@ -1,214 +1,89 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { calculateDistance } from "../utils/distance-calculator";
-import { PostgrestError } from "@supabase/supabase-js";
+import { SearchFilters } from "../use-planning-search";
 
 /**
- * Performs a spatial search for planning applications using PostGIS
- * Returns null if the function is not available, which will trigger fallback search
+ * Performs a spatial search using PostGIS functions if available
+ * @returns Applications within the radius, or null if spatial search not available
  */
-export async function performSpatialSearch(
-  lat: number, 
-  lng: number, 
+export const performSpatialSearch = async (
+  lat: number,
+  lng: number,
   radiusKm: number,
-  filters: any
-): Promise<Application[] | null> {
+  filters: SearchFilters = {}
+): Promise<Application[] | null> => {
+  console.log(`🔍 Performing spatial search at [${lat}, ${lng}] with radius ${radiusKm}km`);
+  
   try {
-    console.log('Attempting spatial search with RPC function');
-    console.log('Search parameters:', { lat, lng, radiusKm, filters });
-    
-    // Progressive loading strategy:
-    // 1. First try to get a small batch of results quickly (25 records)
-    // 2. Then try to get more complete results (up to 100 records)
-    
-    // Quick query with smaller limit for fast initial results
-    const quickQuery = supabase.rpc(
-      'get_nearby_applications',
-      {
-        center_lat: lat,
-        center_lng: lng,
-        radius_km: radiusKm,
-        result_limit: 25 // Small limit for fast initial results
-      }
-    );
-    
-    // Add timeout by using Promise.race
-    const quickTimeout = new Promise<null>((_, reject) => {
-      setTimeout(() => reject(new Error('Quick spatial search timeout')), 8000);
+    // Try calling the PostGIS function first, with a reasonable timeout
+    const { data, error } = await supabase.rpc('get_nearby_applications', {
+      center_lat: lat,
+      center_lng: lng,
+      radius_km: radiusKm,
+      result_limit: 100
     });
     
-    try {
-      // Race between the query and timeout
-      const { data: quickData, error: quickError } = await Promise.race([
-        quickQuery,
-        quickTimeout.then(() => ({ data: null, error: new Error('Timeout') }))
-      ]);
-      
-      // Handle RPC function errors
-      if (quickError) {
-        // Log the specific error for debugging
-        console.error('Spatial search quick fetch error:', quickError);
-        
-        // Check if error is PostgrestError to access code property
-        const pgError = quickError as PostgrestError;
-        
-        // If function doesn't exist, use fallback
-        if (pgError.message?.includes('function') && 
-            (pgError.message?.includes('exist') || 
-             pgError.message?.includes('not found') ||
-             pgError.message?.includes('does not exist'))) {
-          console.log('Spatial search RPC function not available, will use fallback search');
-          return null;
-        }
-        
-        // Return null for timeouts to trigger fallback
-        if (pgError.message?.includes('timeout') || 
-            pgError.message?.includes('cancel') ||
-            pgError.message?.includes('57014')) {
-          console.warn('Spatial search timeout, will use fallback search');
-          return null;
-        }
-        
-        // For other errors, also use fallback
-        return null;
+    if (error) {
+      // Check if this is an RPC not found error (function doesn't exist)
+      if (error.message.includes('function') && error.message.includes('does not exist')) {
+        console.log('🔍 Spatial search function not available, will try fallback search');
+        return null; // Signal that spatial search is not available
       }
       
-      // Process initial results if available
-      if (quickData && quickData.length > 0) {
-        console.log(`Got ${quickData.length} quick results from spatial search`);
-        const processedQuickData = processResults(quickData, lat, lng, filters);
-        
-        // Try to get more complete results in the background
-        try {
-          // Use a longer timeout for the full results
-          const fullQuery = supabase.rpc(
-            'get_nearby_applications',
-            {
-              center_lat: lat,
-              center_lng: lng,
-              radius_km: radiusKm,
-              result_limit: 100 // More complete results
-            }
-          );
-          
-          // Set a longer timeout for full results
-          const fullTimeout = new Promise<null>((_, reject) => {
-            setTimeout(() => reject(new Error('Full spatial search timeout')), 15000);
-          });
-          
-          const { data: fullData } = await Promise.race([
-            fullQuery,
-            fullTimeout.then(() => ({ data: null }))
-          ]);
-          
-          if (fullData && fullData.length > quickData.length) {
-            console.log(`Got ${fullData.length} total results from complete spatial search`);
-            return processResults(fullData, lat, lng, filters);
-          } else {
-            console.log('Full query returned no additional results, using quick results');
-          }
-        } catch (fullError) {
-          console.warn('Full spatial query failed or timed out, using quick results:', fullError);
-        }
-        
-        // Return the quick results if full results failed or returned no additional data
-        return processedQuickData;
-      } else {
-        console.log('Quick query returned no results');
-      }
-    } catch (quickErr) {
-      console.error('Quick query failed:', quickErr);
+      console.error('🔍 Spatial search error:', error);
+      throw error;
     }
     
-    // If no quick results, try one more time with higher limit
-    // but still with reasonable timeout
-    const finalQuery = supabase.rpc(
-      'get_nearby_applications',
-      {
-        center_lat: lat,
-        center_lng: lng,
-        radius_km: radiusKm,
-        result_limit: 100 // Try with full limit
-      }
-    );
-    
-    // Set a timeout for the final query
-    const finalTimeout = new Promise<null>((_, reject) => {
-      setTimeout(() => reject(new Error('Final spatial search timeout')), 12000);
-    });
-    
-    try {
-      // Race between the query and timeout
-      const { data, error } = await Promise.race([
-        finalQuery,
-        finalTimeout.then(() => ({ data: null, error: new Error('Timeout') }))
-      ]);
-      
-      if (error) {
-        console.error('Final spatial search error:', error);
-        return null;
-      }
-      
-      if (!data || data.length === 0) {
-        console.log('No results found in spatial search');
-        return [];
-      }
-      
-      console.log(`Got ${data.length} results from spatial search`);
-      return processResults(data, lat, lng, filters);
-    } catch (err) {
-      console.error('Final spatial search error:', err);
-      return null; // Return null to indicate fallback should be used
-    }
+    // Convert raw data to Application objects with distance information
+    return convertDbResultsToApplications(data, [lat, lng]);
   } catch (error) {
-    console.error('Spatial search error:', error);
-    return null; // Return null to indicate fallback should be used
+    // If error is timeout or similar, we'll still return null to try fallback
+    if (error instanceof Error && 
+       (error.message.includes('timeout') || 
+        error.message.includes('canceling statement'))) {
+      console.log('🔍 Spatial search timed out, will try fallback search');
+      return null;
+    }
+    
+    throw error;
   }
-}
+};
 
 /**
- * Process and filter the results from the spatial search
+ * Convert database results to Application objects
  */
-function processResults(data: any[], lat: number, lng: number, filters: any): Application[] {
-  // Apply additional filters if needed
-  let filteredData = data;
+function convertDbResultsToApplications(
+  data: any[],
+  coordinates: [number, number]
+): Application[] {
+  if (!data || !Array.isArray(data)) return [];
   
-  if (filters) {
-    filteredData = data.filter((app: any) => {
-      // Status filter
-      if (filters.status && app.status && 
-          !app.status.toLowerCase().includes(filters.status.toLowerCase())) {
-        return false;
-      }
-      
-      // Type filter
-      if (filters.type && app.type && 
-          !app.type.toLowerCase().includes(filters.type.toLowerCase())) {
-        return false;
-      }
-      
-      return true;
-    });
-  }
-  
-  // Add distance and sort by distance
-  return filteredData
-    .filter((app: any) => {
-      return (typeof app.latitude === 'number' && typeof app.longitude === 'number');
-    })
-    .map((app: any) => {
-      const distanceKm = calculateDistance(lat, lng, Number(app.latitude), Number(app.longitude));
-      const distanceMiles = distanceKm * 0.621371;
-      
-      return {
-        ...app,
-        distance: `${distanceMiles.toFixed(1)} mi`,
-        coordinates: [Number(app.latitude), Number(app.longitude)] as [number, number]
-      };
-    })
-    .sort((a: any, b: any) => {
-      const distA = calculateDistance(lat, lng, Number(a.latitude), Number(a.longitude));
-      const distB = calculateDistance(lat, lng, Number(b.latitude), Number(b.longitude));
-      return distA - distB;
-    });
+  return data.map(item => ({
+    id: item.id,
+    title: item.ai_title || item.description || `Application ${item.id}`,
+    address: item.address || '',
+    status: item.status || 'Under Review',
+    coordinates: item.latitude && item.longitude ? [Number(item.latitude), Number(item.longitude)] : undefined,
+    reference: item.reference || '',
+    description: item.description || '',
+    applicant: item.applicant || '',
+    submittedDate: item.submission_date || '',
+    decisionDue: item.decision_due || item.decision_target_date || '',
+    type: item.application_type || item.application_type_full || '',
+    ward: item.ward || '',
+    officer: item.officer || '',
+    consultationEnd: item.last_date_consultation_comments || '',
+    image: item.image || '',
+    streetview_url: item.streetview_url || null,
+    image_map_url: item.image_map_url || null,
+    postcode: item.postcode || '',
+    impact_score: item.impact_score || null,
+    impact_score_details: item.impact_score_details || null,
+    last_date_consultation_comments: item.last_date_consultation_comments || null,
+    valid_date: item.valid_date || null,
+    centroid: item.centroid || null,
+    received_date: item.received_date || null,
+    // Calculate distance (to be implemented in the application)
+  }));
 }
