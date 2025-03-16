@@ -1,23 +1,53 @@
-
 /**
- * Helper function to implement timeout for promises
- * Works with Supabase query builders by ensuring they are converted to promises
+ * Utility function to add timeout to any promise
  */
-export const withTimeout = async <T>(
-  promiseOrBuilder: Promise<T> | { then: (onfulfilled: any) => any },
-  timeoutMs: number,
-  timeoutMessage: string
-): Promise<T> => {
-  // Ensure we're working with a proper promise
-  // This handles both regular promises and Supabase query builders
-  const promise = Promise.resolve(promiseOrBuilder) as Promise<T>;
+export const withTimeout = <T>(promise: Promise<T> | any, timeoutMs: number, errorMessage?: string): Promise<T> => {
+  // Ensure the input is a proper promise
+  const promiseToUse = 
+    typeof promise.then === 'function' ? promise : 
+    (typeof promise === 'function' ? promise() : Promise.resolve(promise));
   
+  // Create a timeout promise
   const timeoutPromise = new Promise<never>((_, reject) => {
     const id = setTimeout(() => {
       clearTimeout(id);
-      reject(new Error(timeoutMessage));
+      reject(new Error(errorMessage || `Operation timed out after ${timeoutMs}ms`));
     }, timeoutMs);
   });
 
-  return Promise.race([promise, timeoutPromise]);
+  // Race the promises
+  return Promise.race([
+    promiseToUse,
+    timeoutPromise
+  ]) as Promise<T>;
+};
+
+/**
+ * Function that retries a promise multiple times
+ */
+export const withRetry = async <T>(
+  promiseFn: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000,
+  backoff: number = 2
+): Promise<T> => {
+  let retries = 0;
+  while (retries < maxRetries) {
+    try {
+      return await promiseFn();
+    } catch (error) {
+      retries++;
+      if (retries < maxRetries) {
+        await delay(delay * backoff ** retries);
+      }
+    }
+  }
+  throw new Error(`Max retries reached`);
+};
+
+/**
+ * Delays execution for specified milliseconds
+ */
+export const delay = (ms: number): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, ms));
 };

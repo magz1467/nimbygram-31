@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Add a longer build timeout
+  NETLIFY_BUILD_LIFECYCLE_TIMEOUT = "900"
 
 # Handle SPA routing
 [[redirects]]
@@ -23,7 +25,12 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Content-Security-Policy = "upgrade-insecure-requests"
     Cache-Control = "public, max-age=0, must-revalidate"
+    Vary = "User-Agent"
 
 # SSL settings
 [dev]
   https = true
+
+# Handling large builds
+[functions]
+  node_bundler = "esbuild"

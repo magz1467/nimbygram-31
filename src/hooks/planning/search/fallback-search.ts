@@ -1,123 +1,106 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Application } from "@/types/planning";
-import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 import { withTimeout } from "@/utils/fetchUtils";
-import { PostgrestResponse } from "@supabase/supabase-js";
+import { useSearchLogger } from "@/hooks/use-search-logger";
+import { type PostgrestResponse } from '@supabase/supabase-js';
 
-/**
- * Fallback search using bounding box when PostGIS is not available
- */
-export const performFallbackSearch = async (
-  lat: number,
-  lng: number,
-  radius: number = 5,
-  filters: any = {}
-): Promise<Application[]> => {
-  console.log(`🔍 Performing fallback search near [${lat}, ${lng}] with radius ${radius}km`);
-  
-  try {
-    // Calculate bounding box (simple approximation)
-    const kmPerDegree = 111.32;
-    const latDiff = radius / kmPerDegree;
-    const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
-    
-    // Determine if this is likely a large area search
-    const isLargeArea = radius > 3 || (latDiff * lngDiff > 0.01);
-    console.log(`🔍 Area analysis: isLargeArea=${isLargeArea}, coverage=${latDiff * lngDiff} sq degrees`);
-    
-    // For large areas, we'll use a smaller limit initially to ensure fast results
-    const resultLimit = isLargeArea ? 25 : 100;
-    
-    // Build query with geographic bounds
-    let query = supabase
-      .from('crystal_roof')
-      .select('*')  // Explicitly select all fields including storybook
-      .gte('latitude', lat - latDiff)
-      .lte('latitude', lat + latDiff)
-      .gte('longitude', lng - lngDiff)
-      .lte('longitude', lng + lngDiff)
-      .limit(resultLimit);
-    
-    // Apply any filters
-    if (filters && Object.keys(filters).length > 0) {
-      if (filters.status) {
-        query = query.ilike('status', `%${filters.status}%`);
-      }
+// This is a fallback search method that uses a simpler bounding box approach
+// to find planning applications when the spatial search fails
+export const useBoundingBoxSearch = () => {
+  const { logSearch, logSearchError } = useSearchLogger();
+
+  const searchByBoundingBox = async (lat: number, lng: number, radius: number, limit = 25) => {
+    try {
+      // Calculate bounding box coordinates (simple approximation)
+      // 1 degree of latitude is approximately 111km
+      // 1 degree of longitude varies with latitude, roughly 111km * cos(latitude)
+      const degreesLat = radius / 111.0;
+      const degreesLng = radius / (111.0 * Math.cos(lat * (Math.PI / 180)));
+
+      const minLat = lat - degreesLat;
+      const maxLat = lat + degreesLat;
+      const minLng = lng - degreesLng;
+      const maxLng = lng + degreesLng;
+
+      // First try the optimized search
+      console.log(`Performing fallback search with bounding box: ${minLat},${minLng} to ${maxLat},${maxLng}`);
       
-      if (filters.type) {
-        query = query.ilike('type', `%${filters.type}%`);
-      }
-    }
-    
-    // Set an appropriate timeout
-    const timeout = isLargeArea ? 8000 : 15000; // 8 seconds for large areas, 15 for smaller
-    
-    // Execute query with timeout - convert query to promise first
-    const result = await withTimeout<PostgrestResponse<any>>(
-      query,
-      timeout,
-      `Search timeout reached after ${timeout/1000} seconds. Some results may be available.`
-    );
-    
-    // Now we can safely access data and error properties
-    const { data, error } = result;
-    
-    if (error) {
-      // For timeout errors, we might still have partial results
-      if (error.message.includes('timeout')) {
-        console.log('Timeout in fallback search, but we might have partial results');
-        if (!data) {
-          console.error('Fallback search timeout error with no data:', error);
-          return [];
+      const query = supabase
+        .from('crystal_roof')
+        .select(`
+          id, latitude, longitude, description, status, 
+          address, size, category, created_at, updated_at,
+          authority_name, impact_score, title, ref_number, image_url,
+          location_image, storybook
+        `)
+        .gte('latitude', minLat)
+        .lte('latitude', maxLat)
+        .gte('longitude', minLng)
+        .lte('longitude', maxLng)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('updated_at', { ascending: false })
+        .limit(limit);
+
+      // Add timeout to query execution
+      const response = await withTimeout<PostgrestResponse<any>>(
+        query,
+        20000,
+        'Fallback search timeout'
+      );
+      
+      if (response && 'data' in response && 'error' in response) {
+        const { data, error } = response;
+        
+        if (error) {
+          console.error('Error in fallback search:', error);
+          logSearchError('bounding-box', 'database_error', JSON.stringify(error));
+          return { data: [], error };
         }
-        // Continue with partial results
-      } else {
-        console.error('Fallback search error:', error);
-        throw error;
+
+        // Process and return results with distance calculations
+        if (data && Array.isArray(data)) {
+          const resultsWithDistance = data.map(app => {
+            const appLat = parseFloat(app.latitude);
+            const appLng = parseFloat(app.longitude);
+            
+            // Calculate distance in kilometers using Haversine formula
+            const distance = calculateDistance(lat, lng, appLat, appLng);
+            
+            return {
+              ...app,
+              distance,
+              distance_miles: distance * 0.621371 // Convert to miles
+            };
+          });
+          
+          // Sort by distance
+          resultsWithDistance.sort((a, b) => a.distance - b.distance);
+          
+          return { data: resultsWithDistance, error: null };
+        }
       }
-    }
-    
-    console.log(`✅ Fallback search found ${data?.length || 0} applications`);
-    
-    // Calculate distance for each result for better sorting
-    const results = (data || []).map(app => {
-      // Simple haversine distance calculation
-      const R = 6371; // Earth radius in km
-      const dLat = (app.latitude - lat) * Math.PI / 180;
-      const dLon = (app.longitude - lng) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat * Math.PI / 180) * Math.cos(app.latitude * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
       
-      return {
-        ...app,
-        distance // Add distance in km
-      };
-    });
-    
-    // Sort by distance
-    results.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-    
-    // Check if storybook data is present in the first result
-    if (results && results.length > 0) {
-      console.log('First fallback result storybook check:', {
-        hasStorybook: Boolean(results[0].storybook),
-        id: results[0].id,
-        distance: results[0].distance
-      });
-      
-      if (results[0].storybook) {
-        console.log(`Storybook preview: ${results[0].storybook.substring(0, 100)}...`);
-      }
+      return { data: [], error: new Error('Invalid response format from database') };
+    } catch (error) {
+      console.error('Error in fallback search:', error);
+      logSearchError('bounding-box', 'exception', error instanceof Error ? error.message : String(error));
+      return { data: [], error };
     }
-    
-    return transformApplicationsData(results);
-  } catch (err) {
-    console.error('Error in fallback search:', err);
-    return [];
-  }
+  };
+
+  // Haversine formula to calculate distance between two points on Earth
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  return { searchByBoundingBox };
 };
