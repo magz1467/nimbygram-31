@@ -10,7 +10,7 @@ export const withTimeout = async <T>(
 ): Promise<T> => {
   // Ensure we're working with a proper promise
   // This handles both regular promises and Supabase query builders
-  const promise = Promise.resolve(promiseOrBuilder);
+  const promise = Promise.resolve(promiseOrBuilder) as Promise<T>;
   
   const timeoutPromise = new Promise<never>((_, reject) => {
     const id = setTimeout(() => {

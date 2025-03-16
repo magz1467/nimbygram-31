@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 import { withTimeout } from "@/utils/fetchUtils";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 /**
  * Fallback search using bounding box when PostGIS is not available
@@ -53,7 +54,7 @@ export const performFallbackSearch = async (
     const timeout = isLargeArea ? 8000 : 15000; // 8 seconds for large areas, 15 for smaller
     
     // Execute query with timeout - convert query to promise first
-    const result = await withTimeout(
+    const result = await withTimeout<PostgrestResponse<any>>(
       query,
       timeout,
       `Search timeout reached after ${timeout/1000} seconds. Some results may be available.`

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 import { withTimeout } from "@/utils/fetchUtils";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 /**
  * Performs a spatial search using PostGIS for nearby applications
@@ -44,7 +45,7 @@ export const performSpatialSearch = async (
       });
     
     // Add timeout to the promise
-    const result = await withTimeout(
+    const result = await withTimeout<PostgrestResponse<any>>(
       spatialPromise,
       timeout,
       `Search timeout reached after ${timeout/1000} seconds. Some results may be available.`
