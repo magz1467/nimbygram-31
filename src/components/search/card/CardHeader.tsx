@@ -9,12 +9,16 @@ interface CardHeaderProps {
 }
 
 export const CardHeader = ({ title, address, storybook }: CardHeaderProps) => {
+  // Log incoming storybook data for debugging
+  console.log('CardHeader received storybook:', storybook ? 'yes' : 'no', 
+    storybook ? `length: ${storybook.length}` : '');
+  
   const formattedStorybook = formatStorybook(storybook);
 
   // Log the storybook content for debugging
-  console.log('CardHeader storybook:', 
-    storybook ? storybook.substring(0, 100) + '...' : 'none', 
-    'formatted:', formattedStorybook);
+  console.log('CardHeader storybook formatted result:', 
+    formattedStorybook ? 'success' : 'null', 
+    formattedStorybook?.header ? `header: ${formattedStorybook.header}` : 'no header');
 
   const cleanHeader = (header: string) => {
     let cleanedHeader = header.trim();

@@ -36,12 +36,19 @@ export const CardContent = ({
   const application = applications.find(app => app.id === applicationId);
   const applicationCoords = application?.coordinates;
 
-  // Debug storybook data issues
+  // Enhanced debugging for storybook data issues
   useEffect(() => {
     if (applicationId) {
-      console.log(`CardContent for app ${applicationId}: storybook exists: ${Boolean(storybook)}`);
+      console.log(`CardContent for app ${applicationId}:`, {
+        hasStorybook: Boolean(storybook),
+        storybookType: storybook ? typeof storybook : null,
+        storybookLength: storybook ? storybook.length : 0
+      });
+      
       if (storybook) {
-        console.log(`Storybook preview for app ${applicationId}: ${storybook.substring(0, 50)}...`);
+        console.log(`Storybook preview for app ${applicationId}: ${storybook.substring(0, 150)}...`);
+      } else {
+        console.log(`No storybook for app ${applicationId}`);
       }
     }
   }, [applicationId, storybook]);
@@ -66,12 +73,21 @@ export const CardContent = ({
     }
   };
 
+  // Process storybook data with extended logging
+  console.log('Processing storybook in CardContent, type:', typeof storybook, 
+    'content:', storybook ? storybook.substring(0, 50) + '...' : 'null');
+  
   const formattedStorybook = formatStorybook(storybook);
   
   // Add enhanced logging to see what we're working with
-  console.log('CardContent storybook data:', {
+  console.log('CardContent storybook formatting result:', {
     hasStorybook: !!storybook,
-    formattedResult: formattedStorybook,
+    formattedResult: formattedStorybook ? {
+      hasHeader: !!formattedStorybook.header,
+      hasSections: !!formattedStorybook.sections,
+      hasContent: !!formattedStorybook.content,
+      sectionCount: formattedStorybook.sections?.length || 0
+    } : null,
     sectionTypes: formattedStorybook?.sections?.map(s => s.type) || 'none',
     rawStorybook: storybook ? storybook.substring(0, 100) + '...' : 'none'
   });

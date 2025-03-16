@@ -10,6 +10,24 @@ export const formatStorybook = (content: string | null) => {
   console.log('Processing storybook content length:', content.length);
   console.log('Processing storybook content preview:', content.substring(0, 100) + '...');
 
+  // Check if content is JSON string and try to parse it
+  if (typeof content === 'string' && content.trim().startsWith('{')) {
+    try {
+      const parsedContent = JSON.parse(content);
+      console.log('Successfully parsed JSON storybook content');
+      
+      if (typeof parsedContent === 'string') {
+        // If it's a string inside JSON, use that
+        content = parsedContent;
+      } else if (parsedContent.content) {
+        // If it has a content property, use that
+        content = parsedContent.content;
+      }
+    } catch (error) {
+      console.log('Storybook content is not valid JSON, treating as string');
+    }
+  }
+
   // Extract header if it exists
   const headerMatch = content.match(/<header>(.*?)<\/header>/);
   const header = headerMatch ? headerMatch[1].trim() : null;
@@ -110,7 +128,7 @@ export const formatStorybook = (content: string | null) => {
       .join('\n');
 
     return { 
-      header, 
+      header: header || 'Planning Application', 
       content: cleanContent,
       rawContent: bodyContent // Include the raw content for fallback
     };
@@ -120,7 +138,7 @@ export const formatStorybook = (content: string | null) => {
     processedSections.map(s => s.type).join(', '));
   
   return { 
-    header, 
+    header: header || processedSections[0]?.title || 'Planning Application', 
     sections: processedSections,
     rawContent: bodyContent // Include the raw content for fallback
   };

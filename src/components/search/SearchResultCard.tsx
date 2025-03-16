@@ -47,10 +47,14 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Log storybook info for debugging
+  // Enhanced logging for storybook data
   useEffect(() => {
     console.log(`SearchResultCard for application ${application.id}:`, { 
       hasStorybook: Boolean(application.storybook),
+      storybook: application.storybook ? {
+        type: typeof application.storybook,
+        length: application.storybook.length
+      } : null,
       description: application.description?.substring(0, 30),
       title: application.title
     });

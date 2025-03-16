@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Application } from "@/types/planning";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 
 export const useInterestingApplications = (hasSearched: boolean) => {
   const [interestingApplications, setInterestingApplications] = useState<Application[]>([]);
@@ -31,10 +32,10 @@ export const useInterestingApplications = (hasSearched: boolean) => {
     setIsLoadingInteresting(true);
     
     try {
-      // Explicitly select storybook field from the database
+      // Explicitly select all fields including storybook field with a "*" wildcard
       const { data, error } = await supabase
         .from('crystal_roof')
-        .select('*, storybook')
+        .select('*')
         .not('storybook', 'is', null)
         .order('id', { ascending: false })
         .limit(10);
@@ -50,6 +51,7 @@ export const useInterestingApplications = (hasSearched: boolean) => {
       }
 
       console.log('📊 Fetched interesting applications:', data?.length);
+      console.log('Raw data first item:', data?.[0]);
       
       // Log if the first result has storybook data
       if (data && data.length > 0) {
@@ -59,12 +61,8 @@ export const useInterestingApplications = (hasSearched: boolean) => {
         }
       }
       
-      // Transform and set the applications
-      const transformedApplications = (data || []).map(item => ({
-        ...item,
-        storybook: item.storybook || null // Ensure storybook is explicitly included
-      }));
-      
+      // Use the transformer function to properly handle the data
+      const transformedApplications = transformApplicationsData(data || []);
       setInterestingApplications(transformedApplications);
     } catch (error) {
       console.error('Failed to fetch interesting applications:', error);

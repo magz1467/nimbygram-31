@@ -2,7 +2,7 @@
 import { Application } from '@/types/planning';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errors/centralized-handler';
-import { transformApplicationData } from '@/utils/applicationTransforms';
+import { transformApplicationData } from '@/utils/transforms/application-transformer';
 
 /**
  * Fetches planning applications within a specified radius of coordinates
@@ -21,10 +21,10 @@ export const fetchApplicationsInRadius = async (
     const latDiff = radius / kmPerDegree;
     const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
     
-    // Query with geographic bounds - make sure to request storybook field EXPLICITLY
+    // Query with geographic bounds - using * to select all fields including storybook
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*, storybook')
+      .select('*')
       .gte('latitude', lat - latDiff)
       .lte('latitude', lat + latDiff)
       .gte('longitude', lng - lngDiff)
@@ -35,45 +35,18 @@ export const fetchApplicationsInRadius = async (
 
     console.log(`Found ${data?.length || 0} applications`);
     if (data && data.length > 0) {
-      console.log(`First application has storybook: ${Boolean(data[0].storybook)}`);
+      console.log('First application data:', {
+        id: data[0].id,
+        hasStorybook: Boolean(data[0].storybook),
+        storybookLength: data[0].storybook ? data[0].storybook.length : 0
+      });
       if (data[0].storybook) {
         console.log(`Storybook preview: ${data[0].storybook.substring(0, 50)}...`);
       }
     }
 
-    // Transform to Application type
-    return (data || []).map(item => {
-      // Only create coordinates if both latitude and longitude exist
-      let coords: [number, number] | undefined = undefined;
-      if (item.latitude && item.longitude) {
-        coords = [Number(item.latitude), Number(item.longitude)];
-      }
-      
-      return {
-        id: item.id,
-        title: item.ai_title || item.description || `Application ${item.id}`,
-        address: item.address || '',
-        status: item.status || 'Under Review',
-        coordinates: coords,
-        reference: item.reference || '',
-        description: item.description || '',
-        applicant: item.applicant || '',
-        submittedDate: item.submission_date || '',
-        decisionDue: item.decision_due || item.decision_target_date || '',
-        type: item.application_type || item.application_type_full || '',
-        ward: item.ward || '',
-        officer: item.officer || '',
-        consultationEnd: item.last_date_consultation_comments || '',
-        image: item.image || '',
-        streetview_url: item.streetview_url || null,
-        image_map_url: item.image_map_url || null,
-        postcode: item.postcode || '',
-        impact_score: item.impact_score || null,
-        impact_score_details: item.impact_score_details || null,
-        received_date: item.received_date || null,
-        storybook: item.storybook || null // Make sure to include storybook
-      } as Application;
-    });
+    // Transform to Application type using our transformer
+    return data ? data.map(item => transformApplicationData(item)) : [];
   } catch (err) {
     console.error('Error fetching applications in radius:', err);
     handleError(err, { context: 'fetchApplicationsInRadius' });
