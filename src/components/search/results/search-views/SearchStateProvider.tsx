@@ -22,6 +22,7 @@ interface SearchStateContextProps {
     error: Error | null;
   };
   coordinates: [number, number] | null;
+  postcode: string | null;
   applications: Application[];
   filters: Record<string, any>;
   setFilters: (type: string, value: any) => void;
@@ -68,6 +69,7 @@ export function SearchStateProvider({
   
   const { 
     coordinates, 
+    postcode,
     isLoading: isLoadingCoords, 
     error: coordsError 
   } = useCoordinates(initialSearch?.searchTerm || '');
@@ -79,6 +81,9 @@ export function SearchStateProvider({
     } else if (initialSearch?.searchTerm && coordinates) {
       performanceTracker.mark('coordinatesEnd');
       performanceTracker.addMetadata('coordinates', coordinates);
+      if (postcode) {
+        performanceTracker.addMetadata('postcode', postcode);
+      }
       loadingState.setStage('searching');
     } else if (coordsError) {
       performanceTracker.mark('coordinatesError');
@@ -91,7 +96,10 @@ export function SearchStateProvider({
       setError(coordsError);
       loadingState.setError(coordsError);
     }
-  }, [coordinates, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
+  }, [coordinates, postcode, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
+  
+  // Use postcode for search if available, otherwise fallback to coordinates
+  const searchParam = postcode || coordinates;
   
   const { 
     applications, 
@@ -101,12 +109,13 @@ export function SearchStateProvider({
     setFilters: updateFilters,
     hasPartialResults,
     isSearchInProgress
-  } = usePlanningSearch(coordinates);
+  } = usePlanningSearch(searchParam);
   
   useEffect(() => {
-    if (coordinates && isLoadingResults) {
+    if (searchParam && isLoadingResults) {
       performanceTracker.mark('searchStart');
-    } else if (coordinates && !isLoadingResults) {
+      performanceTracker.addMetadata('searchType', postcode ? 'postcode' : 'coordinates');
+    } else if (searchParam && !isLoadingResults) {
       performanceTracker.mark('searchEnd');
       performanceTracker.addMetadata('resultsCount', applications.length);
       loadingState.setStage('rendering');
@@ -118,7 +127,7 @@ export function SearchStateProvider({
         performanceTracker.logReport();
       }, 200);
     }
-  }, [coordinates, isLoadingResults, applications]);
+  }, [searchParam, postcode, isLoadingResults, applications]);
   
   useEffect(() => {
     if (searchError && !error) {
@@ -165,6 +174,7 @@ export function SearchStateProvider({
       error: error || loadingState.error
     },
     coordinates,
+    postcode,
     applications,
     filters,
     setFilters,

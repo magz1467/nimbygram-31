@@ -6,10 +6,13 @@ import { ensureGoogleMapsLoaded } from "./google-maps-loader";
 
 /**
  * Fetches coordinates for a location name using the Google Geocoding API
+ * Also attempts to extract a postcode when possible for UK locations
  * @param locationName The name of the location to look up
- * @returns Promise with coordinates [lat, lng]
+ * @returns Promise with coordinates [lat, lng] and postcode if found
  */
-export const fetchCoordinatesByLocationName = async (locationName: string): Promise<[number, number]> => {
+export const fetchCoordinatesByLocationName = async (
+  locationName: string
+): Promise<{ coordinates: [number, number]; postcode?: string }> => {
   console.log('🔍 Fetching coordinates for location name:', locationName);
   
   if (!locationName) {
@@ -64,17 +67,50 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     });
     
     if (response && response.length > 0) {
-      const location = response[0].geometry.location;
+      const result = response[0];
+      const location = result.geometry.location;
+      
       // Get coordinates in correct order - lat first, then lng
       const lat = location.lat();
       const lng = location.lng();
       
       console.log('📍 Got coordinates from Geocoding API:', [lat, lng], 'for location:', locationName);
-      console.log('📍 Geometry location type:', response[0].geometry.location_type);
-      console.log('📍 First result formatted address:', response[0].formatted_address);
+      console.log('📍 Geometry location type:', result.geometry.location_type);
+      console.log('📍 Formatted address:', result.formatted_address);
+      
+      // Try to extract postcode from address components
+      let postcode: string | undefined;
+      
+      if (result.address_components) {
+        // Look for postal code in address components
+        const postcodeComponent = result.address_components.find(
+          component => component.types.includes('postal_code')
+        );
+        
+        if (postcodeComponent) {
+          postcode = postcodeComponent.long_name;
+          console.log('📫 Found postcode in address components:', postcode);
+        }
+      }
+      
+      // If we didn't find a postcode component, try to extract it from the formatted address
+      if (!postcode && result.formatted_address) {
+        // UK postcodes typically appear at the end of the address
+        const ukPostcodeRegex = /[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}\b/i;
+        const match = result.formatted_address.match(ukPostcodeRegex);
+        
+        if (match && match[0]) {
+          postcode = match[0];
+          console.log('📫 Extracted postcode from formatted address:', postcode);
+        }
+      }
       
       // Return coordinates in correct [lat, lng] order for consistency with other services
-      return [lat, lng];
+      // Also include the postcode if we found one
+      return { 
+        coordinates: [lat, lng],
+        postcode
+      };
     }
     
     throw new Error("No results found for location");
@@ -98,3 +134,4 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     throw new Error(`Could not find coordinates for location: ${error.message}`);
   }
 };
+

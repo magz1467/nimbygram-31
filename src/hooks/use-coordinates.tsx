@@ -22,6 +22,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage:
 
 export const useCoordinates = (searchTerm: string | undefined) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+  const [postcode, setPostcode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
@@ -39,6 +40,7 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       setIsLoading(true);
       setError(null);
       setCoordinates(null);
+      setPostcode(null);
       
       console.log('🔍 useCoordinates: Fetching coordinates for:', searchTerm);
       
@@ -71,7 +73,10 @@ export const useCoordinates = (searchTerm: string | undefined) => {
                   10000,
                   "Timeout while looking up postcode"
                 );
-                if (isMounted) setCoordinates(postcodeCoords);
+                if (isMounted) {
+                  setCoordinates(postcodeCoords);
+                  setPostcode(searchTerm);
+                }
                 return;
               } catch (postcodeError) {
                 console.warn('⚠️ Postcode lookup failed, continuing with location search');
@@ -81,15 +86,21 @@ export const useCoordinates = (searchTerm: string | undefined) => {
             try {
               // First try with the full search term
               console.log('🔍 Searching for exact location name:', searchTerm);
-              const locationCoords = await withTimeout(
+              const result = await withTimeout(
                 fetchCoordinatesByLocationName(searchTerm),
                 15000, // Increased timeout
                 "Timeout while searching for location"
               );
               
-              if (isMounted && locationCoords) {
-                console.log('✅ Found coordinates for location:', locationCoords);
-                setCoordinates(locationCoords);
+              if (isMounted && result.coordinates) {
+                console.log('✅ Found coordinates for location:', result.coordinates);
+                setCoordinates(result.coordinates);
+                
+                // If we got a postcode, save it
+                if (result.postcode) {
+                  console.log('📫 Setting postcode from location search:', result.postcode);
+                  setPostcode(result.postcode);
+                }
               }
             } catch (locationError: any) {
               console.warn('⚠️ Location search failed:', locationError.message);
@@ -117,7 +128,23 @@ export const useCoordinates = (searchTerm: string | undefined) => {
                           Number(place.longitude)
                         ];
                         console.log('✅ Using coordinates from Postcodes.io place API:', fallbackCoords);
-                        if (isMounted) setCoordinates(fallbackCoords);
+                        if (isMounted) {
+                          setCoordinates(fallbackCoords);
+                          // Also try to get the closest postcode for this location
+                          try {
+                            const reverseResponse = await fetch(
+                              `https://api.postcodes.io/postcodes?lon=${place.longitude}&lat=${place.latitude}&limit=1`
+                            );
+                            const reverseData = await reverseResponse.json();
+                            if (reverseData.result && reverseData.result.length > 0) {
+                              const nearestPostcode = reverseData.result[0].postcode;
+                              console.log('📫 Found nearest postcode:', nearestPostcode);
+                              setPostcode(nearestPostcode);
+                            }
+                          } catch (reverseError) {
+                            console.error('❌ Failed to get nearest postcode:', reverseError);
+                          }
+                        }
                         return;
                       }
                     }
@@ -132,15 +159,21 @@ export const useCoordinates = (searchTerm: string | undefined) => {
               if (placeName && placeName !== searchTerm) {
                 try {
                   console.log('🔍 Trying with simplified place name:', placeName);
-                  const fallbackCoords = await withTimeout(
+                  const fallbackResult = await withTimeout(
                     fetchCoordinatesByLocationName(placeName),
                     15000, // Increased timeout
                     "Timeout while searching for simplified location"
                   );
                   
-                  if (isMounted && fallbackCoords) {
-                    console.log('✅ Found coordinates for simplified location:', fallbackCoords);
-                    setCoordinates(fallbackCoords);
+                  if (isMounted && fallbackResult.coordinates) {
+                    console.log('✅ Found coordinates for simplified location:', fallbackResult.coordinates);
+                    setCoordinates(fallbackResult.coordinates);
+                    
+                    // If we got a postcode, save it
+                    if (fallbackResult.postcode) {
+                      console.log('📫 Setting postcode from simplified location:', fallbackResult.postcode);
+                      setPostcode(fallbackResult.postcode);
+                    }
                   }
                 } catch (fallbackError) {
                   console.error('❌ Both direct and simplified location searches failed');
@@ -160,7 +193,10 @@ export const useCoordinates = (searchTerm: string | undefined) => {
               10000,
               "Timeout while looking up postcode"
             );
-            if (isMounted) setCoordinates(postcodeCoords);
+            if (isMounted) {
+              setCoordinates(postcodeCoords);
+              setPostcode(searchTerm);
+            }
             break;
         }
       } catch (error) {
@@ -192,6 +228,7 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       fetchCoordinates();
     } else {
       setCoordinates(null);
+      setPostcode(null);
       setIsLoading(false);
       setError(null);
     }
@@ -202,5 +239,5 @@ export const useCoordinates = (searchTerm: string | undefined) => {
     };
   }, [searchTerm, toast]);
 
-  return { coordinates, isLoading, error };
+  return { coordinates, postcode, isLoading, error };
 };

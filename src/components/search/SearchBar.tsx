@@ -13,7 +13,7 @@ interface SearchBarProps {
 }
 
 export const SearchBar = ({ onSearch, variant = "primary", className = "" }: SearchBarProps) => {
-  const [postcode, setPostcode] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,7 +21,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
   const handleSubmit = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
-    if (!postcode.trim() || isSubmitting) {
+    if (!searchTerm.trim() || isSubmitting) {
       toast({
         title: "Error",
         description: "Please enter a valid postcode, street name or area",
@@ -34,19 +34,22 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     
     try {
       // Log search
-      await logSearch(postcode.trim(), 'location', 'search');
+      await logSearch(searchTerm.trim(), 'location', 'search');
       
       // Call onSearch callback if provided
       if (onSearch) {
-        onSearch(postcode.trim());
+        onSearch(searchTerm.trim());
       }
 
-      // Navigate to search results
+      // Detect if input is likely a UK postcode
+      const isLikelyPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(searchTerm.trim());
+      
+      // Navigate to search results with appropriate search type
       navigate('/search-results', {
         state: {
-          searchType: 'location',
-          searchTerm: postcode.trim(),
-          displayTerm: postcode.trim(),
+          searchType: isLikelyPostcode ? 'postcode' : 'location',
+          searchTerm: searchTerm.trim(),
+          displayTerm: searchTerm.trim(),
           timestamp: Date.now()
         }
       });
@@ -67,7 +70,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       <form onSubmit={handleSubmit} className="w-full">
         <div className={variant === "compact" ? "flex items-center gap-2" : "mb-4"}>
           <PostcodeSearch
-            onSelect={(value) => setPostcode(value)}
+            onSelect={(value) => setSearchTerm(value)}
             placeholder="Search by postcode, street name or area"
             className="flex-1"
           />
