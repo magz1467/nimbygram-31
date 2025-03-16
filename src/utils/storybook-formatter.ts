@@ -38,14 +38,19 @@ export const formatStorybook = (content: string | null) => {
     }
   }
 
-  // Clean up formatting issues - remove standalone asterisks that appear as bullets
+  // Clean up formatting issues
   processedContent = processedContent
-    .replace(/\n\s*\*\s*\n/g, '\n') // Remove standalone asterisks on their own line
+    // Remove standalone asterisks that appear as bullets
+    .replace(/\n\s*\*\s*\n/g, '\n') // Remove asterisks on their own line
     .replace(/^\s*\*\s*$/gm, '') // Remove standalone asterisks at start of lines
     .replace(/\n\s*•\s*\n/g, '\n') // Remove empty bullet points with bullet character
-    .replace(/\n\s*-\s*\n/g, '\n'); // Remove empty bullet points with dash
+    .replace(/\n\s*-\s*\n/g, '\n') // Remove empty bullet points with dash
+    .replace(/\n\s*\*\s*$/gm, '') // Remove trailing asterisks with no content
+    // Process HTML tags
+    .replace(/&lt;(\/?strong)&gt;/g, '<$1>') // Convert HTML entities to HTML tags
+    .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>'); // Ensure strong tags are processed
 
-  // Format headers with proper styling (convert **Header:** to <strong>Header:</strong>)
+  // Format headers with proper styling
   processedContent = processedContent
     .replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>'); // Bold headers with **Text:**
 
