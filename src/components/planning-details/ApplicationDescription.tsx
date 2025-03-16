@@ -53,14 +53,32 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {formattedStorybook.sections.find(s => s.type === 'details') && (
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-1">Key Details</h4>
-                <ul className="text-sm space-y-1 ml-5 list-disc">
-                  {formattedStorybook.sections
-                    .find(s => s.type === 'details')
-                    ?.content
-                    .map((detail: string, index: number) => (
-                      <li key={index}>{detail}</li>
-                    ))}
-                </ul>
+                <div className="text-sm space-y-2 ml-5">
+                  {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
+                    formattedStorybook.sections
+                      .find(s => s.type === 'details')
+                      ?.content
+                      .map((detail: string, index: number) => (
+                        <div key={index} className="flex gap-2">
+                          <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <div 
+                            className="flex-1"
+                            dangerouslySetInnerHTML={{ 
+                              __html: detail.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
+                            }}
+                          />
+                        </div>
+                      ))
+                  ) : (
+                    <div 
+                      dangerouslySetInnerHTML={{ 
+                        __html: typeof formattedStorybook.sections.find(s => s.type === 'details')?.content === 'string'
+                          ? (formattedStorybook.sections.find(s => s.type === 'details')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                          : formattedStorybook.sections.find(s => s.type === 'details')?.content || ''
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             )}
             
@@ -68,9 +86,14 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {formattedStorybook.sections.find(s => s.type === 'nimby') && (
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-1">Nimbywatch</h4>
-                <p className="text-sm">
-                  {formattedStorybook.sections.find(s => s.type === 'nimby')?.content}
-                </p>
+                <div 
+                  className="text-sm"
+                  dangerouslySetInnerHTML={{ 
+                    __html: typeof formattedStorybook.sections.find(s => s.type === 'nimby')?.content === 'string'
+                      ? (formattedStorybook.sections.find(s => s.type === 'nimby')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                      : formattedStorybook.sections.find(s => s.type === 'nimby')?.content || ''
+                  }}
+                />
               </div>
             )}
           </div>

@@ -38,6 +38,15 @@ export const formatStorybook = (content: string | null) => {
     }
   }
 
+  // Clean up formatting issues - remove standalone asterisks that appear as bullets
+  processedContent = processedContent
+    .replace(/\n\s*\*\s*\n/g, '\n') // Remove standalone asterisks on their own line
+    .replace(/^\s*\*\s*$/gm, ''); // Remove standalone asterisks at start of lines
+
+  // Format headers with proper styling (convert **Header:** to <strong>Header:</strong>)
+  processedContent = processedContent
+    .replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>'); // Bold headers with **Text:**
+
   // Extract header if it exists
   const headerMatch = processedContent.match(/<header>(.*?)<\/header>/s) || 
                      processedContent.match(/^# (.*?)(\n|$)/m) ||
