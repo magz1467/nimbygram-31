@@ -102,27 +102,32 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
         if (typeof searchParam === 'string') {
           // If searchParam is a postcode, fetch its coordinates first
           console.log('Searching with postcode:', searchParam);
+
+          // Determine if it's a full postcode or just an outcode
+          const isOutcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/i.test(searchParam);
+          const endpoint = isOutcode 
+            ? `https://api.postcodes.io/outcodes/${searchParam}`
+            : `https://api.postcodes.io/postcodes/${searchParam}`;
+            
           try {
-            const response = await fetch(`https://api.postcodes.io/postcodes/${searchParam}`);
+            const response = await fetch(endpoint);
             const data = await response.json();
             
             if (!data.result) {
-              throw new Error('Invalid postcode');
+              throw new Error(isOutcode ? 'Invalid outcode' : 'Invalid postcode');
             }
             
             lat = data.result.latitude;
             lng = data.result.longitude;
-            console.log('Converted postcode to coordinates:', lat, lng);
+            console.log(`Converted ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, lat, lng);
           } catch (postcodeError) {
-            console.error('Error converting postcode to coordinates:', postcodeError);
+            console.error(`Error converting ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, postcodeError);
             throw postcodeError;
           }
         } else {
           // If searchParam is already coordinates, use it directly
           [lat, lng] = searchParam;
         }
-        
-        let results: Application[] = [];
         
         // First try spatial search (with PostGIS)
         console.log('Attempting spatial search first...');

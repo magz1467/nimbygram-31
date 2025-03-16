@@ -6,6 +6,8 @@ import {
   fetchCoordinatesForPlaceId,
   fetchCoordinatesForLocationName,
   fetchCoordinatesForPostcode,
+  fetchCoordinatesForOutcode,
+  fetchCoordinatesForTown,
   fetchCoordinatesForAddress
 } from './coordinates/fetch-strategies';
 import { handleCoordinateError } from './coordinates/error-handler';
@@ -37,6 +39,7 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       try {
         // Determine what type of location string we have
         const locationType = detectLocationType(searchTerm);
+        console.log(`🔍 useCoordinates: Detected location type: ${locationType}`);
         
         // Callbacks object to pass to strategy functions
         const callbacks = {
@@ -52,6 +55,14 @@ export const useCoordinates = (searchTerm: string | undefined) => {
         switch (locationType) {
           case 'PLACE_ID':
             await fetchCoordinatesForPlaceId(searchTerm, isMounted, callbacks);
+            break;
+            
+          case 'TOWN':
+            await fetchCoordinatesForTown(searchTerm, isMounted, callbacks);
+            break;
+            
+          case 'OUTCODE':
+            await fetchCoordinatesForOutcode(searchTerm, isMounted, callbacks);
             break;
             
           case 'ADDRESS':
