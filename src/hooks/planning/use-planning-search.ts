@@ -11,7 +11,7 @@ export interface SearchFilters {
   type?: string;
 }
 
-export const usePlanningSearch = (coordinates: [number, number] | null) => {
+export const usePlanningSearch = (searchParam: [number, number] | string | null) => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5);
   const { toast } = useToast();
@@ -20,12 +20,12 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   const hasPartialResults = useRef<boolean>(false);
   const isSearchInProgress = useRef<boolean>(false);
   
-  // Reset error toast flag when coordinates change
+  // Reset error toast flag when search parameters change
   useEffect(() => {
     hasShownErrorToast.current = false;
     hasPartialResults.current = false;
     isSearchInProgress.current = false;
-  }, [coordinates, searchRadius, JSON.stringify(filters)]);
+  }, [searchParam, searchRadius, JSON.stringify(filters)]);
   
   // Function to handle search errors
   const handleSearchError = useCallback((err: any) => {
@@ -67,31 +67,61 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
   // Create a stable query key
   const queryKey = useRef<string[]>(['planning-applications', 'no-coordinates']);
   
-  if (coordinates) {
+  if (searchParam) {
     const filterString = JSON.stringify(filters);
     const radiusString = searchRadius.toString();
-    const coordString = coordinates.join(',');
+    
+    // Generate a consistent query key string based on the type of searchParam
+    const searchParamString = typeof searchParam === 'string' 
+      ? `postcode:${searchParam}` 
+      : `coords:${searchParam.join(',')}`;
     
     // Only update the query key if the search parameters have changed
     if (
-      queryKey.current[1] !== coordString || 
+      queryKey.current[1] !== searchParamString || 
       queryKey.current[2] !== filterString || 
       queryKey.current[3] !== radiusString
     ) {
-      queryKey.current = ['planning-applications', coordString, filterString, radiusString];
+      queryKey.current = ['planning-applications', searchParamString, filterString, radiusString];
     }
   }
   
   const { data: applications = [], isLoading, error: queryError, isFetching } = useQuery({
     queryKey: queryKey.current,
     queryFn: async () => {
-      if (!coordinates) return [];
+      if (!searchParam) return [];
       
       try {
-        console.log('Searching with coordinates:', coordinates, 'radius:', searchRadius);
+        console.log('Searching with param:', searchParam, 'radius:', searchRadius);
         isSearchInProgress.current = true;
         
-        const [lat, lng] = coordinates;
+        let lat: number;
+        let lng: number;
+        
+        // Handle both string (postcode) and coordinates
+        if (typeof searchParam === 'string') {
+          // If searchParam is a postcode, fetch its coordinates first
+          console.log('Searching with postcode:', searchParam);
+          try {
+            const response = await fetch(`https://api.postcodes.io/postcodes/${searchParam}`);
+            const data = await response.json();
+            
+            if (!data.result) {
+              throw new Error('Invalid postcode');
+            }
+            
+            lat = data.result.latitude;
+            lng = data.result.longitude;
+            console.log('Converted postcode to coordinates:', lat, lng);
+          } catch (postcodeError) {
+            console.error('Error converting postcode to coordinates:', postcodeError);
+            throw postcodeError;
+          }
+        } else {
+          // If searchParam is already coordinates, use it directly
+          [lat, lng] = searchParam;
+        }
+        
         let results: Application[] = [];
         
         // First try spatial search (with PostGIS)
@@ -133,7 +163,7 @@ export const usePlanningSearch = (coordinates: [number, number] | null) => {
         }, 2000);
       }
     },
-    enabled: !!coordinates,
+    enabled: !!searchParam,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 2, // Retry twice
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),

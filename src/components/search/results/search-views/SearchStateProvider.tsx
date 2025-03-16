@@ -120,7 +120,7 @@ export function SearchStateProvider({
     setFilters: updateFilters,
     hasPartialResults,
     isSearchInProgress
-  } = usePlanningSearch(searchParam as [number, number] | string | null);
+  } = usePlanningSearch(searchParam);
   
   useEffect(() => {
     if (searchParam && isLoadingResults) {
