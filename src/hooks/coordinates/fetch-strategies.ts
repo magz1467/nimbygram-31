@@ -20,10 +20,10 @@ export const fetchCoordinatesForPlaceId = async (
   callbacks: CoordinateCallbacks
 ) => {
   try {
-    const result = await fetchCoordinatesFromPlaceId(placeId);
-    if (isMounted && result) {
-      callbacks.setCoordinates(result.coordinates);
-      callbacks.setPostcode(result.postcode);
+    const coordinates = await fetchCoordinatesFromPlaceId(placeId);
+    if (isMounted && coordinates) {
+      callbacks.setCoordinates(coordinates);
+      callbacks.setPostcode(null); // Place ID doesn't return a postcode directly
     }
   } catch (error) {
     console.error('Error fetching coordinates for place ID:', error);
@@ -134,11 +134,11 @@ export const fetchCoordinatesForPostcode = async (
 ) => {
   try {
     console.log('📮 Fetching coordinates for postcode:', postcode);
-    const result = await fetchCoordinatesFromPostcodesIo(postcode);
+    const coordinates = await fetchCoordinatesFromPostcodesIo(postcode);
     
     if (isMounted) {
-      console.log('📮 Found postcode coordinates:', result);
-      callbacks.setCoordinates(result);
+      console.log('📮 Found postcode coordinates:', coordinates);
+      callbacks.setCoordinates(coordinates);
       callbacks.setPostcode(postcode);
     }
   } catch (error) {
