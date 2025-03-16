@@ -3,7 +3,7 @@ import { formatStorybook } from "@/utils/storybook-formatter";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DesktopMapDialog } from "@/components/search/results/DesktopMapDialog";
 import { Application } from "@/types/planning";
 
@@ -35,6 +35,16 @@ export const CardContent = ({
   
   const application = applications.find(app => app.id === applicationId);
   const applicationCoords = application?.coordinates;
+
+  // Debug storybook data issues
+  useEffect(() => {
+    if (applicationId) {
+      console.log(`CardContent for app ${applicationId}: storybook exists: ${Boolean(storybook)}`);
+      if (storybook) {
+        console.log(`Storybook preview for app ${applicationId}: ${storybook.substring(0, 50)}...`);
+      }
+    }
+  }, [applicationId, storybook]);
 
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Application } from "@/types/planning";
 import { useState } from "react";
 import { CardHeader } from "./card/CardHeader";
@@ -47,8 +47,14 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Console log for debugging the storybook content
-  React.useEffect(() => {
+  // Log storybook info for debugging
+  useEffect(() => {
+    console.log(`SearchResultCard for application ${application.id}:`, { 
+      hasStorybook: Boolean(application.storybook),
+      description: application.description?.substring(0, 30),
+      title: application.title
+    });
+    
     if (application.storybook) {
       console.log('SearchResultCard storybook preview for app', application.id, ':', 
         application.storybook.substring(0, 100) + '...');

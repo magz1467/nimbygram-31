@@ -8,6 +8,12 @@ import { Application } from "@/types/planning";
 export function transformApplicationData(rawData: any): Application {
   if (!rawData) return {} as Application;
   
+  // Log the raw data to check if storybook is present
+  console.log(`Transform for application ${rawData.id || 'unknown'}: has storybook: ${Boolean(rawData.storybook)}`);
+  if (rawData.storybook) {
+    console.log(`Storybook preview: ${rawData.storybook.substring(0, 50)}...`);
+  }
+  
   // Ensure coordinates are properly formatted as [number, number]
   let coordinates: [number, number] | null = null;
   
@@ -50,6 +56,9 @@ export function transformApplicationData(rawData: any): Application {
  */
 export function transformApplicationsData(rawDataArray: any[]): Application[] {
   if (!Array.isArray(rawDataArray)) return [];
+  
+  console.log(`Transforming ${rawDataArray.length} applications`);
+  console.log(`First application has storybook: ${Boolean(rawDataArray[0]?.storybook)}`);
   
   return rawDataArray.map(transformApplicationData);
 }

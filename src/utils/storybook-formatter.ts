@@ -5,7 +5,10 @@ export const formatStorybook = (content: string | null) => {
     return null;
   }
 
-  console.log('Processing storybook content:', content.substring(0, 100) + '...');
+  // Enhanced logging to see what we're working with
+  console.log('Processing storybook content type:', typeof content);
+  console.log('Processing storybook content length:', content.length);
+  console.log('Processing storybook content preview:', content.substring(0, 100) + '...');
 
   // Extract header if it exists
   const headerMatch = content.match(/<header>(.*?)<\/header>/);

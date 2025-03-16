@@ -2,6 +2,7 @@
 import { Application } from '@/types/planning';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errors/centralized-handler';
+import { transformApplicationData } from '@/utils/applicationTransforms';
 
 /**
  * Fetches planning applications within a specified radius of coordinates
@@ -13,12 +14,14 @@ export const fetchApplicationsInRadius = async (
   try {
     const [lat, lng] = coordinates;
     
+    console.log(`🔍 Fetching applications near [${lat}, ${lng}] with radius ${radius}km`);
+    
     // Calculate bounding box (simple approximation)
     const kmPerDegree = 111.32;
     const latDiff = radius / kmPerDegree;
     const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
     
-    // Query with geographic bounds - make sure to request storybook field 
+    // Query with geographic bounds - make sure to request storybook field EXPLICITLY
     const { data, error } = await supabase
       .from('crystal_roof')
       .select('*, storybook')
@@ -29,6 +32,14 @@ export const fetchApplicationsInRadius = async (
       .limit(500);
       
     if (error) throw error;
+
+    console.log(`Found ${data?.length || 0} applications`);
+    if (data && data.length > 0) {
+      console.log(`First application has storybook: ${Boolean(data[0].storybook)}`);
+      if (data[0].storybook) {
+        console.log(`Storybook preview: ${data[0].storybook.substring(0, 50)}...`);
+      }
+    }
 
     // Transform to Application type
     return (data || []).map(item => {
