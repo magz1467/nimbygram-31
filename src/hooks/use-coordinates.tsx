@@ -5,7 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   fetchCoordinatesForPlaceId,
   fetchCoordinatesForLocationName,
-  fetchCoordinatesForPostcode 
+  fetchCoordinatesForPostcode,
+  fetchCoordinatesForAddress
 } from './coordinates/fetch-strategies';
 import { handleCoordinateError } from './coordinates/error-handler';
 
@@ -51,6 +52,10 @@ export const useCoordinates = (searchTerm: string | undefined) => {
         switch (locationType) {
           case 'PLACE_ID':
             await fetchCoordinatesForPlaceId(searchTerm, isMounted, callbacks);
+            break;
+            
+          case 'ADDRESS':
+            await fetchCoordinatesForAddress(searchTerm, isMounted, callbacks);
             break;
             
           case 'LOCATION_NAME':

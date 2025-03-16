@@ -4,6 +4,7 @@ import {
   fetchCoordinatesFromPlaceId,
   fetchCoordinatesByLocationName,
   fetchCoordinatesFromPostcodesIo,
+  fetchCoordinatesByAddress,
   extractPlaceName
 } from '@/services/coordinates';
 import { resetGoogleMapsLoader } from '@/services/coordinates/google-maps-loader';
@@ -43,6 +44,39 @@ export async function fetchCoordinatesForPostcode(
   if (isMounted) {
     callbacks.setCoordinates(postcodeCoords);
     callbacks.setPostcode(searchTerm);
+  }
+}
+
+export async function fetchCoordinatesForAddress(
+  searchTerm: string,
+  isMounted: boolean,
+  callbacks: {
+    setCoordinates: (coords: [number, number]) => void,
+    setPostcode: (postcode: string | null) => void,
+  }
+) {
+  console.log('🏠 Detected address, using OS API:', searchTerm);
+  
+  try {
+    const result = await withTimeout(
+      fetchCoordinatesByAddress(searchTerm),
+      15000,
+      "Timeout while searching for address"
+    );
+    
+    if (isMounted && result.coordinates) {
+      console.log('✅ Found coordinates for address:', result.coordinates);
+      callbacks.setCoordinates(result.coordinates);
+      
+      // If we got a postcode, save it
+      if (result.postcode) {
+        console.log('📫 Setting postcode from address search:', result.postcode);
+        callbacks.setPostcode(result.postcode);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Address search failed:', error);
+    throw error;
   }
 }
 
