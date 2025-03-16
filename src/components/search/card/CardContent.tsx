@@ -57,7 +57,14 @@ export const CardContent = ({
   };
 
   const formattedStorybook = formatStorybook(storybook);
-  console.log('📚 Formatted storybook:', formattedStorybook);
+  
+  // Add enhanced logging to see what we're working with
+  console.log('CardContent storybook data:', {
+    hasStorybook: !!storybook,
+    formattedResult: formattedStorybook,
+    sectionTypes: formattedStorybook?.sections?.map(s => s.type) || 'none',
+    rawPreview: storybook ? storybook.substring(0, 100) + '...' : 'none'
+  });
 
   // Map button to use throughout the component
   const mapButton = (
@@ -72,7 +79,7 @@ export const CardContent = ({
   );
 
   // If no storybook content, just return the button
-  if (!formattedStorybook) {
+  if (!storybook) {
     return <div className="mt-4">{mapButton}</div>;
   }
 
@@ -83,7 +90,7 @@ export const CardContent = ({
       {mapButton}
 
       {/* What's the Deal section */}
-      {formattedStorybook.sections?.find(s => s.type === 'deal') && (
+      {formattedStorybook?.sections?.find(s => s.type === 'deal') && (
         <div className="prose prose-sm max-w-none">
           <div className="bg-primary/5 rounded-lg p-4">
             <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
@@ -95,7 +102,7 @@ export const CardContent = ({
       )}
 
       {/* Key Details section */}
-      {formattedStorybook.sections?.find(s => s.type === 'details') && (
+      {formattedStorybook?.sections?.find(s => s.type === 'details') && (
         <div className="space-y-4">
           <h3 className="font-semibold text-gray-900">Key Details</h3>
           <div className="grid gap-4">
@@ -119,7 +126,7 @@ export const CardContent = ({
       )}
 
       {/* Nimbywatch section */}
-      {formattedStorybook.sections?.find(s => s.type === 'nimby') && (
+      {formattedStorybook?.sections?.find(s => s.type === 'nimby') && (
         <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
             🏘️ Nimbywatch
@@ -133,10 +140,18 @@ export const CardContent = ({
       )}
 
       {/* Fallback for old format or if sections weren't properly detected */}
-      {!formattedStorybook.sections && formattedStorybook.content && (
+      {!formattedStorybook?.sections && formattedStorybook?.content && (
         <div className="prose prose-sm max-w-none mt-4" 
           dangerouslySetInnerHTML={{ __html: formattedStorybook.content }} 
         />
+      )}
+
+      {/* Raw fallback if nothing was processed correctly */}
+      {!formattedStorybook?.sections && !formattedStorybook?.content && storybook && (
+        <div className="prose prose-sm max-w-none mt-4 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-gray-900 font-medium mb-2">Application Details</h3>
+          <p className="whitespace-pre-wrap text-gray-700">{storybook}</p>
+        </div>
       )}
 
       {/* Map Dialog for Desktop */}

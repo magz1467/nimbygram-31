@@ -47,6 +47,14 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
+  // Console log for debugging the storybook content
+  React.useEffect(() => {
+    if (application.storybook) {
+      console.log('SearchResultCard storybook preview for app', application.id, ':', 
+        application.storybook.substring(0, 100) + '...');
+    }
+  }, [application]);
+
   const formattedSubmittedDate = application.submittedDate || application.received_date
     ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
       ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')

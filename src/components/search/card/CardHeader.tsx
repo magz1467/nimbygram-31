@@ -11,6 +11,11 @@ interface CardHeaderProps {
 export const CardHeader = ({ title, address, storybook }: CardHeaderProps) => {
   const formattedStorybook = formatStorybook(storybook);
 
+  // Log the storybook content for debugging
+  console.log('CardHeader storybook:', 
+    storybook ? storybook.substring(0, 100) + '...' : 'none', 
+    'formatted:', formattedStorybook);
+
   const cleanHeader = (header: string) => {
     let cleanedHeader = header.trim();
     cleanedHeader = cleanedHeader.replace(/^\s*\[(.*?)\]\s*$/, '$1').trim();

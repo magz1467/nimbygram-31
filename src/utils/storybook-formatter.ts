@@ -101,7 +101,7 @@ export const formatStorybook = (content: string | null) => {
       .filter(Boolean)
       .join('\n');
       
-    console.log('No sections found, returning raw content');
+    console.log('No sections found in storybook, returning raw content');
     return { header, content: cleanContent };
   }
   

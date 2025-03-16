@@ -21,7 +21,8 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
     formattedStorybook: {
       hasHeader: !!formattedStorybook?.header,
       hasSections: !!formattedStorybook?.sections,
-      sectionCount: formattedStorybook?.sections?.length
+      sectionCount: formattedStorybook?.sections?.length || 0,
+      rawPreview: application.storybook ? application.storybook.substring(0, 100) + '...' : 'none'
     },
     imageUrl: application.streetview_url || application.image || application.image_map_url
   });
@@ -123,6 +124,10 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
               __html: formattedStorybook.content
             }}
           />
+        ) : application.storybook ? (
+          <p className="text-sm text-gray-600 mb-3 whitespace-pre-wrap line-clamp-4">
+            {application.storybook}
+          </p>
         ) : (
           <p className="text-sm text-gray-600 mb-3 line-clamp-3">
             {application.description || "No description available"}
