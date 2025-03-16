@@ -109,6 +109,24 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
               </div>
             )}
             
+            {formattedStorybook.sections.find(s => s.type === 'watchOutFor') && (
+              <div className="mt-2 p-2 bg-pink-50 rounded-md">
+                <p className="font-medium text-pink-800">What to Watch Out For</p>
+                <p className="text-pink-700">
+                  {formattedStorybook.sections.find(s => s.type === 'watchOutFor')?.content}
+                </p>
+              </div>
+            )}
+            
+            {formattedStorybook.sections.find(s => s.type === 'keyRegulations') && (
+              <div className="mt-2 p-2 bg-green-50 rounded-md">
+                <p className="font-medium text-green-800">Key Regulations</p>
+                <p className="text-green-700">
+                  {formattedStorybook.sections.find(s => s.type === 'keyRegulations')?.content}
+                </p>
+              </div>
+            )}
+            
             {formattedStorybook.sections.find(s => s.type === 'nimby') && (
               <div className="mt-2 p-2 bg-purple-50 rounded-md">
                 <p className="font-medium text-purple-800">Nimbywatch</p>

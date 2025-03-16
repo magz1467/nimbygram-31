@@ -1,3 +1,4 @@
+
 export const formatStorybook = (content: string | null) => {
   if (!content) {
     console.log('No storybook content provided');
@@ -97,7 +98,7 @@ export const formatStorybook = (content: string | null) => {
   const processedSections = [];
   
   // Check if content has "What's the Deal" section
-  const dealMatch = bodyContent.match(/What['']s the Deal:?(.*?)(?=Key Details:|The Details:|Nimbywatch:|$)/si);
+  const dealMatch = bodyContent.match(/What['']s the Deal:?(.*?)(?=Key Details:|The Details:|Nimbywatch:|What to Watch Out For:|Key Regulations:|$)/si);
   if (dealMatch && dealMatch[1]) {
     processedSections.push({
       type: 'deal',
@@ -107,7 +108,7 @@ export const formatStorybook = (content: string | null) => {
   }
   
   // Check if content has "Key Details" or "The Details" section
-  const detailsMatch = bodyContent.match(/(?:Key Details:|The Details:)(.*?)(?=Nimbywatch:|Considerations:|$)/si);
+  const detailsMatch = bodyContent.match(/(?:Key Details:|The Details:)(.*?)(?=Nimbywatch:|What to Watch Out For:|Key Regulations:|Considerations:|$)/si);
   if (detailsMatch && detailsMatch[1]) {
     // Extract bullet points
     const detailsContent = detailsMatch[1].trim();
@@ -137,7 +138,7 @@ export const formatStorybook = (content: string | null) => {
   }
   
   // Check if content has "Nimbywatch" section
-  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)(?=\n\n|$)/si);
+  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)(?=What to Watch Out For:|Key Regulations:|$)/si);
   if (nimbyMatch && nimbyMatch[1]) {
     processedSections.push({
       type: 'nimby',
@@ -145,6 +146,63 @@ export const formatStorybook = (content: string | null) => {
       content: nimbyMatch[1].trim()
     });
   }
+
+  // Check if content has "What to Watch Out For" section
+  const watchOutForMatch = bodyContent.match(/What to Watch Out For:(.*?)(?=Nimbywatch:|Key Regulations:|$)/si);
+  if (watchOutForMatch && watchOutForMatch[1]) {
+    processedSections.push({
+      type: 'watchOutFor',
+      title: "What to Watch Out For",
+      content: watchOutForMatch[1].trim()
+    });
+  }
+
+  // Check if content has "Key Regulations" section
+  const keyRegulationsMatch = bodyContent.match(/Key Regulations:(.*?)(?=Nimbywatch:|What to Watch Out For:|$)/si);
+  if (keyRegulationsMatch && keyRegulationsMatch[1]) {
+    processedSections.push({
+      type: 'keyRegulations',
+      title: "Key Regulations",
+      content: keyRegulationsMatch[1].trim()
+    });
+  }
+  
+  // Also look for these sections within bullet points
+  const processWatchOutForInBulletPoints = (text) => {
+    const matches = text.match(/(?:👀|🚫|⚠️)\s*What to Watch Out For[:\s]+(.*?)(?=(?:👀|🚫|⚠️)\s*|$)/gi);
+    if (matches && matches.length > 0) {
+      matches.forEach(match => {
+        const content = match.replace(/(?:👀|🚫|⚠️)\s*What to Watch Out For[:\s]+/i, '').trim();
+        if (content) {
+          processedSections.push({
+            type: 'watchOutFor',
+            title: "What to Watch Out For",
+            content: content
+          });
+        }
+      });
+    }
+  };
+
+  const processKeyRegulationsInBulletPoints = (text) => {
+    const matches = text.match(/(?:📝|📃|📜)\s*Key Regulations[:\s]+(.*?)(?=(?:📝|📃|📜)\s*|$)/gi);
+    if (matches && matches.length > 0) {
+      matches.forEach(match => {
+        const content = match.replace(/(?:📝|📃|📜)\s*Key Regulations[:\s]+/i, '').trim();
+        if (content) {
+          processedSections.push({
+            type: 'keyRegulations',
+            title: "Key Regulations",
+            content: content
+          });
+        }
+      });
+    }
+  };
+
+  // Process the entire body for inline sections
+  processWatchOutForInBulletPoints(bodyContent);
+  processKeyRegulationsInBulletPoints(bodyContent);
   
   // If no sections were found, provide the raw content as fallback
   if (processedSections.length === 0) {

@@ -83,12 +83,48 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
               </div>
             )}
             
+            {/* What to Watch Out For section */}
+            {formattedStorybook.sections.find(s => s.type === 'watchOutFor') && (
+              <div className="mb-4 p-3 bg-[#FFDEE2] rounded-lg">
+                <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                  <span>👀</span> What to Watch Out For
+                </h4>
+                <div 
+                  className="text-sm text-gray-700"
+                  dangerouslySetInnerHTML={{ 
+                    __html: typeof formattedStorybook.sections.find(s => s.type === 'watchOutFor')?.content === 'string'
+                      ? (formattedStorybook.sections.find(s => s.type === 'watchOutFor')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                      : formattedStorybook.sections.find(s => s.type === 'watchOutFor')?.content || ''
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Key Regulations section */}
+            {formattedStorybook.sections.find(s => s.type === 'keyRegulations') && (
+              <div className="mb-4 p-3 bg-[#F2FCE2] rounded-lg">
+                <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                  <span>📃</span> Key Regulations
+                </h4>
+                <div 
+                  className="text-sm text-gray-700"
+                  dangerouslySetInnerHTML={{ 
+                    __html: typeof formattedStorybook.sections.find(s => s.type === 'keyRegulations')?.content === 'string'
+                      ? (formattedStorybook.sections.find(s => s.type === 'keyRegulations')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                      : formattedStorybook.sections.find(s => s.type === 'keyRegulations')?.content || ''
+                  }}
+                />
+              </div>
+            )}
+            
             {/* Nimbywatch section */}
             {formattedStorybook.sections.find(s => s.type === 'nimby') && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium mb-1">Nimbywatch</h4>
+              <div className="mb-4 p-3 bg-[#8B5CF6] bg-opacity-10 rounded-lg">
+                <h4 className="text-sm font-medium text-[#8B5CF6] mb-1 flex items-center gap-1">
+                  <span>🏘️</span> Nimbywatch
+                </h4>
                 <div 
-                  className="text-sm"
+                  className="text-sm text-gray-700"
                   dangerouslySetInnerHTML={{ 
                     __html: typeof formattedStorybook.sections.find(s => s.type === 'nimby')?.content === 'string'
                       ? (formattedStorybook.sections.find(s => s.type === 'nimby')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
