@@ -57,8 +57,9 @@ export const CardContent = ({
   };
 
   const formattedStorybook = formatStorybook(storybook);
+  console.log('📚 Formatted storybook:', formattedStorybook);
 
-  // Always show the See on Map button
+  // Map button to use throughout the component
   const mapButton = (
     <Button 
       variant="outline" 
@@ -75,9 +76,10 @@ export const CardContent = ({
     return <div className="mt-4">{mapButton}</div>;
   }
 
+  // Render the formatted storybook content from sections or fallback to direct content
   return (
     <div className="space-y-6">
-      {/* See on Map button - always visible as its own row */}
+      {/* Show the button at the top for consistency */}
       {mapButton}
 
       {/* What's the Deal section */}
@@ -97,15 +99,21 @@ export const CardContent = ({
         <div className="space-y-4">
           <h3 className="font-semibold text-gray-900">Key Details</h3>
           <div className="grid gap-4">
-            {formattedStorybook.sections
-              .find(s => s.type === 'details')
-              ?.content
-              .map((detail: string, index: number) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                  <p className="text-gray-700 flex-1">{detail}</p>
-                </div>
-              ))}
+            {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
+              formattedStorybook.sections
+                .find(s => s.type === 'details')
+                ?.content
+                .map((detail: string, index: number) => (
+                  <div key={index} className="flex gap-3 items-start">
+                    <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <p className="text-gray-700 flex-1">{detail}</p>
+                  </div>
+                ))
+            ) : (
+              <p className="text-gray-700">
+                {formattedStorybook.sections.find(s => s.type === 'details')?.content}
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -2,6 +2,8 @@
 export const formatStorybook = (content: string | null) => {
   if (!content) return null;
 
+  console.log('Processing storybook content:', content.substring(0, 100) + '...');
+
   // Extract header if it exists
   const headerMatch = content.match(/<header>(.*?)<\/header>/);
   const header = headerMatch ? headerMatch[1].trim() : null;
@@ -54,15 +56,24 @@ export const formatStorybook = (content: string | null) => {
       .map(point => point.trim())
       .filter(point => point.length > 0);
     
-    processedSections.push({
-      type: 'details',
-      title: "Key Details",
-      content: bulletPoints
-    });
+    // If we extracted bullet points, use them; otherwise use the whole content
+    if (bulletPoints.length > 0) {
+      processedSections.push({
+        type: 'details',
+        title: "Key Details",
+        content: bulletPoints
+      });
+    } else {
+      processedSections.push({
+        type: 'details',
+        title: "Key Details",
+        content: detailsContent
+      });
+    }
   }
   
   // Check if content has "Nimbywatch" section
-  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)$/si);
+  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)(?=\n\n|$)/si);
   if (nimbyMatch && nimbyMatch[1]) {
     processedSections.push({
       type: 'nimby',
@@ -90,8 +101,12 @@ export const formatStorybook = (content: string | null) => {
       .filter(Boolean)
       .join('\n');
       
+    console.log('No sections found, returning raw content');
     return { header, content: cleanContent };
   }
+  
+  console.log(`Found ${processedSections.length} storybook sections:`, 
+    processedSections.map(s => s.type).join(', '));
   
   return { 
     header, 

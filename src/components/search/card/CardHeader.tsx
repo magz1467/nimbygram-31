@@ -18,10 +18,15 @@ export const CardHeader = ({ title, address, storybook }: CardHeaderProps) => {
     return cleanedHeader;
   };
 
+  // Use the most appropriate title from available sources
+  const headerTitle = formattedStorybook?.header 
+    ? cleanHeader(formattedStorybook.header)
+    : title || 'Planning Application';
+
   return (
     <header className="px-4 py-4 text-center">
       <h2 className="font-semibold text-lg text-primary mb-2">
-        {cleanHeader(formattedStorybook?.header || title || 'Planning Application')}
+        {headerTitle}
       </h2>
       <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
         <MapPin className="h-4 w-4" />
@@ -30,4 +35,3 @@ export const CardHeader = ({ title, address, storybook }: CardHeaderProps) => {
     </header>
   );
 };
-

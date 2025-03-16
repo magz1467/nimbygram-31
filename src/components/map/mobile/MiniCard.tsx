@@ -79,20 +79,55 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             {formattedStorybook.sections.find(s => s.type === 'deal') && (
               <div className="mb-2">
                 <p className="font-medium">What's the Deal</p>
-                <p className="line-clamp-2">
+                <p>
                   {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
+                </p>
+              </div>
+            )}
+            
+            {formattedStorybook.sections.find(s => s.type === 'details') && (
+              <div className="mb-2">
+                <p className="font-medium">Key Details</p>
+                {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
+                  <ul className="list-disc pl-4 mt-1">
+                    {formattedStorybook.sections
+                      .find(s => s.type === 'details')
+                      ?.content
+                      .slice(0, 2) // Show just first 2 points for compact display
+                      .map((detail: string, index: number) => (
+                        <li key={index}>{detail}</li>
+                      ))}
+                      {(formattedStorybook.sections.find(s => s.type === 'details')?.content as string[]).length > 2 && (
+                        <li className="text-primary">...more</li>
+                      )}
+                  </ul>
+                ) : (
+                  <p>{formattedStorybook.sections.find(s => s.type === 'details')?.content}</p>
+                )}
+              </div>
+            )}
+            
+            {formattedStorybook.sections.find(s => s.type === 'nimby') && (
+              <div className="mt-2 p-2 bg-purple-50 rounded-md">
+                <p className="font-medium text-purple-800">Nimbywatch</p>
+                <p className="text-purple-700">
+                  {formattedStorybook.sections.find(s => s.type === 'nimby')?.content}
                 </p>
               </div>
             )}
           </div>
         ) : formattedStorybook?.content ? (
           <div 
-            className="text-sm text-gray-600 mb-3 line-clamp-3"
+            className="text-sm text-gray-600 mb-3"
             dangerouslySetInnerHTML={{ 
               __html: formattedStorybook.content
             }}
           />
-        ) : null}
+        ) : (
+          <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+            {application.description || "No description available"}
+          </p>
+        )}
 
         {/* Badges and Distance */}
         <div className="flex items-center gap-2 mt-auto">
