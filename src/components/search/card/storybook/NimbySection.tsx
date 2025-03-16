@@ -15,11 +15,22 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
       .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
   };
   
+  // More robust empty content check
+  const isEmptyContent = (str: string) => {
+    // Remove whitespace, bullet characters, and dashes
+    const trimmed = str.replace(/[\s•\-*]/g, '');
+    return trimmed.length === 0;
+  };
+  
+  // If array, filter out empty items and join
   const htmlContent = typeof content === 'string'
     ? processContent(content)
-    : content.filter(item => item && item.trim().length > 0)
+    : content.filter(item => item && !isEmptyContent(item))
             .map(processContent)
             .join('<br/>');
+  
+  // If after processing we have no content, return null
+  if (isEmptyContent(htmlContent)) return null;
   
   return (
     <div className="bg-[#8B5CF6] text-white rounded-lg p-4">

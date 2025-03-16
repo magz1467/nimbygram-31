@@ -1,4 +1,3 @@
-
 export const formatStorybook = (content: string | null) => {
   if (!content) {
     console.log('No storybook content provided');
@@ -46,6 +45,9 @@ export const formatStorybook = (content: string | null) => {
     .replace(/\n\s*•\s*\n/g, '\n') // Remove empty bullet points with bullet character
     .replace(/\n\s*-\s*\n/g, '\n') // Remove empty bullet points with dash
     .replace(/\n\s*\*\s*$/gm, '') // Remove trailing asterisks with no content
+    .replace(/\n\s*•\s*$/gm, '') // Remove trailing bullet points with no content
+    .replace(/\n\s*-\s*$/gm, '') // Remove trailing dashes with no content
+    .replace(/\n\s*[\*•-]\s+\n/g, '\n') // Handle bullet points with only whitespace after them
     // Process HTML tags
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>') // Convert HTML entities to HTML tags
     .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>'); // Ensure strong tags are processed
@@ -111,7 +113,12 @@ export const formatStorybook = (content: string | null) => {
     const detailsContent = detailsMatch[1].trim();
     const bulletPoints = detailsContent.split(/(?:•|\*|-)\s+/)
       .map(point => point.trim())
-      .filter(point => point.length > 0); // Filter out empty bullet points
+      .filter(point => {
+        // Enhanced empty point detection
+        if (!point) return false;
+        const contentWithoutFormatting = point.replace(/[\s•\-*<>\/strongem]/g, '');
+        return contentWithoutFormatting.length > 0;
+      }); // Filter out empty bullet points more aggressively
     
     // If we extracted bullet points, use them; otherwise use the whole content
     if (bulletPoints.length > 0) {

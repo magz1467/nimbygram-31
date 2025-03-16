@@ -8,6 +8,16 @@ interface DealSectionProps {
 export const DealSection: FC<DealSectionProps> = ({ content }) => {
   if (!content) return null;
   
+  // More robust empty content check
+  const isEmptyContent = (str: string) => {
+    // Remove whitespace, bullet characters, and dashes
+    const trimmed = str.replace(/[\s•\-*]/g, '');
+    return trimmed.length === 0;
+  };
+  
+  // Return null if content is effectively empty
+  if (isEmptyContent(content)) return null;
+  
   // Process HTML tags in content
   const processedContent = content
     .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
