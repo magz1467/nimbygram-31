@@ -31,7 +31,7 @@ export function transformApplicationData(rawData: any): Application {
   }
   
   // Transform the raw data to match Application type
-  return {
+  const transformed: Application = {
     id: rawData.id,
     reference: rawData.reference || '',
     address: rawData.address || '',
@@ -57,6 +57,14 @@ export function transformApplicationData(rawData: any): Application {
     storybook: rawData.storybook || null,  // Ensure storybook is included
     received_date: rawData.received_date || null
   };
+  
+  // Final check to verify storybook was properly assigned
+  if (rawData.storybook && !transformed.storybook) {
+    console.warn(`⚠️ Storybook data was lost during transformation for application ${rawData.id}`);
+    transformed.storybook = rawData.storybook;
+  }
+  
+  return transformed;
 }
 
 /**

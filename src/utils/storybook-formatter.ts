@@ -10,18 +10,28 @@ export const formatStorybook = (content: string | null) => {
   console.log('Processing storybook content length:', content.length);
   console.log('Processing storybook content preview:', content.substring(0, 100) + '...');
 
+  // Handle potential string/JSON parsing issues
+  let processedContent = content;
+  
   // Check if content is JSON string and try to parse it
-  if (typeof content === 'string' && content.trim().startsWith('{')) {
+  if (typeof content === 'string' && 
+      (content.trim().startsWith('{') || content.trim().startsWith('['))) {
     try {
       const parsedContent = JSON.parse(content);
       console.log('Successfully parsed JSON storybook content');
       
       if (typeof parsedContent === 'string') {
         // If it's a string inside JSON, use that
-        content = parsedContent;
+        processedContent = parsedContent;
       } else if (parsedContent.content) {
         // If it has a content property, use that
-        content = parsedContent.content;
+        processedContent = parsedContent.content;
+      } else if (parsedContent.text) {
+        // Some might use 'text' property
+        processedContent = parsedContent.text;
+      } else if (typeof parsedContent === 'object') {
+        // Try to convert object to string for display
+        processedContent = JSON.stringify(parsedContent, null, 2);
       }
     } catch (error) {
       console.log('Storybook content is not valid JSON, treating as string');
@@ -29,11 +39,18 @@ export const formatStorybook = (content: string | null) => {
   }
 
   // Extract header if it exists
-  const headerMatch = content.match(/<header>(.*?)<\/header>/);
+  const headerMatch = processedContent.match(/<header>(.*?)<\/header>/s) || 
+                     processedContent.match(/^# (.*?)(\n|$)/m) ||
+                     processedContent.match(/^Title: (.*?)(\n|$)/mi);
+  
   const header = headerMatch ? headerMatch[1].trim() : null;
   
   // Get content without the header tags
-  let bodyContent = content.replace(/<header>.*?<\/header>/g, '').trim();
+  let bodyContent = processedContent
+    .replace(/<header>.*?<\/header>/gs, '')
+    .replace(/^# .*?(\n|$)/m, '')
+    .replace(/^Title: .*?(\n|$)/mi, '')
+    .trim();
 
   if (header) {
     // Create a sanitized version of the header for comparison
@@ -45,13 +62,13 @@ export const formatStorybook = (content: string | null) => {
     // Get the first paragraph of content
     const firstParagraph = bodyContent.split(/\n\n/)[0];
     const sanitizedFirstParagraph = firstParagraph
-      .replace(/[^\w\s]/g, '')
-      .toLowerCase()
-      .trim();
+      ? firstParagraph.replace(/[^\w\s]/g, '').toLowerCase().trim()
+      : '';
 
     // If the first paragraph is similar to the header, remove it
-    if (sanitizedFirstParagraph.includes(sanitizedHeader) ||
-        sanitizedHeader.includes(sanitizedFirstParagraph)) {
+    if (sanitizedFirstParagraph && (
+        sanitizedFirstParagraph.includes(sanitizedHeader) ||
+        sanitizedHeader.includes(sanitizedFirstParagraph))) {
       bodyContent = bodyContent
         .replace(firstParagraph, '')
         .trim();
@@ -127,19 +144,30 @@ export const formatStorybook = (content: string | null) => {
       .filter(Boolean)
       .join('\n');
 
+    // Check if we actually have content
+    if (cleanContent) {
+      return { 
+        header: header || 'Planning Application', 
+        content: cleanContent,
+        rawContent: bodyContent // Include the raw content for fallback
+      };
+    }
+  } else {
+    console.log(`Found ${processedSections.length} storybook sections:`, 
+      processedSections.map(s => s.type).join(', '));
+    
     return { 
-      header: header || 'Planning Application', 
-      content: cleanContent,
+      header: header || processedSections[0]?.title || 'Planning Application', 
+      sections: processedSections,
       rawContent: bodyContent // Include the raw content for fallback
     };
   }
   
-  console.log(`Found ${processedSections.length} storybook sections:`, 
-    processedSections.map(s => s.type).join(', '));
-  
-  return { 
-    header: header || processedSections[0]?.title || 'Planning Application', 
-    sections: processedSections,
-    rawContent: bodyContent // Include the raw content for fallback
+  // If we've reached here, we couldn't parse the content effectively
+  // Return a basic object with the original content
+  return {
+    header: header || 'Planning Application',
+    content: `<p>${bodyContent}</p>`,
+    rawContent: bodyContent
   };
 };

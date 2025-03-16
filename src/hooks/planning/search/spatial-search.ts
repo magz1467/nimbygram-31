@@ -1,89 +1,80 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { SearchFilters } from "../use-planning-search";
+import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 
 /**
- * Performs a spatial search using PostGIS functions if available
- * @returns Applications within the radius, or null if spatial search not available
+ * Performs a spatial search using PostGIS for nearby applications
  */
 export const performSpatialSearch = async (
   lat: number,
   lng: number,
-  radiusKm: number,
-  filters: SearchFilters = {}
+  radius: number = 5,
+  filters: any = {}
 ): Promise<Application[] | null> => {
-  console.log(`🔍 Performing spatial search at [${lat}, ${lng}] with radius ${radiusKm}km`);
-  
   try {
-    // Try calling the PostGIS function first, with a reasonable timeout
-    const { data, error } = await supabase.rpc('get_nearby_applications', {
-      center_lat: lat,
-      center_lng: lng,
-      radius_km: radiusKm,
-      result_limit: 100
-    });
+    console.log(`🔍 Attempting spatial search near [${lat}, ${lng}] with radius ${radius}km`);
     
-    if (error) {
-      // Check if this is an RPC not found error (function doesn't exist)
-      if (error.message.includes('function') && error.message.includes('does not exist')) {
-        console.log('🔍 Spatial search function not available, will try fallback search');
-        return null; // Signal that spatial search is not available
+    // Try to use the PostGIS function if available
+    const { data: spatialData, error: spatialError } = await supabase
+      .rpc('get_nearby_applications', {
+        center_lat: lat,
+        center_lng: lng,
+        radius_km: radius,
+        result_limit: 100
+      });
+    
+    // If we get a function not found error or other error, return null to trigger fallback
+    if (spatialError) {
+      if (spatialError.message.includes('function') || 
+          spatialError.message.includes('not found')) {
+        console.log('PostGIS function not available, will use fallback');
+        return null;
       }
       
-      console.error('🔍 Spatial search error:', error);
-      throw error;
+      console.error('Spatial search error:', spatialError);
+      throw spatialError;
     }
     
-    // Convert raw data to Application objects with distance information
-    return convertDbResultsToApplications(data, [lat, lng]);
+    if (spatialData) {
+      console.log(`✅ Spatial search successful, found ${spatialData.length} applications`);
+      
+      // Check if storybook data is present in the first result
+      if (spatialData.length > 0) {
+        console.log('First result storybook check:', {
+          hasStorybook: Boolean(spatialData[0].storybook),
+          id: spatialData[0].id
+        });
+        
+        if (spatialData[0].storybook) {
+          console.log(`Storybook preview: ${spatialData[0].storybook.substring(0, 100)}...`);
+        }
+      }
+      
+      // Apply any filters if needed
+      let filteredData = spatialData;
+      if (filters && Object.keys(filters).length > 0) {
+        // Apply status filter if present
+        if (filters.status) {
+          filteredData = filteredData.filter((app: any) => 
+            app.status?.toLowerCase().includes(filters.status.toLowerCase())
+          );
+        }
+        
+        // Apply type filter if present
+        if (filters.type) {
+          filteredData = filteredData.filter((app: any) => 
+            app.type?.toLowerCase().includes(filters.type.toLowerCase())
+          );
+        }
+      }
+      
+      return transformApplicationsData(filteredData);
+    }
+    
+    return [];
   } catch (error) {
-    // If error is timeout or similar, we'll still return null to try fallback
-    if (error instanceof Error && 
-       (error.message.includes('timeout') || 
-        error.message.includes('canceling statement'))) {
-      console.log('🔍 Spatial search timed out, will try fallback search');
-      return null;
-    }
-    
-    throw error;
+    console.error('Error in spatial search:', error);
+    return null; // Return null to trigger fallback
   }
 };
-
-/**
- * Convert database results to Application objects
- */
-function convertDbResultsToApplications(
-  data: any[],
-  coordinates: [number, number]
-): Application[] {
-  if (!data || !Array.isArray(data)) return [];
-  
-  return data.map(item => ({
-    id: item.id,
-    title: item.ai_title || item.description || `Application ${item.id}`,
-    address: item.address || '',
-    status: item.status || 'Under Review',
-    coordinates: item.latitude && item.longitude ? [Number(item.latitude), Number(item.longitude)] : undefined,
-    reference: item.reference || '',
-    description: item.description || '',
-    applicant: item.applicant || '',
-    submittedDate: item.submission_date || '',
-    decisionDue: item.decision_due || item.decision_target_date || '',
-    type: item.application_type || item.application_type_full || '',
-    ward: item.ward || '',
-    officer: item.officer || '',
-    consultationEnd: item.last_date_consultation_comments || '',
-    image: item.image || '',
-    streetview_url: item.streetview_url || null,
-    image_map_url: item.image_map_url || null,
-    postcode: item.postcode || '',
-    impact_score: item.impact_score || null,
-    impact_score_details: item.impact_score_details || null,
-    last_date_consultation_comments: item.last_date_consultation_comments || null,
-    valid_date: item.valid_date || null,
-    centroid: item.centroid || null,
-    received_date: item.received_date || null,
-    // Calculate distance (to be implemented in the application)
-  }));
-}

@@ -97,24 +97,21 @@ export const CardContent = ({
     <Button 
       variant="outline" 
       onClick={handleSeeOnMapClick}
-      className="w-full text-primary flex items-center justify-center gap-1.5"
+      className="w-full text-primary flex items-center justify-center gap-1.5 mt-4"
     >
       <MapPin className="w-4 h-4" />
       See on map
     </Button>
   );
 
-  // If no storybook content, just return the button
+  // If no storybook content at all, just return the button
   if (!storybook) {
-    return <div className="mt-4">{mapButton}</div>;
+    return <div>{mapButton}</div>;
   }
 
   // Render the formatted storybook content from sections or fallback to direct content
   return (
     <div className="space-y-6">
-      {/* Show the button at the top for consistency */}
-      {mapButton}
-
       {/* What's the Deal section */}
       {formattedStorybook?.sections?.find(s => s.type === 'deal') && (
         <div className="prose prose-sm max-w-none">
@@ -167,18 +164,21 @@ export const CardContent = ({
 
       {/* Fallback for content with no sections */}
       {!formattedStorybook?.sections && formattedStorybook?.content && (
-        <div className="prose prose-sm max-w-none mt-4" 
+        <div className="prose prose-sm max-w-none" 
           dangerouslySetInnerHTML={{ __html: formattedStorybook.content }} 
         />
       )}
 
       {/* Raw fallback if nothing was processed correctly */}
       {!formattedStorybook?.sections && !formattedStorybook?.content && storybook && (
-        <div className="prose prose-sm max-w-none mt-4 p-4 bg-gray-50 rounded-lg">
+        <div className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg">
           <h3 className="text-gray-900 font-medium mb-2">Application Details</h3>
           <p className="whitespace-pre-wrap text-gray-700">{storybook}</p>
         </div>
       )}
+
+      {/* Add the map button at the end */}
+      {mapButton}
 
       {/* Map Dialog for Desktop */}
       {!isMobile && applicationId && (

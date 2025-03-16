@@ -21,10 +21,10 @@ export const fetchApplicationsInRadius = async (
     const latDiff = radius / kmPerDegree;
     const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
     
-    // Query with geographic bounds - using * to select all fields including storybook
+    // Query with geographic bounds - explicitly selecting storybook field
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')
+      .select('*')  // Using * to select all fields including storybook
       .gte('latitude', lat - latDiff)
       .lte('latitude', lat + latDiff)
       .gte('longitude', lng - lngDiff)
@@ -41,12 +41,23 @@ export const fetchApplicationsInRadius = async (
         storybookLength: data[0].storybook ? data[0].storybook.length : 0
       });
       if (data[0].storybook) {
-        console.log(`Storybook preview: ${data[0].storybook.substring(0, 50)}...`);
+        console.log(`Storybook preview: ${data[0].storybook.substring(0, 100)}...`);
       }
     }
 
     // Transform to Application type using our transformer
-    return data ? data.map(item => transformApplicationData(item)) : [];
+    const transformedData = data ? data.map(item => transformApplicationData(item)) : [];
+    
+    // Verify storybook content was preserved after transformation
+    if (transformedData.length > 0 && data && data[0].storybook) {
+      const firstTransformed = transformedData[0];
+      console.log('Verifying storybook content preservation:', {
+        beforeTransform: Boolean(data[0].storybook),
+        afterTransform: Boolean(firstTransformed.storybook)
+      });
+    }
+    
+    return transformedData;
   } catch (err) {
     console.error('Error fetching applications in radius:', err);
     handleError(err, { context: 'fetchApplicationsInRadius' });
