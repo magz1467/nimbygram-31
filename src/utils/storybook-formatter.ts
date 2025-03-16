@@ -41,7 +41,9 @@ export const formatStorybook = (content: string | null) => {
   // Clean up formatting issues - remove standalone asterisks that appear as bullets
   processedContent = processedContent
     .replace(/\n\s*\*\s*\n/g, '\n') // Remove standalone asterisks on their own line
-    .replace(/^\s*\*\s*$/gm, ''); // Remove standalone asterisks at start of lines
+    .replace(/^\s*\*\s*$/gm, '') // Remove standalone asterisks at start of lines
+    .replace(/\n\s*•\s*\n/g, '\n') // Remove empty bullet points with bullet character
+    .replace(/\n\s*-\s*\n/g, '\n'); // Remove empty bullet points with dash
 
   // Format headers with proper styling (convert **Header:** to <strong>Header:</strong>)
   processedContent = processedContent
@@ -104,7 +106,7 @@ export const formatStorybook = (content: string | null) => {
     const detailsContent = detailsMatch[1].trim();
     const bulletPoints = detailsContent.split(/(?:•|\*|-)\s+/)
       .map(point => point.trim())
-      .filter(point => point.length > 0);
+      .filter(point => point.length > 0); // Filter out empty bullet points
     
     // If we extracted bullet points, use them; otherwise use the whole content
     if (bulletPoints.length > 0) {

@@ -94,11 +94,12 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
                     {formattedStorybook.sections
                       .find(s => s.type === 'details')
                       ?.content
+                      .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
                       .slice(0, 2) // Show just first 2 points for compact display
                       .map((detail: string, index: number) => (
                         <li key={index}>{detail}</li>
                       ))}
-                      {(formattedStorybook.sections.find(s => s.type === 'details')?.content as string[]).length > 2 && (
+                      {(formattedStorybook.sections.find(s => s.type === 'details')?.content as string[]).filter((detail: string) => detail && detail.trim().length > 0).length > 2 && (
                         <li className="text-primary">...more</li>
                       )}
                   </ul>

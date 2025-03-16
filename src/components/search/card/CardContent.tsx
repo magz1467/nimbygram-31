@@ -133,6 +133,7 @@ export const CardContent = ({
               formattedStorybook.sections
                 .find(s => s.type === 'details')
                 ?.content
+                .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
                 .map((detail: string, index: number) => (
                   <div key={index} className="flex gap-2.5 items-start">
                     <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
