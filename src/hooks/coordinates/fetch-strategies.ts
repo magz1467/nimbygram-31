@@ -94,7 +94,7 @@ export const fetchCoordinatesForAddress = async (
     if (isMounted && result) {
       console.log('🏠 Found address coordinates:', result);
       callbacks.setCoordinates(result.coordinates);
-      callbacks.setPostcode(result.postcode);
+      callbacks.setPostcode(result.postcode || null);
     }
   } catch (error) {
     console.error('Error fetching coordinates for address:', error);
@@ -118,7 +118,7 @@ export const fetchCoordinatesForLocationName = async (
     if (isMounted && result) {
       console.log('🌎 Found location coordinates:', result);
       callbacks.setCoordinates(result.coordinates);
-      callbacks.setPostcode(result.postcode);
+      callbacks.setPostcode(result.postcode || null);
     }
   } catch (error) {
     console.error('Error fetching coordinates for location name:', error);
@@ -136,9 +136,9 @@ export const fetchCoordinatesForPostcode = async (
     console.log('📮 Fetching coordinates for postcode:', postcode);
     const result = await fetchCoordinatesFromPostcodesIo(postcode);
     
-    if (isMounted && result) {
+    if (isMounted) {
       console.log('📮 Found postcode coordinates:', result);
-      callbacks.setCoordinates(result.coordinates);
+      callbacks.setCoordinates(result);
       callbacks.setPostcode(postcode);
     }
   } catch (error) {

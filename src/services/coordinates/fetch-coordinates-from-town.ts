@@ -7,7 +7,7 @@ import { fetchCoordinatesByLocationName } from './fetch-coordinates-by-location-
 
 interface TownCoordinatesResult {
   coordinates: [number, number];
-  postcode: string | null;
+  postcode: string | null; // Making it nullable instead of optional
 }
 
 export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCoordinatesResult> => {
@@ -18,7 +18,13 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
   
   try {
     console.log(`🔄 Using location name strategy for town: ${townName}`);
-    return await fetchCoordinatesByLocationName(townName);
+    const result = await fetchCoordinatesByLocationName(townName);
+    
+    // Ensure we conform to the TownCoordinatesResult interface
+    return {
+      coordinates: result.coordinates,
+      postcode: result.postcode || null // Ensure we always return a string or null
+    };
   } catch (error) {
     console.error('Error fetching town coordinates:', error);
     throw error;

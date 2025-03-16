@@ -1,5 +1,8 @@
 
-import { Toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+
+// Define the Toast type to match what's expected
+type Toast = ReturnType<typeof useToast>["toast"];
 
 export const handleCoordinateError = (error: any, searchTerm: string, toast: Toast) => {
   console.error('Coordinate error:', error);
