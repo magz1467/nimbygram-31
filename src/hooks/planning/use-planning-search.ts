@@ -98,7 +98,9 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
       }
     },
     enabled: !!searchParam,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    // Enhanced caching configuration
+    staleTime: 10 * 60 * 1000, // Increase cache time to 10 minutes
+    gcTime: 15 * 60 * 1000, // Keep cache in memory for 15 minutes
     retry: 2, // Retry twice
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnWindowFocus: false,

@@ -6,6 +6,30 @@ import { calculateDistance, kmToMiles } from "../utils/distance-calculator";
 import { calculateBoundingBox } from "../utils/bounding-box";
 import { SearchFilters } from "./types";
 
+// Cache storage for recent application data
+const applicationCache: Record<string, any[]> = {};
+const MAX_CACHE_SIZE = 20;
+const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Gets a cache key for the results
+ */
+const getCacheKey = (lat: number, lng: number, radius: number, filters?: SearchFilters): string => {
+  return `${lat.toFixed(4)},${lng.toFixed(4)},${radius},${JSON.stringify(filters || {})}`;
+};
+
+/**
+ * Clears old cache entries
+ */
+const cleanupCache = () => {
+  const now = Date.now();
+  Object.keys(applicationCache).forEach(key => {
+    if (applicationCache[key].timestamp && now - applicationCache[key].timestamp > CACHE_EXPIRY_MS) {
+      delete applicationCache[key];
+    }
+  });
+};
+
 /**
  * Standalone function for performing a fallback bounding box search
  * Used directly by search strategy when spatial search is unavailable
@@ -18,6 +42,16 @@ export const performFallbackSearch = async (
   limit = 25
 ) => {
   try {
+    // Check cache first
+    const cacheKey = getCacheKey(lat, lng, radius, filters);
+    if (applicationCache[cacheKey]) {
+      console.log(`Using cached results for ${cacheKey}`);
+      return applicationCache[cacheKey].data;
+    }
+    
+    // Clean up expired cache entries
+    cleanupCache();
+    
     // Calculate bounding box coordinates
     const { minLat, maxLat, minLng, maxLng } = calculateBoundingBox(lat, lng, radius);
 
@@ -85,6 +119,20 @@ export const performFallbackSearch = async (
         
         // Sort by distance
         resultsWithDistance.sort((a, b) => a.distance - b.distance);
+        
+        // Store in cache
+        applicationCache[cacheKey] = {
+          data: resultsWithDistance,
+          timestamp: Date.now()
+        };
+        
+        // Maintain cache size
+        if (Object.keys(applicationCache).length > MAX_CACHE_SIZE) {
+          // Remove oldest entry
+          const oldestKey = Object.keys(applicationCache)
+            .sort((a, b) => applicationCache[a].timestamp - applicationCache[b].timestamp)[0];
+          delete applicationCache[oldestKey];
+        }
         
         return resultsWithDistance;
       }
