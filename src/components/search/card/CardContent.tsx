@@ -1,11 +1,11 @@
 
-import { formatStorybook } from "@/utils/storybook-formatter";
-import { Button } from "@/components/ui/button";
-import { MapPin } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { formatStorybook } from "@/utils/storybook-formatter";
 import { DesktopMapDialog } from "@/components/search/results/DesktopMapDialog";
 import { Application } from "@/types/planning";
+import { StorybookContent } from "./storybook/StorybookContent";
+import { MapButton } from "./storybook/MapButton";
 
 interface CardContentProps {
   storybook: string | null;
@@ -92,112 +92,21 @@ export const CardContent = ({
     rawStorybook: storybook ? storybook.substring(0, 100) + '...' : 'none'
   });
 
-  // Map button to use throughout the component
-  const mapButton = (
-    <Button 
-      variant="outline" 
-      onClick={handleSeeOnMapClick}
-      className="w-full text-primary flex items-center justify-center gap-1.5 mt-4"
-    >
-      <MapPin className="w-4 h-4" />
-      See on map
-    </Button>
-  );
-
   // If no storybook content at all, just return the button
   if (!storybook) {
-    return <div>{mapButton}</div>;
+    return <div><MapButton onClick={handleSeeOnMapClick} /></div>;
   }
 
-  // Render the formatted storybook content from sections or fallback to direct content
   return (
     <div className="space-y-6">
-      {/* What's the Deal section */}
-      {formattedStorybook?.sections?.find(s => s.type === 'deal') && (
-        <div className="prose prose-sm max-w-none">
-          <div className="bg-primary/5 rounded-lg p-4">
-            <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
-            <div className="text-gray-700">
-              {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Key Details section */}
-      {formattedStorybook?.sections?.find(s => s.type === 'details') && (
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Key Details</h3>
-          <div className="grid gap-3">
-            {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
-              formattedStorybook.sections
-                .find(s => s.type === 'details')
-                ?.content
-                .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
-                .map((detail: string, index: number) => (
-                  <div key={index} className="flex gap-2.5 items-start">
-                    <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    <div 
-                      className="text-gray-700 flex-1"
-                      dangerouslySetInnerHTML={{ 
-                        __html: detail.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
-                      }}
-                    />
-                  </div>
-                ))
-            ) : (
-              <div 
-                className="text-gray-700"
-                dangerouslySetInnerHTML={{ 
-                  __html: typeof formattedStorybook.sections.find(s => s.type === 'details')?.content === 'string' 
-                    ? (formattedStorybook.sections.find(s => s.type === 'details')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
-                    : formattedStorybook.sections.find(s => s.type === 'details')?.content || ''
-                }}
-              />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Nimbywatch section */}
-      {formattedStorybook?.sections?.find(s => s.type === 'nimby') && (
-        <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
-          <h3 className="font-semibold mb-2 flex items-center gap-2">
-            🏘️ Nimbywatch
-          </h3>
-          <div 
-            className="space-y-2 text-white/90"
-            dangerouslySetInnerHTML={{ 
-              __html: typeof formattedStorybook.sections.find(s => s.type === 'nimby')?.content === 'string'
-                ? (formattedStorybook.sections.find(s => s.type === 'nimby')?.content as string).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
-                : formattedStorybook.sections.find(s => s.type === 'nimby')?.content || ''
-            }}
-          />
-        </div>
-      )}
-
-      {/* Fallback for content with no sections */}
-      {!formattedStorybook?.sections && formattedStorybook?.content && (
-        <div className="prose prose-sm max-w-none" 
-          dangerouslySetInnerHTML={{ __html: formattedStorybook.content }} 
-        />
-      )}
-
-      {/* Raw fallback if nothing was processed correctly */}
-      {!formattedStorybook?.sections && !formattedStorybook?.content && storybook && (
-        <div className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-gray-900 font-medium mb-2">Application Details</h3>
-          <div 
-            className="whitespace-pre-wrap text-gray-700"
-            dangerouslySetInnerHTML={{ 
-              __html: storybook.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>').replace(/\n\*\s/g, '<br/>• ')
-            }}
-          />
-        </div>
-      )}
+      {/* Render storybook content */}
+      <StorybookContent 
+        formattedStorybook={formattedStorybook} 
+        rawStorybook={storybook} 
+      />
 
       {/* Add the map button at the end */}
-      {mapButton}
+      <MapButton onClick={handleSeeOnMapClick} />
 
       {/* Map Dialog for Desktop */}
       {!isMobile && applicationId && (
