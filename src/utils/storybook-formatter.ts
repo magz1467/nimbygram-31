@@ -1,6 +1,9 @@
 
 export const formatStorybook = (content: string | null) => {
-  if (!content) return null;
+  if (!content) {
+    console.log('No storybook content provided');
+    return null;
+  }
 
   console.log('Processing storybook content:', content.substring(0, 100) + '...');
 
@@ -82,10 +85,12 @@ export const formatStorybook = (content: string | null) => {
     });
   }
   
-  // If no sections were found, just return the cleaned content
+  // If no sections were found, provide the raw content as fallback
   if (processedSections.length === 0) {
-    // Just clean up any bullet points for better formatting
-    let cleanContent = bodyContent
+    console.log('No structured sections found in storybook, using raw content as fallback');
+    
+    // Format the content for better display
+    const cleanContent = bodyContent
       .split(/\n\n+/)
       .map(paragraph => {
         if (!paragraph.trim()) return '';
@@ -100,9 +105,12 @@ export const formatStorybook = (content: string | null) => {
       })
       .filter(Boolean)
       .join('\n');
-      
-    console.log('No sections found in storybook, returning raw content');
-    return { header, content: cleanContent };
+
+    return { 
+      header, 
+      content: cleanContent,
+      rawContent: bodyContent // Include the raw content for fallback
+    };
   }
   
   console.log(`Found ${processedSections.length} storybook sections:`, 
@@ -110,6 +118,7 @@ export const formatStorybook = (content: string | null) => {
   
   return { 
     header, 
-    sections: processedSections
+    sections: processedSections,
+    rawContent: bodyContent // Include the raw content for fallback
   };
 };

@@ -81,7 +81,8 @@ export const useApplicationsData = ({ postcode, radius = 5 }: UseApplicationsDat
             last_date_consultation_comments: item.last_date_consultation_comments || null,
             valid_date: item.valid_date || null,
             centroid: item.centroid || null,
-            received_date: item.received_date || null
+            received_date: item.received_date || null,
+            storybook: item.storybook || null // Ensure storybook is included
           } as Application;
         });
         

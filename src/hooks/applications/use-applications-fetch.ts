@@ -18,10 +18,10 @@ export const fetchApplicationsInRadius = async (
     const latDiff = radius / kmPerDegree;
     const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
     
-    // Query with geographic bounds
+    // Query with geographic bounds - make sure to request storybook field 
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')
+      .select('*, storybook')
       .gte('latitude', lat - latDiff)
       .lte('latitude', lat + latDiff)
       .gte('longitude', lng - lngDiff)
@@ -59,7 +59,8 @@ export const fetchApplicationsInRadius = async (
         postcode: item.postcode || '',
         impact_score: item.impact_score || null,
         impact_score_details: item.impact_score_details || null,
-        received_date: item.received_date || null
+        received_date: item.received_date || null,
+        storybook: item.storybook || null // Make sure to include storybook
       } as Application;
     });
   } catch (err) {

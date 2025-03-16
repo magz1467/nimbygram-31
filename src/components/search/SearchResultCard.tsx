@@ -52,6 +52,8 @@ export const SearchResultCard = ({
     if (application.storybook) {
       console.log('SearchResultCard storybook preview for app', application.id, ':', 
         application.storybook.substring(0, 100) + '...');
+    } else {
+      console.log('SearchResultCard missing storybook for app', application.id);
     }
   }, [application]);
 

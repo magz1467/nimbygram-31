@@ -39,7 +39,9 @@ export function transformApplicationData(rawData: any): Application {
     ai_title: rawData.ai_title || null,
     postcode: rawData.postcode || null,
     impact_score: rawData.impact_score || null,
-    impact_score_details: rawData.impact_score_details || null
+    impact_score_details: rawData.impact_score_details || null,
+    storybook: rawData.storybook || null,  // Make sure storybook is included
+    received_date: rawData.received_date || null
   };
 }
 

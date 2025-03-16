@@ -63,7 +63,7 @@ export const CardContent = ({
     hasStorybook: !!storybook,
     formattedResult: formattedStorybook,
     sectionTypes: formattedStorybook?.sections?.map(s => s.type) || 'none',
-    rawPreview: storybook ? storybook.substring(0, 100) + '...' : 'none'
+    rawStorybook: storybook ? storybook.substring(0, 100) + '...' : 'none'
   });
 
   // Map button to use throughout the component
@@ -139,7 +139,7 @@ export const CardContent = ({
         </div>
       )}
 
-      {/* Fallback for old format or if sections weren't properly detected */}
+      {/* Fallback for content with no sections */}
       {!formattedStorybook?.sections && formattedStorybook?.content && (
         <div className="prose prose-sm max-w-none mt-4" 
           dangerouslySetInnerHTML={{ __html: formattedStorybook.content }} 
