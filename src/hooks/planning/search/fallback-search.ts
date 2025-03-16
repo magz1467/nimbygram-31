@@ -52,12 +52,15 @@ export const performFallbackSearch = async (
     // Set an appropriate timeout
     const timeout = isLargeArea ? 8000 : 15000; // 8 seconds for large areas, 15 for smaller
     
-    // Execute query with timeout
-    const { data, error } = await withTimeout(
+    // Execute query with timeout - convert query to promise first
+    const result = await withTimeout(
       query,
       timeout,
       `Search timeout reached after ${timeout/1000} seconds. Some results may be available.`
     );
+    
+    // Now we can safely access data and error properties
+    const { data, error } = result;
     
     if (error) {
       // For timeout errors, we might still have partial results

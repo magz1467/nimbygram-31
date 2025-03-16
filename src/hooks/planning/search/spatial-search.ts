@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
 import { transformApplicationsData } from "@/utils/transforms/application-transformer";
@@ -43,55 +44,58 @@ export const performSpatialSearch = async (
       });
     
     // Add timeout to the promise
-    const { data: spatialData, error: spatialError } = await withTimeout(
+    const result = await withTimeout(
       spatialPromise,
       timeout,
       `Search timeout reached after ${timeout/1000} seconds. Some results may be available.`
     );
     
+    // Now we can safely access data and error properties
+    const { data, error } = result;
+    
     // If we get a function not found error or other error, return null to trigger fallback
-    if (spatialError) {
-      if (spatialError.message.includes('function') || 
-          spatialError.message.includes('not found')) {
+    if (error) {
+      if (error.message.includes('function') || 
+          error.message.includes('not found')) {
         console.log('PostGIS function not available, will use fallback');
         return null;
       }
       
-      console.error('Spatial search error:', spatialError);
+      console.error('Spatial search error:', error);
       
       // For timeout errors with large areas, we might still have partial results
       if (isLargeArea && 
-          (spatialError.message.includes('timeout') || 
-           spatialError.message.includes('statement') || 
-           spatialError.message.includes('cancel'))) {
+          (error.message.includes('timeout') || 
+           error.message.includes('statement') || 
+           error.message.includes('cancel'))) {
         console.log('Large area timeout, but we might have partial results');
         // If we don't have any data, return null to trigger fallback
-        if (!spatialData) {
+        if (!data) {
           return null;
         }
         // Otherwise, we'll continue with the partial results we have
       } else {
-        throw spatialError;
+        throw error;
       }
     }
     
-    if (spatialData) {
-      console.log(`✅ Spatial search retrieved ${spatialData.length} applications`);
+    if (data) {
+      console.log(`✅ Spatial search retrieved ${data.length} applications`);
       
       // Check if storybook data is present in the first result
-      if (spatialData.length > 0) {
+      if (data.length > 0) {
         console.log('First result storybook check:', {
-          hasStorybook: Boolean(spatialData[0].storybook),
-          id: spatialData[0].id
+          hasStorybook: Boolean(data[0].storybook),
+          id: data[0].id
         });
         
-        if (spatialData[0].storybook) {
-          console.log(`Storybook preview: ${spatialData[0].storybook.substring(0, 100)}...`);
+        if (data[0].storybook) {
+          console.log(`Storybook preview: ${data[0].storybook.substring(0, 100)}...`);
         }
       }
       
       // Apply any filters if needed
-      let filteredData = spatialData;
+      let filteredData = data;
       if (filters && Object.keys(filters).length > 0) {
         // Apply status filter if present
         if (filters.status) {
