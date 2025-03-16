@@ -13,14 +13,15 @@ interface MiniCardProps {
 }
 
 export const MiniCard = ({ application, onClick }: MiniCardProps) => {
-  const storybook = formatStorybook(application.storybook);
+  const formattedStorybook = formatStorybook(application.storybook);
   
   console.log('🎯 MiniCard rendering with:', {
     applicationId: application.id,
     hasStorybook: !!application.storybook,
     formattedStorybook: {
-      hasHeader: !!storybook?.header,
-      hasContent: !!storybook?.content
+      hasHeader: !!formattedStorybook?.header,
+      hasSections: !!formattedStorybook?.sections,
+      sectionCount: formattedStorybook?.sections?.length
     },
     imageUrl: application.streetview_url || application.image || application.image_map_url
   });
@@ -51,14 +52,14 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
       <div className="flex flex-col p-4 cursor-pointer touch-pan-y">
         {/* Title Section */}
         <div className="font-semibold text-primary mb-3 text-lg">
-          {storybook?.header || application.title || 'Planning Application'}
+          {formattedStorybook?.header || application.title || 'Planning Application'}
         </div>
 
         {/* Main Image - Now larger and more prominent */}
         <div className="w-full aspect-video mb-4 rounded-lg overflow-hidden bg-gray-100">
           <ImageWithFallback
             src={imageUrl}
-            alt={storybook?.header || application.title || ''}
+            alt={formattedStorybook?.header || application.title || ''}
             className="w-full h-full object-cover"
             fallbackSrc="/placeholder.svg"
           />
@@ -72,15 +73,26 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
           </span>
         </p>
 
-        {/* Content - if available */}
-        {storybook?.content && (
+        {/* Formatted Storybook Content */}
+        {formattedStorybook?.sections ? (
+          <div className="text-sm text-gray-600 mb-3">
+            {formattedStorybook.sections.find(s => s.type === 'deal') && (
+              <div className="mb-2">
+                <p className="font-medium">What's the Deal</p>
+                <p className="line-clamp-2">
+                  {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : formattedStorybook?.content ? (
           <div 
             className="text-sm text-gray-600 mb-3 line-clamp-3"
             dangerouslySetInnerHTML={{ 
-              __html: storybook.content
+              __html: formattedStorybook.content
             }}
           />
-        )}
+        ) : null}
 
         {/* Badges and Distance */}
         <div className="flex items-center gap-2 mt-auto">

@@ -1,6 +1,8 @@
 
+// This basic formatter is kept for backward compatibility
+// New components should use the more advanced formatStorybook from storybook-formatter.ts
 export const formatStorybook = (text: string): string => {
-  console.log('🔤 Formatting text:', {
+  console.log('🔤 Formatting text with basic formatter:', {
     input: text,
     type: typeof text,
     length: text?.length,
@@ -8,7 +10,7 @@ export const formatStorybook = (text: string): string => {
   });
 
   if (!text) {
-    console.log('⚠️ Empty text received in formatStorybook');
+    console.log('⚠️ Empty text received in basic formatStorybook');
     return '';
   }
 

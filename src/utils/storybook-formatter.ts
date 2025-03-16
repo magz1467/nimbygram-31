@@ -32,46 +32,69 @@ export const formatStorybook = (content: string | null) => {
     }
   }
 
-  // Split content into paragraphs and process each one
-  bodyContent = bodyContent
-    .split(/\n\n+/)
-    .map(paragraph => {
-      // Skip empty paragraphs
-      if (!paragraph.trim()) return '';
-
-      const lines = paragraph
-        .trim()
-        .split('\n')
-        .map(line => {
-          // Convert asterisk list items to bullet points
-          line = line.replace(/^\*\s/, '• ');
-          
-          // Format bold text
-          line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-          
-          // Format section headers that appear at start of lines
-          line = line.replace(/^([A-Za-z\s']+:)(\s*)/g, '<strong>$1</strong>$2');
-          
-          return line;
-        })
-        .join('<br/>');
-
-      return `<p>${lines}</p>`;
-    })
-    .filter(Boolean) // Remove empty paragraphs
-    .join('\n');
-
-  // Clean up any excess whitespace and empty paragraphs
-  bodyContent = bodyContent
-    .replace(/<p>\s*<\/p>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // Ensure content is wrapped in paragraphs
-  if (!bodyContent.startsWith('<p>')) {
-    bodyContent = `<p>${bodyContent}</p>`;
+  // Process sections
+  const processedSections = [];
+  
+  // Check if content has "What's the Deal" section
+  const dealMatch = bodyContent.match(/What['']s the Deal:?(.*?)(?=Key Details:|The Details:|Nimbywatch:|$)/si);
+  if (dealMatch && dealMatch[1]) {
+    processedSections.push({
+      type: 'deal',
+      title: "What's the Deal",
+      content: dealMatch[1].trim()
+    });
   }
-
-  return { header, content: bodyContent };
+  
+  // Check if content has "Key Details" or "The Details" section
+  const detailsMatch = bodyContent.match(/(?:Key Details:|The Details:)(.*?)(?=Nimbywatch:|Considerations:|$)/si);
+  if (detailsMatch && detailsMatch[1]) {
+    // Extract bullet points
+    const detailsContent = detailsMatch[1].trim();
+    const bulletPoints = detailsContent.split(/(?:•|\*|-)\s+/)
+      .map(point => point.trim())
+      .filter(point => point.length > 0);
+    
+    processedSections.push({
+      type: 'details',
+      title: "Key Details",
+      content: bulletPoints
+    });
+  }
+  
+  // Check if content has "Nimbywatch" section
+  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)$/si);
+  if (nimbyMatch && nimbyMatch[1]) {
+    processedSections.push({
+      type: 'nimby',
+      title: "Nimbywatch",
+      content: nimbyMatch[1].trim()
+    });
+  }
+  
+  // If no sections were found, just return the cleaned content
+  if (processedSections.length === 0) {
+    // Just clean up any bullet points for better formatting
+    let cleanContent = bodyContent
+      .split(/\n\n+/)
+      .map(paragraph => {
+        if (!paragraph.trim()) return '';
+        
+        // Format bullet points
+        paragraph = paragraph.replace(/^\*\s|-\s/g, '• ');
+        
+        // Format bold text
+        paragraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        return `<p>${paragraph}</p>`;
+      })
+      .filter(Boolean)
+      .join('\n');
+      
+    return { header, content: cleanContent };
+  }
+  
+  return { 
+    header, 
+    sections: processedSections
+  };
 };
-

@@ -1,8 +1,10 @@
+
 import { Card } from "@/components/ui/card";
 import { Application } from "@/types/planning";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { formatStorybook } from "@/utils/storybook-formatter";
 
 interface ApplicationDescriptionProps {
   application?: Application;
@@ -27,13 +29,57 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
 
   if (!application) return null;
 
+  const formattedStorybook = application.storybook 
+    ? formatStorybook(application.storybook) 
+    : null;
+
   return (
     <Card className="p-4">
       <h3 className="font-semibold mb-2">Description</h3>
       <div className="relative">
-        <p className={`text-sm ${!isExpanded ? "line-clamp-2" : ""}`}>
-          {transformText(application.description || '')}
-        </p>
+        {formattedStorybook?.sections ? (
+          <div className={!isExpanded ? "max-h-24 overflow-hidden" : ""}>
+            {/* What's the Deal section */}
+            {formattedStorybook.sections.find(s => s.type === 'deal') && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">What's the Deal</h4>
+                <p className="text-sm">
+                  {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
+                </p>
+              </div>
+            )}
+            
+            {/* Key Details section */}
+            {formattedStorybook.sections.find(s => s.type === 'details') && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Key Details</h4>
+                <ul className="text-sm space-y-1 ml-5 list-disc">
+                  {formattedStorybook.sections
+                    .find(s => s.type === 'details')
+                    ?.content
+                    .map((detail: string, index: number) => (
+                      <li key={index}>{detail}</li>
+                    ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Nimbywatch section */}
+            {formattedStorybook.sections.find(s => s.type === 'nimby') && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Nimbywatch</h4>
+                <p className="text-sm">
+                  {formattedStorybook.sections.find(s => s.type === 'nimby')?.content}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className={`text-sm ${!isExpanded ? "line-clamp-2" : ""}`}>
+            {transformText(application.description || '')}
+          </p>
+        )}
+        
         <Button
           variant="ghost"
           size="sm"

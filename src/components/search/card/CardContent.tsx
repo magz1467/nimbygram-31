@@ -56,93 +56,79 @@ export const CardContent = ({
     }
   };
 
-  const storyContent = formatStorybook(storybook);
+  const formattedStorybook = formatStorybook(storybook);
 
-  if (!storyContent?.content) {
-    // Even if no storybook content, still show the See on Map button
-    return (
-      <div className="mt-4">
-        <Button 
-          variant="outline" 
-          onClick={handleSeeOnMapClick}
-          className="w-full text-primary flex items-center justify-center gap-1.5"
-        >
-          <MapPin className="w-4 h-4" />
-          See on map
-        </Button>
-      </div>
-    );
+  // Always show the See on Map button
+  const mapButton = (
+    <Button 
+      variant="outline" 
+      onClick={handleSeeOnMapClick}
+      className="w-full text-primary flex items-center justify-center gap-1.5"
+    >
+      <MapPin className="w-4 h-4" />
+      See on map
+    </Button>
+  );
+
+  // If no storybook content, just return the button
+  if (!formattedStorybook) {
+    return <div className="mt-4">{mapButton}</div>;
   }
-
-  const parseHtmlContent = (content: string) => {
-    return content
-      .replace(/<\/?strong>/g, '')
-      .replace(/<\/?p>/g, '')
-      .replace(/<br\/?>/g, '\n')
-      .trim();
-  };
-
-  const getKeyDetails = (content: string) => {
-    const detailsSection = content.split('The Details:')[1]?.split('Considerations:')[0];
-    if (!detailsSection) return [];
-    
-    return detailsSection
-      .split('•')
-      .slice(1)
-      .map(detail => detail.trim())
-      .filter(detail => detail.length > 0);
-  };
 
   return (
     <div className="space-y-6">
       {/* See on Map button - always visible as its own row */}
-      <Button 
-        variant="outline" 
-        onClick={handleSeeOnMapClick}
-        className="w-full text-primary flex items-center justify-center gap-1.5"
-      >
-        <MapPin className="w-4 h-4" />
-        See on map
-      </Button>
+      {mapButton}
 
-      <div className="prose prose-sm max-w-none">
-        <div className="bg-primary/5 rounded-lg p-4">
-          <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
-          <div className="text-gray-700">
-            {parseHtmlContent(storyContent.content.split('The Details:')[0])}
+      {/* What's the Deal section */}
+      {formattedStorybook.sections?.find(s => s.type === 'deal') && (
+        <div className="prose prose-sm max-w-none">
+          <div className="bg-primary/5 rounded-lg p-4">
+            <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+            <div className="text-gray-700">
+              {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900">Key Details</h3>
-        <div className="grid gap-4">
-          {getKeyDetails(storyContent.content).map((detail, index) => (
-            <div key={index} className="flex gap-3 items-start">
-              <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <p className="text-gray-700 flex-1">{parseHtmlContent(detail)}</p>
-            </div>
-          ))}
+      {/* Key Details section */}
+      {formattedStorybook.sections?.find(s => s.type === 'details') && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900">Key Details</h3>
+          <div className="grid gap-4">
+            {formattedStorybook.sections
+              .find(s => s.type === 'details')
+              ?.content
+              .map((detail: string, index: number) => (
+                <div key={index} className="flex gap-3 items-start">
+                  <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <p className="text-gray-700 flex-1">{detail}</p>
+                </div>
+              ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {storyContent.content.includes('Nimbywatch:') && (
+      {/* Nimbywatch section */}
+      {formattedStorybook.sections?.find(s => s.type === 'nimby') && (
         <div className="bg-[#8B5CF6] text-white rounded-lg p-4">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
             🏘️ Nimbywatch
           </h3>
           <div className="space-y-2 text-white/90">
-            {storyContent.content
-              .split('Nimbywatch:')[1]
-              .split('•')
-              .filter(Boolean)
-              .map((point, index) => (
-                <p key={index} className="text-sm">
-                  {parseHtmlContent(point.trim())}
-                </p>
-              ))}
+            <p className="text-sm">
+              {formattedStorybook.sections.find(s => s.type === 'nimby')?.content}
+            </p>
           </div>
         </div>
+      )}
+
+      {/* Fallback for old format or if sections weren't properly detected */}
+      {!formattedStorybook.sections && formattedStorybook.content && (
+        <div className="prose prose-sm max-w-none mt-4" 
+          dangerouslySetInnerHTML={{ __html: formattedStorybook.content }} 
+        />
       )}
 
       {/* Map Dialog for Desktop */}
