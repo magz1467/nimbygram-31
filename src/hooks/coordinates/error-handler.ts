@@ -31,8 +31,29 @@ export const handleCoordinateError = (error: any, searchTerm: string, toast: Toa
       description: `We couldn't find "${searchTerm}". Please try a different location name.`,
       variant: "destructive",
     });
-  } else if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
-    console.log('Network/timeout error detected, showing toast');
+  } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+    console.log('Timeout error detected, showing toast');
+    
+    // Check if this might be a large city/area search
+    const isLikelyCity = !searchTerm.match(/^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i) && // Not a postcode
+                        searchTerm.length < 30 && // Not a super long address
+                        !searchTerm.match(/\d{1,4}[\s,]+/); // Likely doesn't contain a street number
+    
+    if (isLikelyCity) {
+      toast({
+        title: "Search taking longer than expected",
+        description: `We're having trouble searching for "${searchTerm}". Try using a more specific location or postcode for faster results.`,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Connection error",
+        description: "The request timed out. Please try again or use a more specific search term.",
+        variant: "destructive",
+      });
+    }
+  } else if (errorMessage.includes('network')) {
+    console.log('Network error detected, showing toast');
     toast({
       title: "Connection error",
       description: "Please check your internet connection and try again.",
