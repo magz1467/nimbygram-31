@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/utils/fetchUtils";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import { type PostgrestResponse } from '@supabase/supabase-js';
-import { SearchFilters } from "../use-planning-search";
+import { SearchFilters } from "./types";
 
 // This service uses PostGIS spatial functions to find applications within a radius
 export const useSpatialSearch = () => {

@@ -1,20 +1,17 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useToast } from "@/hooks/use-toast";
-import { Application } from "@/types/planning";
-import { performSpatialSearch } from './search/spatial-search';
-import { performFallbackSearch } from './search/fallback-search';
+import { executeSearchStrategy } from './search/search-strategy';
+import { postcodeToCoordinates } from './search/postcode-utils';
+import { useSearchErrorHandler } from './search/search-error-handler';
+import { SearchFilters, PlanningSearchResult } from './search/types';
 
-export interface SearchFilters {
-  status?: string;
-  type?: string;
-}
+export type { SearchFilters } from './search/types';
 
-export const usePlanningSearch = (searchParam: [number, number] | string | null) => {
+export const usePlanningSearch = (searchParam: [number, number] | string | null): PlanningSearchResult => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchRadius, setSearchRadius] = useState<number>(5);
-  const { toast } = useToast();
+  const { handleSearchError } = useSearchErrorHandler();
   const errorRef = useRef<Error | null>(null);
   const hasShownErrorToast = useRef<boolean>(false);
   const hasPartialResults = useRef<boolean>(false);
@@ -26,43 +23,6 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
     hasPartialResults.current = false;
     isSearchInProgress.current = false;
   }, [searchParam, searchRadius, JSON.stringify(filters)]);
-  
-  // Function to handle search errors
-  const handleSearchError = useCallback((err: any) => {
-    console.error('Search error:', err);
-    errorRef.current = err instanceof Error ? err : new Error(String(err));
-    
-    // Don't show errors for missing function
-    if (err?.message?.includes('get_nearby_applications') || 
-        err?.message?.includes('Could not find the function')) {
-      console.log('Not showing error for missing RPC function');
-      return;
-    }
-    
-    // Don't show toast for timeouts if we have partial results
-    if (hasPartialResults.current) {
-      console.log('Not showing error toast because we have partial results');
-      return;
-    }
-    
-    // Don't show timeout errors as toast messages unless we have no results
-    if (err?.message?.includes('timeout') || 
-        err?.message?.includes('canceling statement') ||
-        err?.message?.includes('57014')) {
-      console.log('Not showing toast for timeout error');
-      return;
-    }
-    
-    // Only show toast once per search
-    if (!hasShownErrorToast.current) {
-      toast({
-        title: "Search in Progress",
-        description: "Your search is taking longer than expected. We'll show results as they become available.",
-        variant: "default",
-      });
-      hasShownErrorToast.current = true;
-    }
-  }, [toast]);
   
   // Create a stable query key
   const queryKey = useRef<string[]>(['planning-applications', 'no-coordinates']);
@@ -102,26 +62,12 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
         if (typeof searchParam === 'string') {
           // If searchParam is a postcode, fetch its coordinates first
           console.log('Searching with postcode:', searchParam);
-
-          // Determine if it's a full postcode or just an outcode
-          const isOutcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/i.test(searchParam);
-          const endpoint = isOutcode 
-            ? `https://api.postcodes.io/outcodes/${searchParam}`
-            : `https://api.postcodes.io/postcodes/${searchParam}`;
-            
+          
           try {
-            const response = await fetch(endpoint);
-            const data = await response.json();
-            
-            if (!data.result) {
-              throw new Error(isOutcode ? 'Invalid outcode' : 'Invalid postcode');
-            }
-            
-            lat = data.result.latitude;
-            lng = data.result.longitude;
-            console.log(`Converted ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, lat, lng);
+            [lat, lng] = await postcodeToCoordinates(searchParam);
+            console.log(`Converted postcode to coordinates:`, lat, lng);
           } catch (postcodeError) {
-            console.error(`Error converting ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, postcodeError);
+            console.error(`Error converting postcode to coordinates:`, postcodeError);
             throw postcodeError;
           }
         } else {
@@ -129,35 +75,18 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
           [lat, lng] = searchParam;
         }
         
-        // First try spatial search (with PostGIS)
-        console.log('Attempting spatial search first...');
-        const spatialResults = await performSpatialSearch(lat, lng, searchRadius, filters);
+        // Execute the search strategy
+        const results = await executeSearchStrategy(lat, lng, searchRadius, filters);
         
-        // If spatial search returns results or empty array (not null), use those results
-        if (spatialResults !== null) {
-          console.log('Using spatial search results:', spatialResults.length);
-          
-          // If we got some results, mark as having partial results
-          if (spatialResults.length > 0) {
-            hasPartialResults.current = true;
-          }
-          
-          return spatialResults;
-        }
-        
-        // If spatial search returns null (indicating failure/unavailability), use fallback
-        console.log('Spatial search unavailable, using fallback search');
-        const fallbackResults = await performFallbackSearch(lat, lng, searchRadius, filters);
-        console.log('Got fallback results:', fallbackResults.length);
-        
-        // If we got some results from fallback, mark as having partial results
-        if (fallbackResults.length > 0) {
+        // If we got some results, mark as having partial results
+        if (results.length > 0) {
           hasPartialResults.current = true;
         }
         
-        return fallbackResults;
+        return results;
       } catch (err) {
-        handleSearchError(err);
+        handleSearchError(err, hasPartialResults.current);
+        errorRef.current = err instanceof Error ? err : new Error(String(err));
         // Return empty array to prevent component crashes
         return [];
       } finally {
@@ -177,13 +106,18 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
     refetchOnReconnect: false,
     // Set progressive loading behavior
     placeholderData: (previousData) => previousData || [],
-    // Custom timeout handling
+    // Custom error handling
     meta: {
       onError: (error: Error) => {
-        handleSearchError(error);
+        handleSearchError(error, hasPartialResults.current);
       },
     },
   });
+
+  // Combined filter setter that creates a new object
+  const setFiltersHandler = useCallback((newFilters: SearchFilters) => {
+    setFilters(newFilters);
+  }, []);
 
   // Combine stored error with query error
   const error = queryError || errorRef.current;
@@ -195,7 +129,7 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
     hasPartialResults: hasPartialResults.current,
     error,
     filters,
-    setFilters,
+    setFilters: setFiltersHandler,
     searchRadius,
     setSearchRadius
   };

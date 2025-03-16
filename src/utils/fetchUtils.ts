@@ -39,6 +39,7 @@ export const withRetry = async <T>(
     } catch (error) {
       retries++;
       if (retries < maxRetries) {
+        // Fix: Don't call the Number object directly, use the primitive number type
         await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(backoff, retries)));
       } else {
         throw error;

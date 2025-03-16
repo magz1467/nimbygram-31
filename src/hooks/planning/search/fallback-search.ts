@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/utils/fetchUtils";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import { type PostgrestResponse } from '@supabase/supabase-js';
-import { SearchFilters } from "../use-planning-search";
+import { SearchFilters } from "./types";
 
 // This is a fallback search method that uses a simpler bounding box approach
 // to find planning applications when the spatial search fails
@@ -88,19 +88,6 @@ export const useBoundingBoxSearch = () => {
       logSearchError('bounding-box', 'exception', error instanceof Error ? error.message : String(error));
       return { data: [], error };
     }
-  };
-
-  // Haversine formula to calculate distance between two points on Earth
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
   };
 
   return { searchByBoundingBox };
