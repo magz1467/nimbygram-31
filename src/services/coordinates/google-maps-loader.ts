@@ -1,4 +1,3 @@
-
 /**
  * Google Maps loader - refactored version
  * Handles loading and initialization of Google Maps API

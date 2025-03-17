@@ -19,6 +19,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
     <!-- Ensure styles are loaded before any scripts -->
     <link rel="stylesheet" href="/src/index.css" type="text/css">
+    <!-- Google Maps API Key Detector Script -->
+    <script>
+      (function() {
+        console.log('=== GOOGLE MAPS API KEY DETECTOR ===');
+        
+        // Watch for script additions to detect when Google Maps is loaded
+        const originalCreateElement = document.createElement;
+        document.createElement = function(tagName) {
+          const element = originalCreateElement.call(document, tagName);
+          
+          if (tagName.toLowerCase() === 'script') {
+            // Watch for src attribute changes
+            const originalSetAttribute = element.setAttribute;
+            element.setAttribute = function(name, value) {
+              if (name === 'src' && value.includes('maps.googleapis.com')) {
+                console.log('DETECTED GOOGLE MAPS SCRIPT:', value);
+                
+                // Extract API key
+                const keyMatch = value.match(/key=([^&]+)/);
+                if (keyMatch && keyMatch[1]) {
+                  console.log('USING API KEY:', keyMatch[1]);
+                  console.log('LAST 6 CHARS:', keyMatch[1].slice(-6));
+                  
+                  // Check if it's the expired key
+                  if (keyMatch[1] === 'AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA') {
+                    console.error('EXPIRED KEY DETECTED');
+                  }
+                }
+              }
+              return originalSetAttribute.call(this, name, value);
+            };
+          }
+          return element;
+        };
+      })();
+    </script>
     <!-- Hotjar Tracking Code for nimbygram -->
     <script>
         (function(h,o,t,j,a,r){

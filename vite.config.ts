@@ -23,5 +23,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // Add a cache buster to ensure fresh assets
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      output: {
+        // Add timestamp to chunk names to bust cache
+        chunkFileNames: 'assets/js/[name]-[hash]-[timestamp].js',
+        entryFileNames: 'assets/js/[name]-[hash]-[timestamp].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash]-[timestamp].[ext]',
+      },
+    },
   }
 }));
