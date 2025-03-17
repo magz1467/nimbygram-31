@@ -1,24 +1,42 @@
 
 /**
  * Environment detection utilities
+ * Provides consistent functions for working with environment information
  */
 
 /**
- * Checks if the current hostname is a production domain
- * @returns boolean indicating if this is a production domain
+ * Returns the current hostname, safely handling server-side rendering
+ * @returns Current hostname or 'server' if not in browser
  */
-export const isProdDomain = (): boolean => {
-  const hostname = window.location.hostname || '';
-  return hostname.includes('nimbygram.com') || 
-         hostname.includes('www.nimbygram.com') ||
-         // For local development testing of production mode
-         hostname.includes('localhost');
+export const getCurrentHostname = (): string => {
+  if (typeof window === 'undefined') return 'server';
+  return window.location.hostname;
 };
 
 /**
- * Returns the current hostname or empty string if not available
- * (useful for debugging)
+ * Checks if the current hostname is a production domain
+ * @returns Boolean indicating if this is a production domain
  */
-export const getCurrentHostname = (): string => {
-  return typeof window !== 'undefined' ? window.location.hostname || '' : '';
+export const isProdDomain = (): boolean => {
+  const hostname = getCurrentHostname();
+  return hostname.includes('nimbygram.com');
+};
+
+/**
+ * Checks if the current environment is development
+ * @returns Boolean indicating if this is a development environment
+ */
+export const isDevEnvironment = (): boolean => {
+  const hostname = getCurrentHostname();
+  return hostname === 'localhost' || hostname.includes('127.0.0.1');
+};
+
+/**
+ * Gets the environment name as a string
+ * @returns Environment name: 'production', 'development', or 'unknown'
+ */
+export const getEnvironmentName = (): string => {
+  if (isProdDomain()) return 'production';
+  if (isDevEnvironment()) return 'development';
+  return 'unknown';
 };

@@ -4,6 +4,9 @@
  * This ensures we use consistent API keys across the application
  */
 
+// Import environment detection utility
+import { getCurrentHostname } from "@/utils/environment";
+
 // The current valid Google Maps API key
 const CURRENT_GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
 
@@ -19,7 +22,7 @@ export const getGoogleMapsApiKey = (): string => {
   console.log('🔑 Retrieving Google Maps API key');
   
   // Get the current hostname
-  const hostname = window.location.hostname;
+  const hostname = getCurrentHostname();
   console.log('📍 Current hostname:', hostname);
   
   // Production domain check (nimbygram.com)
@@ -30,7 +33,8 @@ export const getGoogleMapsApiKey = (): string => {
   const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1');
   console.log('🛠️ Is development environment?', isDev);
   
-  // Always use the current key for all environments
+  // IMPORTANT: Always use the CURRENT_GOOGLE_MAPS_API_KEY for all environments
+  // This ensures consistency and prevents API key mismatches
   return CURRENT_GOOGLE_MAPS_API_KEY;
 };
 
@@ -40,11 +44,16 @@ export const getGoogleMapsApiKey = (): string => {
  */
 export const diagnoseApiKey = (): { key: string, hostname: string } => {
   const key = getGoogleMapsApiKey();
-  const hostname = window.location.hostname;
+  const hostname = getCurrentHostname();
   
   console.log('🔍 API key diagnosis:');
   console.log('- Hostname:', hostname);
   console.log('- Using key ending with:', key.slice(-6));
+  
+  // Additional validation for nimbygram.com
+  if (hostname.includes('nimbygram.com')) {
+    console.log('- Using production key for nimbygram.com domain');
+  }
   
   return {
     key: key,

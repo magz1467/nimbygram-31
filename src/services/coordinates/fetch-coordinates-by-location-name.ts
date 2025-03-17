@@ -1,7 +1,8 @@
 
-import { getGoogleGeocoder } from "./geocoder-service";
+import { getGoogleGeocoder, testGeocoder } from "./geocoder-service";
 import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
 import { isProdDomain, getCurrentHostname } from "@/utils/environment";
+import { getGoogleMapsApiKey } from "@/utils/api-keys";
 
 /**
  * Fetch coordinates using Google Geocoding API
@@ -11,6 +12,7 @@ import { isProdDomain, getCurrentHostname } from "@/utils/environment";
 export const fetchCoordinatesByLocationName = async (locationName: string): Promise<{ coordinates: [number, number]; postcode: string | null }> => {
   console.log('🔍 Fetching coordinates for location name:', locationName);
   console.log('🔍 Current hostname:', getCurrentHostname());
+  console.log('🔍 Using API key ending with:', getGoogleMapsApiKey().slice(-6));
   
   try {
     // Enhance the search term by adding UK context if not already present
@@ -23,6 +25,19 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     // Try to load Google Maps
     await ensureGoogleMapsLoaded();
     
+    // Verify Google Maps API is working by running a test
+    const testResult = await testGeocoder();
+    if (!testResult.success) {
+      console.warn('⚠️ Geocoder test failed:', testResult.error || testResult.status);
+      console.warn('⚠️ Will use fallback coordinates instead');
+      const fallbackCoords = useFallbackCoordinates(locationName);
+      
+      return {
+        coordinates: fallbackCoords as [number, number],
+        postcode: null
+      };
+    }
+    
     // Get the geocoder service
     const geocoder = getGoogleGeocoder();
     
@@ -31,7 +46,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       const fallbackCoords = useFallbackCoordinates(locationName);
       
       return {
-        coordinates: fallbackCoords as [number, number], // Type assertion since we know it won't be null
+        coordinates: fallbackCoords as [number, number],
         postcode: null
       };
     }
@@ -46,8 +61,16 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       geocoder.geocode({ address: enhancedLocation }, (results, status) => {
         clearTimeout(timeout);
         
+        console.log('🔍 Geocoder status:', status);
+        console.log('🔍 Found results:', results ? results.length : 0);
+        
         if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
           resolve(results);
+        } else if (status === google.maps.GeocoderStatus.ERROR || 
+                  status === google.maps.GeocoderStatus.INVALID_REQUEST || 
+                  status === google.maps.GeocoderStatus.REQUEST_DENIED) {
+          console.error('🔍 Geocoder API key or request error:', status);
+          reject(new Error(`Geocoder API error: ${status}`));
         } else {
           reject(new Error(`Geocoder failed with status: ${status}`));
         }
@@ -78,13 +101,15 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     };
   } catch (error) {
     console.error('❌ Error fetching coordinates by location name:', error);
+    console.error('❌ Current hostname:', getCurrentHostname());
+    console.error('❌ API key used (last 6 chars):', getGoogleMapsApiKey().slice(-6));
     
     // Use fallback coordinates if available
     console.log('✅ Using fallback coordinates after error for:', locationName);
     const fallbackCoords = useFallbackCoordinates(locationName);
     
     return {
-      coordinates: fallbackCoords as [number, number], // Type assertion since we know it won't be null
+      coordinates: fallbackCoords as [number, number],
       postcode: null
     };
   }
