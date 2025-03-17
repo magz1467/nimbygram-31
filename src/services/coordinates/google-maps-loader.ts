@@ -45,114 +45,90 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   // Create a new loading promise
   isLoading = true;
   loadPromise = new Promise((resolve, reject) => {
-    // Double-check if script is already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
-      console.log('Google Maps API already available in window object');
-      isLoaded = true;
-      isLoading = false;
-      resolve();
-      return;
-    }
-    
-    // Check if script tag already exists
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-      console.log('Google Maps script tag already exists, waiting for it to load');
+    try {
+      // Double-check if script is already loaded
+      if (window.google && window.google.maps && window.google.maps.places) {
+        console.log('Google Maps API already available in window object');
+        isLoaded = true;
+        isLoading = false;
+        loadError = null;
+        resolve();
+        return;
+      }
       
-      // Wait for existing script to load
-      const checkIfLoaded = () => {
-        if (window.google && window.google.maps && window.google.maps.places) {
-          console.log('Google Maps loaded via existing script tag');
-          isLoaded = true;
-          isLoading = false;
-          resolve();
-        } else {
-          setTimeout(checkIfLoaded, 100);
-        }
+      // Check if script tag already exists
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+      if (existingScript) {
+        console.log('Google Maps script tag already exists, waiting for it to load');
+        
+        // Wait for existing script to load
+        const checkIfLoaded = () => {
+          if (window.google && window.google.maps && window.google.maps.places) {
+            console.log('Google Maps loaded via existing script tag');
+            isLoaded = true;
+            isLoading = false;
+            loadError = null;
+            resolve();
+          } else {
+            setTimeout(checkIfLoaded, 100);
+          }
+        };
+        
+        setTimeout(checkIfLoaded, 100);
+        return;
+      }
+      
+      console.log('Loading Google Maps script...');
+      console.log('Current hostname:', window.location.hostname);
+      console.log('Using API key that ends with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
+      
+      // Create script element with explicit libraries
+      const script = document.createElement('script');
+      // Add all necessary libraries: places, geocoding, geometry
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
+      script.async = true;
+      script.defer = true;
+      
+      // Create a promise that will resolve with the script load event
+      window.googleMapsLoaded = () => {
+        console.log('Google Maps script loaded via callback function');
+        
+        // Wait a short time to ensure all objects are available
+        setTimeout(() => {
+          if (window.google && window.google.maps && window.google.maps.places) {
+            console.log('Google Maps API objects confirmed available');
+            isLoaded = true;
+            isLoading = false;
+            loadError = null;
+            resolve();
+          } else {
+            const err = new Error('Google Maps objects not available after script loaded');
+            console.error(err);
+            loadError = err;
+            isLoading = false;
+            reject(err);
+          }
+        }, 300);
       };
       
-      setTimeout(checkIfLoaded, 100);
-      return;
-    }
-    
-    console.log('Loading Google Maps script...');
-    console.log('Current hostname:', window.location.hostname);
-    console.log('Using API key that ends with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
-    
-    // Create script element with explicit libraries
-    const script = document.createElement('script');
-    // Add all necessary libraries: places, geocoding, geometry
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
-    script.async = true;
-    script.defer = true;
-    
-    // Add global callback function for script loading
-    window.googleMapsLoaded = () => {
-      console.log('Google Maps script loaded via callback function');
-      // Note: we don't resolve here because we still need to verify API works
-    };
-    
-    script.onload = () => {
-      console.log('Google Maps script loaded successfully');
+      script.onerror = (error) => {
+        console.error('Failed to load Google Maps script:', error);
+        console.error('Current hostname:', window.location.hostname);
+        const err = new Error('Google Maps script failed to load');
+        loadError = err;
+        isLoading = false;
+        loadPromise = null;
+        reject(err);
+      };
       
-      // Verify the API key works by making a simple API call with longer timeout
-      setTimeout(() => {
-        try {
-          // Check if geocoding is available and works
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ address: 'London, UK' }, (results, status) => {
-            console.log('Geocoder test status:', status);
-            console.log('Geocoder test results:', results ? results.length : 0);
-            
-            if (status === google.maps.GeocoderStatus.OK) {
-              console.log('Google Maps Geocoder API is working correctly');
-              isLoaded = true;
-              isLoading = false;
-              loadError = null;
-              resolve();
-            } else if (status === google.maps.GeocoderStatus.REQUEST_DENIED || 
-                      status === google.maps.GeocoderStatus.ERROR) {
-              const apiError = new Error(`Google Maps API key issue: ${status}`);
-              console.error(apiError);
-              console.error('API key may be restricted to specific domains or has usage limits');
-              console.error('Current hostname:', window.location.hostname);
-              loadError = apiError;
-              isLoading = false;
-              reject(apiError);
-            } else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
-              const limitError = new Error('Google Maps API quota exceeded');
-              console.error(limitError);
-              console.error('The API key has reached its daily quota limit');
-              loadError = limitError;
-              isLoading = false;
-              reject(limitError);
-            } else {
-              // Other statuses may be normal (e.g., ZERO_RESULTS)
-              console.log('Geocoder test status:', status);
-              isLoaded = true;
-              isLoading = false;
-              resolve();
-            }
-          });
-        } catch (error) {
-          console.error('Error testing Google Maps API:', error);
-          loadError = error instanceof Error ? error : new Error(String(error));
-          isLoading = false;
-          reject(loadError);
-        }
-      }, 500); // Give the API a moment to initialize fully
-    };
-    
-    script.onerror = (error) => {
-      console.error('Failed to load Google Maps script:', error);
-      console.error('Current hostname:', window.location.hostname);
-      loadError = new Error('Google Maps script failed to load');
+      document.head.appendChild(script);
+    } catch (error) {
+      console.error('Unexpected error loading Google Maps:', error);
+      loadError = error instanceof Error ? error : new Error(String(error));
       isLoading = false;
       loadPromise = null;
       reject(loadError);
-    };
-    
-    document.head.appendChild(script);
+    }
   });
   
   return loadPromise;

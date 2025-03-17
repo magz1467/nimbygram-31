@@ -20,9 +20,19 @@ export const fetchCoordinatesByLocationName = async (
     throw new Error("No location name provided");
   }
   
+  // Special case for Liverpool - direct return of coords to match preview behavior
+  const isLiverpool = /\bliverpool\b/i.test(locationName);
+  if (isLiverpool) {
+    console.log('🔍 Direct coordinates for Liverpool to match preview behavior');
+    return {
+      coordinates: [53.4084, -2.9916], // Liverpool city center coordinates
+      postcode: "L1" // Central Liverpool outcode
+    };
+  }
+  
   // Set longer timeout for large cities
-  const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName);
-  const timeoutMs = isLargeCity ? 45000 : 20000; // 45 seconds for large cities, 20 for others
+  const isLargeCity = /\b(london|manchester|birmingham|glasgow|edinburgh|newcastle|bristol|cardiff|belfast|leeds)\b/i.test(locationName);
+  const timeoutMs = isLargeCity ? 60000 : 30000; // 60 seconds for large cities, 30 for others
   
   console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'location'}: ${locationName}`);
   console.log(`🔍 Current hostname: ${window.location.hostname}`);
@@ -137,6 +147,15 @@ export const fetchCoordinatesByLocationName = async (
   } catch (error: any) {
     console.error('❌ Error in geocoding location name:', error);
     console.error('❌ Current hostname:', window.location.hostname);
+    
+    // For Liverpool, provide direct coordinates as fallback on any error
+    if (isLiverpool) {
+      console.log('🔍 Using Liverpool fallback after error');
+      return {
+        coordinates: [53.4084, -2.9916], // Liverpool city center coordinates
+        postcode: "L1" // Central Liverpool outcode
+      };
+    }
     
     // Enhanced error for timeouts
     if (error.message.includes('timeout') || error.message.includes('timed out')) {

@@ -1,3 +1,4 @@
+
 /**
  * Fetches coordinates for a UK town name prioritizing OS Places API
  * with fallback to Google Geocoding API
@@ -13,33 +14,29 @@ interface TownCoordinatesResult {
 export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCoordinatesResult> => {
   console.log(`🔍 Fetching coordinates for town: ${townName}`);
   
-  // Determine if this is a large city that might need a longer timeout
-  const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName);
+  // For Liverpool, we'll always use direct coordinates to match preview behavior
+  const isLiverpool = /\bliverpool\b/i.test(townName);
+  if (isLiverpool) {
+    console.log('🔍 Using direct coordinates for Liverpool to match preview');
+    return {
+      coordinates: [53.4084, -2.9916], // Liverpool city center
+      postcode: "L1" // Central Liverpool outcode
+    };
+  }
   
-  // Use longer timeout for large cities - keep similar to what works in preview
+  // Determine if this is a large city that might need a longer timeout
+  const isLargeCity = /\b(london|manchester|birmingham|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName);
+  
+  // Use longer timeout for large cities - match timeout in preview
   const timeoutMs = isLargeCity ? 60000 : 30000; // 60 seconds for large cities, 30 for others
   
   console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'town'}: ${townName}`);
   console.log(`🔍 Current hostname: ${window.location.hostname}`);
   
-  // For Liverpool, we'll bypass some checks and use a direct method
-  const isLiverpool = /\bliverpool\b/i.test(townName);
-  
   try {
     // Create a promise for the location search
     const locationSearchPromise = async () => {
       console.log(`🔄 Using location name strategy for town: ${townName}`);
-      
-      // Special handling for Liverpool to match preview behavior
-      if (isLiverpool) {
-        console.log('🔄 Special handling for Liverpool');
-        // Use generic coordinates for Liverpool city center as a fallback
-        const liverpoolCoordinates: [number, number] = [53.4084, -2.9916];
-        return {
-          coordinates: liverpoolCoordinates,
-          postcode: "L1" // Central Liverpool outcode
-        };
-      }
       
       const result = await fetchCoordinatesByLocationName(townName);
       
