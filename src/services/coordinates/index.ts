@@ -9,6 +9,7 @@ export { fetchCoordinatesByAddress } from './fetch-coordinates-by-address';
 export { fetchCoordinatesFromOutcode } from './fetch-coordinates-from-outcode';
 export { fetchCoordinatesFromTown } from './fetch-coordinates-from-town';
 export { ensureGoogleMapsLoaded } from './google-maps-loader';
+export { getGoogleGeocoder } from './geocoder-service';
 export { 
   isGooglePlaceId, 
   isLocationName,
