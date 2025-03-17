@@ -5,12 +5,15 @@ import { LatLngTuple } from "leaflet";
 import { useMemo } from "react";
 import L from "leaflet";
 import { extractCoordinates } from "@/utils/transforms/coordinate-extraction";
+import { calculateDistance } from "@/utils/distance";
+import { MAP_DEFAULTS } from "@/utils/mapConstants";
 
 interface ApplicationMarkersProps {
   applications: Application[];
   baseCoordinates: LatLngTuple;
   onMarkerClick: (id: number) => void;
   selectedId: number | null;
+  searchRadius?: number;
 }
 
 // Helper function to determine marker color based on application status
@@ -51,11 +54,13 @@ export const ApplicationMarkers = ({
   baseCoordinates,
   onMarkerClick,
   selectedId,
+  searchRadius = MAP_DEFAULTS.searchRadius,
 }: ApplicationMarkersProps) => {
   console.log('🎯 ApplicationMarkers props:', {
     applicationsCount: applications.length,
     selectedId,
-    baseCoordinates
+    baseCoordinates,
+    searchRadius
   });
 
   // Create map markers - selected marker should appear last (on top)
@@ -74,8 +79,22 @@ export const ApplicationMarkers = ({
       return app;
     });
     
+    // Filter applications by radius (in km)
+    const filteredApplications = applicationsWithCoordinates.filter(app => {
+      if (!app.coordinates) return false;
+      
+      // Calculate distance from search point
+      const distance = calculateDistance(baseCoordinates, app.coordinates);
+      
+      // Convert searchRadius from km to miles for display if needed
+      // For filtering, use the actual km value
+      return distance <= searchRadius;
+    });
+    
+    console.log(`📏 Filtered to ${filteredApplications.length} applications within ${searchRadius}km radius`);
+    
     // First create non-selected markers
-    const nonSelectedMarkers = applicationsWithCoordinates
+    const nonSelectedMarkers = filteredApplications
       .filter(app => {
         // Filter out applications without valid coordinates
         if (!app.coordinates) {
@@ -112,7 +131,7 @@ export const ApplicationMarkers = ({
       });
     
     // Now add the selected marker if it exists (to ensure it's on top)
-    const selectedApp = applicationsWithCoordinates.find(app => app.id === selectedId);
+    const selectedApp = filteredApplications.find(app => app.id === selectedId);
     if (selectedApp && selectedApp.coordinates) {
       const color = getStatusColor(selectedApp.status || 'pending');
       
@@ -142,7 +161,7 @@ export const ApplicationMarkers = ({
     }
     
     return nonSelectedMarkers;
-  }, [applications, selectedId, onMarkerClick, baseCoordinates]);
+  }, [applications, selectedId, onMarkerClick, baseCoordinates, searchRadius]);
 
   console.log(`🎯 Rendering ${markers.length} markers`);
   return <>{markers}</>;

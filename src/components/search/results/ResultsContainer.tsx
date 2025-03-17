@@ -3,7 +3,7 @@ import { Application } from "@/types/planning";
 import { ResultsListView } from "./ResultsListView";
 import { useState, useEffect } from "react";
 import { MapSplitView } from "./components/MapSplitView";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export interface ResultsContainerProps {
   applications: Application[];
@@ -39,6 +39,7 @@ export const ResultsContainer = ({
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
   const navigate = useNavigate();
+  const location = useLocation();
 
   // If showMap is true, navigate to the map page instead
   useEffect(() => {
@@ -46,19 +47,45 @@ export const ResultsContainer = ({
       const params = new URLSearchParams();
       if (searchTerm) params.set('postcode', searchTerm);
       
-      // Navigate to the map page
-      navigate(`/map?${params.toString()}`);
+      // Navigate to the map page with application data preserved
+      navigate(`/map?${params.toString()}`, { 
+        state: { 
+          applications,
+          searchTerm: searchTerm,
+          coordinates,
+          fromList: true // Mark that we came from list view
+        } 
+      });
       
       // Reset the showMap state after navigation
       setShowMap(false);
     }
-  }, [showMap, coordinates, navigate, searchTerm, setShowMap]);
+  }, [showMap, coordinates, navigate, searchTerm, setShowMap, applications]);
+
+  // Check for incoming state from the map view
+  useEffect(() => {
+    if (location.state?.fromMap && !applications.length && location.state?.applications?.length) {
+      console.log('Restoring applications from map state:', location.state.applications.length);
+      // We could dispatch an action here to restore the applications if needed
+    }
+  }, [location.state, applications.length]);
 
   // Simple implementation that focuses on showing the list view
   const onSeeOnMap = (id: number) => {
     setSelectedId(id);
-    // In a real implementation we might integrate with a map view here
-    console.log(`See on map clicked for application: ${id}`);
+    // Navigate to map view with the selected application
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('postcode', searchTerm);
+    
+    navigate(`/map?${params.toString()}`, { 
+      state: { 
+        applications,
+        searchTerm: searchTerm,
+        coordinates,
+        selectedId: id,
+        fromList: true
+      } 
+    });
   };
 
   // Modified to not cause page reloads

@@ -3,10 +3,11 @@ import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
 import { useEffect, useRef, memo } from "react";
-import { Map as LeafletMap, LatLngBounds } from "leaflet"; // Add LatLngBounds import
+import { Map as LeafletMap, LatLngBounds } from "leaflet";
 import { SearchLocationPin } from "./SearchLocationPin";
 import "leaflet/dist/leaflet.css";
-import L from 'leaflet'; // Add this import for Leaflet
+import L from 'leaflet';
+import { MAP_DEFAULTS } from '@/utils/mapConstants';
 
 interface MapContainerProps {
   applications: Application[];
@@ -16,16 +17,18 @@ interface MapContainerProps {
   onMarkerClick: (id: number) => void;
   onCenterChange?: (center: [number, number]) => void;
   onMapMove?: (map: LeafletMap) => void;
+  searchRadius?: number; // Added search radius prop
 }
 
 export const MapContainer = memo(({
   coordinates,
-  searchLocation, // Added search location
+  searchLocation,
   applications,
   selectedId,
   onMarkerClick,
   onCenterChange,
   onMapMove,
+  searchRadius = MAP_DEFAULTS.searchRadius, // Default to constants
 }: MapContainerProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -185,6 +188,7 @@ export const MapContainer = memo(({
           baseCoordinates={coordinates}
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
+          searchRadius={searchRadius}
         />
       </LeafletMapContainer>
     </div>

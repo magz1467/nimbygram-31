@@ -10,14 +10,15 @@ import { PostcodeSearch } from "../PostcodeSearch";
 
 interface MapHeaderProps {
   onFilterChange?: (filterType: string, value: string) => void;
-  onSortChange?: (sortType: 'closingSoon' | 'newest' | null) => void;
+  onSortChange?: (sortType: 'closingSoon' | 'newest' | 'distance' | null) => void;
   activeFilters?: {
     status?: string;
     type?: string;
   };
-  activeSort?: 'closingSoon' | 'newest' | null;
+  activeSort?: 'closingSoon' | 'newest' | 'distance' | null;
   isMapView?: boolean;
   onToggleView?: () => void;
+  applications?: any[];
 }
 
 export const MapHeader = ({ 
@@ -26,7 +27,8 @@ export const MapHeader = ({
   activeFilters = {}, 
   activeSort = null,
   isMapView = true, 
-  onToggleView 
+  onToggleView,
+  applications = []
 }: MapHeaderProps) => {
   const [searchParams] = useSearchParams();
   const initialPostcode = searchParams.get('postcode') || '';
@@ -47,11 +49,23 @@ export const MapHeader = ({
   };
 
   const handleListViewClick = () => {
-    // Navigate back to search results with the current postcode
+    // Navigate back to search results with the current postcode and state
     if (postcode) {
-      navigate(`/search-results?postcode=${encodeURIComponent(postcode.trim())}`);
+      navigate(`/search-results?postcode=${encodeURIComponent(postcode.trim())}`, {
+        state: {
+          ...location.state, // Preserve other state
+          applications: applications, // Pass the current applications
+          fromMap: true // Mark as coming from map
+        }
+      });
     } else {
-      navigate('/search-results');
+      navigate('/search-results', {
+        state: {
+          ...location.state,
+          applications: applications,
+          fromMap: true
+        }
+      });
     }
   };
 
@@ -96,6 +110,7 @@ export const MapHeader = ({
                   activeFilters={activeFilters}
                   activeSort={activeSort || 'distance'}
                   isMapView={true}
+                  applications={applications}
                 />
               )}
               

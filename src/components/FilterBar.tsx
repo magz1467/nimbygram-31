@@ -64,17 +64,32 @@ export const FilterBar = ({
     const isOnMapPage = location.pathname === '/map';
     
     if (isOnMapPage) {
-      // If on map page, go back to search results
+      // If on map page, go back to search results, preserving the search state
       const searchParams = new URLSearchParams(location.search);
       const postcode = searchParams.get('postcode');
-      navigate(`/search-results${postcode ? `?postcode=${postcode}` : ''}`);
+      
+      // Navigate with state to preserve application data
+      navigate(`/search-results${postcode ? `?postcode=${postcode}` : ''}`, {
+        state: {
+          ...location.state, // Preserve existing state
+          fromMap: true // Mark that we're coming from map view
+        }
+      });
     } else {
-      // If not on map page, go to map
+      // If not on map page, go to map with application data
       const searchParams = new URLSearchParams(location.search);
       const postcode = searchParams.get('postcode');
-      navigate(`/map${postcode ? `?postcode=${postcode}` : ''}`);
+      
+      // Navigate with state to ensure applications are preserved
+      navigate(`/map${postcode ? `?postcode=${postcode}` : ''}`, {
+        state: {
+          ...location.state, // Preserve existing state
+          applications: applications, // Pass along applications
+          fromList: true // Mark that we're coming from list view
+        }
+      });
     }
-  }, [navigate, location]);
+  }, [navigate, location, applications]);
 
   return (
     <div className="flex flex-col bg-white border-b w-full">
