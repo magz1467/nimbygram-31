@@ -14,6 +14,20 @@ const extractEmoji = (text: string) => {
   };
 };
 
+// Format section headers to be bold
+const formatSectionHeader = (text: string) => {
+  // Check if text starts with a common section header format
+  const headerMatch = text.match(/^(The Details:|Details:|Considerations:|Key Considerations:)(.*)/i);
+  
+  if (headerMatch) {
+    return (
+      <h4 className="font-medium text-gray-800 text-left my-3">{headerMatch[1]}</h4>
+    );
+  }
+  
+  return <p className="text-left">{text}</p>;
+};
+
 export const DetailsSection = ({ content }: DetailsSectionProps) => {
   if (!content) return null;
   
@@ -39,25 +53,85 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
       </ul>
     );
   } else {
-    detailContent = (
-      <div className="mt-2 text-left">
-        {typeof content === 'string' && content.includes('•') ? (
-          <ul className="list-disc pl-5 space-y-1">
-            {content.split('•').filter(Boolean).map((item, idx) => (
-              <li key={idx} className="pl-1 mb-1.5">{item.trim()}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>{content}</p>
-        )}
-      </div>
-    );
+    // Process string content to handle section headers and bullet points
+    if (typeof content === 'string') {
+      // Split the content by lines to find headers and sections
+      const lines = content.split(/\n+/).filter(line => line.trim());
+      
+      if (lines.length > 0) {
+        // Format the lines with proper headers and bullet points
+        const formattedContent = [];
+        let currentSection = null;
+        let sectionContent = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          // Check if the line is a section header
+          if (line.match(/^(The Details:|Details:|Considerations:|Key Considerations:)/i)) {
+            // If we already have a section, add it to the formatted content
+            if (currentSection && sectionContent.length > 0) {
+              formattedContent.push(
+                <div key={`section-${formattedContent.length}`} className="mb-3">
+                  {currentSection}
+                  {sectionContent}
+                </div>
+              );
+            }
+            
+            // Start a new section
+            currentSection = <h4 key={`header-${i}`} className="font-medium text-gray-800 text-left my-2">{line}</h4>;
+            sectionContent = [];
+          } else if (line.match(/^[•\*\-]\s+/)) {
+            // This is a bullet point
+            const bulletContent = line.replace(/^[•\*\-]\s+/, '');
+            sectionContent.push(
+              <li key={`bullet-${i}`} className="flex items-start gap-2 mb-2 text-left">
+                <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                <span className="flex-1">{bulletContent}</span>
+              </li>
+            );
+          } else {
+            // Regular text
+            sectionContent.push(<p key={`text-${i}`} className="text-left mb-2">{line}</p>);
+          }
+        }
+        
+        // Add the last section if there is one
+        if (currentSection) {
+          formattedContent.push(
+            <div key={`section-${formattedContent.length}`} className="mb-3">
+              {currentSection}
+              {sectionContent.length > 0 ? (
+                <ul className="list-none pl-0 space-y-1">{sectionContent}</ul>
+              ) : null}
+            </div>
+          );
+        } else if (sectionContent.length > 0) {
+          formattedContent.push(
+            <div key="content" className="mb-3">
+              <ul className="list-none pl-0 space-y-1">{sectionContent}</ul>
+            </div>
+          );
+        }
+        
+        detailContent = <div>{formattedContent}</div>;
+      } else {
+        // Fallback if no lines were found
+        detailContent = <p className="text-left">{content}</p>;
+      }
+    } else {
+      // Fallback for non-string content
+      detailContent = <p className="text-left">No details available</p>;
+    }
   }
   
   return (
     <div className="mb-4">
       <p className="font-medium text-gray-800 text-left">Key Details</p>
-      {detailContent}
+      <div className="mt-1">
+        {detailContent}
+      </div>
     </div>
   );
 };
