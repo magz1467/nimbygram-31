@@ -3,9 +3,10 @@ import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
 import { useEffect, useRef, memo } from "react";
-import { Map as LeafletMap } from "leaflet";
+import { Map as LeafletMap, LatLngBounds } from "leaflet"; // Add LatLngBounds import
 import { SearchLocationPin } from "./SearchLocationPin";
 import "leaflet/dist/leaflet.css";
+import L from 'leaflet'; // Add this import for Leaflet
 
 interface MapContainerProps {
   applications: Application[];
