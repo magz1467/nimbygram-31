@@ -1,6 +1,5 @@
-
 // Use the provided API key directly
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyDnmLXAQF6n07_t_-E2ttqwhZk993TtCcs';
 
 // Helper function to determine if a key is enabled for a specific API
 export const isKeyEnabledForApi = async (apiKey: string, apiName: string): Promise<boolean> => {
