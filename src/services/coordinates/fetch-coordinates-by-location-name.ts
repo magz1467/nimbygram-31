@@ -1,5 +1,5 @@
 
-import { getGoogleGeocoder } from "@/services/coordinates/geocoder-service";
+import { getGoogleGeocoder } from "./geocoder-service";
 import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
 
 /**
