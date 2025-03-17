@@ -90,6 +90,7 @@
 .leaflet-container {
   width: 100%;
   height: 100%;
+  z-index: 1; /* Lower z-index for the base map container */
 }
 
 /* Hide scrollbar but keep functionality */
@@ -102,7 +103,7 @@
   display: none;  /* Chrome, Safari and Opera */
 }
 
-/* Fix z-index for map controls */
+/* Fix z-index for map controls - increase to ensure visibility */
 .leaflet-top,
 .leaflet-bottom {
   z-index: 1000;
@@ -130,12 +131,13 @@
   to { opacity: 1; }
 }
 
-/* Map overlay animation */
+/* Map overlay animation with improved z-index */
 .fixed.inset-0.bg-white {
   animation: fadeIn 0.3s ease-out;
+  z-index: 9999 !important; /* Ensure the map overlay is on top of everything */
 }
 
-/* Mobile application cards */
+/* Mobile application cards with improved z-index */
 .mobile-application-cards {
   position: absolute;
   bottom: 0;
@@ -153,148 +155,127 @@
 
 /* Ensure mobile map view has correct z-index */
 .mobile-map-overlay {
-  z-index: 9999;
-  position: fixed;
-  inset: 0;
-  background: white;
+  z-index: 9999 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: white !important;
 }
 
-/* Ensure command dropdown displays correctly and doesn't get cut off */
-[cmdk-root] {
-  max-width: 100%;
-  width: 100%;
-  background: white;
-  border-radius: 8px;
-  padding: 0;
-  font-family: inherit;
-  z-index: 50;
+/* Improved bullet point styling, particularly for mobile */
+.prose ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+  padding-left: 1.5rem !important;
 }
 
-/* Style the command suggestions */
-[cmdk-item] {
-  content-visibility: auto;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 8px 12px;
-  margin: 2px 0;
-  transition: all 150ms ease;
+.prose li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+  position: relative !important;
 }
 
-[cmdk-item][data-selected="true"] {
-  background: rgba(0, 0, 0, 0.05);
+.prose li::marker {
+  color: rgb(74, 132, 128) !important;
 }
 
-/* Ensure command suggestions stay on top of other content */
-.cmdk-overlay {
-  z-index: 999 !important;
+.prose p {
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
 }
 
-/* Add responsive padding */
+/* Fix empty sections issue */
+h3:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Mobile-specific improvements */
 @media (max-width: 768px) {
-  #root {
-    padding: 0;
-  }
-  .card {
-    padding: 1em;
+  /* Force map containers to highest z-index on mobile */
+  .fixed.inset-0.z-\[9999\] {
+    z-index: 9999 !important;
   }
   
-  /* Improve filter scrolling on mobile */
-  .scrollbar-hide, .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Ensure buttons in map are clickable */
+  .z-\[10000\] {
+    z-index: 10000 !important;
   }
   
-  .scrollbar-hide::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar {
-    display: none;
+  /* Improve bullet points display on mobile */
+  .prose {
+    font-size: 0.9rem !important;
   }
   
-  /* Smaller text on mobile */
-  .text-xs {
-    font-size: 0.7rem;
-  }
-  
-  /* Reduce button padding on mobile */
-  .btn-mobile {
-    padding: 0.25rem 0.5rem;
-  }
-
-  /* Override any selector errors */
-  .invalid-selector {
-    display: none !important;
-  }
-
-  /* Ensure filter items don't shrink too much */
-  .filter-item {
-    flex-shrink: 0;
-  }
-  
-  /* Improve map visibility on mobile */
-  .mobile-map-container {
-    height: 70vh !important;
-    z-index: 10;
-    position: relative;
-  }
-  
-  /* Ensure map buttons are clickable */
-  .leaflet-control-container .leaflet-top,
-  .leaflet-control-container .leaflet-bottom {
-    z-index: 1000;
-  }
-  
-  /* Better "See on map" button visibility */
-  .text-primary.flex.items-center.gap-1\.5 {
-    padding: 0.375rem 0.75rem;
-    font-weight: 500;
-  }
-  
-  /* Improved map navigation controls on mobile */
-  .mobile-map-container .leaflet-control-container .leaflet-top {
-    top: 60px;
-  }
-  
-  /* Ensure map controls don't overlap with back/close buttons */
-  .mobile-map-container .leaflet-control-zoom {
-    margin-top: 10px !important;
-  }
-  
-  /* Fix potential image display issues */
-  .object-cover {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-  }
-  
-  /* Styling for the minicard drag handle */
-  .drag-handle {
-    margin: 8px auto;
-    border-radius: 999px;
-    background-color: #D1D5DB;
-  }
-  
-  /* Make sure application cards are visible even with map */
-  .fixed.bottom-0 {
-    z-index: 1500;
-    max-height: 70vh;
-    overflow-y: auto;
-    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Ensure cards aren't cut off at bottom */
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 20px);
-  }
-  
-  /* Improve bullet points on mobile */
   .prose ul {
-    padding-left: 1rem !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+    padding-left: 1.5rem !important;
+    margin-left: 0 !important;
   }
   
   .prose li {
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.25rem !important;
-    padding-left: 0.25rem !important;
+    padding-left: 0 !important;
+    display: list-item !important;
+  }
+  
+  /* Make bullet points more visible */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128) !important;
+    font-size: 1.2em !important;
+  }
+  
+  /* Ensure "See on map" button is prominent */
+  button:has(.w-4.h-4) {
+    padding: 0.5rem 1rem !important;
+  }
+}
+
+/* Fix emoji spacing in bullet points */
+.emoji-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.emoji-bullet .emoji {
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+/* Better mobile list styling */
+@media (max-width: 768px) {
+  .list-disc {
+    padding-left: 1rem;
+  }
+  
+  .bullet-point::before {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Fix text overflow on small screens */
+  .text-gray-700, .text-gray-600 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Enhanced bullet point styling for mobile */
+  ul.list-disc {
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  /* Ensure section headers have proper spacing */
+  .font-semibold.mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Make bullet points more visible on mobile */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
   }
   
   /* Fix empty detail sections showing title only */
@@ -386,9 +367,15 @@
     font-size: 1.2em;
   }
   
-  /* Fix empty sections */
-  div:empty {
-    display: none;
+  /* Fix empty detail sections showing title only */
+  h3:only-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Improve section title readability */
+  h3.font-semibold {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
   }
 }
 

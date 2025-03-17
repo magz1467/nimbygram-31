@@ -6,6 +6,7 @@ import { DesktopMapDialog } from "@/components/search/results/DesktopMapDialog";
 import { Application } from "@/types/planning";
 import { StorybookContent } from "./storybook/StorybookContent";
 import { MapButton } from "./storybook/MapButton";
+import { MobileMapView } from "@/components/search/results/MobileMapView";
 
 interface CardContentProps {
   storybook: string | null;
@@ -31,6 +32,7 @@ export const CardContent = ({
   postcode = ""
 }: CardContentProps) => {
   const [showMapDialog, setShowMapDialog] = useState(false);
+  const [showMobileMap, setShowMobileMap] = useState(false);
   const isMobile = useIsMobile();
   
   const application = applications.find(app => app.id === applicationId);
@@ -56,11 +58,17 @@ export const CardContent = ({
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('💡 See on map button clicked');
+    console.log('💡 See on map button clicked, isMobile:', isMobile);
     
     if (isMobile) {
-      // On mobile, use the existing handler
-      onSeeOnMap();
+      console.log('📱 Showing mobile map view for app:', applicationId);
+      // Show mobile map view instead of using the external handler
+      setShowMobileMap(true);
+      
+      // Ensure this application is selected
+      if (handleMarkerClick && applicationId) {
+        handleMarkerClick(applicationId);
+      }
     } else {
       // On desktop, open the map dialog
       if (applicationId) {
@@ -71,6 +79,11 @@ export const CardContent = ({
         }
       }
     }
+  };
+
+  const handleCloseMap = () => {
+    console.log('📱 Closing mobile map view');
+    setShowMobileMap(false);
   };
 
   // Process storybook data with extended logging
@@ -118,6 +131,19 @@ export const CardContent = ({
           handleMarkerClick={handleMarkerClick}
           isOpen={showMapDialog}
           onClose={() => setShowMapDialog(false)}
+          isLoading={isLoading}
+          postcode={postcode}
+        />
+      )}
+
+      {/* Mobile Map View */}
+      {isMobile && showMobileMap && applicationId && applicationCoords && (
+        <MobileMapView
+          applications={applications}
+          selectedId={applicationId}
+          coordinates={applicationCoords as [number, number]}
+          handleMarkerClick={handleMarkerClick}
+          handleCloseMap={handleCloseMap}
           isLoading={isLoading}
           postcode={postcode}
         />

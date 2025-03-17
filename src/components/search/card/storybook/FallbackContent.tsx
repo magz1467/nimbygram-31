@@ -26,15 +26,15 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
     return trimmed.length === 0;
   };
 
-  // Function to format bullet points properly
+  // Function to format bullet points properly with improved mobile support
   const formatBulletPoints = (text: string) => {
     // Check if text contains bullet points
     if (text.includes('• ') || text.includes('* ') || text.includes('- ')) {
       // Split by bullet point markers
       const parts = text.split(/(?:\n|^)(?:\s*[•*-]\s+)/).filter(Boolean);
       if (parts.length > 1) {
-        return `<ul class="list-disc pl-5 space-y-2">
-          ${parts.map(part => `<li class="pl-1 mb-2">${part.trim()}</li>`).join('')}
+        return `<ul class="list-disc pl-5 space-y-1">
+          ${parts.map(part => `<li class="pl-0 mb-1 relative">${part.trim()}</li>`).join('')}
         </ul>`;
       }
     }

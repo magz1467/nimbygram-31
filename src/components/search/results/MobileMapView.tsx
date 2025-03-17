@@ -28,7 +28,7 @@ export const MobileMapView = ({
   
   // When mobile map view mounts, prevent body scrolling
   useEffect(() => {
-    console.log('📱 Mobile map overlay mounted');
+    console.log('📱 Mobile map overlay mounted with z-index: 50');
     document.body.style.overflow = 'hidden';
     
     // Force redraw of the map
@@ -57,7 +57,7 @@ export const MobileMapView = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-white overflow-hidden"
+      className="fixed inset-0 z-[9999] bg-white overflow-hidden"
       ref={overlayRef}
     >
       <div className="absolute top-4 right-4 z-[10000]">
