@@ -45,8 +45,7 @@ export const ResultsHeader = ({
         </div>
       </div>
       
-      {/* Removed duplicate buttons here - now only using FilterBar for all controls */}
-      
+      {/* Only use the FilterBar, which now contains all the buttons */}
       <FilterBar
         onFilterChange={onFilterChange}
         onSortChange={onSortChange}
@@ -56,6 +55,13 @@ export const ResultsHeader = ({
         onToggleView={onToggleMapView}
         statusCounts={statusCounts}
       />
+      
+      {/* If there are extra controls, render them after the FilterBar */}
+      {extraControls && (
+        <div className="px-4 py-2">
+          {extraControls}
+        </div>
+      )}
     </div>
   );
 };

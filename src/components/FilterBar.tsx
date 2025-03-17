@@ -56,6 +56,7 @@ export const FilterBar = ({
     }
   }, [onSortChange]);
 
+  // Just render the primary buttons, not both sets
   return (
     <div className="flex flex-col bg-white border-b w-full">
       <div className="px-4 pb-2 flex items-center gap-2">
@@ -86,7 +87,12 @@ export const FilterBar = ({
           variant="outline"
           size="sm"
           className="flex items-center gap-1.5"
-          onClick={() => {/* Add filter action here if needed */}}
+          onClick={() => {
+            // We could trigger a modal/dropdown here for filters
+            if (onFilterChange) {
+              onFilterChange('status', activeFilters.status === 'All' ? '' : 'All');
+            }
+          }}
         >
           <Filter className="h-4 w-4" />
           Filter
@@ -104,20 +110,8 @@ export const FilterBar = ({
         </Button>
       </div>
       
-      {/* Additional filter controls can go here */}
-      <div className={`flex items-center justify-between p-1.5 w-full ${isMobile ? 'overflow-x-auto scrollbar-hide' : ''}`}>
-        <FilterControls 
-          onFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
-          activeFilters={activeFilters}
-          activeSort={activeSort}
-          isMobile={isMobile}
-          applications={applications}
-          statusCounts={statusCounts}
-          isMapView={isMapView || false}
-          onToggleView={onToggleView}
-        />
-      </div>
+      {/* Remove the additional FilterControls that was causing duplication */}
+      {/* Advanced filters can be shown in a modal/dropdown when the Filter button is clicked */}
     </div>
   );
 };
