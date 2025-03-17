@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Application } from "@/types/planning";
 import { useState } from "react";
@@ -64,9 +65,9 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
                 <div className="text-sm space-y-2">
                   {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
                     <ul className="list-none ml-0 space-y-2">
-                      {formattedStorybook.sections
+                      {(formattedStorybook.sections
                         .find(s => s.type === 'details')
-                        ?.content
+                        ?.content as string[])
                         .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
                         .map((detail: string, index: number) => {
                           const { emoji, text } = extractEmoji(detail);
