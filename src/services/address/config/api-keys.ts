@@ -1,3 +1,4 @@
+
 // Use the provided API key directly
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyDnmLXAQF6n07_t_-E2ttqwhZk993TtCcs';
 
