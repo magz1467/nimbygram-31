@@ -46,8 +46,10 @@ export const performSpatialSearch = async (
     
     if (response.error) {
       console.error('Error in spatial search:', response.error);
-      // If it's a function missing error, return null to trigger fallback
+      
+      // Check if it's a 404 error (function not found) or function missing error text
       const isFunctionMissingError = 
+        response.error.code === '404' || 
         response.error.message.includes('function') && 
         (response.error.message.includes('does not exist') || response.error.message.includes('not found'));
         
@@ -67,6 +69,13 @@ export const performSpatialSearch = async (
     return [];
   } catch (error) {
     console.error('Error in standalone spatial search:', error);
+    
+    // Check if it's a 404 error (function not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      console.log('Caught 404 error for spatial function, returning null to trigger fallback');
+      return null;
+    }
+    
     return [];
   }
 };

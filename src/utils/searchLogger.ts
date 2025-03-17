@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Keep track of recent search terms to prevent duplicate logging
@@ -25,15 +24,14 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     // Get current user session (if logged in)
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Insert into Searches table
+    // Insert into Searches table - use the correct column names for your schema
     const { error } = await supabase
       .from('Searches')
       .insert({
-        search_term: searchTerm,
-        search_type: type,
-        tab: tab || 'unknown',
-        user_id: session?.user?.id || null,
-        timestamp: new Date().toISOString()
+        'Post Code': searchTerm,
+        'Status': type,
+        'User_logged_in': !!session?.user,
+        'Tab': tab || 'unknown'
       });
     
     if (error) {

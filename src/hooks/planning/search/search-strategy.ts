@@ -95,7 +95,21 @@ export const executeSearchStrategy = async (
     console.log('Attempting spatial search first...');
     const spatialResults = await performSpatialSearch(lat, lng, radius, filters, limit);
     
-    if (spatialResults !== null) {
+    // If spatial search returns null (function not available), use fallback
+    if (spatialResults === null) {
+      console.log('Spatial search unavailable, using fallback search');
+      const fallbackResults = await performFallbackSearch(lat, lng, radius, filters, limit);
+      console.log('Got fallback results:', fallbackResults.length);
+      
+      recentSearchCache[cacheKey] = fallbackResults;
+      
+      const cacheKeys = Object.keys(recentSearchCache);
+      if (cacheKeys.length > RECENT_CACHE_SIZE) {
+        delete recentSearchCache[cacheKeys[0]];
+      }
+      
+      return fallbackResults;
+    } else if (Array.isArray(spatialResults)) {
       console.log('Using spatial search results:', spatialResults.length);
       
       recentSearchCache[cacheKey] = spatialResults;
@@ -108,10 +122,9 @@ export const executeSearchStrategy = async (
       return spatialResults;
     }
     
-    // If spatial search returns null (function not available), use fallback
-    console.log('Spatial search unavailable, using fallback search');
+    // If we get here, something unexpected happened with the spatial search
+    console.log('Spatial search returned unexpected result, using fallback');
     const fallbackResults = await performFallbackSearch(lat, lng, radius, filters, limit);
-    console.log('Got fallback results:', fallbackResults.length);
     
     recentSearchCache[cacheKey] = fallbackResults;
     
