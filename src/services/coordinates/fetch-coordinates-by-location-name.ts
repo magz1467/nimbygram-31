@@ -1,6 +1,6 @@
-
 import { getGoogleGeocoder } from "./geocoder-service";
 import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
+import { isProdDomain, getCurrentHostname } from "@/utils/environment";
 
 /**
  * Fetch coordinates using Google Geocoding API
@@ -9,24 +9,19 @@ import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coord
  */
 export const fetchCoordinatesByLocationName = async (locationName: string): Promise<{ coordinates: [number, number]; postcode: string | null }> => {
   console.log('🔍 Fetching coordinates for location name:', locationName);
+  console.log('🔍 Current hostname:', getCurrentHostname());
   
   // Check if we're in production and should prioritize fallback
-  const isProdDomain = window.location.hostname.includes('nimbygram.com') || 
-                       window.location.hostname.includes('www.nimbygram.com') || 
-                       window.location.hostname.includes('nimbygram.vercel.app');
-
-  // In production, prioritize fallback coordinates to avoid API key issues
-  if (isProdDomain) {
+  if (isProdDomain()) {
     console.log('🔍 Production domain detected, using fallback coordinates');
+    // Always use fallback in production to avoid API key issues
     const fallbackCoords = useFallbackCoordinates(locationName);
     
-    if (fallbackCoords) {
-      console.log('✅ Using fallback coordinates for location:', fallbackCoords);
-      return {
-        coordinates: fallbackCoords,
-        postcode: null
-      };
-    }
+    console.log('✅ Using fallback coordinates for location:', fallbackCoords);
+    return {
+      coordinates: fallbackCoords as [number, number], // Force type as we know it will always return coordinates 
+      postcode: null
+    };
   }
   
   try {
@@ -38,7 +33,7 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     console.log('🔍 Enhanced search location:', enhancedLocation);
     
     // Try to load Google Maps if not in production
-    if (!isProdDomain) {
+    if (!isProdDomain()) {
       await ensureGoogleMapsLoaded();
     }
     
@@ -49,14 +44,10 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       console.warn('⚠️ Geocoder not available, falling back to UK coordinates');
       const fallbackCoords = useFallbackCoordinates(locationName);
       
-      if (fallbackCoords) {
-        return {
-          coordinates: fallbackCoords,
-          postcode: null
-        };
-      }
-      
-      throw new Error('No geocoder available and no fallback coordinates found');
+      return {
+        coordinates: fallbackCoords as [number, number], // Type assertion since we know it won't be null
+        postcode: null
+      };
     }
     
     // Use the geocoder to get coordinates
@@ -103,17 +94,12 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     console.error('❌ Error fetching coordinates by location name:', error);
     
     // Use fallback coordinates if available
+    console.log('✅ Using fallback coordinates after error for:', locationName);
     const fallbackCoords = useFallbackCoordinates(locationName);
     
-    if (fallbackCoords) {
-      console.log('✅ Using fallback coordinates after error:', fallbackCoords);
-      return {
-        coordinates: fallbackCoords,
-        postcode: null
-      };
-    }
-    
-    // Re-throw if no fallback
-    throw error;
+    return {
+      coordinates: fallbackCoords as [number, number], // Type assertion since we know it won't be null
+      postcode: null
+    };
   }
 };

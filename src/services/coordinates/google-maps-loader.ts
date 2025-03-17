@@ -1,4 +1,3 @@
-
 /**
  * Utility for loading Google Maps script - consolidated version
  */
@@ -12,6 +11,7 @@ declare global {
 
 // Import the consistent API key from config
 import { GOOGLE_MAPS_API_KEY } from "@/services/address/config/api-keys";
+import { isProdDomain, getCurrentHostname } from "@/utils/environment";
 
 // Keep track of loading state to prevent duplicate loading
 let isLoading = false;
@@ -21,18 +21,10 @@ let loadError: Error | null = null;
 let loadRetries = 0;
 const MAX_RETRIES = 2;
 
-// Add domain detection to check for production vs preview
-const isProdDomain = (): boolean => {
-  const hostname = window.location.hostname;
-  // Match against known production domains
-  return hostname.includes('nimbygram.com') || 
-         hostname.includes('www.nimbygram.com') ||
-         hostname.includes('nimbygram.vercel.app') ||
-         hostname === 'localhost';
-};
-
 // Add fallback mechanism that doesn't rely on Google Maps
 export const useFallbackCoordinates = (location: string): [number, number] | null => {
+  console.log('🔍 Attempting to find fallback coordinates for:', location);
+  
   // Common UK locations fallback map
   const UK_LOCATIONS: Record<string, [number, number]> = {
     'london': [51.5074, -0.1278],
@@ -61,15 +53,17 @@ export const useFallbackCoordinates = (location: string): [number, number] | nul
   const locationLower = location.toLowerCase();
   
   // Direct match
-  if (UK_LOCATIONS[locationLower]) {
-    console.log(`✅ Using fallback coordinates for: ${location}`);
-    return UK_LOCATIONS[locationLower];
+  for (const [place, coords] of Object.entries(UK_LOCATIONS)) {
+    if (locationLower === place) {
+      console.log(`✅ Using exact fallback coordinates for: ${location} = ${coords}`);
+      return coords;
+    }
   }
   
   // Partial match - check if the location contains any of our known places
   for (const [place, coords] of Object.entries(UK_LOCATIONS)) {
     if (locationLower.includes(place)) {
-      console.log(`✅ Using partial match fallback coordinates for: ${location} (matched: ${place})`);
+      console.log(`✅ Using partial match fallback coordinates for: ${location} (matched: ${place}) = ${coords}`);
       return coords;
     }
   }
@@ -85,6 +79,9 @@ export const useFallbackCoordinates = (location: string): [number, number] | nul
  * @returns Promise that resolves when Google Maps is available
  */
 export const ensureGoogleMapsLoaded = async (): Promise<void> => {
+  // Log the hostname for debugging
+  console.log('🌐 Current hostname:', getCurrentHostname());
+  
   // Check if we should use API or fallback based on domain
   const shouldUseFallback = isProdDomain();
   

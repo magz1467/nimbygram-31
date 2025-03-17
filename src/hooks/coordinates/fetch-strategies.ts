@@ -1,4 +1,3 @@
-
 import { detectErrorType } from "@/utils/errors";
 import { fetchCoordinatesFromPlaceId } from "@/services/coordinates/fetch-coordinates-by-place-id";
 import { fetchCoordinatesByLocationName } from "@/services/coordinates/fetch-coordinates-by-location-name";
@@ -8,19 +7,12 @@ import { fetchCoordinatesFromOutcode } from "@/services/coordinates/fetch-coordi
 import { fetchCoordinatesFromTown } from "@/services/coordinates/fetch-coordinates-from-town";
 import { withTimeout } from "@/utils/fetchUtils";
 import { useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
+import { isProdDomain, getCurrentHostname } from "@/utils/environment";
 
 // Callbacks interface to pass to strategy functions
 type CoordinateCallbacks = {
   setCoordinates: (coords: [number, number]) => void;
   setPostcode: (pc: string | null) => void;
-};
-
-// Helper function to check if we're in production
-const isProdDomain = (): boolean => {
-  const hostname = window.location.hostname;
-  return hostname.includes('nimbygram.com') || 
-         hostname.includes('www.nimbygram.com') ||
-         hostname.includes('nimbygram.vercel.app');
 };
 
 // Helper function for fallback with any location string
@@ -29,6 +21,7 @@ const useFallbackForLocation = (
   isMounted: boolean,
   callbacks: CoordinateCallbacks
 ): boolean => {
+  console.log(`🔍 Checking fallback for "${locationString}" on ${getCurrentHostname()}`);
   const fallbackCoords = useFallbackCoordinates(locationString);
   
   if (fallbackCoords && isMounted) {
@@ -47,8 +40,11 @@ export const fetchCoordinatesForPlaceId = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
-  // In production, prioritize fallbacks
+  console.log('🔍 fetchCoordinatesForPlaceId:', placeId, 'on hostname:', getCurrentHostname());
+  
+  // In production, always use fallbacks
   if (isProdDomain()) {
+    console.log('🔍 Production domain detected, using fallbacks for place ID');
     if (useFallbackForLocation(placeId, isMounted, callbacks)) {
       return;
     }
