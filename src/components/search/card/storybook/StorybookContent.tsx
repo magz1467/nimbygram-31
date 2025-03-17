@@ -29,9 +29,6 @@ export const StorybookContent: FC<StorybookContentProps> = ({
 }) => {
   if (!formattedStorybook && !rawStorybook) return null;
   
-  // Enhanced logging to debug section rendering
-  console.log('StorybookContent rendering with sections:', formattedStorybook?.sections?.map(s => s.type));
-
   // If we have formatted sections, display them
   if (formattedStorybook?.sections?.length) {
     const dealSection = formattedStorybook.sections.find(s => s.type === 'deal');
@@ -40,10 +37,17 @@ export const StorybookContent: FC<StorybookContentProps> = ({
     const watchOutForSection = formattedStorybook.sections.find(s => s.type === 'watchOutFor');
     const keyRegulationsSection = formattedStorybook.sections.find(s => s.type === 'keyRegulations');
     
+    // Check if we have actual content for details section
+    const hasDetailsContent = detailsSection && (
+      Array.isArray(detailsSection.content) 
+        ? detailsSection.content.some(item => item && item.trim().length > 0)
+        : detailsSection.content && detailsSection.content.trim().length > 0
+    );
+    
     return (
       <div className="space-y-6">
         {dealSection && <DealSection content={dealSection.content as string} />}
-        {detailsSection && <DetailsSection content={detailsSection.content} />}
+        {hasDetailsContent && <DetailsSection content={detailsSection.content} />}
         {watchOutForSection && <WatchOutForSection content={watchOutForSection.content} />}
         {keyRegulationsSection && <KeyRegulationsSection content={keyRegulationsSection.content} />}
         {nimbySection && <NimbySection content={nimbySection.content} />}

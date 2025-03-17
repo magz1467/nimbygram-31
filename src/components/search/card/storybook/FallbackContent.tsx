@@ -26,11 +26,27 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
     return trimmed.length === 0;
   };
 
+  // Function to format bullet points properly
+  const formatBulletPoints = (text: string) => {
+    // Check if text contains bullet points
+    if (text.includes('• ') || text.includes('* ') || text.includes('- ')) {
+      // Split by bullet point markers
+      const parts = text.split(/(?:\n|^)(?:\s*[•*-]\s+)/).filter(Boolean);
+      if (parts.length > 1) {
+        return `<ul class="list-disc pl-5 space-y-2">
+          ${parts.map(part => `<li>${part.trim()}</li>`).join('')}
+        </ul>`;
+      }
+    }
+    return `<p>${text}</p>`;
+  };
+
   // First try to use formatted content if available
   if (content && !isEmptyContent(content)) {
+    const processedContent = processHtml(content);
     return (
       <div className="prose prose-sm max-w-none" 
-        dangerouslySetInnerHTML={{ __html: processHtml(content) }} 
+        dangerouslySetInnerHTML={{ __html: formatBulletPoints(processedContent) }} 
       />
     );
   }
@@ -38,19 +54,16 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
   // Raw fallback if nothing was processed correctly
   if (storybook && !isEmptyContent(storybook)) {
     const processedStorybook = processHtml(storybook);
+    
+    // Try to identify bullet points and format them properly
+    const formattedContent = formatBulletPoints(processedStorybook);
+    
     return (
       <div className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg">
         <h3 className="text-gray-900 font-medium mb-2">Application Details</h3>
         <div 
           className="whitespace-pre-wrap text-gray-700"
-          dangerouslySetInnerHTML={{ 
-            __html: processedStorybook
-              .replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
-              .replace(/\n\*\s/g, '<br/>• ')
-              // Add more specific replacements for empty bullet points
-              .replace(/<br\/>•\s*<br\/>/g, '<br/>')
-              .replace(/<br\/>•\s*$/g, '')
-          }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
     );

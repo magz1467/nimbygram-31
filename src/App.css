@@ -135,6 +135,30 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 20px);
   }
+  
+  /* Improve bullet points on mobile */
+  .prose ul {
+    padding-left: 1rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .prose li {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    padding-left: 0.25rem !important;
+  }
+  
+  /* Fix empty detail sections showing title only */
+  h3:only-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Improve section title readability */
+  h3.font-semibold {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
 }
 
 /* Hide scrollbar but keep functionality */
@@ -195,5 +219,27 @@
     word-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+  }
+  
+  /* Enhanced bullet point styling for mobile */
+  ul.list-disc {
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  /* Ensure section headers have proper spacing */
+  .font-semibold.mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Make bullet points more visible on mobile */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
+  }
+  
+  /* Fix empty sections */
+  div:empty {
+    display: none;
   }
 }

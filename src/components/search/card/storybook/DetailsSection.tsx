@@ -41,7 +41,8 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
               
               return (
                 <div key={index} className="flex gap-2.5 items-start">
-                  <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  {/* More prominent bullet point, especially on mobile */}
+                  <div className="min-w-[8px] min-h-[8px] w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                   <div className="text-gray-700 flex-1">
                     {emoji && <span className="mr-1.5">{emoji}</span>}
                     <span 
@@ -54,8 +55,9 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
               );
             })
         ) : (
+          // If content is a string, display it properly with paragraph styling
           <div 
-            className="text-gray-700"
+            className="text-gray-700 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ 
               __html: processString(typeof content === 'string' ? content : String(content))
             }}

@@ -27,11 +27,13 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
   // Format the content with proper paragraphs and bullet points if needed
   const formatHtmlContent = (inputContent: string | string[]) => {
     if (Array.isArray(inputContent)) {
-      // Handle array content
-      return inputContent
-        .filter(item => item && !isEmptyContent(item))
-        .map((item, index) => `<p key="${index}">${processContent(item)}</p>`)
-        .join('');
+      // Handle array content - create proper bullet points
+      return `<ul class="list-disc pl-5 space-y-2 my-0">
+        ${inputContent
+          .filter(item => item && !isEmptyContent(item))
+          .map((item, index) => `<li key="${index}">${processContent(item)}</li>`)
+          .join('')}
+      </ul>`;
     } else {
       // Handle string content
       let contentStr = processContent(inputContent);
@@ -40,13 +42,15 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
       if (contentStr.includes('•') || contentStr.includes('*') || contentStr.includes('-')) {
         const parts = contentStr.split(/(?:•|\*|-)\s+/).filter(Boolean);
         if (parts.length > 1) {
-          return parts.map((part, i) => `<p key="${i}" class="${i > 0 ? 'mt-2' : ''}">${part.trim()}</p>`).join('');
+          return `<ul class="list-disc pl-5 space-y-2 my-0">
+            ${parts.map((part, i) => `<li key="${i}">${part.trim()}</li>`).join('')}
+          </ul>`;
         }
       }
       
       // Add paragraph tags if not already present
       if (!contentStr.includes('<p>')) {
-        contentStr = `<p>${contentStr}</p>`;
+        contentStr = `<p class="my-0">${contentStr}</p>`;
       }
       
       return contentStr;
@@ -61,11 +65,11 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
   
   return (
     <div className="bg-[#8B5CF6] bg-opacity-10 rounded-lg p-4">
-      <h3 className="font-semibold mb-2 text-[#8B5CF6] flex items-center gap-2">
+      <h3 className="font-semibold mb-2 text-base md:text-lg text-[#8B5CF6] flex items-center gap-2">
         <span>🏘️</span> Nimbywatch
       </h3>
       <div 
-        className="space-y-2 text-gray-700"
+        className="space-y-2 text-gray-700 prose prose-sm max-w-none"
         dangerouslySetInnerHTML={{ 
           __html: htmlContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
         }}

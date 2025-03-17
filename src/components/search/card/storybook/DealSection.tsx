@@ -25,21 +25,28 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
   
   // Check for bullet points in the deal section and format properly
+  let formattedContent;
   if (processedContent.includes('•') || processedContent.includes('*') || processedContent.includes('-')) {
     const parts = processedContent.split(/(?:•|\*|-)\s+/).filter(Boolean);
     if (parts.length > 1) {
-      // This actually has bullet points
-      processedContent = parts.map(part => `<p>${part.trim()}</p>`).join('');
+      // This actually has bullet points - create proper HTML list
+      formattedContent = `<ul class="list-disc pl-5 space-y-2">
+        ${parts.map(part => `<li>${part.trim()}</li>`).join('')}
+      </ul>`;
+    } else {
+      formattedContent = `<p>${processedContent}</p>`;
     }
+  } else {
+    formattedContent = `<p>${processedContent}</p>`;
   }
   
   return (
     <div className="prose prose-sm max-w-none">
       <div className="bg-primary/5 rounded-lg p-4">
-        <h3 className="text-primary font-semibold mb-2">What's the Deal</h3>
+        <h3 className="text-primary font-semibold mb-2 text-base md:text-lg">What's the Deal</h3>
         <div 
           className="text-gray-700"
-          dangerouslySetInnerHTML={{ __html: processedContent }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
     </div>
