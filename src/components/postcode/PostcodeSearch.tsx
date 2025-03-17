@@ -10,12 +10,14 @@ interface PostcodeSearchProps {
   onSelect: (postcode: string) => void;
   placeholder?: string;
   className?: string;
+  initialValue?: string;
 }
 
 export const PostcodeSearch = ({ 
   onSelect, 
   placeholder = "Search location", 
-  className = "" 
+  className = "",
+  initialValue = "",
 }: PostcodeSearchProps) => {
   const {
     search,
@@ -29,7 +31,7 @@ export const PostcodeSearch = ({
     handleSelect,
     handleSearchClick,
     handleInputChange,
-  } = usePostcodeInput({ onSelect });
+  } = usePostcodeInput({ onSelect, initialValue });
 
   return (
     <div className={`relative ${className}`}>
