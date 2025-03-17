@@ -1,4 +1,3 @@
-
 import { FC, useEffect } from "react";
 import { DealSection } from "./DealSection";
 import { DetailsSection } from "./DetailsSection";
@@ -6,17 +5,7 @@ import { NimbySection } from "./NimbySection";
 import { WatchOutForSection } from "./WatchOutForSection";
 import { KeyRegulationsSection } from "./KeyRegulationsSection";
 import { FallbackContent } from "./FallbackContent";
-
-export interface FormattedStorybook {
-  header?: string | null;
-  sections?: Array<{
-    type: string;
-    title: string;
-    content: string | string[];
-  }> | null;
-  content?: string | null;
-  rawContent?: string | null;
-}
+import { FormattedStorybook } from "@/utils/storybook/types";
 
 interface StorybookContentProps {
   formattedStorybook: FormattedStorybook | null;

@@ -1,9 +1,10 @@
+
 import { Application } from "@/types/planning";
 import { MapPin } from "lucide-react";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getImageUrl } from "@/utils/imageUtils";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { formatStorybook } from "@/utils/storybook";
 import { useEffect } from "react";
 
 interface MiniCardProps {

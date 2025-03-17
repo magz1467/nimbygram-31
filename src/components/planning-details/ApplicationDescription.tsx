@@ -1,10 +1,9 @@
-
 import { Card } from "@/components/ui/card";
 import { Application } from "@/types/planning";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { formatStorybook } from "@/utils/storybook";
 
 interface ApplicationDescriptionProps {
   application?: Application;

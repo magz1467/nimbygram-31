@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { formatStorybook } from "@/utils/storybook";
 import { DesktopMapDialog } from "@/components/search/results/DesktopMapDialog";
 import { Application } from "@/types/planning";
 import { StorybookContent } from "./storybook/StorybookContent";

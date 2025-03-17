@@ -1,6 +1,5 @@
-
 import { MapPin } from "lucide-react";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { formatStorybook } from "@/utils/storybook";
 
 interface CardHeaderProps {
   title: string;

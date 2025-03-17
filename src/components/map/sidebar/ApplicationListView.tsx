@@ -4,7 +4,7 @@ import { ImageResolver } from "@/components/map/mobile/components/ImageResolver"
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { SortType } from "@/types/application-types";
 import { AlertSection } from "./AlertSection";
-import { formatStorybook } from "@/utils/storybook-formatter";
+import { formatStorybook } from "@/utils/storybook";
 import { MapPin } from "lucide-react";
 
 interface ApplicationListViewProps {
