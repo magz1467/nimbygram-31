@@ -42,8 +42,9 @@ export const commonUKLocations: Record<string, {lat: number, lng: number}> = {
  */
 export const getFallbackCoordinates = (locationName: string): {lat: number, lng: number} => {
   if (!locationName) {
-    console.log('Empty location name, using default UK coordinates');
-    return { lat: 54.0000, lng: -2.5000 }; // Default UK center
+    console.warn('Empty location name provided to getFallbackCoordinates');
+    // Don't automatically fallback to UK center - return null-like object so caller has to handle it
+    return { lat: 0, lng: 0 };
   }
   
   // Look up location in our database
@@ -65,9 +66,9 @@ export const getFallbackCoordinates = (locationName: string): {lat: number, lng:
     }
   }
   
-  // Return the location name's default coordinates, falling back to UK center only as a last resort
-  console.log('No specific match for:', locationName, 'using UK center as fallback');
-  return { lat: 54.0000, lng: -2.5000 }; // Default UK center
+  // Return zero coordinates to force caller to handle missing coordinates explicitly
+  console.warn('No fallback found for:', locationName);
+  return { lat: 0, lng: 0 };
 };
 
 /**

@@ -1,7 +1,7 @@
 import { Application } from "@/types/planning";
 import { MapView } from "./MapView";
 import { MobileApplicationCards } from "@/components/map/mobile/MobileApplicationCards";
-import { useCallback, memo } from "react";
+import { useCallback, memo, useEffect, useState } from "react";
 import { MapAction } from "@/types/map-reducer";
 import { EmptyStateWithEmail } from "./EmptyStateWithEmail";
 
@@ -24,16 +24,29 @@ export const MapSection = memo(({
   dispatch,
   postcode,
 }: MapSectionProps) => {
+  // Keep track of last valid coordinates to avoid losing them
+  const [lastValidCoordinates, setLastValidCoordinates] = useState<[number, number] | null>(null);
+  
+  // Update last valid coordinates when we receive new valid ones
+  useEffect(() => {
+    if (coordinates && coordinates[0] !== 0 && coordinates[1] !== 0) {
+      setLastValidCoordinates(coordinates);
+      console.log('MapSection: Stored valid coordinates:', coordinates);
+    }
+  }, [coordinates]);
+  
+  // Use last valid coordinates as a fallback
+  const effectiveCoordinates = coordinates || lastValidCoordinates;
   
   const handleMarkerClick = useCallback((id: number | null) => {
     console.log('MapSection handleMarkerClick:', id);
     dispatch({ type: 'SELECT_APPLICATION', payload: id });
   }, [dispatch]);
 
-  if (!coordinates || (!isMobile && !isMapView)) return null;
+  if (!effectiveCoordinates || (!isMobile && !isMapView)) return null;
 
   // Show empty state if no applications and coordinates are valid
-  if (coordinates && applications.length === 0) {
+  if (applications.length === 0) {
     return (
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
         <EmptyStateWithEmail postcode={postcode} />
@@ -54,7 +67,7 @@ export const MapSection = memo(({
         <MapView
           applications={applications}
           selectedId={selectedId}
-          coordinates={coordinates}
+          coordinates={effectiveCoordinates}
           onMarkerClick={handleMarkerClick}
         />
         {isMobile && selectedId && (

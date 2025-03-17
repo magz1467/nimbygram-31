@@ -27,6 +27,15 @@ export const MobileMapView = ({
 }: MobileMapViewProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [showFullCard, setShowFullCard] = useState(false);
+  const [storedCoordinates, setStoredCoordinates] = useState<[number, number]>(coordinates);
+  
+  // When coordinates change, store them
+  useEffect(() => {
+    if (coordinates && coordinates[0] !== 0 && coordinates[1] !== 0) {
+      setStoredCoordinates(coordinates);
+      console.log('📱 Mobile map view - stored coordinates:', coordinates);
+    }
+  }, [coordinates]);
   
   // When mobile map view mounts, prevent body scrolling
   useEffect(() => {
@@ -45,7 +54,7 @@ export const MobileMapView = ({
     const refreshTimer = setTimeout(() => {
       console.log('📱 Refreshing map to ensure markers are visible');
       const event = new CustomEvent('refresh-map-markers', {
-        detail: { applications, selectedId }
+        detail: { applications, selectedId, coordinates: storedCoordinates }
       });
       window.dispatchEvent(event);
     }, 500);
@@ -55,7 +64,7 @@ export const MobileMapView = ({
       clearTimeout(timer);
       clearTimeout(refreshTimer);
     };
-  }, [applications, selectedId]);
+  }, [applications, selectedId, storedCoordinates]);
 
   // Get the selected application
   const selectedApplication = applications.find(app => app.id === selectedId);
@@ -96,8 +105,8 @@ export const MobileMapView = ({
         <MapContent 
           applications={applications}
           selectedId={selectedId}
-          coordinates={coordinates}
-          searchLocation={coordinates}
+          coordinates={storedCoordinates}
+          searchLocation={storedCoordinates}
           isMobile={true}
           isMapView={true}
           onMarkerClick={handleMarkerClick}
@@ -125,7 +134,7 @@ export const MobileMapView = ({
               onSeeOnMap={() => {}}
               applications={applications}
               selectedId={selectedId}
-              coordinates={coordinates}
+              coordinates={storedCoordinates}
               handleMarkerClick={handleMarkerClick}
               isLoading={isLoading}
               postcode={postcode}

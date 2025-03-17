@@ -31,12 +31,15 @@ export const MapContent = ({
   const [forceRender, setForceRender] = useState(0);
   const [isMapLoading, setIsMapLoading] = useState(true);
   
+  // Store the true search location to prevent it from being lost
+  const effectiveSearchLocation = searchLocation || coordinates;
+  
   // Log both locations to help debug
   useEffect(() => {
-    console.log('🗺️ MapContent with search location:', searchLocation);
+    console.log('🗺️ MapContent with search location:', effectiveSearchLocation);
     console.log('🗺️ MapContent with coordinates:', coordinates);
     console.log('🗺️ MapContent postcode:', postcode);
-  }, [searchLocation, coordinates, postcode]);
+  }, [effectiveSearchLocation, coordinates, postcode]);
 
   // Force map to render correctly
   useEffect(() => {
@@ -61,7 +64,7 @@ export const MapContent = ({
         resizeEvents.forEach(clearTimeout);
       };
     }
-  }, [searchLocation, selectedId, isMobile]);
+  }, [effectiveSearchLocation, selectedId, isMobile]);
 
   // Listen for external requests to refresh the map
   useEffect(() => {
@@ -107,6 +110,15 @@ export const MapContent = ({
     }
   }, [applications]);
 
+  // Don't render if we don't have valid coordinates
+  if (!effectiveSearchLocation || !coordinates) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full" ref={mapContainerRef}>
       {/* Force render with key to ensure full component refresh when needed */}
@@ -115,7 +127,7 @@ export const MapContent = ({
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}
-        searchLocation={searchLocation} // Always use search location
+        searchLocation={effectiveSearchLocation} // Use effective search location
         onMarkerClick={onMarkerClick}
       />
       
