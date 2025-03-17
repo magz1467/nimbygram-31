@@ -3,6 +3,13 @@
  * Utility for loading Google Maps script - consolidated version
  */
 
+// Extend Window interface to include our custom property
+declare global {
+  interface Window {
+    googleMapsLoaded?: () => void;
+  }
+}
+
 // Use a single API key to prevent confusion
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
 
