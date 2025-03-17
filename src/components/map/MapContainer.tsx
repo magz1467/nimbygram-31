@@ -1,13 +1,13 @@
-
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
-import { useEffect, useRef, memo } from "react";
-import { Map as LeafletMap, LatLngBounds } from "leaflet";
+import { useEffect, useRef, memo, useState } from "react";
+import { Map as LeafletMap } from "leaflet";
 import { SearchLocationPin } from "./SearchLocationPin";
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
 import { MAP_DEFAULTS } from '@/utils/mapConstants';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MapContainerProps {
   applications: Application[];
@@ -32,6 +32,8 @@ export const MapContainer = memo(({
 }: MapContainerProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [mapReady, setMapReady] = useState(false);
 
   // Validate coordinates are in correct format [lat, lng]
   const validCoordinates = Array.isArray(coordinates) && 
@@ -45,7 +47,7 @@ export const MapContainer = memo(({
 
   // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
-    if (!mapRef.current || !validCoordinates) return;
+    if (!mapRef.current || !validCoordinates || !mapReady) return;
     
     const map = mapRef.current;
     
@@ -55,14 +57,15 @@ export const MapContainer = memo(({
       
       if (selectedApp?.coordinates) {
         // Center on the selected application with appropriate zoom
-        map.setView(selectedApp.coordinates, 16, { animate: true });
+        map.setView(selectedApp.coordinates, isMobile ? MAP_DEFAULTS.mobileMapZoom : 16, { animate: true });
         console.log('🗺️ Centering map on selected application:', selectedId);
         return;
       }
     }
     
     // If no selection or selection not found, center on search coordinates
-    map.setView(coordinates, 14, { animate: true });
+    const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
+    map.setView(coordinates, initialZoom, { animate: true });
     
     // Force map to redraw
     const invalidateTimes = [0, 100, 300, 500];
@@ -73,37 +76,64 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [coordinates, selectedId, applications, validCoordinates]);
+  }, [coordinates, selectedId, applications, validCoordinates, isMobile, mapReady]);
 
-  // Fit bounds to show all markers when applications change
+  // Fit bounds to show all markers within search radius when applications change
   useEffect(() => {
-    if (!mapRef.current || applications.length === 0) return;
+    if (!mapRef.current || applications.length === 0 || !mapReady) return;
     
-    // Get valid application coordinates
-    const validAppCoordinates = applications
-      .filter(app => app.coordinates && Array.isArray(app.coordinates) && app.coordinates.length === 2)
-      .map(app => app.coordinates as [number, number]);
-    
-    if (validAppCoordinates.length > 1) {
+    // Calculate applications within search radius
+    const applicationsInRadius = applications.filter(app => {
+      if (!app.coordinates) return false;
+      
+      // Calculate distance using L.latLng
       try {
-        // Create bounds object from coordinates
-        const bounds = validAppCoordinates.reduce((bounds, coords) => {
-          return bounds.extend(coords);
-        }, new L.LatLngBounds(validAppCoordinates[0], validAppCoordinates[0]));
+        const appLatLng = L.latLng(app.coordinates[0], app.coordinates[1]);
+        const searchLatLng = L.latLng(searchLocation[0], searchLocation[1]);
+        const distanceInMeters = appLatLng.distanceTo(searchLatLng);
+        const distanceInKm = distanceInMeters / 1000;
         
-        // Add padding and fit bounds
+        // Keep only applications within the search radius (plus a small buffer)
+        return distanceInKm <= (searchRadius + 0.1);
+      } catch (err) {
+        console.error('Error calculating distance for app:', app.id, err);
+        return false;
+      }
+    });
+    
+    console.log(`Found ${applicationsInRadius.length} applications within ${searchRadius}km radius`);
+    
+    if (applicationsInRadius.length > 0) {
+      try {
+        // Create bounds from radius coordinates
+        const bounds = new L.LatLngBounds(
+          applicationsInRadius
+            .filter(app => app.coordinates)
+            .map(app => app.coordinates as [number, number])
+        );
+        
+        // Always include the search location in the bounds
+        bounds.extend(searchLocation);
+        
+        // Add padding to bounds and fit
+        const maxZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : 15;
         mapRef.current.fitBounds(bounds, { 
-          padding: [50, 50],
-          maxZoom: 16,
+          padding: [MAP_DEFAULTS.fitBoundsPadding, MAP_DEFAULTS.fitBoundsPadding],
+          maxZoom: maxZoom,
           animate: true
         });
         
-        console.log('🗺️ Fitting bounds to show all markers:', validAppCoordinates.length);
+        console.log('🗺️ Fitted bounds to show applications in radius');
       } catch (error) {
         console.error('Error fitting bounds:', error);
+        // Fallback to centered view if fitting bounds fails
+        mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
       }
+    } else {
+      // If no applications in radius, center on search location
+      mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
     }
-  }, [applications]);
+  }, [applications, searchRadius, searchLocation, isMobile, mapReady]);
 
   // Handle first mount of the map
   useEffect(() => {
@@ -167,13 +197,16 @@ export const MapContainer = memo(({
       <LeafletMapContainer
         ref={mapRef}
         center={coordinates}
-        zoom={14}
+        zoom={isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
         className="z-10"
+        maxZoom={MAP_DEFAULTS.maxZoom}
+        minZoom={MAP_DEFAULTS.minZoom}
         whenReady={() => {
           console.log('🗺️ Map is ready');
           mapRef.current?.invalidateSize(true);
+          setMapReady(true);
         }}
       >
         <TileLayer 
@@ -185,7 +218,7 @@ export const MapContainer = memo(({
         <SearchLocationPin position={searchLocation} />
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={coordinates}
+          baseCoordinates={searchLocation} // Use searchLocation instead of coordinates
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
           searchRadius={searchRadius}
