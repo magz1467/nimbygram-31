@@ -1,4 +1,3 @@
-
 /**
  * Google Maps loader - refactored version
  * Handles loading and initialization of Google Maps API
@@ -99,7 +98,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         return;
       }
       
-      // Get the API key from our centralized utility
+      // Get the API key from our centralized utility - always use the same key
       const apiKey = getGoogleMapsApiKey();
       
       console.log('Loading Google Maps script...');

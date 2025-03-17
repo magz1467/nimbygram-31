@@ -30,7 +30,7 @@ export const getGoogleMapsApiKey = (): string => {
   const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1');
   console.log('🛠️ Is development environment?', isDev);
   
-  // Always use the current key for production domains
+  // Always use the current key for all environments
   return CURRENT_GOOGLE_MAPS_API_KEY;
 };
 
