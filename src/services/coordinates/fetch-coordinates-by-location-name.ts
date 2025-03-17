@@ -2,7 +2,7 @@
 /**
  * Utility functions for fetching coordinates using location names
  */
-import { ensureGoogleMapsLoaded } from "./google-maps-loader";
+import { ensureGoogleMapsLoaded, resetGoogleMapsLoader } from "./google-maps-loader";
 import { withTimeout } from "@/utils/fetchUtils";
 
 /**
@@ -77,8 +77,22 @@ export const fetchCoordinatesByLocationName = async (
   console.log(`🔍 Current hostname: ${window.location.hostname}`);
   
   try {
+    // Reset Google Maps loader if we're seeing repeated API key issues
+    // This will force a clean reload of the script
+    if (window.google && window.google.maps && 
+        typeof window.google.maps.Geocoder !== 'function') {
+      console.log('🔄 Detected corrupted Google Maps instance, resetting loader');
+      resetGoogleMapsLoader();
+    }
+    
     // First ensure Google Maps API is loaded
     await ensureGoogleMapsLoaded();
+    
+    // Check if Google Maps loaded properly
+    if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
+      console.error('❌ Google Maps API not loaded properly, falling back to direct coordinates');
+      throw new Error('Google Maps API not available');
+    }
     
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();

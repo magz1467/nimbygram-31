@@ -1,3 +1,4 @@
+
 /**
  * Utility for loading Google Maps script - consolidated version
  */
@@ -41,6 +42,22 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       loadError = null;
       isLoading = false;
       loadPromise = null;
+      
+      // Remove any existing Google Maps script tags to prevent conflicts
+      const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
+      existingScripts.forEach(script => script.remove());
+      console.log(`Removed ${existingScripts.length} existing Google Maps script tags`);
+      
+      // Also clean up any Google objects that might be cached
+      if (window.google && window.google.maps) {
+        try {
+          // @ts-ignore - Force delete the google.maps object
+          delete window.google.maps;
+          console.log('Cleaned up existing Google Maps object');
+        } catch (e) {
+          console.warn('Could not clean up Google Maps object:', e);
+        }
+      }
     } else {
       // For preview compatibility - don't fail but proceed with fallback coordinates for major cities
       console.warn(`Max retries (${MAX_RETRIES}) reached for Google Maps loading, will use fallback coordinates`);
@@ -69,26 +86,11 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         return;
       }
       
-      // Check if script tag already exists
+      // Check if script tag already exists and remove it
       const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
       if (existingScript) {
-        console.log('Google Maps script tag already exists, waiting for it to load');
-        
-        // Wait for existing script to load
-        const checkIfLoaded = () => {
-          if (window.google && window.google.maps && window.google.maps.places) {
-            console.log('Google Maps loaded via existing script tag');
-            isLoaded = true;
-            isLoading = false;
-            loadError = null;
-            resolve();
-          } else {
-            setTimeout(checkIfLoaded, 100);
-          }
-        };
-        
-        setTimeout(checkIfLoaded, 100);
-        return;
+        console.log('Removing existing Google Maps script tag to prevent key conflicts');
+        existingScript.remove();
       }
       
       console.log('Loading Google Maps script...');
@@ -110,6 +112,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         setTimeout(() => {
           if (window.google && window.google.maps && window.google.maps.places) {
             console.log('Google Maps API objects confirmed available');
+            console.log('Script used key ending with:', script.src.match(/key=([^&]*)/)?.[1].substring((script.src.match(/key=([^&]*)/)?.[1].length || 0) - 6));
             isLoaded = true;
             isLoading = false;
             loadError = null;
@@ -162,13 +165,28 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   return loadPromise;
 };
 
-// Function to reset the loader state for testing or recovery
+// Function to completely reset the loader state for testing or recovery
 export const resetGoogleMapsLoader = () => {
   isLoading = false;
   isLoaded = false;
   loadPromise = null;
   loadError = null;
   loadRetries = 0;
+  
+  // Remove any existing Google Maps script tags
+  const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
+  existingScripts.forEach(script => script.remove());
+  
+  // Also clean up any Google objects that might be cached
+  if (window.google && window.google.maps) {
+    try {
+      // @ts-ignore - Force delete the google.maps object
+      delete window.google.maps;
+    } catch (e) {
+      console.warn('Could not clean up Google Maps object:', e);
+    }
+  }
+  
   console.log('Google Maps loader has been reset');
 };
 
