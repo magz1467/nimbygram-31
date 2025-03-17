@@ -9,7 +9,7 @@ serve(async (req) => {
 
   try {
     // IMPORTANT: Hardcoded API key to ensure consistent value in production
-    const apiKey = 'AIzaSyDnmLXAQF6n07_t_-E2ttqwhZk993TtCcs';
+    const apiKey = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
     
     console.log('API Key validation:')
     console.log('- Key length:', apiKey.length)
