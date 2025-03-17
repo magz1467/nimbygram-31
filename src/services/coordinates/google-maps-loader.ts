@@ -13,6 +13,8 @@ declare global {
       // Add any other Google services that might be used
       [key: string]: any;
     };
+    __GOOGLE_MAPS_API_KEY?: string;
+    getGoogleMapsApiKey?: () => string;
   }
 }
 
@@ -40,18 +42,18 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   // Always clean up expired key scripts first
   cleanupExpiredKeyScripts();
   
-  // 🔍 DEBUGGING - API key from function
-  const debugApiKey = getGoogleMapsApiKey();
-  console.log('🔍 DEBUGGING - API key from function:', debugApiKey);
-  console.log('🔍 DEBUGGING - Last 6 chars:', debugApiKey.slice(-6));
+  // Use the global API key if it's available (from fixApiKey.js)
+  const apiKey = typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY 
+    ? window.__GOOGLE_MAPS_API_KEY 
+    : getGoogleMapsApiKey();
+  
+  // 🔍 DEBUGGING - API key from global or function
+  console.log('🔍 DEBUGGING - API key:', apiKey);
+  console.log('🔍 DEBUGGING - Last 6 chars:', apiKey.slice(-6));
+  console.log('🔍 DEBUGGING - Source:', window.__GOOGLE_MAPS_API_KEY ? 'Global override' : 'Function');
   
   // Log the hostname for debugging
   console.log('🌐 Current hostname:', getCurrentHostname());
-  
-  // Diagnostic check to log which key is being used
-  const diagnostics = getDiagnosticInfo();
-  console.log('🔑 Using Google Maps API key ending with:', diagnostics.keyLastSix);
-  console.log('🔑 On domain:', diagnostics.hostname);
   
   // Load the Google Maps script
   return loadGoogleMapsScript();

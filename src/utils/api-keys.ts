@@ -15,8 +15,14 @@ const CURRENT_GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
  * This provides a single source of truth for the API key
  */
 export const getGoogleMapsApiKey = (): string => {
+  // Check for the global override from fixApiKey.js
+  if (typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY) {
+    console.log('🔑 Using globally forced API key ending with:', window.__GOOGLE_MAPS_API_KEY.slice(-6));
+    return window.__GOOGLE_MAPS_API_KEY;
+  }
+  
   // Log to help identify where the key is being retrieved
-  console.log('🔑 Retrieving Google Maps API key');
+  console.log('🔑 Retrieving Google Maps API key from standard function');
   
   // Get the current hostname
   const hostname = getCurrentHostname();
@@ -32,21 +38,22 @@ export const getGoogleMapsApiKey = (): string => {
  * Diagnostic function to check API key status
  * This helps identify which key is being used and if there are any issues
  */
-export const diagnoseApiKey = (): { key: string, hostname: string } => {
+export const diagnoseApiKey = (): { key: string, hostname: string, source: string } => {
+  // Check for the global override
+  const usingGlobalKey = typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY;
+  
   const key = getGoogleMapsApiKey();
   const hostname = getCurrentHostname();
+  const source = usingGlobalKey ? 'Global override' : 'Function';
   
   console.log('🔍 API key diagnosis:');
   console.log('- Hostname:', hostname);
   console.log('- Using key ending with:', key.slice(-6));
-  
-  // Additional validation for nimbygram.com
-  if (hostname.includes('nimbygram.com')) {
-    console.log('- Using production key for nimbygram.com domain');
-  }
+  console.log('- Source:', source);
   
   return {
     key: key,
-    hostname: hostname
+    hostname: hostname,
+    source: source
   };
 };

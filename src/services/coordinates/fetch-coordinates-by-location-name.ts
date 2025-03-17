@@ -1,3 +1,4 @@
+
 /**
  * Core service for fetching coordinates by location name
  * Orchestrates the geocoding process using smaller focused components
@@ -19,18 +20,13 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
   logGeocodeDebugInfo(locationName);
   
   try {
-    // TEMPORARY: Always use fallback coordinates while fixing the API key
-    // This ensures your app keeps working while the API key issue is resolved
-    const fallbackLocation = getFallbackCoordinates(locationName);
-    const fallbackCoords = locationToCoordinates(fallbackLocation);
+    // Check for the global API key set by fixApiKey.js
+    const usingGlobalKey = typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY;
     
-    console.log('✅ Using fallback coordinates for location:', locationName);
-    console.log('✅ Fallback coordinates:', fallbackCoords);
-    
-    return {
-      coordinates: fallbackCoords,
-      postcode: null
-    };
+    if (usingGlobalKey) {
+      console.log('✅ Using global API key override for location:', locationName);
+      console.log('✅ API key ends with:', window.__GOOGLE_MAPS_API_KEY!.slice(-6));
+    }
     
     // Initialize the geocoder
     const geocoderInit = await initializeGeocoder();

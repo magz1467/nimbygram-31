@@ -17,9 +17,6 @@ let loadError: Error | null = null;
 let loadRetries = 0;
 const MAX_RETRIES = 2;
 
-// Hardcoded correct API key - eliminates any possible variability
-const CORRECT_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
-
 /**
  * Load the Google Maps script
  * @returns Promise that resolves when Google Maps is loaded
@@ -28,9 +25,14 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
   // Always clean up expired key scripts first
   cleanupExpiredKeyScripts();
   
+  // Use global key if available (from fixApiKey.js)
+  const apiKey = typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY 
+    ? window.__GOOGLE_MAPS_API_KEY 
+    : getGoogleMapsApiKey();
+  
   // Log the API key being used
-  console.log('🔍 DEBUGGING - API key from function:', getGoogleMapsApiKey());
-  console.log('🔍 DEBUGGING - Last 6 chars:', getGoogleMapsApiKey().slice(-6));
+  console.log('🔍 DEBUGGING - API key being used:', apiKey.slice(-6));
+  console.log('🔍 DEBUGGING - Source:', window.__GOOGLE_MAPS_API_KEY ? 'Global override' : 'Function');
   
   // If already loaded, resolve immediately
   if (isLoaded && isGoogleMapsLoaded()) {
@@ -53,9 +55,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       
       console.log('Complete reset performed before retry');
     } else {
-      // For preview compatibility - don't fail but proceed with fallback coordinates for major cities
-      console.warn(`Max retries (${MAX_RETRIES}) reached for Google Maps loading, will use fallback coordinates`);
-      // Instead of rejecting, resolve so that the fallback coordinates can be used
+      console.warn(`Max retries (${MAX_RETRIES}) reached for Google Maps loading`);
       return Promise.resolve();
     }
   }
@@ -83,12 +83,11 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
         return;
       }
       
-      // Use the hardcoded correct API key directly
-      console.log('Loading Google Maps script with key ending with:', CORRECT_API_KEY.slice(-6));
+      console.log('Loading Google Maps script with key ending with:', apiKey.slice(-6));
       
-      // Create script element with explicit libraries and the correct hardcoded key
+      // Create script element with explicit libraries and the API key
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${CORRECT_API_KEY}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
       script.async = true;
       script.defer = true;
       script.id = 'google-maps-script'; // Add ID for easier identification
@@ -110,7 +109,6 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
             // Force reset and try again with fallback
             resetGoogleMaps(true);
             isLoading = false;
-            // Instead of rejecting, resolve so that the fallback coordinates can be used
             resolve();
           }
         }, 300);
@@ -122,10 +120,9 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
         // Reset for a clean state on next try
         resetGoogleMaps(true);
         
-        console.warn('Google Maps script failed to load, will use fallback coordinates');
+        console.warn('Google Maps script failed to load');
         isLoading = false;
         loadError = error instanceof Error ? error : new Error('Script loading error');
-        // Instead of rejecting, resolve so that the fallback coordinates can be used
         resolve();
       };
       
@@ -134,12 +131,11 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       // Set a timeout to resolve even if the script doesn't load properly
       setTimeout(() => {
         if (isLoading) {
-          console.warn('Google Maps script loading timed out, will use fallback coordinates');
+          console.warn('Google Maps script loading timed out');
           // Reset for a clean state on next try
           resetGoogleMaps(true);
           isLoading = false;
           loadError = new Error('Script loading timeout');
-          // Instead of rejecting, resolve so that the fallback coordinates can be used
           resolve();
         }
       }, 10000); // 10 second script load timeout
@@ -150,11 +146,8 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       // Reset for a clean state on next try
       resetGoogleMaps(true);
       
-      // For preview compatibility - don't fail but proceed with fallback coordinates
-      console.warn('Unexpected error in Google Maps loading, will use fallback coordinates');
       isLoading = false;
       loadError = error instanceof Error ? error : new Error(String(error));
-      // Instead of rejecting, resolve so that the fallback coordinates can be used
       resolve();
     }
   });
