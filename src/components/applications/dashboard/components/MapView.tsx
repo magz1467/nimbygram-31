@@ -26,7 +26,7 @@ export const MapView = memo(({
     !isNaN(coordinates[1]) && 
     Math.abs(coordinates[0]) <= 90 && 
     Math.abs(coordinates[1]) <= 180 ? 
-    [coordinates[0], coordinates[1]] : [51.5074, -0.1278]; // Only default to London if truly invalid
+    [coordinates[0], coordinates[1]] : [52.4068, -1.5197]; // Default to Coventry instead of London
   
   // Log coordinates for debugging
   useEffect(() => {

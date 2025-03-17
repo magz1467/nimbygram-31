@@ -1,4 +1,3 @@
-
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
@@ -45,22 +44,28 @@ export const MapContainer = memo(({
   // Validate coordinates are in correct format [lat, lng]
   const validCoordinates = Array.isArray(coordinates) && 
                           coordinates.length === 2 && 
+                          !isNaN(coordinates[0]) && 
+                          !isNaN(coordinates[1]) && 
                           Math.abs(coordinates[0]) <= 90 && 
                           Math.abs(coordinates[1]) <= 180;
                           
   // Validate search location coordinates
   const validSearchLocation = Array.isArray(searchLocation) && 
                           searchLocation.length === 2 && 
+                          !isNaN(searchLocation[0]) && 
+                          !isNaN(searchLocation[1]) && 
                           Math.abs(searchLocation[0]) <= 90 && 
                           Math.abs(searchLocation[1]) <= 180;
   
-  if (!validCoordinates) {
-    console.error('Invalid coordinates provided to MapContainer:', coordinates);
-  }
-  
-  if (!validSearchLocation) {
-    console.error('Invalid search location provided to MapContainer:', searchLocation);
-  }
+  // Logging for debugging purposes
+  useEffect(() => {
+    console.log('🔍 Map coordinates validation:', { 
+      coordinates, 
+      validCoordinates, 
+      searchLocation, 
+      validSearchLocation 
+    });
+  }, [coordinates, validCoordinates, searchLocation, validSearchLocation]);
 
   // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
@@ -81,11 +86,16 @@ export const MapContainer = memo(({
     }
     
     // If no selection or selection not found, center on search coordinates
-    // Use searchLocation instead of coordinates for centering
+    // CRITICAL: Always prioritize searchLocation when available and valid
     if (validSearchLocation) {
       const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
       map.setView(searchLocation, initialZoom, { animate: true });
       console.log('🗺️ Centering map on search location:', searchLocation);
+    } else if (validCoordinates) {
+      // Only fall back to regular coordinates if search location is invalid
+      const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
+      map.setView(coordinates, initialZoom, { animate: true });
+      console.log('🗺️ Centering map on coordinates (fallback):', coordinates);
     }
     
     // Force map to redraw
@@ -97,7 +107,7 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [selectedId, applications, mapReady, isMobile, searchLocation, validSearchLocation]);
+  }, [selectedId, applications, mapReady, isMobile, searchLocation, validSearchLocation, coordinates, validCoordinates]);
 
   // Fit bounds to show all markers within search radius when applications change
   useEffect(() => {
@@ -220,12 +230,13 @@ export const MapContainer = memo(({
     };
   }, []);
 
-  // Use search location as the center point when available and valid
+  // CRITICAL FIX: Use search location as the center point when available and valid
+  // This ensures we ALWAYS use the searched-for location and NEVER default to London unnecessarily
   const centerPoint: [number, number] = validSearchLocation ? searchLocation : 
                                          validCoordinates ? coordinates : 
-                                         [51.5074, -0.1278]; // London fallback only as last resort
-
-  console.log('MapContainer rendering with center:', centerPoint, 'searchLocation:', searchLocation);
+                                         [52.4068, -1.5197]; // Default to Coventry if truly invalid
+  
+  console.log('🗺️ MapContainer rendering with center:', centerPoint, 'searchLocation:', searchLocation);
 
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
@@ -253,7 +264,7 @@ export const MapContainer = memo(({
         {validSearchLocation && <SearchLocationPin position={searchLocation} />}
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={validSearchLocation ? searchLocation : centerPoint} // Use searchLocation when valid
+          baseCoordinates={validSearchLocation ? searchLocation : centerPoint} // CRITICAL: Use searchLocation when valid
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
           searchRadius={effectiveSearchRadius}

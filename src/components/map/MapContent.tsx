@@ -53,12 +53,13 @@ export const MapContent = ({
   useEffect(() => {
     console.log('🗺️ MapContent with search location:', validSearchLocation ? searchLocation : 'invalid');
     console.log('🗺️ MapContent with coordinates:', validCoordinates ? coordinates : 'invalid');
+    console.log('🗺️ MapContent postcode:', postcode);
     
     if (initialRenderRef.current) {
       console.log('🗺️ Initial render - will use specified search location');
       initialRenderRef.current = false;
     }
-  }, [searchLocation, coordinates, validSearchLocation, validCoordinates]);
+  }, [searchLocation, coordinates, validSearchLocation, validCoordinates, postcode]);
 
   // Force map to render correctly
   useEffect(() => {
@@ -135,7 +136,7 @@ export const MapContent = ({
     ? [searchLocation[0], searchLocation[1]]  // Convert to explicit tuple
     : validCoordinates 
       ? [coordinates[0], coordinates[1]]  // Convert to explicit tuple
-      : [51.5074, -0.1278];  // Default London coordinates as last resort
+      : [52.4068, -1.5197];  // Default to Coventry instead of London
   
   console.log('🗺️ Using effective coordinates for map:', effectiveCoordinates);
 
