@@ -11,7 +11,6 @@ export const isProdDomain = (): boolean => {
   const hostname = window.location.hostname || '';
   return hostname.includes('nimbygram.com') || 
          hostname.includes('www.nimbygram.com') ||
-         hostname.includes('nimbygram.vercel.app') ||
          // For local development testing of production mode
          hostname.includes('localhost');
 };

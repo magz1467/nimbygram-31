@@ -82,18 +82,6 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   // Log the hostname for debugging
   console.log('🌐 Current hostname:', getCurrentHostname());
   
-  // Check if we should use API or fallback based on domain
-  const shouldUseFallback = isProdDomain();
-  
-  if (shouldUseFallback) {
-    console.log('🌐 Production domain detected, will prioritize fallback coordinates');
-    
-    // Don't even try to load Google Maps on production domains
-    // This will force the app to use the fallback coordinates
-    // Return a resolved promise to allow the app to continue
-    return Promise.resolve();
-  }
-  
   // If already loaded, resolve immediately
   if (isLoaded && window.google && window.google.maps) {
     console.log('Google Maps already loaded, reusing existing instance');

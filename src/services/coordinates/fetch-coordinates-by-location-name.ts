@@ -1,3 +1,4 @@
+
 import { getGoogleGeocoder } from "./geocoder-service";
 import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
 import { isProdDomain, getCurrentHostname } from "@/utils/environment";
@@ -11,19 +12,6 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
   console.log('🔍 Fetching coordinates for location name:', locationName);
   console.log('🔍 Current hostname:', getCurrentHostname());
   
-  // Check if we're in production and should prioritize fallback
-  if (isProdDomain()) {
-    console.log('🔍 Production domain detected, using fallback coordinates');
-    // Always use fallback in production to avoid API key issues
-    const fallbackCoords = useFallbackCoordinates(locationName);
-    
-    console.log('✅ Using fallback coordinates for location:', fallbackCoords);
-    return {
-      coordinates: fallbackCoords as [number, number], // Force type as we know it will always return coordinates 
-      postcode: null
-    };
-  }
-  
   try {
     // Enhance the search term by adding UK context if not already present
     const enhancedLocation = locationName.toLowerCase().includes('uk') 
@@ -32,10 +20,8 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     console.log('🔍 Enhanced search location:', enhancedLocation);
     
-    // Try to load Google Maps if not in production
-    if (!isProdDomain()) {
-      await ensureGoogleMapsLoaded();
-    }
+    // Try to load Google Maps
+    await ensureGoogleMapsLoaded();
     
     // Get the geocoder service
     const geocoder = getGoogleGeocoder();

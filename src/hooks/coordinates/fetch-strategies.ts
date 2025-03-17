@@ -21,7 +21,7 @@ const useFallbackForLocation = (
   isMounted: boolean,
   callbacks: CoordinateCallbacks
 ): boolean => {
-  console.log(`🔍 Checking fallback for "${locationString}" on ${getCurrentHostname()}`);
+  console.log(`🔍 Using fallback for "${locationString}" on ${getCurrentHostname()}`);
   const fallbackCoords = useFallbackCoordinates(locationString);
   
   if (fallbackCoords && isMounted) {
@@ -41,14 +41,6 @@ export const fetchCoordinatesForPlaceId = async (
   callbacks: CoordinateCallbacks
 ) => {
   console.log('🔍 fetchCoordinatesForPlaceId:', placeId, 'on hostname:', getCurrentHostname());
-  
-  // In production, always use fallbacks
-  if (isProdDomain()) {
-    console.log('🔍 Production domain detected, using fallbacks for place ID');
-    if (useFallbackForLocation(placeId, isMounted, callbacks)) {
-      return;
-    }
-  }
 
   try {
     const coordinates = await fetchCoordinatesFromPlaceId(placeId);
@@ -56,7 +48,7 @@ export const fetchCoordinatesForPlaceId = async (
       callbacks.setCoordinates(coordinates);
       callbacks.setPostcode(null); // Place ID doesn't return a postcode directly
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching coordinates for place ID:', error);
     
     // Use fallback if API fails
@@ -74,13 +66,6 @@ export const fetchCoordinatesForTown = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
-  // In production, prioritize fallbacks
-  if (isProdDomain()) {
-    if (useFallbackForLocation(townName, isMounted, callbacks)) {
-      return;
-    }
-  }
-
   try {
     console.log('🏙️ Fetching coordinates for town:', townName);
     console.log('🏙️ Current hostname:', window.location.hostname);
@@ -129,18 +114,7 @@ export const fetchCoordinatesForTown = async (
       return;
     }
     
-    // Try location name search as fallback
-    try {
-      await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
-    } catch (fallbackError) {
-      // If both fail, use hardcoded coordinates for common UK cities
-      if (useFallbackForLocation(townName, isMounted, callbacks)) {
-        return;
-      }
-      
-      // If all else fails, throw the original error
-      throw error;
-    }
+    throw error;
   }
 };
 
@@ -150,13 +124,6 @@ export const fetchCoordinatesForOutcode = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
-  // In production, prioritize fallbacks
-  if (isProdDomain()) {
-    if (useFallbackForLocation(outcode, isMounted, callbacks)) {
-      return;
-    }
-  }
-
   try {
     console.log('📮 Fetching coordinates for outcode:', outcode);
     const result = await fetchCoordinatesFromOutcode(outcode);
@@ -184,13 +151,6 @@ export const fetchCoordinatesForAddress = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
-  // In production, prioritize fallbacks
-  if (isProdDomain()) {
-    if (useFallbackForLocation(address, isMounted, callbacks)) {
-      return;
-    }
-  }
-
   try {
     console.log('🏠 Fetching coordinates for address:', address);
     const result = await fetchCoordinatesByAddress(address);
@@ -220,16 +180,9 @@ export const fetchCoordinatesForLocationName = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
-  // In production, prioritize fallbacks
-  if (isProdDomain()) {
-    if (useFallbackForLocation(locationName, isMounted, callbacks)) {
-      return;
-    }
-  }
-
   try {
     console.log('🌎 Fetching coordinates for location name:', locationName);
-    console.log('🌎 Current hostname:', window.location.hostname);
+    console.log('���� Current hostname:', window.location.hostname);
     
     // Determine if this is a large city that needs special handling
     const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName);
