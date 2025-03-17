@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatStorybook } from "@/utils/storybook-formatter";
@@ -7,6 +6,7 @@ import { Application } from "@/types/planning";
 import { StorybookContent } from "./storybook/StorybookContent";
 import { MapButton } from "./storybook/MapButton";
 import { MobileMapView } from "@/components/search/results/MobileMapView";
+import { FallbackContent } from "./storybook/FallbackContent";
 
 interface CardContentProps {
   storybook: string | null;
@@ -86,28 +86,46 @@ export const CardContent = ({
     setShowMobileMap(false);
   };
 
-  // Process storybook data with extended logging
-  console.log('Processing storybook in CardContent, type:', typeof storybook, 
-    'content:', storybook ? storybook.substring(0, 50) + '...' : 'null');
-  
+  // Process storybook data
   const formattedStorybook = formatStorybook(storybook);
   
-  // Add enhanced logging to see what we're working with
-  console.log('CardContent storybook formatting result:', {
-    hasStorybook: !!storybook,
-    formattedResult: formattedStorybook ? {
-      hasHeader: !!formattedStorybook.header,
-      hasSections: !!formattedStorybook.sections,
-      hasContent: !!formattedStorybook.content,
-      sectionCount: formattedStorybook.sections?.length || 0
-    } : null,
-    sectionTypes: formattedStorybook?.sections?.map(s => s.type) || 'none',
-    rawStorybook: storybook ? storybook.substring(0, 100) + '...' : 'none'
-  });
-
-  // If no storybook content at all, just return the button
+  // Render the map button regardless of storybook content
+  const mapButton = <MapButton onClick={handleSeeOnMapClick} />;
+  
+  // If no storybook content, render a simplified view with just the map button
   if (!storybook) {
-    return <div><MapButton onClick={handleSeeOnMapClick} /></div>;
+    return (
+      <div className="space-y-6">
+        {mapButton}
+        
+        {/* Map components - keep these the same for all cases */}
+        {!isMobile && applicationId && (
+          <DesktopMapDialog
+            applications={applications}
+            selectedId={applicationId}
+            coordinates={applicationCoords as [number, number]}
+            searchLocation={coordinates as [number, number]}
+            handleMarkerClick={handleMarkerClick}
+            isOpen={showMapDialog}
+            onClose={() => setShowMapDialog(false)}
+            isLoading={isLoading}
+            postcode={postcode}
+          />
+        )}
+
+        {isMobile && showMobileMap && applicationId && applicationCoords && (
+          <MobileMapView
+            applications={applications}
+            selectedId={applicationId}
+            coordinates={applicationCoords as [number, number]}
+            handleMarkerClick={handleMarkerClick}
+            handleCloseMap={handleCloseMap}
+            isLoading={isLoading}
+            postcode={postcode}
+          />
+        )}
+      </div>
+    );
   }
 
   return (
@@ -119,7 +137,7 @@ export const CardContent = ({
       />
 
       {/* Add the map button at the end */}
-      <MapButton onClick={handleSeeOnMapClick} />
+      {mapButton}
 
       {/* Map Dialog for Desktop */}
       {!isMobile && applicationId && (
