@@ -41,32 +41,6 @@ export const MapContainer = memo(({
     ? MAP_DEFAULTS.mobileSearchRadius 
     : (searchRadius || MAP_DEFAULTS.searchRadius);
 
-  // Validate coordinates are in correct format [lat, lng]
-  const validCoordinates = Array.isArray(coordinates) && 
-                          coordinates.length === 2 && 
-                          !isNaN(coordinates[0]) && 
-                          !isNaN(coordinates[1]) && 
-                          Math.abs(coordinates[0]) <= 90 && 
-                          Math.abs(coordinates[1]) <= 180;
-                          
-  // Validate search location coordinates
-  const validSearchLocation = Array.isArray(searchLocation) && 
-                          searchLocation.length === 2 && 
-                          !isNaN(searchLocation[0]) && 
-                          !isNaN(searchLocation[1]) && 
-                          Math.abs(searchLocation[0]) <= 90 && 
-                          Math.abs(searchLocation[1]) <= 180;
-  
-  // Logging for debugging purposes
-  useEffect(() => {
-    console.log('🔍 Map coordinates validation:', { 
-      coordinates, 
-      validCoordinates, 
-      searchLocation, 
-      validSearchLocation 
-    });
-  }, [coordinates, validCoordinates, searchLocation, validSearchLocation]);
-
   // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
@@ -86,17 +60,9 @@ export const MapContainer = memo(({
     }
     
     // If no selection or selection not found, center on search coordinates
-    // CRITICAL: Always prioritize searchLocation when available and valid
-    if (validSearchLocation) {
-      const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
-      map.setView(searchLocation, initialZoom, { animate: true });
-      console.log('🗺️ Centering map on search location:', searchLocation);
-    } else if (validCoordinates) {
-      // Only fall back to regular coordinates if search location is invalid
-      const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
-      map.setView(coordinates, initialZoom, { animate: true });
-      console.log('🗺️ Centering map on coordinates (fallback):', coordinates);
-    }
+    // ALWAYS use searchLocation - no fallbacks
+    map.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom, { animate: true });
+    console.log('🗺️ Centering map on search location:', searchLocation);
     
     // Force map to redraw
     const invalidateTimes = [0, 100, 300, 500];
@@ -107,11 +73,11 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [selectedId, applications, mapReady, isMobile, searchLocation, validSearchLocation, coordinates, validCoordinates]);
+  }, [selectedId, applications, mapReady, isMobile, searchLocation, coordinates]);
 
   // Fit bounds to show all markers within search radius when applications change
   useEffect(() => {
-    if (!mapRef.current || applications.length === 0 || !mapReady || !validSearchLocation) return;
+    if (!mapRef.current || applications.length === 0 || !mapReady) return;
     
     // Skip the first render to avoid overriding the initial view
     if (initialRenderRef.current) {
@@ -164,17 +130,13 @@ export const MapContainer = memo(({
       } catch (error) {
         console.error('Error fitting bounds:', error);
         // Fallback to centered view if fitting bounds fails
-        if (validSearchLocation) {
-          mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
-        }
+        mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
       }
     } else {
       // If no applications in radius, center on search location
-      if (validSearchLocation) {
-        mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
-      }
+      mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
     }
-  }, [applications, effectiveSearchRadius, searchLocation, isMobile, mapReady, validSearchLocation]);
+  }, [applications, effectiveSearchRadius, searchLocation, isMobile, mapReady]);
 
   // Handle first mount of the map
   useEffect(() => {
@@ -230,19 +192,13 @@ export const MapContainer = memo(({
     };
   }, []);
 
-  // CRITICAL FIX: Use search location as the center point when available and valid
-  // This ensures we ALWAYS use the searched-for location and NEVER default to London unnecessarily
-  const centerPoint: [number, number] = validSearchLocation ? searchLocation : 
-                                         validCoordinates ? coordinates : 
-                                         [52.4068, -1.5197]; // Default to Coventry if truly invalid
-  
-  console.log('🗺️ MapContainer rendering with center:', centerPoint, 'searchLocation:', searchLocation);
+  console.log('🗺️ MapContainer rendering with center:', searchLocation);
 
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
-        center={centerPoint}
+        center={searchLocation}
         zoom={isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
@@ -260,11 +216,11 @@ export const MapContainer = memo(({
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           maxZoom={19}
         />
-        {/* Show search location pin at search coordinates */}
-        {validSearchLocation && <SearchLocationPin position={searchLocation} />}
+        {/* Always show search location pin */}
+        <SearchLocationPin position={searchLocation} />
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={validSearchLocation ? searchLocation : centerPoint} // CRITICAL: Use searchLocation when valid
+          baseCoordinates={searchLocation}
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
           searchRadius={effectiveSearchRadius}

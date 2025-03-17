@@ -21,7 +21,7 @@ export const MapContent = ({
   applications,
   selectedId,
   coordinates,
-  searchLocation, // Added searchLocation to props
+  searchLocation,
   isMobile,
   isMapView,
   onMarkerClick,
@@ -33,33 +33,17 @@ export const MapContent = ({
   const [isMapLoading, setIsMapLoading] = useState(true);
   const initialRenderRef = useRef(true);
   
-  // Validate search location to ensure it's not defaulting
-  const validSearchLocation = Array.isArray(searchLocation) && 
-                             searchLocation.length === 2 && 
-                             Math.abs(searchLocation[0]) <= 90 && 
-                             Math.abs(searchLocation[1]) <= 180 &&
-                             !isNaN(searchLocation[0]) &&
-                             !isNaN(searchLocation[1]);
-  
-  // Validate coordinates
-  const validCoordinates = Array.isArray(coordinates) && 
-                          coordinates.length === 2 && 
-                          Math.abs(coordinates[0]) <= 90 && 
-                          Math.abs(coordinates[1]) <= 180 &&
-                          !isNaN(coordinates[0]) &&
-                          !isNaN(coordinates[1]);
-  
   // Log both locations to help debug
   useEffect(() => {
-    console.log('🗺️ MapContent with search location:', validSearchLocation ? searchLocation : 'invalid');
-    console.log('🗺️ MapContent with coordinates:', validCoordinates ? coordinates : 'invalid');
+    console.log('🗺️ MapContent with search location:', searchLocation);
+    console.log('🗺️ MapContent with coordinates:', coordinates);
     console.log('🗺️ MapContent postcode:', postcode);
     
     if (initialRenderRef.current) {
       console.log('🗺️ Initial render - will use specified search location');
       initialRenderRef.current = false;
     }
-  }, [searchLocation, coordinates, validSearchLocation, validCoordinates, postcode]);
+  }, [searchLocation, coordinates, postcode]);
 
   // Force map to render correctly
   useEffect(() => {
@@ -129,16 +113,6 @@ export const MapContent = ({
       }, 500);
     }
   }, [applications]);
-  
-  // Determine which coordinates to use - ALWAYS use the search location if it's valid
-  // Fix for TypeScript error: ensure it's always a proper [number, number] tuple
-  const effectiveCoordinates: [number, number] = validSearchLocation 
-    ? [searchLocation[0], searchLocation[1]]  // Convert to explicit tuple
-    : validCoordinates 
-      ? [coordinates[0], coordinates[1]]  // Convert to explicit tuple
-      : [52.4068, -1.5197];  // Default to Coventry instead of London
-  
-  console.log('🗺️ Using effective coordinates for map:', effectiveCoordinates);
 
   return (
     <div className="relative w-full h-full" ref={mapContainerRef}>
@@ -147,8 +121,8 @@ export const MapContent = ({
         key={`map-${forceRender}-${isMobile ? 'mobile' : 'desktop'}-${selectedId || 'none'}`}
         applications={applications}
         selectedId={selectedId}
-        coordinates={effectiveCoordinates}
-        searchLocation={effectiveCoordinates} // Always use the same coordinates for search
+        coordinates={coordinates}
+        searchLocation={searchLocation} // Always use search location
         onMarkerClick={onMarkerClick}
       />
       
