@@ -1,4 +1,3 @@
-
 /**
  * Utility for loading Google Maps script - consolidated version
  */
@@ -10,8 +9,8 @@ declare global {
   }
 }
 
-// Use a single API key to prevent confusion
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
+// Import the consistent API key from config
+import { GOOGLE_MAPS_API_KEY } from "@/services/address/config/api-keys";
 
 // Keep track of loading state to prevent duplicate loading
 let isLoading = false;
