@@ -176,8 +176,10 @@ export const resetGoogleMapsLoader = (forceCleanup = false) => {
   
   existingScripts.forEach(script => {
     try {
-      console.log('Removing script:', script.src);
-      script.remove();
+      // Type assertion to HTMLScriptElement to fix the TypeScript error
+      const scriptElement = script as HTMLScriptElement;
+      console.log('Removing script:', scriptElement.src);
+      scriptElement.remove();
     } catch (e) {
       console.warn('Error removing script:', e);
     }
@@ -242,4 +244,3 @@ export const checkApiKeyDomainRestrictions = async () => {
 
 // Export for debugging
 export const getGoogleMapsApiKey = () => GOOGLE_MAPS_API_KEY;
-
