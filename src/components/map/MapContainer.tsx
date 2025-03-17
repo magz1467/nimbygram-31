@@ -71,6 +71,36 @@ export const MapContainer = memo(({
     });
   }, [coordinates, selectedId, applications, validCoordinates]);
 
+  // Fit bounds to show all markers when applications change
+  useEffect(() => {
+    if (!mapRef.current || applications.length === 0) return;
+    
+    // Get valid application coordinates
+    const validAppCoordinates = applications
+      .filter(app => app.coordinates && Array.isArray(app.coordinates) && app.coordinates.length === 2)
+      .map(app => app.coordinates as [number, number]);
+    
+    if (validAppCoordinates.length > 1) {
+      try {
+        // Create bounds object from coordinates
+        const bounds = validAppCoordinates.reduce((bounds, coords) => {
+          return bounds.extend(coords);
+        }, new L.LatLngBounds(validAppCoordinates[0], validAppCoordinates[0]));
+        
+        // Add padding and fit bounds
+        mapRef.current.fitBounds(bounds, { 
+          padding: [50, 50],
+          maxZoom: 16,
+          animate: true
+        });
+        
+        console.log('🗺️ Fitting bounds to show all markers:', validAppCoordinates.length);
+      } catch (error) {
+        console.error('Error fitting bounds:', error);
+      }
+    }
+  }, [applications]);
+
   // Handle first mount of the map
   useEffect(() => {
     const checkAndInvalidateSize = () => {

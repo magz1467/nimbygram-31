@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
+import { Home, List } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -46,6 +46,15 @@ export const MapHeader = ({
     }
   };
 
+  const handleListViewClick = () => {
+    // Navigate back to search results with the current postcode
+    if (postcode) {
+      navigate(`/search-results?postcode=${encodeURIComponent(postcode.trim())}`);
+    } else {
+      navigate('/search-results');
+    }
+  };
+
   return (
     <header className="border-b bg-white">
       <div className={`container mx-auto ${isMobile ? 'p-3' : 'px-4 py-3'}`}>
@@ -55,6 +64,17 @@ export const MapHeader = ({
               <Home className="h-6 w-6" />
               PlanningPulse
             </Link>
+            
+            {/* Add List View button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleListViewClick}
+              className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+            >
+              <List className="h-4 w-4" />
+              List View
+            </Button>
           </div>
         )}
         
@@ -66,19 +86,29 @@ export const MapHeader = ({
           />
         </form>
 
-        {isMobile && onFilterChange && onToggleView && (
+        {isMobile && (
           <div className="flex items-center justify-between mt-3 border-t pt-2">
             <div className="flex items-center gap-1">
-              <FilterBar
-                onFilterChange={onFilterChange}
-                onSortChange={onSortChange}
-                activeFilters={activeFilters}
-                activeSort={activeSort}
-              />
-              <MapListToggle
-                isMapView={isMapView}
-                onToggle={onToggleView}
-              />
+              {onFilterChange && (
+                <FilterBar
+                  onFilterChange={onFilterChange}
+                  onSortChange={onSortChange}
+                  activeFilters={activeFilters}
+                  activeSort={activeSort || 'distance'}
+                  isMapView={true}
+                />
+              )}
+              
+              {/* Add List View button for mobile */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleListViewClick}
+                className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+              >
+                <List className="h-4 w-4" />
+                List
+              </Button>
             </div>
           </div>
         )}

@@ -6,7 +6,7 @@ import { SortType } from "@/types/application-types";
 import { useCallback } from "react";
 import { Button } from "./ui/button";
 import { Map, List, Filter, ArrowUpDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface FilterBarProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -45,6 +45,7 @@ export const FilterBar = ({
 }: FilterBarProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleFilterChange = useCallback((filterType: string, value: string) => {
     if (onFilterChange) {
@@ -59,43 +60,44 @@ export const FilterBar = ({
   }, [onSortChange]);
 
   const handleMapToggle = useCallback(() => {
-    if (onToggleView) {
-      // If we're in list view, navigate to map view instead of using the toggle function
-      if (!isMapView) {
-        // Navigate to map view with current search parameters
-        navigate('/map');
-      } else {
-        // Use the toggle function to return to list view
-        onToggleView();
-      }
+    // Check if we're currently on the map page
+    const isOnMapPage = location.pathname === '/map';
+    
+    if (isOnMapPage) {
+      // If on map page, go back to search results
+      const searchParams = new URLSearchParams(location.search);
+      const postcode = searchParams.get('postcode');
+      navigate(`/search-results${postcode ? `?postcode=${postcode}` : ''}`);
+    } else {
+      // If not on map page, go to map
+      const searchParams = new URLSearchParams(location.search);
+      const postcode = searchParams.get('postcode');
+      navigate(`/map${postcode ? `?postcode=${postcode}` : ''}`);
     }
-  }, [navigate, onToggleView, isMapView]);
+  }, [navigate, location]);
 
-  // Just render the primary buttons, not both sets
   return (
     <div className="flex flex-col bg-white border-b w-full">
       <div className="px-4 pb-2 flex items-center gap-2">
         {/* Map/List toggle button */}
-        {onToggleView && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleMapToggle}
-            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-          >
-            {isMapView ? (
-              <>
-                <List className="h-4 w-4" />
-                List
-              </>
-            ) : (
-              <>
-                <Map className="h-4 w-4" />
-                Map
-              </>
-            )}
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleMapToggle}
+          className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+        >
+          {location.pathname === '/map' ? (
+            <>
+              <List className="h-4 w-4" />
+              List
+            </>
+          ) : (
+            <>
+              <Map className="h-4 w-4" />
+              Map
+            </>
+          )}
+        </Button>
         
         {/* Filter button */}
         <Button
@@ -124,9 +126,6 @@ export const FilterBar = ({
           Distance
         </Button>
       </div>
-      
-      {/* Remove the additional FilterControls that was causing duplication */}
-      {/* Advanced filters can be shown in a modal/dropdown when the Filter button is clicked */}
     </div>
   );
 };

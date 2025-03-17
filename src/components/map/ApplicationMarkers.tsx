@@ -4,6 +4,7 @@ import { Application } from "@/types/planning";
 import { LatLngTuple } from "leaflet";
 import { useMemo } from "react";
 import L from "leaflet";
+import { extractCoordinates } from "@/utils/transforms/coordinate-extraction";
 
 interface ApplicationMarkersProps {
   applications: Application[];
@@ -61,8 +62,20 @@ export const ApplicationMarkers = ({
   const markers = useMemo(() => {
     console.log('🔍 Creating markers for applications:', applications.length);
     
+    // Ensure all applications have valid coordinates extracted
+    const applicationsWithCoordinates = applications.map(app => {
+      if (!app.coordinates) {
+        // Try to extract coordinates if they're missing
+        const extracted = extractCoordinates(app, baseCoordinates);
+        if (extracted) {
+          return { ...app, coordinates: extracted };
+        }
+      }
+      return app;
+    });
+    
     // First create non-selected markers
-    const nonSelectedMarkers = applications
+    const nonSelectedMarkers = applicationsWithCoordinates
       .filter(app => {
         // Filter out applications without valid coordinates
         if (!app.coordinates) {
@@ -99,7 +112,7 @@ export const ApplicationMarkers = ({
       });
     
     // Now add the selected marker if it exists (to ensure it's on top)
-    const selectedApp = applications.find(app => app.id === selectedId);
+    const selectedApp = applicationsWithCoordinates.find(app => app.id === selectedId);
     if (selectedApp && selectedApp.coordinates) {
       const color = getStatusColor(selectedApp.status || 'pending');
       
@@ -129,7 +142,7 @@ export const ApplicationMarkers = ({
     }
     
     return nonSelectedMarkers;
-  }, [applications, selectedId, onMarkerClick]);
+  }, [applications, selectedId, onMarkerClick, baseCoordinates]);
 
   console.log(`🎯 Rendering ${markers.length} markers`);
   return <>{markers}</>;
