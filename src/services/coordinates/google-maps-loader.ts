@@ -1,3 +1,4 @@
+
 /**
  * Google Maps loader - refactored version
  * Handles loading and initialization of Google Maps API
@@ -32,6 +33,37 @@ let loadError: Error | null = null;
 let loadRetries = 0;
 const MAX_RETRIES = 2;
 
+// Hardcoded correct API key - eliminates any possible variability
+const CORRECT_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
+
+// Function to clean up any scripts with expired keys
+const cleanupExpiredKeyScripts = () => {
+  if (typeof document === 'undefined') return;
+  
+  console.log('🧹 Checking for Google Maps scripts with expired keys...');
+  const scripts = document.querySelectorAll('script');
+  
+  scripts.forEach(script => {
+    const src = script.getAttribute('src') || '';
+    // Specifically check for the known expired key
+    if (src.includes('maps.googleapis.com') && src.includes('AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA')) {
+      console.log('🧹 Found and removing script with expired key:', src);
+      script.parentNode?.removeChild(script);
+      
+      // Also clean up the Google Maps object to allow a fresh initialization
+      if (window.google && window.google.maps) {
+        console.log('🧹 Cleaning up expired Google Maps object');
+        delete window.google.maps;
+        
+        // If no other Google APIs are in use, remove the entire google object
+        if (!window.google.charts && !window.google.visualization) {
+          delete (window as any).google;
+        }
+      }
+    }
+  });
+};
+
 /**
  * Provides fallback coordinates for location names
  * @param locationName Location to find coordinates for
@@ -48,6 +80,9 @@ export const useFallbackCoordinates = (locationName: string): [number, number] |
  * @returns Promise that resolves when Google Maps is available
  */
 export const ensureGoogleMapsLoaded = async (): Promise<void> => {
+  // Always clean up expired key scripts first
+  cleanupExpiredKeyScripts();
+  
   // 🔍 DEBUGGING - API key from function
   const debugApiKey = getGoogleMapsApiKey();
   console.log('🔍 DEBUGGING - API key from function:', debugApiKey);
@@ -112,22 +147,18 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         return;
       }
       
-      // Get the API key from our centralized utility - always use the same key
-      const apiKey = getGoogleMapsApiKey();
-      
+      // IMPORTANT: Use the hardcoded correct API key directly
+      // This eliminates any possibility of using the wrong key
       console.log('Loading Google Maps script...');
       console.log('Current hostname:', getCurrentHostname());
-      console.log('Using API key that ends with:', apiKey.slice(-6));
+      console.log('Using hardcoded correct API key ending with:', CORRECT_API_KEY.slice(-6));
       
       // 🔍 DEBUGGING - Script URL being used
-      const scriptUrl = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
-      console.log('🔍 DEBUGGING - Script URL being used:', scriptUrl.replace(apiKey, 'API_KEY_REDACTED'));
+      const scriptUrl = `https://maps.googleapis.com/maps/api/js?key=${CORRECT_API_KEY}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
+      console.log('🔍 DEBUGGING - Script URL being used:', scriptUrl.replace(CORRECT_API_KEY, 'API_KEY_REDACTED'));
       
-      // Create script element with explicit libraries
+      // Create script element with explicit libraries and the correct hardcoded key
       const script = document.createElement('script');
-      
-      // IMPORTANT: Ensure we're using the consistent key here
-      // Add all necessary libraries: places, geocoding, geometry
       script.src = scriptUrl;
       script.async = true;
       script.defer = true;
@@ -141,7 +172,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         setTimeout(() => {
           if (window.google && window.google.maps && window.google.maps.places) {
             console.log('Google Maps API objects confirmed available');
-            console.log('Script used key ending with:', apiKey.slice(-6));
+            console.log('Script used key ending with:', CORRECT_API_KEY.slice(-6));
             isLoaded = true;
             isLoading = false;
             loadError = null;
@@ -160,8 +191,8 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       script.onerror = (error) => {
         console.error('Failed to load Google Maps script:', error);
         console.error('Current hostname:', getCurrentHostname());
-        console.error('API key used (last 6 chars):', apiKey.slice(-6));
-        console.error('Full script URL:', script.src.replace(apiKey, 'API_KEY_REDACTED'));
+        console.error('API key used (last 6 chars):', CORRECT_API_KEY.slice(-6));
+        console.error('Full script URL:', script.src.replace(CORRECT_API_KEY, 'API_KEY_REDACTED'));
         
         // Reset for a clean state on next try
         resetGoogleMaps(true);

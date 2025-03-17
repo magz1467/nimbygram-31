@@ -69,8 +69,8 @@ export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Pr
               address: prediction.description,
               place_id: prediction.place_id,
               country: 'United Kingdom', // Default to UK since we're restricting to UK
-              nhs_ha: '', // Required field but we don't have this info from Places API
-              admin_district: prediction.structured_formatting.secondary_text || '' // Use secondary text as district
+              nhs_ha: 'Unknown', // Required field but we don't have this info from Places API
+              admin_district: prediction.structured_formatting.secondary_text || 'Unknown' // Use secondary text as district
             }));
             
             resolve(suggestions);

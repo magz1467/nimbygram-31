@@ -11,6 +11,9 @@ declare global {
   }
 }
 
+// Known expired API key to check for specifically
+const EXPIRED_API_KEY = 'AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA';
+
 /**
  * Completely resets the Google Maps loader state
  * Removes script tags and cleans up Google objects
@@ -32,8 +35,16 @@ export const resetGoogleMaps = (forceCleanup = false): void => {
     try {
       // Type assertion to HTMLScriptElement to fix the TypeScript error
       const scriptElement = script as HTMLScriptElement;
-      console.log('Removing script:', scriptElement.src);
-      scriptElement.remove();
+      const src = scriptElement.src || '';
+      
+      // Aggressively remove scripts with expired keys
+      if (src.includes(EXPIRED_API_KEY)) {
+        console.log('🚨 Removing script with EXPIRED API key:', src);
+        scriptElement.remove();
+      } else {
+        console.log('Removing script:', scriptElement.src);
+        scriptElement.remove();
+      }
     } catch (e) {
       console.warn('Error removing script:', e);
     }
