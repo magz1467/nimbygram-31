@@ -30,14 +30,14 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
     const parts = processedContent.split(/(?:•|\*|-)\s+/).filter(Boolean);
     if (parts.length > 1) {
       // This actually has bullet points - create proper HTML list
-      formattedContent = `<ul class="list-disc pl-5 space-y-2">
-        ${parts.map(part => `<li>${part.trim()}</li>`).join('')}
+      formattedContent = `<ul class="list-disc pl-5 space-y-2 mt-2">
+        ${parts.map(part => `<li class="pl-1 mb-2">${part.trim()}</li>`).join('')}
       </ul>`;
     } else {
-      formattedContent = `<p>${processedContent}</p>`;
+      formattedContent = `<p class="mt-2">${processedContent}</p>`;
     }
   } else {
-    formattedContent = `<p>${processedContent}</p>`;
+    formattedContent = `<p class="mt-2">${processedContent}</p>`;
   }
   
   return (

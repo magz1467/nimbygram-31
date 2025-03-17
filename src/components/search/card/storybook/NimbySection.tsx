@@ -31,7 +31,7 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
       return `<ul class="list-disc pl-5 space-y-2 my-0">
         ${inputContent
           .filter(item => item && !isEmptyContent(item))
-          .map((item, index) => `<li key="${index}">${processContent(item)}</li>`)
+          .map((item, index) => `<li class="pl-1 mb-2">${processContent(item)}</li>`)
           .join('')}
       </ul>`;
     } else {
@@ -43,14 +43,14 @@ export const NimbySection: FC<NimbySectionProps> = ({ content }) => {
         const parts = contentStr.split(/(?:•|\*|-)\s+/).filter(Boolean);
         if (parts.length > 1) {
           return `<ul class="list-disc pl-5 space-y-2 my-0">
-            ${parts.map((part, i) => `<li key="${i}">${part.trim()}</li>`).join('')}
+            ${parts.map((part, i) => `<li class="pl-1 mb-2">${part.trim()}</li>`).join('')}
           </ul>`;
         }
       }
       
       // Add paragraph tags if not already present
       if (!contentStr.includes('<p>')) {
-        contentStr = `<p class="my-0">${contentStr}</p>`;
+        contentStr = `<p class="my-0 mt-2">${contentStr}</p>`;
       }
       
       return contentStr;

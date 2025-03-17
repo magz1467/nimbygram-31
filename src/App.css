@@ -138,15 +138,17 @@
   
   /* Improve bullet points on mobile */
   .prose ul {
-    padding-left: 1rem !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+    padding-left: 1.5rem !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
   }
   
   .prose li {
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.25rem !important;
-    padding-left: 0.25rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-left: 0.375rem !important;
+    position: relative !important;
+    display: list-item !important;
   }
   
   /* Fix empty detail sections showing title only */
@@ -158,6 +160,35 @@
   h3.font-semibold {
     font-size: 1rem !important;
     line-height: 1.5 !important;
+  }
+  
+  /* Improve bullet point visibility */
+  .min-w-\[8px\].min-h-\[8px\].w-2.h-2.rounded-full.bg-primary {
+    display: block !important;
+    margin-top: 0.5rem !important;
+  }
+  
+  /* Fix stacked bullet points in the Deal section */
+  .bg-primary\/5 ul.list-disc li {
+    display: list-item !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Enhanced spacing between items with bullets */
+  .flex.gap-2\.5.items-start {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Ensure emoji have proper spacing */
+  .mr-1\.5.inline-block {
+    vertical-align: middle !important;
+  }
+  
+  /* Ensure text wraps properly on mobile */
+  .break-words {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
   }
 }
 
@@ -176,17 +207,18 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .bullet-point::before {
   content: "";
   flex-shrink: 0;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: currentColor;
   margin-top: 0.5rem;
+  display: block;
 }
 
 /* Fix emoji spacing in bullet points */
@@ -194,23 +226,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .emoji-bullet .emoji {
   flex-shrink: 0;
-  margin-right: 0.25rem;
+  margin-right: 0.375rem;
 }
 
 /* Better mobile list styling */
 @media (max-width: 768px) {
   .list-disc {
-    padding-left: 1rem;
+    padding-left: 1.5rem !important;
+    list-style-position: outside !important;
   }
   
   .bullet-point::before {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
+    min-width: 5px;
   }
   
   /* Fix text overflow on small screens */
@@ -227,9 +261,15 @@
     padding-left: 1.5rem !important;
   }
   
+  ul.list-disc li {
+    display: list-item !important;
+    padding-left: 0.375rem !important;
+    margin-bottom: 0.625rem !important;
+  }
+  
   /* Ensure section headers have proper spacing */
   .font-semibold.mb-2 {
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
   
   /* Make bullet points more visible on mobile */
@@ -241,5 +281,22 @@
   /* Fix empty sections */
   div:empty {
     display: none;
+  }
+  
+  /* Improve What's the Deal section formatting */
+  .bg-primary\/5 p, .bg-\[#FFDEE2\] p, .bg-\[#F2FCE2\] p, .bg-\[#8B5CF6\] p {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Fix bullet points in colored sections */
+  .bg-primary\/5 ul, .bg-\[#FFDEE2\] ul, .bg-\[#F2FCE2\] ul, .bg-\[#8B5CF6\] ul {
+    margin-top: 0.75rem !important;
+  }
+  
+  /* Improve What's the Deal section rendering */
+  .prose p {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
   }
 }

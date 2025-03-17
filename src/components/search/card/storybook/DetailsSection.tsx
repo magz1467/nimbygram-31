@@ -28,6 +28,14 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     return emojiMatch ? emojiMatch[1] : null;
   };
   
+  // If content is effectively empty after our checks, return null
+  if (
+    (typeof content === 'string' && isEmptyContent(content)) || 
+    (Array.isArray(content) && content.every(item => !item || isEmptyContent(item)))
+  ) {
+    return null;
+  }
+  
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-gray-900">Key Details</h3>
@@ -43,8 +51,8 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
                 <div key={index} className="flex gap-2.5 items-start">
                   {/* More prominent bullet point, especially on mobile */}
                   <div className="min-w-[8px] min-h-[8px] w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                  <div className="text-gray-700 flex-1">
-                    {emoji && <span className="mr-1.5">{emoji}</span>}
+                  <div className="text-gray-700 flex-1 break-words">
+                    {emoji && <span className="mr-1.5 inline-block">{emoji}</span>}
                     <span 
                       dangerouslySetInnerHTML={{ 
                         __html: processString(displayDetail)
@@ -55,13 +63,22 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
               );
             })
         ) : (
-          // If content is a string, display it properly with paragraph styling
-          <div 
-            className="text-gray-700 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ 
-              __html: processString(typeof content === 'string' ? content : String(content))
-            }}
-          />
+          // If content is a string, check if it has bullet points and format properly
+          <div className="text-gray-700 prose prose-sm max-w-none">
+            {typeof content === 'string' && (content.includes('•') || content.includes('*') || content.includes('-')) ? (
+              <ul className="list-disc pl-5 space-y-2">
+                {content.split(/(?:•|\*|-)\s+/).filter(Boolean).map((part, idx) => (
+                  <li key={idx} className="pl-1 mb-2">{processString(part.trim())}</li>
+                ))}
+              </ul>
+            ) : (
+              <div 
+                dangerouslySetInnerHTML={{ 
+                  __html: processString(typeof content === 'string' ? content : String(content))
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>

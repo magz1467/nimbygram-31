@@ -1,5 +1,5 @@
 
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { DealSection } from "./DealSection";
 import { DetailsSection } from "./DetailsSection";
 import { NimbySection } from "./NimbySection";
@@ -29,6 +29,14 @@ export const StorybookContent: FC<StorybookContentProps> = ({
 }) => {
   if (!formattedStorybook && !rawStorybook) return null;
   
+  useEffect(() => {
+    if (formattedStorybook?.sections?.length) {
+      console.log('info: StorybookContent rendering with sections:', 
+        formattedStorybook.sections.map(s => s.type)
+      );
+    }
+  }, [formattedStorybook]);
+  
   // If we have formatted sections, display them
   if (formattedStorybook?.sections?.length) {
     const dealSection = formattedStorybook.sections.find(s => s.type === 'deal');
@@ -46,11 +54,11 @@ export const StorybookContent: FC<StorybookContentProps> = ({
     
     return (
       <div className="space-y-6">
-        {dealSection && <DealSection content={dealSection.content as string} />}
+        {dealSection && dealSection.content && <DealSection content={dealSection.content as string} />}
         {hasDetailsContent && <DetailsSection content={detailsSection.content} />}
-        {watchOutForSection && <WatchOutForSection content={watchOutForSection.content} />}
-        {keyRegulationsSection && <KeyRegulationsSection content={keyRegulationsSection.content} />}
-        {nimbySection && <NimbySection content={nimbySection.content} />}
+        {watchOutForSection && watchOutForSection.content && <WatchOutForSection content={watchOutForSection.content} />}
+        {keyRegulationsSection && keyRegulationsSection.content && <KeyRegulationsSection content={keyRegulationsSection.content} />}
+        {nimbySection && nimbySection.content && <NimbySection content={nimbySection.content} />}
       </div>
     );
   }
