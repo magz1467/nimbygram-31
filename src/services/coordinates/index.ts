@@ -8,7 +8,11 @@ export { fetchCoordinatesFromPostcodesIo } from './fetch-coordinates-from-postco
 export { fetchCoordinatesByAddress } from './fetch-coordinates-by-address';
 export { fetchCoordinatesFromOutcode } from './fetch-coordinates-from-outcode';
 export { fetchCoordinatesFromTown } from './fetch-coordinates-from-town';
-export { ensureGoogleMapsLoaded, useFallbackCoordinates, resetGoogleMapsLoader } from './google-maps-loader';
+export { 
+  ensureGoogleMapsLoaded, 
+  useFallbackCoordinates, 
+  resetGoogleMapsLoader 
+} from './google-maps-loader';
 export { getGoogleGeocoder } from './geocoder-service';
 export { 
   isGooglePlaceId, 
