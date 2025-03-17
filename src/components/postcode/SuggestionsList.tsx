@@ -11,7 +11,7 @@ interface SuggestionsListProps {
   suggestions: PostcodeSuggestion[] | undefined;
   isLoading: boolean;
   isFetching: boolean;
-  error: Error | null;
+  error: boolean | null; // Changed from Error to boolean
   onSelect: (value: string) => void;
   commandRef: React.RefObject<HTMLDivElement>;
 }
