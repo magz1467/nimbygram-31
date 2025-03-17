@@ -43,21 +43,10 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       isLoading = false;
       loadPromise = null;
       
-      // Remove any existing Google Maps script tags to prevent conflicts
-      const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
-      existingScripts.forEach(script => script.remove());
-      console.log(`Removed ${existingScripts.length} existing Google Maps script tags`);
+      // Force complete reset before retrying
+      resetGoogleMapsLoader(true);
       
-      // Also clean up any Google objects that might be cached
-      if (window.google && window.google.maps) {
-        try {
-          // @ts-ignore - Force delete the google.maps object
-          delete window.google.maps;
-          console.log('Cleaned up existing Google Maps object');
-        } catch (e) {
-          console.warn('Could not clean up Google Maps object:', e);
-        }
-      }
+      console.log('Complete reset performed before retry');
     } else {
       // For preview compatibility - don't fail but proceed with fallback coordinates for major cities
       console.warn(`Max retries (${MAX_RETRIES}) reached for Google Maps loading, will use fallback coordinates`);
@@ -76,21 +65,17 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   isLoading = true;
   loadPromise = new Promise((resolve, reject) => {
     try {
-      // Double-check if script is already loaded
+      // First, do a complete cleanup of any existing Google Maps scripts
+      resetGoogleMapsLoader(true);
+      
+      // Double-check if script is already loaded after cleanup
       if (window.google && window.google.maps && window.google.maps.places) {
-        console.log('Google Maps API already available in window object');
+        console.log('Google Maps API already available in window object after cleanup');
         isLoaded = true;
         isLoading = false;
         loadError = null;
         resolve();
         return;
-      }
-      
-      // Check if script tag already exists and remove it
-      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-      if (existingScript) {
-        console.log('Removing existing Google Maps script tag to prevent key conflicts');
-        existingScript.remove();
       }
       
       console.log('Loading Google Maps script...');
@@ -103,6 +88,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding,geometry&v=weekly&callback=googleMapsLoaded`;
       script.async = true;
       script.defer = true;
+      script.id = 'google-maps-script'; // Add ID for easier identification
       
       // Create a promise that will resolve with the script load event
       window.googleMapsLoaded = () => {
@@ -112,14 +98,15 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         setTimeout(() => {
           if (window.google && window.google.maps && window.google.maps.places) {
             console.log('Google Maps API objects confirmed available');
-            console.log('Script used key ending with:', script.src.match(/key=([^&]*)/)?.[1].substring((script.src.match(/key=([^&]*)/)?.[1].length || 0) - 6));
+            console.log('Script used key ending with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
             isLoaded = true;
             isLoading = false;
             loadError = null;
             resolve();
           } else {
-            // For preview compatibility - don't fail but proceed with fallback coordinates
-            console.warn('Google Maps objects not available after script loaded, will use fallback coordinates');
+            console.warn('Google Maps objects not available after script loaded');
+            // Force reset and try again with fallback
+            resetGoogleMapsLoader(true);
             isLoading = false;
             // Instead of rejecting, resolve so that the fallback coordinates can be used
             resolve();
@@ -131,7 +118,9 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         console.error('Failed to load Google Maps script:', error);
         console.error('Current hostname:', window.location.hostname);
         
-        // For preview compatibility - don't fail but proceed with fallback coordinates
+        // Reset for a clean state on next try
+        resetGoogleMapsLoader(true);
+        
         console.warn('Google Maps script failed to load, will use fallback coordinates');
         isLoading = false;
         // Instead of rejecting, resolve so that the fallback coordinates can be used
@@ -145,6 +134,8 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       setTimeout(() => {
         if (isLoading) {
           console.warn('Google Maps script loading timed out, will use fallback coordinates');
+          // Reset for a clean state on next try
+          resetGoogleMapsLoader(true);
           isLoading = false;
           // Instead of rejecting, resolve so that the fallback coordinates can be used
           resolve();
@@ -153,6 +144,9 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       
     } catch (error) {
       console.error('Unexpected error loading Google Maps:', error);
+      
+      // Reset for a clean state on next try
+      resetGoogleMapsLoader(true);
       
       // For preview compatibility - don't fail but proceed with fallback coordinates
       console.warn('Unexpected error in Google Maps loading, will use fallback coordinates');
@@ -166,25 +160,53 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
 };
 
 // Function to completely reset the loader state for testing or recovery
-export const resetGoogleMapsLoader = () => {
+export const resetGoogleMapsLoader = (forceCleanup = false) => {
   isLoading = false;
   isLoaded = false;
   loadPromise = null;
-  loadError = null;
-  loadRetries = 0;
   
-  // Remove any existing Google Maps script tags
+  if (forceCleanup) {
+    loadError = null;
+    loadRetries = 0;
+  }
+  
+  // Remove ANY existing Google Maps script tags, not just those with our selector
   const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
-  existingScripts.forEach(script => script.remove());
+  console.log(`Removing ${existingScripts.length} existing Google Maps script tags`);
+  
+  existingScripts.forEach(script => {
+    try {
+      console.log('Removing script:', script.src);
+      script.remove();
+    } catch (e) {
+      console.warn('Error removing script:', e);
+    }
+  });
   
   // Also clean up any Google objects that might be cached
-  if (window.google && window.google.maps) {
+  if (window.google) {
     try {
-      // @ts-ignore - Force delete the google.maps object
-      delete window.google.maps;
+      // Clean up the google.maps object specifically
+      if (window.google.maps) {
+        console.log('Cleaning up existing Google Maps object');
+        // @ts-ignore - Force delete the google.maps object
+        delete window.google.maps;
+      }
+      
+      // In extreme cases, remove the entire google object
+      if (forceCleanup) {
+        console.log('Forcing cleanup of entire google object');
+        // @ts-ignore - Force delete the google object
+        delete window.google;
+      }
     } catch (e) {
       console.warn('Could not clean up Google Maps object:', e);
     }
+  }
+  
+  // Remove the callback function
+  if (window.googleMapsLoaded) {
+    delete window.googleMapsLoaded;
   }
   
   console.log('Google Maps loader has been reset');
@@ -195,19 +217,24 @@ export const checkApiKeyDomainRestrictions = async () => {
   console.log('Checking API key domain restrictions...');
   
   try {
+    // Force reset before checking
+    resetGoogleMapsLoader(true);
+    
     await ensureGoogleMapsLoaded();
     
     // If we get here, the API key is working for this domain
     console.log('API key is valid for domain:', window.location.hostname);
     return {
       isValid: true,
-      domain: window.location.hostname
+      domain: window.location.hostname,
+      apiKey: GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6) // Only show last 6 chars for security
     };
   } catch (error) {
     console.error('API key validation failed:', error);
     return {
       isValid: false,
       domain: window.location.hostname,
+      apiKey: GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6), // Only show last 6 chars for security
       error: error instanceof Error ? error.message : String(error)
     };
   }
@@ -215,3 +242,4 @@ export const checkApiKeyDomainRestrictions = async () => {
 
 // Export for debugging
 export const getGoogleMapsApiKey = () => GOOGLE_MAPS_API_KEY;
+

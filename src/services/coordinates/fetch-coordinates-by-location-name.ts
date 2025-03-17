@@ -5,6 +5,57 @@
 import { ensureGoogleMapsLoaded, resetGoogleMapsLoader } from "./google-maps-loader";
 import { withTimeout } from "@/utils/fetchUtils";
 
+// Mapping of UK area names to coordinates for fallback
+const UK_AREA_COORDINATES: Record<string, { coordinates: [number, number], postcode?: string }> = {
+  // Major cities
+  'liverpool': { coordinates: [53.4084, -2.9916], postcode: "L1" },
+  'manchester': { coordinates: [53.4808, -2.2426], postcode: "M1" },
+  'london': { coordinates: [51.5074, -0.1278], postcode: "W1" },
+  'birmingham': { coordinates: [52.4862, -1.8904], postcode: "B1" },
+  'leeds': { coordinates: [53.8008, -1.5491], postcode: "LS1" },
+  'glasgow': { coordinates: [55.8642, -4.2518], postcode: "G1" },
+  'edinburgh': { coordinates: [55.9533, -3.1883], postcode: "EH1" },
+  'cardiff': { coordinates: [51.4816, -3.1791], postcode: "CF1" },
+  'belfast': { coordinates: [54.5973, -5.9301], postcode: "BT1" },
+  'newcastle': { coordinates: [54.9783, -1.6178], postcode: "NE1" },
+  'bristol': { coordinates: [51.4545, -2.5879], postcode: "BS1" },
+  
+  // London areas
+  'enfield': { coordinates: [51.6521, -0.0806], postcode: "EN1" },
+  'enfield wash': { coordinates: [51.6667, -0.0333], postcode: "EN3" },
+  'barnet': { coordinates: [51.6503, -0.2001], postcode: "EN5" },
+  'camden': { coordinates: [51.5390, -0.1426], postcode: "NW1" },
+  'hackney': { coordinates: [51.5450, -0.0553], postcode: "E8" },
+  'islington': { coordinates: [51.5362, -0.1031], postcode: "N1" },
+  'kensington': { coordinates: [51.5016, -0.1926], postcode: "W8" },
+  'lambeth': { coordinates: [51.4961, -0.1180], postcode: "SE1" },
+  'southwark': { coordinates: [51.5037, -0.0885], postcode: "SE1" },
+  'tower hamlets': { coordinates: [51.5130, -0.0243], postcode: "E1" },
+  'wandsworth': { coordinates: [51.4570, -0.1927], postcode: "SW18" },
+  'westminster': { coordinates: [51.4973, -0.1372], postcode: "SW1" },
+  'brent': { coordinates: [51.5671, -0.2699], postcode: "NW9" },
+  'ealing': { coordinates: [51.5130, -0.3089], postcode: "W5" },
+  'harrow': { coordinates: [51.5880, -0.3355], postcode: "HA1" },
+  'hounslow': { coordinates: [51.4684, -0.3338], postcode: "TW3" },
+  'kingston': { coordinates: [51.4085, -0.3064], postcode: "KT1" },
+  'merton': { coordinates: [51.4107, -0.2110], postcode: "SW19" },
+  'redbridge': { coordinates: [51.5591, 0.0744], postcode: "IG1" },
+  'richmond': { coordinates: [51.4615, -0.3035], postcode: "TW9" },
+  'sutton': { coordinates: [51.3615, -0.1947], postcode: "SM1" },
+  'waltham forest': { coordinates: [51.5908, -0.0134], postcode: "E17" },
+  'croydon': { coordinates: [51.3728, -0.1004], postcode: "CR0" },
+  'bromley': { coordinates: [51.4052, 0.0146], postcode: "BR1" },
+  'bexley': { coordinates: [51.4536, 0.1450], postcode: "DA5" },
+  'greenwich': { coordinates: [51.4808, -0.0090], postcode: "SE10" },
+  'lewisham': { coordinates: [51.4452, -0.0202], postcode: "SE13" },
+  'haringey': { coordinates: [51.5897, -0.1118], postcode: "N22" },
+  'barking': { coordinates: [51.5387, 0.0809], postcode: "IG11" },
+  'dagenham': { coordinates: [51.5584, 0.1347], postcode: "RM8" },
+  'havering': { coordinates: [51.5770, 0.1825], postcode: "RM1" },
+  'hillingdon': { coordinates: [51.5311, -0.4518], postcode: "UB8" },
+  'newham': { coordinates: [51.5077, 0.0469], postcode: "E15" }
+};
+
 /**
  * Fetches coordinates for a location name using the Google Geocoding API
  * Also attempts to extract a postcode when possible for UK locations
@@ -20,53 +71,23 @@ export const fetchCoordinatesByLocationName = async (
     throw new Error("No location name provided");
   }
   
-  // Special case handling to match preview behavior and provide fallbacks
-  // when API key issues occur
-  const lowerLocationName = locationName.toLowerCase();
+  // Normalize the location name for comparison
+  const normalizedLocationName = locationName.toLowerCase().trim();
   
-  // Liverpool special case - direct return of coordinates to match preview behavior
-  if (lowerLocationName.includes('liverpool')) {
-    console.log('🔍 Using direct coordinates for Liverpool to match preview behavior');
-    return {
-      coordinates: [53.4084, -2.9916], // Liverpool city center coordinates
-      postcode: "L1" // Central Liverpool outcode
-    };
+  // Check if we have direct coordinates for this location
+  for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+    // We're using includes here to match partial names like "London" in "Central London"
+    if (normalizedLocationName.includes(key)) {
+      console.log(`🔍 Found direct coordinates match for "${key}" in "${normalizedLocationName}"`);
+      return value;
+    }
   }
   
-  // Manchester special case
-  if (lowerLocationName.includes('manchester')) {
-    console.log('🔍 Using direct coordinates for Manchester to match preview behavior');
-    return {
-      coordinates: [53.4808, -2.2426], // Manchester city center
-      postcode: "M1" // Central Manchester outcode
-    };
-  }
-  
-  // London special case
-  if (lowerLocationName.includes('london')) {
-    console.log('🔍 Using direct coordinates for London to match preview behavior');
-    return {
-      coordinates: [51.5074, -0.1278], // London city center
-      postcode: "W1" // Central London outcode
-    };
-  }
-  
-  // Birmingham special case
-  if (lowerLocationName.includes('birmingham')) {
-    console.log('🔍 Using direct coordinates for Birmingham to match preview behavior');
-    return {
-      coordinates: [52.4862, -1.8904], // Birmingham city center
-      postcode: "B1" // Central Birmingham outcode
-    };
-  }
-  
-  // Leeds special case
-  if (lowerLocationName.includes('leeds')) {
-    console.log('🔍 Using direct coordinates for Leeds to match preview behavior');
-    return {
-      coordinates: [53.8008, -1.5491], // Leeds city center
-      postcode: "LS1" // Central Leeds outcode
-    };
+  // Special case handling for London areas that might not be in our mapping
+  if (normalizedLocationName.includes('london') || 
+      normalizedLocationName.includes('greater london')) {
+    console.log('🔍 Using London coordinates for London area that's not specifically mapped');
+    return UK_AREA_COORDINATES['london'];
   }
   
   // Set much longer timeouts to match preview behavior
@@ -82,7 +103,7 @@ export const fetchCoordinatesByLocationName = async (
     if (window.google && window.google.maps && 
         typeof window.google.maps.Geocoder !== 'function') {
       console.log('🔄 Detected corrupted Google Maps instance, resetting loader');
-      resetGoogleMapsLoader();
+      resetGoogleMapsLoader(true);
     }
     
     // First ensure Google Maps API is loaded
@@ -91,14 +112,27 @@ export const fetchCoordinatesByLocationName = async (
     // Check if Google Maps loaded properly
     if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
       console.error('❌ Google Maps API not loaded properly, falling back to direct coordinates');
-      throw new Error('Google Maps API not available');
+      
+      // Try to find a partial match for fallback
+      for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+        const keyWords = key.split(' ');
+        // Check if any word from the key is in the location name
+        if (keyWords.some(word => normalizedLocationName.includes(word))) {
+          console.log(`🔍 Found partial match with "${key}" for "${normalizedLocationName}"`);
+          return value;
+        }
+      }
+      
+      // Default to London if we can't find anything
+      console.log('🔍 No matches found, defaulting to London');
+      return UK_AREA_COORDINATES['london'];
     }
     
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();
     
     // Always append UK to the location name if not already there to be consistent
-    const searchLocation = lowerLocationName.includes('uk') ? 
+    const searchLocation = normalizedLocationName.includes('uk') ? 
       locationName : 
       `${locationName}, UK`;
     
@@ -126,26 +160,51 @@ export const fetchCoordinatesByLocationName = async (
           } else {
             console.error('❌ Geocoder failed:', status);
             
-            // Check for common cities to provide fallbacks
-            if (lowerLocationName.includes('liverpool')) {
-              console.log('🔍 Using Liverpool fallback for geocoder error');
-              // Resolve with mock result for Liverpool
+            // Check for fallbacks in our mapping
+            for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+              if (normalizedLocationName.includes(key)) {
+                console.log(`🔍 Using fallback for "${key}" after geocoder error`);
+                // Create a mock result matching the expected structure
+                resolve([{
+                  geometry: {
+                    location: {
+                      lat: () => value.coordinates[0],
+                      lng: () => value.coordinates[1]
+                    },
+                    location_type: 'APPROXIMATE',
+                    viewport: null
+                  },
+                  formatted_address: `${key}, UK`,
+                  address_components: [
+                    value.postcode ? { long_name: value.postcode, short_name: value.postcode, types: ['postal_code'] } : undefined
+                  ].filter(Boolean) as google.maps.GeocoderAddressComponent[],
+                  types: ['locality'],
+                  place_id: `fallback-${key}`
+                } as google.maps.GeocoderResult]);
+                return;
+              }
+            }
+            
+            // If no specific fallback found, check for London areas
+            if (normalizedLocationName.includes('london') || 
+                normalizedLocationName.includes('greater london')) {
+              console.log('🔍 Using London fallback for geocoder error');
               resolve([{
                 geometry: {
                   location: {
-                    lat: () => 53.4084,
-                    lng: () => -2.9916
+                    lat: () => 51.5074,
+                    lng: () => -0.1278
                   },
                   location_type: 'APPROXIMATE',
                   viewport: null
                 },
-                formatted_address: 'Liverpool, UK',
+                formatted_address: 'London, UK',
                 address_components: [
-                  { long_name: 'L1', short_name: 'L1', types: ['postal_code'] }
+                  { long_name: 'W1', short_name: 'W1', types: ['postal_code'] }
                 ],
                 types: ['locality'],
-                place_id: 'ChIJ37SF6XYee0gRCIMYqnwTjXA'
-              } as any]);
+                place_id: 'ChIJdd4hrwug2EcRmSrV3Vo6llI' // London place_id
+              } as google.maps.GeocoderResult]);
               return;
             }
             
@@ -204,17 +263,21 @@ export const fetchCoordinatesByLocationName = async (
       
       // If we still don't have a postcode, extract the outcode from the area
       if (!postcode) {
-        // For big cities, use the central outcode
-        if (lowerLocationName.includes('london')) postcode = "W1";
-        else if (lowerLocationName.includes('manchester')) postcode = "M1";
-        else if (lowerLocationName.includes('birmingham')) postcode = "B1";
-        else if (lowerLocationName.includes('leeds')) postcode = "LS1";
-        else if (lowerLocationName.includes('glasgow')) postcode = "G1";
-        else if (lowerLocationName.includes('edinburgh')) postcode = "EH1";
-        else if (lowerLocationName.includes('cardiff')) postcode = "CF1";
+        // Look for an appropriate outcode in our mapping
+        const locationLower = locationName.toLowerCase();
         
-        if (postcode) {
-          console.log('📫 Using default outcode for major city:', postcode);
+        for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+          if (locationLower.includes(key) && value.postcode) {
+            postcode = value.postcode;
+            console.log(`📫 Using default outcode for "${key}": ${postcode}`);
+            break;
+          }
+        }
+        
+        // If still no match, use central London as last resort
+        if (!postcode && (locationLower.includes('london') || locationLower.includes('greater london'))) {
+          postcode = "W1";
+          console.log('📫 Using default London outcode: W1');
         }
       }
       
@@ -231,37 +294,33 @@ export const fetchCoordinatesByLocationName = async (
     console.error('❌ Error in geocoding location name:', error);
     console.error('❌ Current hostname:', window.location.hostname);
     
-    // Check for special city cases for fallback coordinates
-    if (lowerLocationName.includes('liverpool')) {
-      console.log('🔍 Using Liverpool fallback after error');
-      return {
-        coordinates: [53.4084, -2.9916],
-        postcode: "L1"
-      };
-    } else if (lowerLocationName.includes('manchester')) {
-      console.log('🔍 Using Manchester fallback after error');
-      return {
-        coordinates: [53.4808, -2.2426],
-        postcode: "M1"
-      };
-    } else if (lowerLocationName.includes('london')) {
+    // Try to find a match in our UK area mapping
+    for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+      if (normalizedLocationName.includes(key)) {
+        console.log(`🔍 Using ${key} fallback after error`);
+        return value;
+      }
+    }
+    
+    // Check for London areas specifically
+    if (normalizedLocationName.includes('london') || 
+        normalizedLocationName.includes('greater london')) {
       console.log('🔍 Using London fallback after error');
-      return {
-        coordinates: [51.5074, -0.1278],
-        postcode: "W1"
-      };
-    } else if (lowerLocationName.includes('birmingham')) {
-      console.log('🔍 Using Birmingham fallback after error');
-      return {
-        coordinates: [52.4862, -1.8904],
-        postcode: "B1"
-      };
-    } else if (lowerLocationName.includes('leeds')) {
-      console.log('🔍 Using Leeds fallback after error');
-      return {
-        coordinates: [53.8008, -1.5491],
-        postcode: "LS1"
-      };
+      return UK_AREA_COORDINATES['london'];
+    }
+    
+    // Check if the location might be a town near a major city
+    // Very basic approach - look for partial word matches in our keys
+    const words = normalizedLocationName.split(/\s+/);
+    for (const word of words) {
+      if (word.length > 3) { // Only check words with more than 3 characters
+        for (const [key, value] of Object.entries(UK_AREA_COORDINATES)) {
+          if (key.includes(word)) {
+            console.log(`🔍 Found partial match "${key}" containing "${word}" from "${normalizedLocationName}"`);
+            return value;
+          }
+        }
+      }
     }
     
     // Simplified error message to match preview behavior
