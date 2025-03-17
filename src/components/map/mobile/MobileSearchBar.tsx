@@ -1,17 +1,20 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export const MobileSearchBar = () => {
-  const [postcode, setPostcode] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialPostcode = searchParams.get('postcode') || '';
+  const [postcode, setPostcode] = useState(initialPostcode);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (postcode.trim()) {
-      navigate('/map', { state: { postcode: postcode.trim() } });
+      navigate(`/map?postcode=${encodeURIComponent(postcode.trim())}`);
     }
   };
 

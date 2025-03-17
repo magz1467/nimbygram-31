@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
@@ -9,11 +9,24 @@ import { logRouteChange } from "@/utils/reloadTracker";
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<Error | null>(null);
-  const searchState = location.state;
   const firstRenderRef = useRef(true);
   const handleErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousPath = useRef<string | null>(null);
+
+  // Get search parameters from URL
+  const searchTerm = searchParams.get('search') || location.state?.searchTerm;
+  const searchType = (searchParams.get('searchType') || location.state?.searchType || 'location') as 'postcode' | 'location';
+  const timestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp')!) : Date.now();
+  
+  // Construct a search state object from URL parameters
+  const searchState = searchTerm ? {
+    searchType,
+    searchTerm,
+    displayTerm: searchTerm,
+    timestamp
+  } : location.state;
 
   // Log route changes
   useEffect(() => {
@@ -61,14 +74,8 @@ const SearchResultsPage = () => {
   // If we don't have search state, show the no search state view
   if (!searchState?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={(postcode) => {
-      navigate('/search-results', {
-        state: {
-          searchType: 'location',
-          searchTerm: postcode,
-          displayTerm: postcode,
-          timestamp: Date.now()
-        }
-      });
+      // Use URL parameters instead of location state
+      navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
     }} />;
   }
 

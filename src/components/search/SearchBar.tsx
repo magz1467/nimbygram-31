@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PostcodeSearch } from "@/components/postcode/PostcodeSearch";
 import { useToast } from "@/hooks/use-toast";
 import { logSearch } from "@/utils/searchLogger";
@@ -13,7 +13,9 @@ interface SearchBarProps {
 }
 
 export const SearchBar = ({ onSearch, variant = "primary", className = "" }: SearchBarProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -43,16 +45,10 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
 
       // Detect if input is likely a UK postcode
       const isLikelyPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(searchTerm.trim());
+      const searchType = isLikelyPostcode ? 'postcode' : 'location';
       
-      // Navigate to search results with appropriate search type
-      navigate('/search-results', {
-        state: {
-          searchType: isLikelyPostcode ? 'postcode' : 'location',
-          searchTerm: searchTerm.trim(),
-          displayTerm: searchTerm.trim(),
-          timestamp: Date.now()
-        }
-      });
+      // Navigate to search results with URL parameters
+      navigate(`/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`);
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -73,6 +69,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
             onSelect={(value) => setSearchTerm(value)}
             placeholder="Search by postcode, street name or area"
             className="flex-1"
+            initialValue={searchTerm}
           />
           
           {variant === "compact" ? (

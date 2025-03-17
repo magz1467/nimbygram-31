@@ -1,7 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterBar } from "../FilterBar";
 import { MapListToggle } from "./mobile/MapListToggle";
@@ -27,7 +28,9 @@ export const MapHeader = ({
   isMapView = true, 
   onToggleView 
 }: MapHeaderProps) => {
-  const [postcode, setPostcode] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialPostcode = searchParams.get('postcode') || '';
+  const [postcode, setPostcode] = useState(initialPostcode);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -36,14 +39,9 @@ export const MapHeader = ({
     e.preventDefault();
     if (postcode.trim()) {
       if (location.pathname === '/map') {
-        navigate('/map', { 
-          state: { postcode: postcode.trim() }, 
-          replace: true 
-        });
+        navigate(`/map?postcode=${encodeURIComponent(postcode.trim())}`, { replace: true });
       } else {
-        navigate('/map', { 
-          state: { postcode: postcode.trim() } 
-        });
+        navigate(`/map?postcode=${encodeURIComponent(postcode.trim())}`);
       }
     }
   };
@@ -64,6 +62,7 @@ export const MapHeader = ({
           <PostcodeSearch
             onSelect={setPostcode}
             placeholder="Search new location"
+            initialValue={postcode}
           />
         </form>
 
