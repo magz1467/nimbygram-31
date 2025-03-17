@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { SortType, StatusCounts } from "@/types/application-types";
-import { Map, List, Filter, ArrowsUpDown } from "lucide-react";
+import { Map, List, Filter, ArrowUpDown } from "lucide-react";
 import { FilterBar } from "@/components/FilterBar";
 import { ReactNode } from "react";
 
@@ -79,7 +78,7 @@ export const ResultsHeader = ({
           size="sm"
           className="flex items-center gap-1.5"
         >
-          <ArrowsUpDown className="h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
           Distance
         </Button>
         
