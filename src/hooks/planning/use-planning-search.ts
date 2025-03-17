@@ -137,26 +137,11 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
             throw postcodeError;
           }
         } else {
-          // If searchParam is already coordinates, use it directly
+          // If searchParam is already coordinates, use it directly - NO VALIDATION that might override
           [lat, lng] = searchParam;
           
           // Store these coordinates for reference
-          effectiveCoordinatesRef.current = [lat, lng];
-        }
-        
-        if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-          console.error(`Invalid coordinates: [${lat}, ${lng}], using fallback`);
-          if (effectiveCoordinatesRef.current && 
-              !isNaN(effectiveCoordinatesRef.current[0]) && 
-              !isNaN(effectiveCoordinatesRef.current[1])) {
-            [lat, lng] = effectiveCoordinatesRef.current;
-            console.log(`Using stored effective coordinates: [${lat}, ${lng}]`);
-          } else {
-            // Default to London only as absolute last resort
-            lat = 51.5074;
-            lng = -0.1278;
-            console.log(`Using default London coordinates: [${lat}, ${lng}]`);
-          }
+          effectiveCoordinatesRef.current = searchParam;
         }
         
         // First try spatial search (with PostGIS)

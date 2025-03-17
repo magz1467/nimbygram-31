@@ -35,27 +35,39 @@ export const commonUKLocations: Record<string, {lat: number, lng: number}> = {
 };
 
 /**
- * Gets fallback coordinates for a location - SIMPLIFIED VERSION
- * This version simply returns what is passed in if valid, or UK center as last resort
+ * Gets fallback coordinates for a location - EXPLICIT FALLBACK ONLY
+ * This version only returns a fallback when explicitly requested, not automatically
  * @param locationName Location to find coordinates for
  * @returns Coordinates object
  */
 export const getFallbackCoordinates = (locationName: string): {lat: number, lng: number} => {
   if (!locationName) {
-    // Central UK as absolute last resort
-    return { lat: 54.0000, lng: -2.5000 };
+    console.log('Empty location name, using default UK coordinates');
+    return { lat: 54.0000, lng: -2.5000 }; // Default UK center
   }
   
   // Look up location in our database
   for (const [key, coords] of Object.entries(commonUKLocations)) {
     if (locationName.toLowerCase().includes(key.toLowerCase())) {
-      console.log('Using known coordinates for:', key);
+      console.log('Using explicit fallback coordinates for:', key);
       return coords;
     }
   }
   
-  // Central UK as absolute last resort
-  return { lat: 54.0000, lng: -2.5000 };
+  // If locationName itself contains coordinates in a format like "51.5074,-0.1278"
+  const coordMatch = locationName.match(/(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+  if (coordMatch) {
+    const lat = parseFloat(coordMatch[1]);
+    const lng = parseFloat(coordMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      console.log('Extracted coordinates from location string:', lat, lng);
+      return { lat, lng };
+    }
+  }
+  
+  // Return the location name's default coordinates, falling back to UK center only as a last resort
+  console.log('No specific match for:', locationName, 'using UK center as fallback');
+  return { lat: 54.0000, lng: -2.5000 }; // Default UK center
 };
 
 /**

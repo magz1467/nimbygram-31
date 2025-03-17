@@ -3,7 +3,6 @@ import { MobileApplicationCards } from "./mobile/MobileApplicationCards";
 import { MapContainer } from "./MapContainer";
 import { Application } from "@/types/planning";
 import { useEffect, useRef, useState } from "react";
-import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 
 interface MapContentProps {
   applications: Application[];
@@ -31,18 +30,12 @@ export const MapContent = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [forceRender, setForceRender] = useState(0);
   const [isMapLoading, setIsMapLoading] = useState(true);
-  const initialRenderRef = useRef(true);
   
   // Log both locations to help debug
   useEffect(() => {
     console.log('🗺️ MapContent with search location:', searchLocation);
     console.log('🗺️ MapContent with coordinates:', coordinates);
     console.log('🗺️ MapContent postcode:', postcode);
-    
-    if (initialRenderRef.current) {
-      console.log('🗺️ Initial render - will use specified search location');
-      initialRenderRef.current = false;
-    }
   }, [searchLocation, coordinates, postcode]);
 
   // Force map to render correctly
@@ -68,7 +61,7 @@ export const MapContent = ({
         resizeEvents.forEach(clearTimeout);
       };
     }
-  }, [coordinates, searchLocation, selectedId, isMobile]);
+  }, [searchLocation, selectedId, isMobile]);
 
   // Listen for external requests to refresh the map
   useEffect(() => {

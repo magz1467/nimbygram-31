@@ -1,3 +1,4 @@
+
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
@@ -59,8 +60,8 @@ export const MapContainer = memo(({
       }
     }
     
-    // If no selection or selection not found, center on search coordinates
-    // ALWAYS use searchLocation - no fallbacks
+    // If no selection or selection not found, ALWAYS center on search coordinates
+    // Never use fallbacks or validation that could change the location
     map.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom, { animate: true });
     console.log('🗺️ Centering map on search location:', searchLocation);
     
@@ -73,7 +74,7 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [selectedId, applications, mapReady, isMobile, searchLocation, coordinates]);
+  }, [selectedId, applications, mapReady, isMobile, searchLocation]);
 
   // Fit bounds to show all markers within search radius when applications change
   useEffect(() => {
@@ -129,7 +130,7 @@ export const MapContainer = memo(({
         console.log('🗺️ Fitted bounds to show applications in radius');
       } catch (error) {
         console.error('Error fitting bounds:', error);
-        // Fallback to centered view if fitting bounds fails
+        // If fitting bounds fails, CENTER ON SEARCH LOCATION, not a fallback
         mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
       }
     } else {
