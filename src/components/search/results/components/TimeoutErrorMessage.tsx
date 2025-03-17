@@ -16,28 +16,51 @@ export const TimeoutErrorMessage = ({
   postcode,
   onRetry
 }: TimeoutErrorMessageProps) => {
-  const isTimeoutError = error && 
-    (error.message.includes('timeout') || 
-     error.message.includes('57014') || 
-     error.message.includes('canceling statement') ||
-     error.message.includes('cancel'));
-     
-  const isLargeAreaError = error && error.message.includes('large area');
-  const isOutcodeError = error && error.message.includes('Invalid outcode');
+  // Enhanced error type detection
+  const errorType = (error as any)?.type || '';
+  const errorMessage = error?.message || '';
+  
+  const isTimeoutError = errorType === 'LOCATION_TIMEOUT' || 
+                        errorType === 'LARGE_AREA_TIMEOUT' ||
+                        errorMessage.includes('timeout') || 
+                        errorMessage.includes('57014') || 
+                        errorMessage.includes('canceling statement') ||
+                        errorMessage.includes('cancel');
+                       
+  const isLargeAreaError = errorType === 'LARGE_AREA_TIMEOUT' || 
+                          (errorMessage.includes('large') && 
+                           errorMessage.includes('city'));
+                          
+  const isApiKeyError = errorType === 'API_KEY_ERROR' ||
+                       errorMessage.includes('API key') ||
+                       errorMessage.includes('denied') ||
+                       errorMessage.includes('not authorized');
+                       
+  const isOutcodeError = errorMessage.includes('Invalid outcode');
 
   const locationTerm = displayTerm || searchTerm || postcode || 'this location';
 
   let title = "Error loading results";
-  let message = error ? error.message : `We couldn't find any planning applications for ${locationTerm}. Please try another search.`;
+  let message = error ? errorMessage : `We couldn't find any planning applications for ${locationTerm}. Please try another search.`;
   
-  if (isTimeoutError) {
-    title = isLargeAreaError ? "Large Area Search" : "Search Timeout";
-    message = `The search for "${locationTerm}" covers a large area. For better results, try:
-    • Using a specific postcode
-    • Searching for a street name
-    • Using a smaller area within ${locationTerm}`;
+  // Customize message based on error type
+  if (isLargeAreaError) {
+    title = "Large Area Search";
+    message = `"${locationTerm}" is a large city with many planning applications. For better results, try:
+    • Searching for a specific area within ${locationTerm} (e.g., "${locationTerm} city center")
+    • Using a specific postcode (e.g., "L1 9BG" for Liverpool)
+    • Searching for a specific street name`;
+  } else if (isTimeoutError) {
+    title = "Search Timeout";
+    message = `The search for "${locationTerm}" took too long. For better results, try:
+    • Using a more specific location
+    • Searching with a UK postcode
+    • Trying again during off-peak hours`;
+  } else if (isApiKeyError) {
+    title = "Location Search Unavailable";
+    message = `We're having trouble searching by location name on this domain. Please try using a UK postcode instead.`;
   } else if (isOutcodeError) {
-    title = "Partial Postcode Error";
+    title = "Partial Postcode";
     message = `"${locationTerm}" appears to be a partial postcode. Please try using a full postcode (e.g., SW1A 1AA) or a more specific location name.`;
   }
 

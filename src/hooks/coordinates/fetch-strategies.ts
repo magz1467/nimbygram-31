@@ -6,6 +6,7 @@ import { fetchCoordinatesFromPostcodesIo } from "@/services/coordinates/fetch-co
 import { fetchCoordinatesByAddress } from "@/services/coordinates/fetch-coordinates-by-address";
 import { fetchCoordinatesFromOutcode } from "@/services/coordinates/fetch-coordinates-from-outcode";
 import { fetchCoordinatesFromTown } from "@/services/coordinates/fetch-coordinates-from-town";
+import { withTimeout } from "@/utils/fetchUtils";
 
 // Callbacks interface to pass to strategy functions
 type CoordinateCallbacks = {
@@ -39,16 +40,27 @@ export const fetchCoordinatesForTown = async (
 ) => {
   try {
     console.log('🏙️ Fetching coordinates for town:', townName);
+    console.log('🏙️ Current hostname:', window.location.hostname);
+    
+    // Determine if this is a large city that needs special handling
+    const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName);
     
     // Increase timeout for large cities
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Town search timeout')), 20000); // 20 seconds timeout
-    });
+    const timeoutMs = isLargeCity ? 30000 : 20000; // 30 seconds for large cities, 20 for others
     
+    console.log(`🏙️ Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'town'}: ${townName}`);
+    
+    // Create a timeout promise
     const searchPromise = fetchCoordinatesFromTown(townName);
     
     // Add type assertion to handle the unknown type
-    const result = await Promise.race([searchPromise, timeoutPromise]) as { 
+    const result = await withTimeout(
+      searchPromise,
+      timeoutMs,
+      isLargeCity
+        ? `Timeout searching for large city "${townName}". Try a more specific area within ${townName} or a postcode.`
+        : `Timeout searching for town "${townName}". Try a more specific location or postcode.`
+    ) as { 
       coordinates: [number, number]; 
       postcode: string | null;
     };
@@ -60,12 +72,32 @@ export const fetchCoordinatesForTown = async (
       return;
     }
     
-    // Fallback to location name search with increased timeout
-    console.log('🏙️ Town search failed, falling back to location name search');
-    await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
-  } catch (error) {
+    // Fallback to location name search if town search didn't give valid results
+    if (!result || !result.coordinates) {
+      console.log('🏙️ Town search failed, falling back to location name search');
+      await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
+    }
+  } catch (error: any) {
     console.error('Error fetching town coordinates:', error);
-    await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
+    console.error('Current hostname:', window.location.hostname);
+    
+    // Enhance error for large cities
+    if (/\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName) && 
+        (error.message.includes('timeout') || error.message.includes('timed out'))) {
+      const enhancedError = new Error(
+        `Timeout searching for large city "${townName}". Try using a specific area within ${townName} or a postcode instead.`
+      );
+      (enhancedError as any).type = 'LARGE_AREA_TIMEOUT';
+      throw enhancedError;
+    }
+    
+    // Try location name search as fallback
+    try {
+      await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
+    } catch (fallbackError) {
+      // If both fail, throw the original error
+      throw error;
+    }
   }
 };
 
@@ -122,15 +154,47 @@ export const fetchCoordinatesForLocationName = async (
 ) => {
   try {
     console.log('🌎 Fetching coordinates for location name:', locationName);
-    const result = await fetchCoordinatesByLocationName(locationName);
+    console.log('🌎 Current hostname:', window.location.hostname);
+    
+    // Determine if this is a large city that needs special handling
+    const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName);
+    
+    // Increase timeout for large cities
+    const timeoutMs = isLargeCity ? 30000 : 15000; // 30 seconds for large cities, 15 for others
+    
+    console.log(`🌎 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'location'}: ${locationName}`);
+    
+    // Create a search promise
+    const searchPromise = fetchCoordinatesByLocationName(locationName);
+    
+    // Apply timeout
+    const result = await withTimeout(
+      searchPromise,
+      timeoutMs,
+      isLargeCity
+        ? `Timeout searching for large city "${locationName}". Try a more specific area within ${locationName} or a postcode.`
+        : `Timeout searching for location "${locationName}". Try a more specific location or postcode.`
+    );
     
     if (isMounted && result) {
       console.log('🌎 Found location coordinates:', result);
       callbacks.setCoordinates(result.coordinates);
       callbacks.setPostcode(result.postcode || null);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching coordinates for location name:', error);
+    console.error('Current hostname:', window.location.hostname);
+    
+    // Enhance error for large cities
+    if (/\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName) && 
+        (error.message.includes('timeout') || error.message.includes('timed out'))) {
+      const enhancedError = new Error(
+        `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} or a postcode instead.`
+      );
+      (enhancedError as any).type = 'LARGE_AREA_TIMEOUT';
+      throw enhancedError;
+    }
+    
     throw error;
   }
 };

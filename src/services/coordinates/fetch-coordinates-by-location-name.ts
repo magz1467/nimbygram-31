@@ -3,6 +3,7 @@
  * Utility functions for fetching coordinates using location names
  */
 import { ensureGoogleMapsLoaded } from "./google-maps-loader";
+import { withTimeout } from "@/utils/fetchUtils";
 
 /**
  * Fetches coordinates for a location name using the Google Geocoding API
@@ -19,6 +20,12 @@ export const fetchCoordinatesByLocationName = async (
     throw new Error("No location name provided");
   }
   
+  // Set longer timeout for large cities
+  const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName);
+  const timeoutMs = isLargeCity ? 30000 : 15000; // 30 seconds for large cities, 15 for others
+  
+  console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'location'}: ${locationName}`);
+  
   try {
     // First ensure Google Maps API is loaded
     await ensureGoogleMapsLoaded();
@@ -32,9 +39,12 @@ export const fetchCoordinatesByLocationName = async (
       `${locationName}, UK`;
     
     console.log('🔍 Enhanced search location:', searchLocation);
+    console.log('🔍 Current hostname:', window.location.hostname);
     
-    // Try to find the location with UK country restriction to improve accuracy
-    const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+    // Wrap the geocoding promise with our timeout
+    const geocodingPromise = new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+      console.log('🔍 Starting geocoder.geocode call...');
+      
       geocoder.geocode(
         { 
           address: searchLocation, 
@@ -44,6 +54,9 @@ export const fetchCoordinatesByLocationName = async (
           }
         }, 
         (results, status) => {
+          console.log('🔍 Geocoder returned status:', status);
+          console.log('🔍 Geocoder found results:', results ? results.length : 0);
+          
           if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
             console.log('✅ Geocoder found results:', results.length);
             resolve(results);
@@ -65,6 +78,13 @@ export const fetchCoordinatesByLocationName = async (
         }
       );
     });
+    
+    // Apply timeout to the geocoding promise
+    const response = await withTimeout(
+      geocodingPromise,
+      timeoutMs,
+      `Timeout while searching for simplified location "${locationName}". Large cities may take longer to process, try a more specific location.`
+    );
     
     if (response && response.length > 0) {
       const result = response[0];
@@ -113,9 +133,27 @@ export const fetchCoordinatesByLocationName = async (
       };
     }
     
-    throw new Error("No results found for location");
+    throw new Error(`No results found for location "${locationName}"`);
   } catch (error: any) {
     console.error('❌ Error in geocoding location name:', error);
+    console.error('❌ Current hostname:', window.location.hostname);
+    
+    // Enhanced error for timeouts
+    if (error.message.includes('timeout') || error.message.includes('timed out')) {
+      if (isLargeCity) {
+        const specificError = new Error(
+          `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} or a postcode instead.`
+        );
+        (specificError as any).type = 'LARGE_AREA_TIMEOUT';
+        throw specificError;
+      } else {
+        const timeoutError = new Error(
+          `The search for "${locationName}" timed out. Please try a more specific location or use a postcode.`
+        );
+        (timeoutError as any).type = 'LOCATION_TIMEOUT';
+        throw timeoutError;
+      }
+    }
     
     // Special handling for API key issues
     if (error.message.includes('API key') || 
@@ -128,10 +166,11 @@ export const fetchCoordinatesByLocationName = async (
         throw new Error(`Google Maps API error. Try using the specific postcode instead of a location name.`);
       }
       
-      throw new Error(`Unable to use location search. Please try using a UK postcode instead.`);
+      const keyError = new Error(`Unable to use location search on ${window.location.hostname}. Please try using a UK postcode instead.`);
+      (keyError as any).type = 'API_KEY_ERROR';
+      throw keyError;
     }
     
-    throw new Error(`Could not find coordinates for location: ${error.message}`);
+    throw new Error(`Could not find coordinates for location "${locationName}": ${error.message}`);
   }
 };
-
