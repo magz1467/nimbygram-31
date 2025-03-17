@@ -38,7 +38,7 @@ export const formatStorybook = (content: string | null) => {
     }
   }
 
-  // Clean up formatting issues
+  // Clean up formatting issues - improved version
   processedContent = processedContent
     // Normalize section headers (add colon if missing)
     .replace(/What['']s the Deal(?!\:)/gi, "What's the Deal:")
@@ -61,13 +61,17 @@ export const formatStorybook = (content: string | null) => {
     .replace(/\n\s*•\s*$/gm, '') // Remove trailing bullet points with no content
     .replace(/\n\s*-\s*$/gm, '') // Remove trailing dashes with no content
     .replace(/\n\s*[\*•-]\s+\n/g, '\n') // Handle bullet points with only whitespace after them
+    // Normalize double asterisks for formatting
+    .replace(/\*\*/g, '') // Remove double asterisks completely
     // Process HTML tags
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>') // Convert HTML entities to HTML tags
     .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>'); // Ensure strong tags are processed
 
-  // Format headers with proper styling
-  processedContent = processedContent
-    .replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>'); // Bold headers with **Text:**
+  // Format emoji at beginning of bullet points
+  processedContent = processedContent.replace(
+    /(\n\s*[•\*\-]\s*)([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/gu, 
+    '$1'
+  );
 
   // Extract header if it exists
   const headerMatch = processedContent.match(/<header>(.*?)<\/header>/s) || 
@@ -136,6 +140,12 @@ export const formatStorybook = (content: string | null) => {
         sectionType = 'keyRegulations';
       }
       
+      // Clean bullet points and prepare content
+      sectionContent = sectionContent
+        .replace(/^\s*[\*•-]\s*$/gm, '') // Remove empty bullet points
+        .replace(/\n\s*[\*•-]\s*\n/g, '\n') // Remove empty bullets with newlines
+        .replace(/\n{3,}/g, '\n\n'); // Normalize excessive newlines
+      
       // Extract bullet points if any
       const hasBulletPoints = sectionContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
       
@@ -147,9 +157,10 @@ export const formatStorybook = (content: string | null) => {
         const bulletMatches = [...sectionContent.matchAll(bulletRegex)];
         
         bulletMatches.forEach(bulletMatch => {
-          const emoji = bulletMatch[1];
           const text = bulletMatch[2].trim();
-          bulletPoints.push(`${emoji} ${text}`);
+          if (text) { // Only add if there's actual content
+            bulletPoints.push(text);
+          }
         });
         
         if (bulletPoints.length > 0) {
@@ -223,10 +234,16 @@ export const formatStorybook = (content: string | null) => {
       }
     } else {
       // If no clear structure, just treat it all as the "deal" section
+      // Clean up bullet points first
+      const cleanedContent = bodyContent
+        .replace(/^\s*[\*•-]\s*$/gm, '') // Remove empty bullet points
+        .replace(/\n\s*[\*•-]\s*\n/g, '\n') // Remove empty bullets with newlines
+        .replace(/\n{3,}/g, '\n\n'); // Normalize excessive newlines
+      
       processedSections.push({
         type: 'deal',
         title: "What's the Deal",
-        content: bodyContent
+        content: cleanedContent
       });
     }
   }

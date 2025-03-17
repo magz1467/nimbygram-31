@@ -45,16 +45,13 @@ export const CardContent = ({
       console.log(`CardContent for app ${applicationId}:`, {
         hasStorybook: Boolean(storybook),
         storybookType: storybook ? typeof storybook : null,
-        storybookLength: storybook ? storybook.length : 0
+        storybookLength: storybook ? storybook.length : 0,
+        hasApplicationCoords: Boolean(applicationCoords),
+        hasCoordinates: Boolean(coordinates),
+        isMobile
       });
-      
-      if (storybook) {
-        console.log(`Storybook preview for app ${applicationId}: ${storybook.substring(0, 150)}...`);
-      } else {
-        console.log(`No storybook for app ${applicationId}`);
-      }
     }
-  }, [applicationId, storybook]);
+  }, [applicationId, storybook, applicationCoords, coordinates, isMobile]);
 
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,7 +81,7 @@ export const CardContent = ({
   };
 
   const handleCloseMap = () => {
-    console.log('📱 Closing mobile map view');
+    console.log('📱 Closing map view');
     setShowMobileMap(false);
     setShowMapDialog(false);
   };
@@ -95,60 +92,30 @@ export const CardContent = ({
   // Render the map button regardless of storybook content
   const mapButton = <MapButton onClick={handleSeeOnMapClick} />;
   
-  // If no storybook content, render a simplified view with just the map button
-  if (!storybook) {
-    return (
-      <div className="space-y-6">
-        {mapButton}
-        
-        {/* Map components - desktop */}
-        {!isMobile && applicationId && (
-          <DesktopMapDialog
-            applications={applications}
-            selectedId={applicationId}
-            coordinates={applicationCoords || coordinates as [number, number]}
-            searchLocation={coordinates as [number, number]}
-            handleMarkerClick={handleMarkerClick}
-            isOpen={showMapDialog}
-            onClose={() => setShowMapDialog(false)}
-            isLoading={isLoading}
-            postcode={postcode}
-          />
-        )}
-
-        {/* Map components - mobile */}
-        {isMobile && showMobileMap && applicationId && (applicationCoords || coordinates) && (
-          <MobileMapView
-            applications={applications}
-            selectedId={applicationId}
-            coordinates={(applicationCoords || coordinates) as [number, number]}
-            handleMarkerClick={handleMarkerClick}
-            handleCloseMap={handleCloseMap}
-            isLoading={isLoading}
-            postcode={postcode}
-          />
-        )}
-      </div>
-    );
-  }
-
+  // Determine which coordinates to use - prefer application coordinates, fall back to prop coordinates
+  const mapCoordinates = applicationCoords || coordinates as [number, number];
+  
   return (
     <div className="space-y-6">
-      {/* Render storybook content */}
-      <StorybookContent 
-        formattedStorybook={formattedStorybook} 
-        rawStorybook={storybook} 
-      />
+      {/* Render storybook content if available */}
+      {storybook ? (
+        <StorybookContent 
+          formattedStorybook={formattedStorybook} 
+          rawStorybook={storybook} 
+        />
+      ) : (
+        <FallbackContent content={null} storybook={null} />
+      )}
 
       {/* Add the map button at the end */}
       {mapButton}
 
       {/* Map Dialog for Desktop */}
-      {!isMobile && applicationId && (
+      {!isMobile && applicationId && mapCoordinates && (
         <DesktopMapDialog
           applications={applications}
           selectedId={applicationId}
-          coordinates={applicationCoords as [number, number]}
+          coordinates={mapCoordinates}
           searchLocation={coordinates as [number, number]}
           handleMarkerClick={handleMarkerClick}
           isOpen={showMapDialog}
@@ -159,11 +126,11 @@ export const CardContent = ({
       )}
 
       {/* Mobile Map View */}
-      {isMobile && showMobileMap && applicationId && applicationCoords && (
+      {isMobile && showMobileMap && applicationId && mapCoordinates && (
         <MobileMapView
           applications={applications}
           selectedId={applicationId}
-          coordinates={applicationCoords as [number, number]}
+          coordinates={mapCoordinates}
           handleMarkerClick={handleMarkerClick}
           handleCloseMap={handleCloseMap}
           isLoading={isLoading}

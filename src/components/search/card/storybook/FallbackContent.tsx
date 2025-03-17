@@ -15,7 +15,8 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
       .replace(/\n\*\s*$/gm, '') // Remove empty bullet points
       .replace(/\n\*\s*\n/g, '\n') // Remove empty bullet points with newlines
       .replace(/\n\s*•\s*\n/g, '\n') // Remove empty bullet points with bullets
-      .replace(/\n\s*-\s*\n/g, '\n'); // Remove empty bullet points with dashes
+      .replace(/\n\s*-\s*\n/g, '\n') // Remove empty bullet points with dashes
+      .replace(/\*\*/g, ''); // Remove ** markers completely
   };
 
   // More robust empty content check
@@ -28,17 +29,41 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
 
   // Function to format bullet points properly with improved mobile support
   const formatBulletPoints = (text: string) => {
+    // Clean up any standalone markers first
+    const cleanedText = text
+      .replace(/^\s*[\*•-]\s*$/gm, '') // Remove empty bullet points
+      .replace(/\n\s*[\*•-]\s*\n/g, '\n'); // Remove empty bullets with newlines
+      
     // Check if text contains bullet points
-    if (text.includes('• ') || text.includes('* ') || text.includes('- ')) {
-      // Split by bullet point markers
-      const parts = text.split(/(?:\n|^)(?:\s*[•*-]\s+)/).filter(Boolean);
-      if (parts.length > 1) {
-        return `<ul class="list-disc pl-5 space-y-1">
-          ${parts.map(part => `<li class="pl-0 mb-1 relative">${part.trim()}</li>`).join('')}
-        </ul>`;
+    if (cleanedText.includes('• ') || cleanedText.includes('* ') || cleanedText.includes('- ')) {
+      // Extract bullet points with regex
+      const bulletRegex = /(?:^|\n)\s*([•\*\-])\s+(.*?)(?=(?:^|\n)\s*[•\*\-]|$)/gs;
+      const bulletMatches = [...cleanedText.matchAll(bulletRegex)];
+      
+      if (bulletMatches.length > 0) {
+        let formattedHtml = `<ul class="list-disc pl-5 space-y-1">`;
+        bulletMatches.forEach(match => {
+          const bulletText = match[2].trim();
+          if (bulletText) { // Only add if there's content
+            formattedHtml += `<li class="pl-0 mb-1 relative">${bulletText}</li>`;
+          }
+        });
+        formattedHtml += `</ul>`;
+        
+        // Get any content before the first bullet point
+        const firstBulletStart = cleanedText.indexOf(bulletMatches[0][0]);
+        if (firstBulletStart > 0) {
+          const beforeBullets = cleanedText.substring(0, firstBulletStart).trim();
+          if (beforeBullets) {
+            formattedHtml = `<p>${beforeBullets}</p>${formattedHtml}`;
+          }
+        }
+        
+        return formattedHtml;
       }
     }
-    return `<p>${text}</p>`;
+    
+    return `<p>${cleanedText}</p>`;
   };
 
   // First try to use formatted content if available
