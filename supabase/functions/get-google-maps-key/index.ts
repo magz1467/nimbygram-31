@@ -8,10 +8,14 @@ serve(async (req) => {
   }
 
   try {
-    // IMPORTANT: Hardcoded API key to ensure consistent value in production
+    // IMPORTANT: Using the centralized API key to ensure consistency
     const apiKey = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
     
-    console.log('API Key validation:')
+    // Log the request origin to help debug domain restriction issues
+    const origin = req.headers.get('origin') || 'unknown';
+    
+    console.log('API Key request:')
+    console.log('- Origin:', origin)
     console.log('- Key length:', apiKey.length)
     console.log('- First 4 chars:', apiKey.substring(0, 4))
     console.log('- Last 4 chars:', apiKey.substring(apiKey.length - 4))
@@ -20,7 +24,8 @@ serve(async (req) => {
       JSON.stringify({ 
         apiKey,
         status: 'success',
-        message: 'API key retrieved successfully'
+        message: 'API key retrieved successfully',
+        requestOrigin: origin
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

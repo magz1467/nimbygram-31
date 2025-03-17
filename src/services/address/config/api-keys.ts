@@ -1,6 +1,9 @@
 
-// Use the provided API key directly
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
+// Import the centralized API key utility
+import { getGoogleMapsApiKey } from "@/utils/api-keys";
+
+// Use the provided API key from the centralized source
+export const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 // Helper function to determine if a key is enabled for a specific API
 export const isKeyEnabledForApi = async (apiKey: string, apiName: string): Promise<boolean> => {
@@ -58,13 +61,14 @@ export const isKeyEnabledForApi = async (apiKey: string, apiName: string): Promi
 // Function to test both APIs and log results
 export const testGoogleMapsAPIs = async () => {
   try {
-    console.log('Testing Google Maps APIs with key ending in:', GOOGLE_MAPS_API_KEY.slice(-6));
+    const apiKey = getGoogleMapsApiKey();
+    console.log('Testing Google Maps APIs with key ending in:', apiKey.slice(-6));
     console.log('Current hostname:', window.location.hostname);
     
-    const geocodingEnabled = await isKeyEnabledForApi(GOOGLE_MAPS_API_KEY, 'geocoding');
+    const geocodingEnabled = await isKeyEnabledForApi(apiKey, 'geocoding');
     console.log('Geocoding API enabled:', geocodingEnabled);
     
-    const placesEnabled = await isKeyEnabledForApi(GOOGLE_MAPS_API_KEY, 'places');
+    const placesEnabled = await isKeyEnabledForApi(apiKey, 'places');
     console.log('Places API enabled:', placesEnabled);
     
     return {
@@ -89,15 +93,16 @@ export const testGoogleMapsAPIs = async () => {
 // Helper function to diagnose API key domain restrictions
 export const diagnoseApiKeyIssues = async () => {
   try {
+    const apiKey = getGoogleMapsApiKey();
     console.log('🔎 Diagnosing Google Maps API key issues...');
     console.log('🔎 Current hostname:', window.location.hostname);
-    console.log('🔎 API key ends with:', GOOGLE_MAPS_API_KEY.slice(-6));
+    console.log('🔎 API key ends with:', apiKey.slice(-6));
     
     if (!window.google || !window.google.maps) {
       console.log('🔎 Google Maps not loaded yet, loading...');
       // Load Google Maps script
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding&v=quarterly`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=quarterly`;
       
       await new Promise<void>((resolve, reject) => {
         script.onload = () => resolve();
@@ -138,16 +143,17 @@ export const diagnoseApiKeyIssues = async () => {
     
     return {
       hostname: window.location.hostname,
-      apiKeyLastSix: GOOGLE_MAPS_API_KEY.slice(-6),
+      apiKeyLastSix: apiKey.slice(-6),
       geocoding: geocodeResult,
       places: placesResult,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
+    const apiKey = getGoogleMapsApiKey();
     console.error('🔎 Error diagnosing API key issues:', error);
     return {
       hostname: window.location.hostname,
-      apiKeyLastSix: GOOGLE_MAPS_API_KEY.slice(-6),
+      apiKeyLastSix: apiKey.slice(-6),
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     };

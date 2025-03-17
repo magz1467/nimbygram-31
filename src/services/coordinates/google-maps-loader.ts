@@ -1,3 +1,4 @@
+
 /**
  * Google Maps loader - refactored version
  * Handles loading and initialization of Google Maps API
@@ -13,7 +14,7 @@ declare global {
 // Import utilities
 import { resetGoogleMaps } from './utils/map-reset';
 import { getFallbackCoordinates } from './utils/fallback-coordinates';
-import { GOOGLE_MAPS_API_KEY } from "@/services/address/config/api-keys";
+import { getGoogleMapsApiKey, diagnoseApiKey } from "@/utils/api-keys";
 import { getCurrentHostname } from "@/utils/environment";
 
 // Export utilities for use elsewhere
@@ -41,6 +42,11 @@ const MAX_RETRIES = 2;
 export const ensureGoogleMapsLoaded = async (): Promise<void> => {
   // Log the hostname for debugging
   console.log('🌐 Current hostname:', getCurrentHostname());
+  
+  // Diagnostic check to log which key is being used
+  const diagnostics = diagnoseApiKey();
+  console.log('🔑 Using Google Maps API key ending with:', diagnostics.key.slice(-6));
+  console.log('🔑 On domain:', diagnostics.hostname);
   
   // If already loaded, resolve immediately
   if (isLoaded && window.google && window.google.maps) {
@@ -93,14 +99,17 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         return;
       }
       
+      // Get the API key from our centralized utility
+      const apiKey = getGoogleMapsApiKey();
+      
       console.log('Loading Google Maps script...');
       console.log('Current hostname:', window.location.hostname);
-      console.log('Using API key that ends with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
+      console.log('Using API key that ends with:', apiKey.substring(apiKey.length - 6));
       
       // Create script element with explicit libraries
       const script = document.createElement('script');
       // Add all necessary libraries: places, geocoding, geometry
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding,geometry&v=weekly&callback=googleMapsLoaded`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=weekly&callback=googleMapsLoaded`;
       script.async = true;
       script.defer = true;
       script.id = 'google-maps-script'; // Add ID for easier identification
@@ -113,7 +122,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
         setTimeout(() => {
           if (window.google && window.google.maps && window.google.maps.places) {
             console.log('Google Maps API objects confirmed available');
-            console.log('Script used key ending with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
+            console.log('Script used key ending with:', apiKey.substring(apiKey.length - 6));
             isLoaded = true;
             isLoading = false;
             loadError = null;
@@ -132,6 +141,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       script.onerror = (error) => {
         console.error('Failed to load Google Maps script:', error);
         console.error('Current hostname:', window.location.hostname);
+        console.error('API key used (last 6 chars):', apiKey.slice(-6));
         
         // Reset for a clean state on next try
         resetGoogleMaps(true);

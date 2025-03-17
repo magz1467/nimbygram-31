@@ -4,7 +4,7 @@
  * Functions to check Google Maps API key and domain restrictions
  */
 
-import { GOOGLE_MAPS_API_KEY } from "@/services/address/config/api-keys";
+import { getGoogleMapsApiKey } from "@/utils/api-keys";
 import { getCurrentHostname } from "@/utils/environment";
 import { ensureGoogleMapsLoaded } from "../google-maps-loader";
 
@@ -21,17 +21,19 @@ export const checkApiKeyDomainRestrictions = async () => {
     
     // If we get here, the API key is working for this domain
     console.log('API key is valid for domain:', getCurrentHostname());
+    const apiKey = getGoogleMapsApiKey();
     return {
       isValid: true,
       domain: getCurrentHostname(),
-      apiKey: GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6) // Only show last 6 chars for security
+      apiKey: apiKey.substring(apiKey.length - 6) // Only show last 6 chars for security
     };
   } catch (error) {
     console.error('API key validation failed:', error);
+    const apiKey = getGoogleMapsApiKey();
     return {
       isValid: false,
       domain: getCurrentHostname(),
-      apiKey: GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6), // Only show last 6 chars for security
+      apiKey: apiKey.substring(apiKey.length - 6), // Only show last 6 chars for security
       error: error instanceof Error ? error.message : String(error)
     };
   }
@@ -45,13 +47,14 @@ export const diagnoseApiKeyIssues = async () => {
   try {
     console.log('🔎 Diagnosing Google Maps API key issues...');
     console.log('🔎 Current hostname:', getCurrentHostname());
-    console.log('🔎 API key ends with:', GOOGLE_MAPS_API_KEY.slice(-6));
+    const apiKey = getGoogleMapsApiKey();
+    console.log('🔎 API key ends with:', apiKey.slice(-6));
     
     if (!window.google || !window.google.maps) {
       console.log('🔎 Google Maps not loaded yet, loading...');
       // Load Google Maps script
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geocoding&v=quarterly`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=quarterly`;
       
       await new Promise<void>((resolve, reject) => {
         script.onload = () => resolve();
@@ -92,16 +95,17 @@ export const diagnoseApiKeyIssues = async () => {
     
     return {
       hostname: getCurrentHostname(),
-      apiKeyLastSix: GOOGLE_MAPS_API_KEY.slice(-6),
+      apiKeyLastSix: apiKey.slice(-6),
       geocoding: geocodeResult,
       places: placesResult,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
     console.error('🔎 Error diagnosing API key issues:', error);
+    const apiKey = getGoogleMapsApiKey();
     return {
       hostname: getCurrentHostname(),
-      apiKeyLastSix: GOOGLE_MAPS_API_KEY.slice(-6),
+      apiKeyLastSix: apiKey.slice(-6),
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     };
@@ -112,4 +116,7 @@ export const diagnoseApiKeyIssues = async () => {
  * Provides the Google Maps API key for debugging
  * Only exposes the last few characters for security
  */
-export const getGoogleMapsApiKeyForDebugging = () => GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6);
+export const getGoogleMapsApiKeyForDebugging = () => {
+  const apiKey = getGoogleMapsApiKey();
+  return apiKey.substring(apiKey.length - 6);
+};
