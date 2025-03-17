@@ -86,7 +86,7 @@ export const fetchCoordinatesByLocationName = async (
   // Special case handling for London areas that might not be in our mapping
   if (normalizedLocationName.includes('london') || 
       normalizedLocationName.includes('greater london')) {
-    console.log('🔍 Using London coordinates for London area that's not specifically mapped');
+    console.log("🔍 Using London coordinates for London area that's not specifically mapped");
     return UK_AREA_COORDINATES['london'];
   }
   
