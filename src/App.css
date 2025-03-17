@@ -1,4 +1,3 @@
-
 #root {
   margin: 0 auto;
   text-align: center;
@@ -39,6 +38,199 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Add responsive padding */
+@media (max-width: 768px) {
+  #root {
+    padding: 0;
+  }
+  .card {
+    padding: 1em;
+  }
+  
+  /* Improve filter scrolling on mobile */
+  .scrollbar-hide, .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smaller text on mobile */
+  .text-xs {
+    font-size: 0.7rem;
+  }
+  
+  /* Reduce button padding on mobile */
+  .btn-mobile {
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Override any selector errors */
+  .invalid-selector {
+    display: none !important;
+  }
+
+  /* Ensure filter items don't shrink too much */
+  .filter-item {
+    flex-shrink: 0;
+  }
+  
+  /* Improve map visibility on mobile */
+  .mobile-map-container {
+    height: 70vh !important;
+    z-index: 10;
+    position: relative;
+  }
+  
+  /* Ensure map buttons are clickable */
+  .leaflet-control-container .leaflet-top,
+  .leaflet-control-container .leaflet-bottom {
+    z-index: 1000;
+  }
+  
+  /* Better "See on map" button visibility */
+  .text-primary.flex.items-center.gap-1\.5 {
+    padding: 0.375rem 0.75rem;
+    font-weight: 500;
+  }
+  
+  /* Improved map navigation controls on mobile */
+  .mobile-map-container .leaflet-control-container .leaflet-top {
+    top: 60px;
+  }
+  
+  /* Ensure map controls don't overlap with back/close buttons */
+  .mobile-map-container .leaflet-control-zoom {
+    margin-top: 10px !important;
+  }
+  
+  /* Fix potential image display issues */
+  .object-cover {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Styling for the minicard drag handle */
+  .drag-handle {
+    margin: 8px auto;
+    border-radius: 999px;
+    background-color: #D1D5DB;
+  }
+  
+  /* Make sure application cards are visible even with map */
+  .fixed.bottom-0 {
+    z-index: 1500;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ensure cards aren't cut off at bottom */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  
+  /* Improve bullet points on mobile */
+  .prose ul {
+    padding-left: 1.5rem !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .prose li {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-left: 0.375rem !important;
+    position: relative !important;
+    display: list-item !important;
+  }
+  
+  /* Fix empty detail sections showing title only */
+  h3:only-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Improve section title readability */
+  h3.font-semibold {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Improve bullet point visibility */
+  .min-w-\[8px\].min-h-\[8px\].w-2.h-2.rounded-full.bg-primary {
+    display: block !important;
+    margin-top: 0.5rem !important;
+  }
+  
+  /* Fix stacked bullet points in the Deal section */
+  .bg-primary\/5 ul.list-disc li {
+    display: list-item !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Enhanced spacing between items with bullets */
+  .flex.gap-2\.5.items-start {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Ensure emoji have proper spacing */
+  .mr-1\.5.inline-block {
+    vertical-align: middle !important;
+  }
+  
+  /* Ensure text wraps properly on mobile */
+  .break-words {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Improved bullet point styling */
+.bullet-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bullet-point::before {
+  content: "";
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+/* Fix emoji spacing in bullet points */
+.emoji-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.emoji-bullet .emoji {
+  flex-shrink: 0;
+  margin-right: 0.375rem;
 }
 
 /* Add responsive padding */
@@ -299,4 +491,46 @@
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
   }
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Improved bullet point styling */
+.bullet-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bullet-point::before {
+  content: "";
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+/* Fix emoji spacing in bullet points */
+.emoji-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.emoji-bullet .emoji {
+  flex-shrink: 0;
+  margin-right: 0.375rem;
 }

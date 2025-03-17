@@ -38,7 +38,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
   
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-gray-900">Key Details</h3>
+      <h3 className="font-semibold text-gray-900 text-left">Key Details</h3>
       <div className="grid gap-3">
         {Array.isArray(content) ? (
           content
@@ -48,11 +48,11 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
               const displayDetail = emoji ? detail.substring(emoji.length).trim() : detail;
               
               return (
-                <div key={index} className="flex gap-2.5 items-start">
-                  {/* More prominent bullet point, especially on mobile */}
+                <div key={index} className="flex gap-2.5 items-start text-left">
+                  {/* More prominent bullet point */}
                   <div className="min-w-[8px] min-h-[8px] w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                   <div className="text-gray-700 flex-1 break-words">
-                    {emoji && <span className="mr-1.5 inline-block">{emoji}</span>}
+                    {emoji && <span className="mr-1.5 inline-block align-middle">{emoji}</span>}
                     <span 
                       dangerouslySetInnerHTML={{ 
                         __html: processString(displayDetail)
@@ -64,7 +64,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
             })
         ) : (
           // If content is a string, check if it has bullet points and format properly
-          <div className="text-gray-700 prose prose-sm max-w-none">
+          <div className="text-gray-700 prose prose-sm max-w-none text-left">
             {typeof content === 'string' && (content.includes('•') || content.includes('*') || content.includes('-')) ? (
               <ul className="list-disc pl-5 space-y-2">
                 {content.split(/(?:•|\*|-)\s+/).filter(Boolean).map((part, idx) => (
