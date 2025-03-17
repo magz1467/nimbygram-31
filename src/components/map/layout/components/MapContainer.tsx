@@ -36,7 +36,7 @@ export const MapContainer = ({
       <div className="absolute inset-0">
         <MapContainerBase
           coordinates={coordinates}
-          searchLocation={coordinates} // Add searchLocation prop
+          searchLocation={coordinates} // Ensure we're using the correct coordinates for search
           applications={applications}
           selectedId={selectedApplication}
           onMarkerClick={onMarkerClick}

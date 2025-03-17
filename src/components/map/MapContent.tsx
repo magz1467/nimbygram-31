@@ -9,7 +9,7 @@ interface MapContentProps {
   applications: Application[];
   selectedId: number | null;
   coordinates: [number, number];
-  searchLocation: [number, number]; // Added searchLocation prop
+  searchLocation: [number, number]; // Search location prop
   isMobile: boolean;
   isMapView: boolean;
   onMarkerClick: (id: number) => void;
@@ -32,11 +32,18 @@ export const MapContent = ({
   const [forceRender, setForceRender] = useState(0);
   const [isMapLoading, setIsMapLoading] = useState(true);
   
+  // Validate search location to ensure it's not defaulting
+  const validSearchLocation = Array.isArray(searchLocation) && 
+                             searchLocation.length === 2 && 
+                             Math.abs(searchLocation[0]) <= 90 && 
+                             Math.abs(searchLocation[1]) <= 180;
+  
   console.log('🗺️ MapContent rendering:', {
     isMobile, 
     hasSelectedId: !!selectedId,
     applicationCount: applications.length,
-    coordinates
+    coordinates,
+    searchLocation: validSearchLocation ? searchLocation : 'invalid',
   });
 
   // Force map to render correctly
@@ -62,7 +69,7 @@ export const MapContent = ({
         resizeEvents.forEach(clearTimeout);
       };
     }
-  }, [coordinates, selectedId, isMobile]);
+  }, [coordinates, searchLocation, selectedId, isMobile]);
 
   // Listen for external requests to refresh the map
   useEffect(() => {
@@ -116,7 +123,7 @@ export const MapContent = ({
         applications={applications}
         selectedId={selectedId}
         coordinates={coordinates}
-        searchLocation={searchLocation} // Pass searchLocation
+        searchLocation={validSearchLocation ? searchLocation : coordinates} // Use coordinates as fallback
         onMarkerClick={onMarkerClick}
       />
       

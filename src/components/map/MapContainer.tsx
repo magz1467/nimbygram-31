@@ -1,3 +1,4 @@
+
 import { MapContainer as LeafletMapContainer, TileLayer } from 'react-leaflet';
 import { Application } from "@/types/planning";
 import { ApplicationMarkers } from "./ApplicationMarkers";
@@ -34,6 +35,7 @@ export const MapContainer = memo(({
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [mapReady, setMapReady] = useState(false);
+  const initialRenderRef = useRef(true);
   
   // Use mobile search radius if on mobile
   const effectiveSearchRadius = isMobile 
@@ -45,14 +47,24 @@ export const MapContainer = memo(({
                           coordinates.length === 2 && 
                           Math.abs(coordinates[0]) <= 90 && 
                           Math.abs(coordinates[1]) <= 180;
+                          
+  // Validate search location coordinates
+  const validSearchLocation = Array.isArray(searchLocation) && 
+                          searchLocation.length === 2 && 
+                          Math.abs(searchLocation[0]) <= 90 && 
+                          Math.abs(searchLocation[1]) <= 180;
   
   if (!validCoordinates) {
     console.error('Invalid coordinates provided to MapContainer:', coordinates);
   }
+  
+  if (!validSearchLocation) {
+    console.error('Invalid search location provided to MapContainer:', searchLocation);
+  }
 
   // Handle map view updates for both initial coordinates and selected application
   useEffect(() => {
-    if (!mapRef.current || !validCoordinates || !mapReady) return;
+    if (!mapRef.current || !mapReady) return;
     
     const map = mapRef.current;
     
@@ -69,8 +81,12 @@ export const MapContainer = memo(({
     }
     
     // If no selection or selection not found, center on search coordinates
-    const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
-    map.setView(coordinates, initialZoom, { animate: true });
+    // Use searchLocation instead of coordinates for centering
+    if (validSearchLocation) {
+      const initialZoom = isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom;
+      map.setView(searchLocation, initialZoom, { animate: true });
+      console.log('🗺️ Centering map on search location:', searchLocation);
+    }
     
     // Force map to redraw
     const invalidateTimes = [0, 100, 300, 500];
@@ -81,11 +97,17 @@ export const MapContainer = memo(({
         }
       }, delay);
     });
-  }, [coordinates, selectedId, applications, validCoordinates, isMobile, mapReady]);
+  }, [selectedId, applications, mapReady, isMobile, searchLocation, validSearchLocation]);
 
   // Fit bounds to show all markers within search radius when applications change
   useEffect(() => {
-    if (!mapRef.current || applications.length === 0 || !mapReady) return;
+    if (!mapRef.current || applications.length === 0 || !mapReady || !validSearchLocation) return;
+    
+    // Skip the first render to avoid overriding the initial view
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      return;
+    }
     
     // Calculate applications within search radius
     const applicationsInRadius = applications.filter(app => {
@@ -132,13 +154,17 @@ export const MapContainer = memo(({
       } catch (error) {
         console.error('Error fitting bounds:', error);
         // Fallback to centered view if fitting bounds fails
-        mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
+        if (validSearchLocation) {
+          mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
+        }
       }
     } else {
       // If no applications in radius, center on search location
-      mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
+      if (validSearchLocation) {
+        mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
+      }
     }
-  }, [applications, effectiveSearchRadius, searchLocation, isMobile, mapReady]);
+  }, [applications, effectiveSearchRadius, searchLocation, isMobile, mapReady, validSearchLocation]);
 
   // Handle first mount of the map
   useEffect(() => {
@@ -194,14 +220,18 @@ export const MapContainer = memo(({
     };
   }, []);
 
-  // Use a fallback center if coordinates are invalid
-  const centerPoint: [number, number] = validCoordinates ? coordinates : [51.5074, -0.1278]; // London fallback
+  // Use search location as the center point when available and valid
+  const centerPoint: [number, number] = validSearchLocation ? searchLocation : 
+                                         validCoordinates ? coordinates : 
+                                         [51.5074, -0.1278]; // London fallback only as last resort
+
+  console.log('MapContainer rendering with center:', centerPoint, 'searchLocation:', searchLocation);
 
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <LeafletMapContainer
         ref={mapRef}
-        center={coordinates}
+        center={centerPoint}
         zoom={isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
@@ -220,10 +250,10 @@ export const MapContainer = memo(({
           maxZoom={19}
         />
         {/* Show search location pin at search coordinates */}
-        <SearchLocationPin position={searchLocation} />
+        {validSearchLocation && <SearchLocationPin position={searchLocation} />}
         <ApplicationMarkers
           applications={applications}
-          baseCoordinates={searchLocation} // Use searchLocation instead of coordinates
+          baseCoordinates={validSearchLocation ? searchLocation : centerPoint} // Use searchLocation when valid
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
           searchRadius={effectiveSearchRadius}
