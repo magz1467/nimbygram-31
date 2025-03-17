@@ -21,8 +21,8 @@ export const usePostcodeInput = ({ onSelect, initialValue = "" }: UsePostcodeInp
     suggestions,
     isLoading,
     isFetching,
-    error
-  } = useAddressSuggestions(debouncedSearch, open);
+    isError
+  } = useAddressSuggestions({ input: debouncedSearch });
 
   // Set the initial value when it changes
   useEffect(() => {
@@ -74,7 +74,7 @@ export const usePostcodeInput = ({ onSelect, initialValue = "" }: UsePostcodeInp
     suggestions,
     isLoading,
     isFetching,
-    error,
+    error: isError, // Map isError to error for backwards compatibility
     handleSelect,
     handleSearchClick,
     handleInputChange,
