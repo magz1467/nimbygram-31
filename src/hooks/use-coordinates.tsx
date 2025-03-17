@@ -8,7 +8,8 @@ import {
   fetchCoordinatesForPostcode,
   fetchCoordinatesForOutcode,
   fetchCoordinatesForTown,
-  fetchCoordinatesForAddress
+  fetchCoordinatesForAddress,
+  CoordinateCallbacks
 } from './coordinates/fetch-strategies';
 import { handleCoordinateError } from './coordinates/error-handler';
 
