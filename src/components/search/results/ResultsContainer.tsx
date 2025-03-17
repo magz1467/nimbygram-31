@@ -1,8 +1,9 @@
 
 import { Application } from "@/types/planning";
 import { ResultsListView } from "./ResultsListView";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapSplitView } from "./components/MapSplitView";
+import { useNavigate } from "react-router-dom";
 
 export interface ResultsContainerProps {
   applications: Application[];
@@ -37,6 +38,21 @@ export const ResultsContainer = ({
 }: ResultsContainerProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
+  const navigate = useNavigate();
+
+  // If showMap is true, navigate to the map page instead
+  useEffect(() => {
+    if (showMap && coordinates) {
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('postcode', searchTerm);
+      
+      // Navigate to the map page
+      navigate(`/map?${params.toString()}`);
+      
+      // Reset the showMap state after navigation
+      setShowMap(false);
+    }
+  }, [showMap, coordinates, navigate, searchTerm, setShowMap]);
 
   // Simple implementation that focuses on showing the list view
   const onSeeOnMap = (id: number) => {
@@ -60,26 +76,7 @@ export const ResultsContainer = ({
   // Calculate total pages based on the number of applications
   const totalPages = Math.ceil(displayApplications.length / pageSize);
 
-  // Show the map split view if showMap is true
-  if (showMap && coordinates && displayApplications.length > 0) {
-    return (
-      <MapSplitView
-        applications={displayApplications}
-        selectedId={selectedId}
-        setSelectedId={setSelectedId}
-        coordinates={coordinates}
-        searchTerm={searchTerm}
-        onMarkerClick={handleMarkerClick}
-        onToggleMapView={() => setShowMap(false)}
-        isLoading={isLoading}
-        hasPartialResults={hasPartialResults}
-        isSearchInProgress={isSearchInProgress}
-        onRetry={handleRetry}
-      />
-    );
-  }
-
-  // Otherwise show the standard list view
+  // Show only the list view since map view will be handled by navigation
   return (
     <ResultsListView
       applications={displayApplications}

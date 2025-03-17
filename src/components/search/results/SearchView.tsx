@@ -7,6 +7,7 @@ import { ResultsView } from './search-views/ResultsView';
 import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
 import { Header } from '@/components/Header';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // This is the inner component that uses the search state context
 function SearchViewContent() {
@@ -19,8 +20,30 @@ function SearchViewContent() {
     retry,
     hasSearched,
     hasPartialResults,
-    isSearchInProgress
+    isSearchInProgress,
+    coordinates
   } = useSearchState();
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Handle navigation to the map view
+  const handleToggleMapView = () => {
+    // Navigate to the map view with search parameters
+    const params = new URLSearchParams();
+    if (initialSearch?.searchTerm) {
+      params.set('postcode', initialSearch.searchTerm);
+    }
+    
+    // Store the current search results and coordinates in state
+    navigate(`/map?${params.toString()}`, { 
+      state: { 
+        applications,
+        searchTerm: initialSearch?.searchTerm,
+        coordinates
+      } 
+    });
+  };
   
   if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
@@ -61,6 +84,7 @@ function SearchViewContent() {
       onFilterChange={setFilters}
       hasPartialResults={hasPartialResults}
       isSearchInProgress={isSearchInProgress}
+      onToggleMapView={handleToggleMapView}
     />
   );
 }

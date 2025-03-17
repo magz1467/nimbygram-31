@@ -6,6 +6,7 @@ import { SortType } from "@/types/application-types";
 import { useCallback } from "react";
 import { Button } from "./ui/button";
 import { Map, List, Filter, ArrowUpDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface FilterBarProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -43,6 +44,7 @@ export const FilterBar = ({
   }
 }: FilterBarProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const handleFilterChange = useCallback((filterType: string, value: string) => {
     if (onFilterChange) {
@@ -56,6 +58,19 @@ export const FilterBar = ({
     }
   }, [onSortChange]);
 
+  const handleMapToggle = useCallback(() => {
+    if (onToggleView) {
+      // If we're in list view, navigate to map view instead of using the toggle function
+      if (!isMapView) {
+        // Navigate to map view with current search parameters
+        navigate('/map');
+      } else {
+        // Use the toggle function to return to list view
+        onToggleView();
+      }
+    }
+  }, [navigate, onToggleView, isMapView]);
+
   // Just render the primary buttons, not both sets
   return (
     <div className="flex flex-col bg-white border-b w-full">
@@ -65,7 +80,7 @@ export const FilterBar = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onToggleView}
+            onClick={handleMapToggle}
             className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
           >
             {isMapView ? (

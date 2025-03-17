@@ -12,6 +12,7 @@ interface ResultsViewProps {
   onFilterChange: (type: string, value: any) => void;
   hasPartialResults?: boolean;
   isSearchInProgress?: boolean;
+  onToggleMapView?: () => void;
 }
 
 export function ResultsView({ 
@@ -20,7 +21,8 @@ export function ResultsView({
   filters, 
   onFilterChange,
   hasPartialResults = false,
-  isSearchInProgress = false
+  isSearchInProgress = false,
+  onToggleMapView
 }: ResultsViewProps) {
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -57,6 +59,15 @@ export function ResultsView({
   
   const searchCoordinates = firstAppWithCoordinates?.coordinates || null;
   
+  // Handle map toggle - use the passed function if available
+  const handleToggleMapView = () => {
+    if (onToggleMapView) {
+      onToggleMapView();
+    } else {
+      setShowMap(!showMap);
+    }
+  };
+  
   return (
     <div>
       <ResultsHeader 
@@ -64,7 +75,7 @@ export function ResultsView({
         resultCount={applications?.length || 0}
         isLoading={false}
         isMapVisible={showMap}
-        onToggleMapView={() => setShowMap(!showMap)}
+        onToggleMapView={handleToggleMapView}
         activeSort={activeSort}
         activeFilters={filters}
         onFilterChange={onFilterChange}
