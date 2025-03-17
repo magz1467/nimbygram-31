@@ -123,7 +123,7 @@ export const executeSearchStrategy = async (
     return fallbackResults;
   } catch (error) {
     console.error('Spatial search failed:', error);
-    console.log('Spatial search unavailable, using fallback search');
+    console.log('Attempting fallback search after error');
     const fallbackResults = await performFallbackSearch(lat, lng, radius, filters, limit);
     console.log('Got fallback results:', fallbackResults.length);
     
