@@ -40,6 +40,11 @@ const MAX_RETRIES = 2;
  * @returns Promise that resolves when Google Maps is available
  */
 export const ensureGoogleMapsLoaded = async (): Promise<void> => {
+  // 🔍 DEBUGGING - API key from function
+  const debugApiKey = getGoogleMapsApiKey();
+  console.log('🔍 DEBUGGING - API key from function:', debugApiKey);
+  console.log('🔍 DEBUGGING - Last 6 chars:', debugApiKey.slice(-6));
+  
   // Log the hostname for debugging
   console.log('🌐 Current hostname:', getCurrentHostname());
   
@@ -106,12 +111,16 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       console.log('Current hostname:', getCurrentHostname());
       console.log('Using API key that ends with:', apiKey.slice(-6));
       
+      // 🔍 DEBUGGING - Script URL being used
+      const scriptUrl = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
+      console.log('🔍 DEBUGGING - Script URL being used:', scriptUrl.replace(apiKey, 'API_KEY_REDACTED'));
+      
       // Create script element with explicit libraries
       const script = document.createElement('script');
       
       // IMPORTANT: Ensure we're using the consistent key here
       // Add all necessary libraries: places, geocoding, geometry
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
+      script.src = scriptUrl;
       script.async = true;
       script.defer = true;
       script.id = 'google-maps-script'; // Add ID for easier identification

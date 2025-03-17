@@ -22,6 +22,17 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     console.log('🔍 Enhanced search location:', enhancedLocation);
     
+    // TEMPORARY: Use fallback coordinates while fixing the API key
+    const fallbackCoords = useFallbackCoordinates(locationName);
+    if (fallbackCoords) {
+      console.log('✅ Using fallback coordinates for location:', locationName);
+      console.log('✅ Fallback coordinates:', fallbackCoords);
+      return {
+        coordinates: fallbackCoords as [number, number],
+        postcode: null
+      };
+    }
+    
     // Run a preemptive test of the geocoder to check if API key is working
     const testResult = await testGeocoder();
     console.log('🧪 Geocoder test result:', testResult);

@@ -9,6 +9,7 @@ export const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 export const isKeyEnabledForApi = async (apiKey: string, apiName: string): Promise<boolean> => {
   console.log(`Checking if key is enabled for ${apiName} API...`);
   console.log(`Running on: ${window.location.hostname}`);
+  console.log(`Using API key ending with: ${apiKey.slice(-6)}`);
   
   // In a production environment, you would validate this server-side
   try {

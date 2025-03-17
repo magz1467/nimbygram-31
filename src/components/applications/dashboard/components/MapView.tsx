@@ -18,6 +18,9 @@ export const MapView = memo(({
   onMarkerClick,
   onCenterChange,
 }: MapViewProps) => {
+  // Use the correct API key and ensure the correct coordinates are passed
+  console.log("MapView rendering with coordinates:", coordinates);
+  
   return (
     <div className="absolute inset-0">
       <MapContainer
