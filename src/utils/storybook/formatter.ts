@@ -10,7 +10,7 @@ import {
   detectSections, 
   extractBulletPoints,
   splitDealDetails 
-} from './section-parser';
+} from './parsers';
 
 /**
  * Formats raw storybook content into structured sections
