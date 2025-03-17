@@ -1,7 +1,7 @@
 
 import { QueryClient } from '@tanstack/react-query';
-import { performSpatialSearch } from './spatial-search';
-import { performFallbackSearch } from './fallback-search';
+import { performSpatialSearch } from './spatial-search-function';
+import { performFallbackSearch } from './fallback-search-function';
 import { SearchFilters } from './types';
 import { isSearchQueryCached, createSearchQueryKey } from './search-cache-utils';
 import { batchSearchLocations, getSearchRequestKey } from './batch-search';
@@ -107,6 +107,20 @@ export const executeSearchStrategy = async (
       
       return spatialResults;
     }
+    
+    // If spatial search returns null (function not available), use fallback
+    console.log('Spatial search unavailable, using fallback search');
+    const fallbackResults = await performFallbackSearch(lat, lng, radius, filters, limit);
+    console.log('Got fallback results:', fallbackResults.length);
+    
+    recentSearchCache[cacheKey] = fallbackResults;
+    
+    const cacheKeys = Object.keys(recentSearchCache);
+    if (cacheKeys.length > RECENT_CACHE_SIZE) {
+      delete recentSearchCache[cacheKeys[0]];
+    }
+    
+    return fallbackResults;
   } catch (error) {
     console.error('Spatial search failed:', error);
     console.log('Spatial search unavailable, using fallback search');
