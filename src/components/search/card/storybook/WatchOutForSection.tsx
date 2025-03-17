@@ -38,6 +38,12 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
       // Handle string content
       let contentStr = processContent(inputContent);
       
+      // Make "Considerations:" and other headers bold
+      contentStr = contentStr.replace(
+        /(The Details:|Details:|Considerations:|Key Considerations:)/gi,
+        '<strong class="font-bold text-gray-800">$1</strong>'
+      );
+      
       // Check if content has bullet points and format properly
       if (contentStr.includes('•') || contentStr.includes('*') || contentStr.includes('-')) {
         const parts = contentStr.split(/(?:•|\*|-)\s+/).filter(Boolean);

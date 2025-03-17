@@ -79,7 +79,7 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
               );
             }
             
-            // Start a new section
+            // Start a new section with bold heading
             currentSection = <h4 key={`header-${i}`} className="font-bold text-gray-800 text-left my-2">{line}</h4>;
             sectionContent = [];
           } else if (line.match(/^[•\*\-]\s+/)) {
