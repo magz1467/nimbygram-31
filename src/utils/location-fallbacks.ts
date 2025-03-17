@@ -26,7 +26,7 @@ export const commonUKLocations: Record<string, {lat: number, lng: number}> = {
   'oxford': { lat: 51.7520, lng: -1.2577 },
   'bath': { lat: 51.3837, lng: -2.3599 },
   'buckinghamshire': { lat: 51.8144, lng: -0.8093 },
-  'broadstairs': { lat: 51.3603, lng: 1.4322 },
+  'broadstairs': { lat: 51.3603, lng: 1.4322 },  // Added explicit entry for Broadstairs
   'kent': { lat: 51.2787, lng: 0.5217 },
   'margate': { lat: 51.3891, lng: 1.3862 },
   'ramsgate': { lat: 51.3371, lng: 1.4098 }

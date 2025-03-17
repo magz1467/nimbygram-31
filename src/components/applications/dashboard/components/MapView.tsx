@@ -19,16 +19,20 @@ export const MapView = memo(({
   onCenterChange,
 }: MapViewProps) => {
   // Make sure we have valid coordinates
+  // This is CRITICAL - we must ensure we're not defaulting to London when we have valid coordinates
   const validCoordinates: [number, number] = Array.isArray(coordinates) && 
     coordinates.length === 2 && 
     !isNaN(coordinates[0]) && 
-    !isNaN(coordinates[1]) ? 
-    coordinates : [51.5074, -0.1278]; // Default to London only if invalid
+    !isNaN(coordinates[1]) && 
+    Math.abs(coordinates[0]) <= 90 && 
+    Math.abs(coordinates[1]) <= 180 ? 
+    [coordinates[0], coordinates[1]] : [51.5074, -0.1278]; // Only default to London if truly invalid
   
   // Log coordinates for debugging
   useEffect(() => {
     console.log("🗺️ MapView rendering with coordinates:", validCoordinates);
-  }, [validCoordinates]);
+    console.log("🗺️ Original coordinates passed:", coordinates);
+  }, [validCoordinates, coordinates]);
   
   return (
     <div className="absolute inset-0">
@@ -36,7 +40,7 @@ export const MapView = memo(({
         applications={applications}
         selectedId={selectedId}
         coordinates={validCoordinates}
-        searchLocation={validCoordinates} // Always use the same coordinates for search location
+        searchLocation={validCoordinates} // Always use the same valid coordinates for search location
         onMarkerClick={onMarkerClick}
         onCenterChange={onCenterChange}
       />

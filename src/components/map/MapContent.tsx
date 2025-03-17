@@ -129,10 +129,13 @@ export const MapContent = ({
     }
   }, [applications]);
   
-  // Determine which coordinates to use (prefer search location if valid)
-  const effectiveCoordinates = validSearchLocation ? searchLocation : 
-                              validCoordinates ? coordinates : 
-                              [51.5074, -0.1278]; // Default to London only as last resort
+  // Determine which coordinates to use - ALWAYS use the search location if it's valid
+  // Fix for TypeScript error: ensure it's always a proper [number, number] tuple
+  const effectiveCoordinates: [number, number] = validSearchLocation 
+    ? [searchLocation[0], searchLocation[1]]  // Convert to explicit tuple
+    : validCoordinates 
+      ? [coordinates[0], coordinates[1]]  // Convert to explicit tuple
+      : [51.5074, -0.1278];  // Default London coordinates as last resort
   
   console.log('🗺️ Using effective coordinates for map:', effectiveCoordinates);
 
