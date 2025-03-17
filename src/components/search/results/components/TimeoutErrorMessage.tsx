@@ -51,10 +51,10 @@ export const TimeoutErrorMessage = ({
     title = "Large Area Search";
     
     if (isLiverpool) {
-      message = `Liverpool is a large city with many planning applications. For better results, try:
-      • Searching for a specific area like "Liverpool City Centre" or "Liverpool Docks"
-      • Using a Liverpool postcode (e.g., "L1 9BG" for city center)
-      • Searching for a specific street name in Liverpool`;
+      message = `For better results when searching Liverpool, try:
+      • Using a specific postcode in Liverpool (e.g., "L1 9BG" for city center)
+      • Searching for specific areas like "Liverpool City Centre" or "Liverpool Docks"
+      • Try searching for a specific street name in Liverpool`;
     } else {
       message = `"${locationTerm}" is a large city with many planning applications. For better results, try:
       • Searching for a specific area within ${locationTerm} (e.g., "${locationTerm} city center")
@@ -69,7 +69,7 @@ export const TimeoutErrorMessage = ({
     • Trying again during off-peak hours`;
   } else if (isApiKeyError) {
     title = "Location Search Unavailable";
-    message = `We're having trouble searching by location name on this domain. Please try using a UK postcode instead.`;
+    message = `We're having trouble searching by location name. Please try using a UK postcode instead.`;
   } else if (isOutcodeError) {
     title = "Partial Postcode";
     message = `"${locationTerm}" appears to be a partial postcode. Please try using a full postcode (e.g., SW1A 1AA) or a more specific location name.`;
