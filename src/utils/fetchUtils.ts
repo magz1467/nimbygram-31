@@ -1,4 +1,3 @@
-
 /**
  * Utility function to add timeout to any promise
  */
@@ -29,7 +28,7 @@ export const withTimeout = <T>(promise: Promise<T> | any, timeoutMs: number, err
 export const withRetry = async <T>(
   promiseFn: () => Promise<T>,
   maxRetries: number = 3,
-  delayMs: number = 1000,
+  delay: number = 1000,
   backoff: number = 2
 ): Promise<T> => {
   let retries = 0;
@@ -39,10 +38,7 @@ export const withRetry = async <T>(
     } catch (error) {
       retries++;
       if (retries < maxRetries) {
-        // Fix: Don't call the Number object directly, use the primitive number type
-        await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(backoff, retries)));
-      } else {
-        throw error;
+        await delay(delay * backoff ** retries);
       }
     }
   }
