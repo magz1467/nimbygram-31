@@ -35,7 +35,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     setIsSubmitting(true);
     
     try {
-      // Log search
+      // Log search - using multiple column format attempts for compatibility
       await logSearch(searchTerm.trim(), 'location', 'search');
       
       // Call onSearch callback if provided

@@ -52,7 +52,7 @@ export const diagnoseApiKeyIssues = async () => {
     
     if (!window.google || !window.google.maps) {
       console.log('🔎 Google Maps not loaded yet, loading...');
-      // Load Google Maps script
+      // Load Google Maps script with the CORRECT key from centralized source
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=quarterly`;
       
@@ -98,7 +98,8 @@ export const diagnoseApiKeyIssues = async () => {
       apiKeyLastSix: apiKey.slice(-6),
       geocoding: geocodeResult,
       places: placesResult,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      apiKeySource: 'centralized getGoogleMapsApiKey()'
     };
   } catch (error) {
     console.error('🔎 Error diagnosing API key issues:', error);
@@ -107,7 +108,8 @@ export const diagnoseApiKeyIssues = async () => {
       hostname: getCurrentHostname(),
       apiKeyLastSix: apiKey.slice(-6),
       error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      apiKeySource: 'centralized getGoogleMapsApiKey()'
     };
   }
 };

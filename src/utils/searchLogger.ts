@@ -27,7 +27,7 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     
     // Try to handle differences in column naming between environments
     try {
-      // First try with original column names
+      // First try with search_term - this is the most likely column name
       const { error } = await supabase
         .from('Searches')
         .insert({
@@ -41,29 +41,46 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
       if (error) {
         console.warn('Search log failed with standard column names, trying alternate column names:', error);
         
-        // If first attempt fails with a column name error, try with alternative column names
+        // If first attempt fails, try with just 'term' as the column name
         if (error.message.includes('column') && error.message.includes('does not exist')) {
-          // Try with alternative naming convention
-          const { error: altError } = await supabase
+          const { error: termError } = await supabase
             .from('Searches')
             .insert({
-              'Post Code': searchTerm,
-              'Status': type,
-              'Tab': tab || 'unknown',
-              'User_logged_in': !!session?.user,
-              'Timestamp': new Date().toISOString()
+              term: searchTerm,
+              type: type,
+              tab: tab || 'unknown',
+              user_id: session?.user?.id || null,
+              timestamp: new Date().toISOString()
             });
           
-          if (altError) {
-            console.error('Failed to log search with alternative column names too:', altError);
+          if (termError) {
+            console.warn('Search log failed with term column name, trying Post Code:', termError);
+            
+            // Try with alternative 'Post Code' naming convention as final fallback
+            const { error: altError } = await supabase
+              .from('Searches')
+              .insert({
+                'Post Code': searchTerm,
+                'Status': type,
+                'Tab': tab || 'unknown',
+                'User_logged_in': !!session?.user,
+                'Timestamp': new Date().toISOString()
+              });
+            
+            if (altError) {
+              console.error('Failed to log search with all column naming attempts:', altError);
+              console.error('Column options tried: search_term, term, Post Code');
+            } else {
+              console.log('Search logged successfully with Post Code column name');
+            }
           } else {
-            console.log('Search logged successfully with alternative column names');
+            console.log('Search logged successfully with term column name');
           }
         } else {
           console.error('Failed to log search to database:', error);
         }
       } else {
-        console.log('Search logged successfully with standard column names');
+        console.log('Search logged successfully with search_term column name');
       }
     } catch (insertError) {
       console.error('Exception during search logging:', insertError);

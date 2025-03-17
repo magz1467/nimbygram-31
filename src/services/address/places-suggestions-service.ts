@@ -1,6 +1,8 @@
 
 import { PostcodeSuggestion } from "../../types/address-suggestions";
 import { loadGoogleMapsScript } from "./utils/script-loader";
+import { getGoogleMapsApiKey } from "@/utils/api-keys";
+import { getFallbackCoordinates } from "@/utils/location-fallbacks";
 
 /**
  * Fetch address suggestions using Google Places API
@@ -9,6 +11,7 @@ import { loadGoogleMapsScript } from "./utils/script-loader";
  */
 export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Promise<PostcodeSuggestion[]> => {
   console.log('🔍 Fetching address suggestions via Places API for:', searchTerm);
+  console.log('🔍 Using API key ending with:', getGoogleMapsApiKey().slice(-6));
   
   if (!searchTerm || searchTerm.length < 2) {
     return [];
@@ -21,6 +24,25 @@ export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Pr
     
     if (!google || !google.maps || !google.maps.places) {
       console.error('Google Maps Places API not loaded');
+      console.log('Falling back to static suggestions');
+      
+      // Provide some static UK city/location suggestions as fallback
+      const locations = Object.keys(getFallbackCoordinates(''));
+      
+      // Filter locations that match the search term
+      const matchingLocations = locations.filter(location => 
+        location.toLowerCase().includes(searchTerm.toLowerCase())
+      ).slice(0, 5); // Limit to 5 results
+      
+      if (matchingLocations.length > 0) {
+        return matchingLocations.map(location => ({
+          id: `fallback-${location}`,
+          postcode: location.charAt(0).toUpperCase() + location.slice(1), // Capitalize first letter
+          address: `${location.charAt(0).toUpperCase() + location.slice(1)}, United Kingdom`,
+          place_id: `fallback-${location}`
+        }));
+      }
+      
       return [];
     }
     

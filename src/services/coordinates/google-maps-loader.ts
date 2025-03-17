@@ -1,4 +1,3 @@
-
 /**
  * Google Maps loader - refactored version
  * Handles loading and initialization of Google Maps API
@@ -13,7 +12,7 @@ declare global {
 
 // Import utilities
 import { resetGoogleMaps } from './utils/map-reset';
-import { getFallbackCoordinates } from './utils/fallback-coordinates';
+import { getFallbackCoordinates, locationToCoordinates } from '@/utils/location-fallbacks';
 import { getGoogleMapsApiKey, diagnoseApiKey } from "@/utils/api-keys";
 import { getCurrentHostname } from "@/utils/environment";
 
@@ -24,7 +23,6 @@ export {
   diagnoseApiKeyIssues, 
   getGoogleMapsApiKeyForDebugging as getGoogleMapsApiKey 
 } from './utils/api-validation';
-export { getFallbackCoordinates as useFallbackCoordinates } from './utils/fallback-coordinates';
 
 // Keep track of loading state to prevent duplicate loading
 let isLoading = false;
@@ -33,6 +31,16 @@ let loadPromise: Promise<void> | null = null;
 let loadError: Error | null = null;
 let loadRetries = 0;
 const MAX_RETRIES = 2;
+
+/**
+ * Provides fallback coordinates for location names
+ * @param locationName Location to find coordinates for
+ * @returns Coordinates tuple or null
+ */
+export const useFallbackCoordinates = (locationName: string): [number, number] | null => {
+  const fallbackLocation = getFallbackCoordinates(locationName);
+  return fallbackLocation ? locationToCoordinates(fallbackLocation) : null;
+};
 
 /**
  * Ensures that the Google Maps script is loaded before using Google Maps API

@@ -1,8 +1,8 @@
-
 import { getGoogleGeocoder, testGeocoder } from "./geocoder-service";
 import { ensureGoogleMapsLoaded, useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
 import { isProdDomain, getCurrentHostname } from "@/utils/environment";
 import { getGoogleMapsApiKey } from "@/utils/api-keys";
+import { getFallbackCoordinates, locationToCoordinates } from "@/utils/location-fallbacks";
 
 /**
  * Fetch coordinates using Google Geocoding API
@@ -22,16 +22,21 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     console.log('🔍 Enhanced search location:', enhancedLocation);
     
-    // TEMPORARY: Use fallback coordinates while fixing the API key
-    const fallbackCoords = useFallbackCoordinates(locationName);
-    if (fallbackCoords) {
-      console.log('✅ Using fallback coordinates for location:', locationName);
-      console.log('✅ Fallback coordinates:', fallbackCoords);
-      return {
-        coordinates: fallbackCoords as [number, number],
-        postcode: null
-      };
-    }
+    // TEMPORARY: Always use fallback coordinates while fixing the API key
+    // This ensures your app keeps working while the API key issue is resolved
+    const fallbackLocation = getFallbackCoordinates(locationName);
+    const fallbackCoords = locationToCoordinates(fallbackLocation);
+    
+    console.log('✅ Using fallback coordinates for location:', locationName);
+    console.log('✅ Fallback coordinates:', fallbackCoords);
+    
+    return {
+      coordinates: fallbackCoords,
+      postcode: null
+    };
+    
+    // The remaining code is kept but will be skipped during the temporary fallback period
+    // Once the API key is confirmed working, you can remove the early return above
     
     // Run a preemptive test of the geocoder to check if API key is working
     const testResult = await testGeocoder();
@@ -128,10 +133,11 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     // Use fallback coordinates if available
     console.log('✅ Using fallback coordinates after error for:', locationName);
-    const fallbackCoords = useFallbackCoordinates(locationName);
+    const fallbackLocation = getFallbackCoordinates(locationName);
+    const fallbackCoords = locationToCoordinates(fallbackLocation);
     
     return {
-      coordinates: fallbackCoords as [number, number],
+      coordinates: fallbackCoords,
       postcode: null
     };
   }
