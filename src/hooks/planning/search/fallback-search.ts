@@ -14,6 +14,12 @@ export const performFallbackSearch = async (
 ): Promise<Application[]> => {
   console.log(`🔍 Performing fallback search near [${lat}, ${lng}] with radius ${radius}km`);
   
+  // Validate coordinates
+  if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    console.error(`🔍 Invalid coordinates for fallback search: [${lat}, ${lng}]`);
+    return [];
+  }
+  
   try {
     // Calculate bounding box (simple approximation)
     const kmPerDegree = 111.32;
@@ -57,6 +63,7 @@ export const performFallbackSearch = async (
     }
     
     console.log(`✅ Fallback search found ${result.data?.length || 0} applications`);
+    console.log(`✅ Search was performed at [${lat}, ${lng}] with radius ${radius}km`);
     
     // Check if storybook data is present in the first result
     if (result.data && result.data.length > 0) {

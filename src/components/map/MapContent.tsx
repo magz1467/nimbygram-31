@@ -31,20 +31,34 @@ export const MapContent = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [forceRender, setForceRender] = useState(0);
   const [isMapLoading, setIsMapLoading] = useState(true);
+  const initialRenderRef = useRef(true);
   
   // Validate search location to ensure it's not defaulting
   const validSearchLocation = Array.isArray(searchLocation) && 
                              searchLocation.length === 2 && 
                              Math.abs(searchLocation[0]) <= 90 && 
-                             Math.abs(searchLocation[1]) <= 180;
+                             Math.abs(searchLocation[1]) <= 180 &&
+                             !isNaN(searchLocation[0]) &&
+                             !isNaN(searchLocation[1]);
   
-  console.log('🗺️ MapContent rendering:', {
-    isMobile, 
-    hasSelectedId: !!selectedId,
-    applicationCount: applications.length,
-    coordinates,
-    searchLocation: validSearchLocation ? searchLocation : 'invalid',
-  });
+  // Validate coordinates
+  const validCoordinates = Array.isArray(coordinates) && 
+                          coordinates.length === 2 && 
+                          Math.abs(coordinates[0]) <= 90 && 
+                          Math.abs(coordinates[1]) <= 180 &&
+                          !isNaN(coordinates[0]) &&
+                          !isNaN(coordinates[1]);
+  
+  // Log both locations to help debug
+  useEffect(() => {
+    console.log('🗺️ MapContent with search location:', validSearchLocation ? searchLocation : 'invalid');
+    console.log('🗺️ MapContent with coordinates:', validCoordinates ? coordinates : 'invalid');
+    
+    if (initialRenderRef.current) {
+      console.log('🗺️ Initial render - will use specified search location');
+      initialRenderRef.current = false;
+    }
+  }, [searchLocation, coordinates, validSearchLocation, validCoordinates]);
 
   // Force map to render correctly
   useEffect(() => {
@@ -114,6 +128,13 @@ export const MapContent = ({
       }, 500);
     }
   }, [applications]);
+  
+  // Determine which coordinates to use (prefer search location if valid)
+  const effectiveCoordinates = validSearchLocation ? searchLocation : 
+                              validCoordinates ? coordinates : 
+                              [51.5074, -0.1278]; // Default to London only as last resort
+  
+  console.log('🗺️ Using effective coordinates for map:', effectiveCoordinates);
 
   return (
     <div className="relative w-full h-full" ref={mapContainerRef}>
@@ -122,8 +143,8 @@ export const MapContent = ({
         key={`map-${forceRender}-${isMobile ? 'mobile' : 'desktop'}-${selectedId || 'none'}`}
         applications={applications}
         selectedId={selectedId}
-        coordinates={coordinates}
-        searchLocation={validSearchLocation ? searchLocation : coordinates} // Use coordinates as fallback
+        coordinates={effectiveCoordinates}
+        searchLocation={effectiveCoordinates} // Always use the same coordinates for search
         onMarkerClick={onMarkerClick}
       />
       

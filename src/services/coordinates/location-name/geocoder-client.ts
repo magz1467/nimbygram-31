@@ -93,6 +93,15 @@ export const performGeocoding = async (
   
   console.log('🔍 Enhanced search location:', enhancedLocation);
   
+  // Special case handling for known locations that may have issues
+  if (locationName.toLowerCase().includes('broadstairs')) {
+    console.log('🔍 Using direct coordinates for Broadstairs, Kent');
+    return {
+      coordinates: [51.3603, 1.4322],
+      postcode: null
+    };
+  }
+  
   // Use the geocoder to get coordinates
   const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
     // Add a timeout to prevent long-running searches
@@ -100,13 +109,35 @@ export const performGeocoding = async (
       reject(new Error('Timeout while searching for location'));
     }, 10000);
     
-    geocoder.geocode({ address: enhancedLocation }, (results, status) => {
+    geocoder.geocode({ 
+      address: enhancedLocation,
+      // Add region biasing to improve UK results
+      region: 'uk',
+      // Add bounds biasing to UK
+      bounds: {
+        north: 58.6350, // Northern point of UK
+        south: 50.0000, // Southern point of UK
+        east: 1.7800,   // Eastern point of UK
+        west: -8.6500   // Western point of UK
+      }
+    }, (results, status) => {
       clearTimeout(timeout);
       
       console.log('🔍 Geocoder status:', status);
       console.log('🔍 Found results:', results ? results.length : 0);
       
       if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+        // Print the first result to help debug
+        if (results[0]) {
+          console.log('🔍 First result:', {
+            formattedAddress: results[0].formatted_address,
+            location: {
+              lat: results[0].geometry.location.lat(),
+              lng: results[0].geometry.location.lng()
+            },
+            types: results[0].types
+          });
+        }
         resolve(results);
       } else if (status === google.maps.GeocoderStatus.ERROR || 
                 status === google.maps.GeocoderStatus.INVALID_REQUEST || 

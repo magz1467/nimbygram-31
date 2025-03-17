@@ -15,6 +15,12 @@ export const performSpatialSearch = async (
   try {
     console.log(`🔍 Attempting spatial search near [${lat}, ${lng}] with radius ${radius}km`);
     
+    // Validate coordinates
+    if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      console.error(`🔍 Invalid coordinates for spatial search: [${lat}, ${lng}]`);
+      return null;
+    }
+    
     // Try to use the PostGIS function if available
     const { data: spatialData, error: spatialError } = await supabase
       .rpc('get_nearby_applications', {
@@ -38,6 +44,9 @@ export const performSpatialSearch = async (
     
     if (spatialData) {
       console.log(`✅ Spatial search successful, found ${spatialData.length} applications`);
+      
+      // Log the coordinates we searched around
+      console.log(`✅ Search was performed at [${lat}, ${lng}] with radius ${radius}km`);
       
       // Check if storybook data is present in the first result
       if (spatialData.length > 0) {

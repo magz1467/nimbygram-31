@@ -25,7 +25,11 @@ export const commonUKLocations: Record<string, {lat: number, lng: number}> = {
   'cambridge': { lat: 52.2053, lng: 0.1218 },
   'oxford': { lat: 51.7520, lng: -1.2577 },
   'bath': { lat: 51.3837, lng: -2.3599 },
-  'buckinghamshire': { lat: 51.8144, lng: -0.8093 }
+  'buckinghamshire': { lat: 51.8144, lng: -0.8093 },
+  'broadstairs': { lat: 51.3603, lng: 1.4322 },
+  'kent': { lat: 51.2787, lng: 0.5217 },
+  'margate': { lat: 51.3891, lng: 1.3862 },
+  'ramsgate': { lat: 51.3371, lng: 1.4098 }
 };
 
 /**
@@ -35,6 +39,12 @@ export const commonUKLocations: Record<string, {lat: number, lng: number}> = {
  */
 export const getFallbackCoordinates = (locationName: string): {lat: number, lng: number} => {
   if (!locationName) return { lat: 51.5074, lng: -0.1278 }; // Default to London
+  
+  // Handle Broadstairs/Kent specially
+  if (locationName.toLowerCase().includes('broadstairs')) {
+    console.log('✅ Using exact fallback coordinates for Broadstairs');
+    return { lat: 51.3603, lng: 1.4322 };
+  }
   
   // Clean up location name for matching
   const simpleName = locationName.split(',')[0].trim().toLowerCase();
@@ -51,6 +61,12 @@ export const getFallbackCoordinates = (locationName: string): {lat: number, lng:
       console.log('✅ Using fuzzy fallback match:', key, 'for:', simpleName);
       return coords;
     }
+  }
+  
+  // For Kent-related searches
+  if (locationName.toLowerCase().includes('kent')) {
+    console.log('✅ Using Kent fallback coordinates');
+    return { lat: 51.2787, lng: 0.5217 };
   }
   
   console.log('⚠️ No specific fallback coordinates found for:', locationName, '- using London');

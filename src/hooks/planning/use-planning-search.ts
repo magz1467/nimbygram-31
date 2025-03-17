@@ -19,12 +19,20 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
   const hasShownErrorToast = useRef<boolean>(false);
   const hasPartialResults = useRef<boolean>(false);
   const isSearchInProgress = useRef<boolean>(false);
+  const effectiveCoordinatesRef = useRef<[number, number] | null>(null);
   
-  // Reset error toast flag when search parameters change
+  // When search parameters change, clear flags
   useEffect(() => {
+    console.log('🔍 Search parameters changed:', searchParam);
     hasShownErrorToast.current = false;
     hasPartialResults.current = false;
     isSearchInProgress.current = false;
+    
+    // Store effective coordinates for later reference
+    if (Array.isArray(searchParam) && searchParam.length === 2) {
+      console.log('🔍 Storing effective coordinates:', searchParam);
+      effectiveCoordinatesRef.current = searchParam;
+    }
   }, [searchParam, searchRadius, JSON.stringify(filters)]);
   
   // Function to handle search errors
@@ -119,6 +127,10 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
             
             lat = data.result.latitude;
             lng = data.result.longitude;
+            
+            // Store these coordinates for reference
+            effectiveCoordinatesRef.current = [lat, lng];
+            
             console.log(`Converted ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, lat, lng);
           } catch (postcodeError) {
             console.error(`Error converting ${isOutcode ? 'outcode' : 'postcode'} to coordinates:`, postcodeError);
@@ -127,6 +139,24 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
         } else {
           // If searchParam is already coordinates, use it directly
           [lat, lng] = searchParam;
+          
+          // Store these coordinates for reference
+          effectiveCoordinatesRef.current = [lat, lng];
+        }
+        
+        if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          console.error(`Invalid coordinates: [${lat}, ${lng}], using fallback`);
+          if (effectiveCoordinatesRef.current && 
+              !isNaN(effectiveCoordinatesRef.current[0]) && 
+              !isNaN(effectiveCoordinatesRef.current[1])) {
+            [lat, lng] = effectiveCoordinatesRef.current;
+            console.log(`Using stored effective coordinates: [${lat}, ${lng}]`);
+          } else {
+            // Default to London only as absolute last resort
+            lat = 51.5074;
+            lng = -0.1278;
+            console.log(`Using default London coordinates: [${lat}, ${lng}]`);
+          }
         }
         
         // First try spatial search (with PostGIS)
@@ -193,6 +223,7 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
     isLoading: isLoading || isFetching,
     isSearchInProgress: isSearchInProgress.current,
     hasPartialResults: hasPartialResults.current,
+    effectiveCoordinates: effectiveCoordinatesRef.current,
     error,
     filters,
     setFilters,
