@@ -7,11 +7,38 @@ import { fetchCoordinatesByAddress } from "@/services/coordinates/fetch-coordina
 import { fetchCoordinatesFromOutcode } from "@/services/coordinates/fetch-coordinates-from-outcode";
 import { fetchCoordinatesFromTown } from "@/services/coordinates/fetch-coordinates-from-town";
 import { withTimeout } from "@/utils/fetchUtils";
+import { useFallbackCoordinates } from "@/services/coordinates/google-maps-loader";
 
 // Callbacks interface to pass to strategy functions
 type CoordinateCallbacks = {
   setCoordinates: (coords: [number, number]) => void;
   setPostcode: (pc: string | null) => void;
+};
+
+// Helper function to check if we're in production
+const isProdDomain = (): boolean => {
+  const hostname = window.location.hostname;
+  return hostname.includes('nimbygram.com') || 
+         hostname.includes('www.nimbygram.com') ||
+         hostname.includes('nimbygram.vercel.app');
+};
+
+// Helper function for fallback with any location string
+const useFallbackForLocation = (
+  locationString: string,
+  isMounted: boolean,
+  callbacks: CoordinateCallbacks
+): boolean => {
+  const fallbackCoords = useFallbackCoordinates(locationString);
+  
+  if (fallbackCoords && isMounted) {
+    console.log(`🏁 Using fallback coordinates for "${locationString}":`, fallbackCoords);
+    callbacks.setCoordinates(fallbackCoords);
+    callbacks.setPostcode(null);
+    return true;
+  }
+  
+  return false;
 };
 
 // Fetch coordinates for Google Place ID
@@ -20,6 +47,13 @@ export const fetchCoordinatesForPlaceId = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
+  // In production, prioritize fallbacks
+  if (isProdDomain()) {
+    if (useFallbackForLocation(placeId, isMounted, callbacks)) {
+      return;
+    }
+  }
+
   try {
     const coordinates = await fetchCoordinatesFromPlaceId(placeId);
     if (isMounted && coordinates) {
@@ -28,6 +62,12 @@ export const fetchCoordinatesForPlaceId = async (
     }
   } catch (error) {
     console.error('Error fetching coordinates for place ID:', error);
+    
+    // Use fallback if API fails
+    if (useFallbackForLocation(placeId, isMounted, callbacks)) {
+      return;
+    }
+    
     throw error;
   }
 };
@@ -38,6 +78,13 @@ export const fetchCoordinatesForTown = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
+  // In production, prioritize fallbacks
+  if (isProdDomain()) {
+    if (useFallbackForLocation(townName, isMounted, callbacks)) {
+      return;
+    }
+  }
+
   try {
     console.log('🏙️ Fetching coordinates for town:', townName);
     console.log('🏙️ Current hostname:', window.location.hostname);
@@ -81,21 +128,21 @@ export const fetchCoordinatesForTown = async (
     console.error('Error fetching town coordinates:', error);
     console.error('Current hostname:', window.location.hostname);
     
-    // Enhance error for large cities
-    if (/\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName) && 
-        (error.message.includes('timeout') || error.message.includes('timed out'))) {
-      const enhancedError = new Error(
-        `Timeout searching for large city "${townName}". Try using a specific area within ${townName} or a postcode instead.`
-      );
-      (enhancedError as any).type = 'LARGE_AREA_TIMEOUT';
-      throw enhancedError;
+    // Use fallback if API fails
+    if (useFallbackForLocation(townName, isMounted, callbacks)) {
+      return;
     }
     
     // Try location name search as fallback
     try {
       await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
     } catch (fallbackError) {
-      // If both fail, throw the original error
+      // If both fail, use hardcoded coordinates for common UK cities
+      if (useFallbackForLocation(townName, isMounted, callbacks)) {
+        return;
+      }
+      
+      // If all else fails, throw the original error
       throw error;
     }
   }
@@ -107,6 +154,13 @@ export const fetchCoordinatesForOutcode = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
+  // In production, prioritize fallbacks
+  if (isProdDomain()) {
+    if (useFallbackForLocation(outcode, isMounted, callbacks)) {
+      return;
+    }
+  }
+
   try {
     console.log('📮 Fetching coordinates for outcode:', outcode);
     const result = await fetchCoordinatesFromOutcode(outcode);
@@ -118,6 +172,12 @@ export const fetchCoordinatesForOutcode = async (
     }
   } catch (error) {
     console.error('Error fetching coordinates for outcode:', error);
+    
+    // Use fallback if API fails
+    if (useFallbackForLocation(outcode, isMounted, callbacks)) {
+      return;
+    }
+    
     throw error;
   }
 };
@@ -128,6 +188,13 @@ export const fetchCoordinatesForAddress = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
+  // In production, prioritize fallbacks
+  if (isProdDomain()) {
+    if (useFallbackForLocation(address, isMounted, callbacks)) {
+      return;
+    }
+  }
+
   try {
     console.log('🏠 Fetching coordinates for address:', address);
     const result = await fetchCoordinatesByAddress(address);
@@ -139,6 +206,11 @@ export const fetchCoordinatesForAddress = async (
     }
   } catch (error) {
     console.error('Error fetching coordinates for address:', error);
+    
+    // Use fallback if API fails
+    if (useFallbackForLocation(address, isMounted, callbacks)) {
+      return;
+    }
     
     // If address geocoding fails, try as a general location
     console.log('🏠 Address search failed, falling back to location name search');
@@ -152,6 +224,13 @@ export const fetchCoordinatesForLocationName = async (
   isMounted: boolean, 
   callbacks: CoordinateCallbacks
 ) => {
+  // In production, prioritize fallbacks
+  if (isProdDomain()) {
+    if (useFallbackForLocation(locationName, isMounted, callbacks)) {
+      return;
+    }
+  }
+
   try {
     console.log('🌎 Fetching coordinates for location name:', locationName);
     console.log('🌎 Current hostname:', window.location.hostname);
@@ -185,14 +264,9 @@ export const fetchCoordinatesForLocationName = async (
     console.error('Error fetching coordinates for location name:', error);
     console.error('Current hostname:', window.location.hostname);
     
-    // Enhance error for large cities
-    if (/\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName) && 
-        (error.message.includes('timeout') || error.message.includes('timed out'))) {
-      const enhancedError = new Error(
-        `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} or a postcode instead.`
-      );
-      (enhancedError as any).type = 'LARGE_AREA_TIMEOUT';
-      throw enhancedError;
+    // Use fallback if API fails
+    if (useFallbackForLocation(locationName, isMounted, callbacks)) {
+      return;
     }
     
     throw error;
@@ -216,6 +290,12 @@ export const fetchCoordinatesForPostcode = async (
     }
   } catch (error) {
     console.error('Error fetching coordinates for postcode:', error);
+    
+    // Use fallback if API fails
+    if (useFallbackForLocation(postcode, isMounted, callbacks)) {
+      return;
+    }
+    
     throw error;
   }
 };
