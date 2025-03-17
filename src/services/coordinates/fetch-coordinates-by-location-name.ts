@@ -22,9 +22,10 @@ export const fetchCoordinatesByLocationName = async (
   
   // Set longer timeout for large cities
   const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(locationName);
-  const timeoutMs = isLargeCity ? 30000 : 15000; // 30 seconds for large cities, 15 for others
+  const timeoutMs = isLargeCity ? 45000 : 20000; // 45 seconds for large cities, 20 for others
   
   console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'location'}: ${locationName}`);
+  console.log(`🔍 Current hostname: ${window.location.hostname}`);
   
   try {
     // First ensure Google Maps API is loaded
@@ -39,7 +40,6 @@ export const fetchCoordinatesByLocationName = async (
       `${locationName}, UK`;
     
     console.log('🔍 Enhanced search location:', searchLocation);
-    console.log('🔍 Current hostname:', window.location.hostname);
     
     // Wrap the geocoding promise with our timeout
     const geocodingPromise = new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
@@ -83,7 +83,7 @@ export const fetchCoordinatesByLocationName = async (
     const response = await withTimeout(
       geocodingPromise,
       timeoutMs,
-      `Timeout while searching for simplified location "${locationName}". Large cities may take longer to process, try a more specific location.`
+      `Timeout while searching for "${locationName}". ${isLargeCity ? 'Large cities like this may take longer, try searching for a specific area within the city or use a postcode.' : 'Try a more specific location.'}`
     );
     
     if (response && response.length > 0) {
@@ -142,7 +142,7 @@ export const fetchCoordinatesByLocationName = async (
     if (error.message.includes('timeout') || error.message.includes('timed out')) {
       if (isLargeCity) {
         const specificError = new Error(
-          `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} or a postcode instead.`
+          `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} (like "${locationName} city center") or a postcode instead.`
         );
         (specificError as any).type = 'LARGE_AREA_TIMEOUT';
         throw specificError;

@@ -18,7 +18,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
   const isLargeCity = /\b(london|manchester|birmingham|liverpool|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName);
   
   // Use longer timeout for large cities
-  const timeoutMs = isLargeCity ? 30000 : 15000; // 30 seconds for large cities
+  const timeoutMs = isLargeCity ? 45000 : 20000; // 45 seconds for large cities
   
   console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'town'}: ${townName}`);
   console.log(`🔍 Current hostname: ${window.location.hostname}`);
@@ -41,7 +41,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
       locationSearchPromise(),
       timeoutMs,
       isLargeCity 
-        ? `Timeout searching for large city "${townName}". Try a more specific area within ${townName} or use a postcode.`
+        ? `Timeout searching for large city "${townName}". Try a more specific area within ${townName} (like "${townName} city center") or use a postcode.`
         : `Timeout searching for town "${townName}". Try a more specific location or postcode.`
     );
     
@@ -53,7 +53,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     // Enhance error for large cities
     if (isLargeCity && (error.message.includes('timeout') || error.message.includes('timed out'))) {
       const enhancedError = new Error(
-        `Timeout searching for large city "${townName}". Try using a specific area within ${townName} or a postcode instead.`
+        `Timeout searching for large city "${townName}". Try using a specific area within ${townName} (like "${townName} city center") or a postcode instead.`
       );
       (enhancedError as any).type = 'LARGE_AREA_TIMEOUT';
       throw enhancedError;

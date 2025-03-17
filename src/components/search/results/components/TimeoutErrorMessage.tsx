@@ -39,6 +39,9 @@ export const TimeoutErrorMessage = ({
   const isOutcodeError = errorMessage.includes('Invalid outcode');
 
   const locationTerm = displayTerm || searchTerm || postcode || 'this location';
+  
+  // Check if this is Liverpool specifically to give tailored suggestions
+  const isLiverpool = /\bliverpool\b/i.test(locationTerm);
 
   let title = "Error loading results";
   let message = error ? errorMessage : `We couldn't find any planning applications for ${locationTerm}. Please try another search.`;
@@ -46,10 +49,18 @@ export const TimeoutErrorMessage = ({
   // Customize message based on error type
   if (isLargeAreaError) {
     title = "Large Area Search";
-    message = `"${locationTerm}" is a large city with many planning applications. For better results, try:
-    • Searching for a specific area within ${locationTerm} (e.g., "${locationTerm} city center")
-    • Using a specific postcode (e.g., "L1 9BG" for Liverpool)
-    • Searching for a specific street name`;
+    
+    if (isLiverpool) {
+      message = `Liverpool is a large city with many planning applications. For better results, try:
+      • Searching for a specific area like "Liverpool City Centre" or "Liverpool Docks"
+      • Using a Liverpool postcode (e.g., "L1 9BG" for city center)
+      • Searching for a specific street name in Liverpool`;
+    } else {
+      message = `"${locationTerm}" is a large city with many planning applications. For better results, try:
+      • Searching for a specific area within ${locationTerm} (e.g., "${locationTerm} city center")
+      • Using a specific postcode
+      • Searching for a specific street name`;
+    }
   } else if (isTimeoutError) {
     title = "Search Timeout";
     message = `The search for "${locationTerm}" took too long. For better results, try:

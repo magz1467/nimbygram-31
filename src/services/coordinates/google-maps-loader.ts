@@ -1,4 +1,3 @@
-
 /**
  * Utility for loading Google Maps script - consolidated version
  */
@@ -90,55 +89,58 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
     // Add global callback function for script loading
     window.googleMapsLoaded = () => {
       console.log('Google Maps script loaded via callback function');
+      // Note: we don't resolve here because we still need to verify API works
     };
     
     script.onload = () => {
       console.log('Google Maps script loaded successfully');
       
-      // Verify the API key works by making a simple API call
-      try {
-        // Check if geocoding is available and works
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: 'London, UK' }, (results, status) => {
-          console.log('Geocoder test status:', status);
-          console.log('Geocoder test results:', results ? results.length : 0);
-          
-          if (status === google.maps.GeocoderStatus.OK) {
-            console.log('Google Maps Geocoder API is working correctly');
-            isLoaded = true;
-            isLoading = false;
-            loadError = null;
-            resolve();
-          } else if (status === google.maps.GeocoderStatus.REQUEST_DENIED || 
-                    status === google.maps.GeocoderStatus.ERROR) {
-            const apiError = new Error(`Google Maps API key issue: ${status}`);
-            console.error(apiError);
-            console.error('API key may be restricted to specific domains or has usage limits');
-            console.error('Current hostname:', window.location.hostname);
-            loadError = apiError;
-            isLoading = false;
-            reject(apiError);
-          } else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
-            const limitError = new Error('Google Maps API quota exceeded');
-            console.error(limitError);
-            console.error('The API key has reached its daily quota limit');
-            loadError = limitError;
-            isLoading = false;
-            reject(limitError);
-          } else {
-            // Other statuses may be normal (e.g., ZERO_RESULTS)
+      // Verify the API key works by making a simple API call with longer timeout
+      setTimeout(() => {
+        try {
+          // Check if geocoding is available and works
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address: 'London, UK' }, (results, status) => {
             console.log('Geocoder test status:', status);
-            isLoaded = true;
-            isLoading = false;
-            resolve();
-          }
-        });
-      } catch (error) {
-        console.error('Error testing Google Maps API:', error);
-        loadError = error instanceof Error ? error : new Error(String(error));
-        isLoading = false;
-        reject(loadError);
-      }
+            console.log('Geocoder test results:', results ? results.length : 0);
+            
+            if (status === google.maps.GeocoderStatus.OK) {
+              console.log('Google Maps Geocoder API is working correctly');
+              isLoaded = true;
+              isLoading = false;
+              loadError = null;
+              resolve();
+            } else if (status === google.maps.GeocoderStatus.REQUEST_DENIED || 
+                      status === google.maps.GeocoderStatus.ERROR) {
+              const apiError = new Error(`Google Maps API key issue: ${status}`);
+              console.error(apiError);
+              console.error('API key may be restricted to specific domains or has usage limits');
+              console.error('Current hostname:', window.location.hostname);
+              loadError = apiError;
+              isLoading = false;
+              reject(apiError);
+            } else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+              const limitError = new Error('Google Maps API quota exceeded');
+              console.error(limitError);
+              console.error('The API key has reached its daily quota limit');
+              loadError = limitError;
+              isLoading = false;
+              reject(limitError);
+            } else {
+              // Other statuses may be normal (e.g., ZERO_RESULTS)
+              console.log('Geocoder test status:', status);
+              isLoaded = true;
+              isLoading = false;
+              resolve();
+            }
+          });
+        } catch (error) {
+          console.error('Error testing Google Maps API:', error);
+          loadError = error instanceof Error ? error : new Error(String(error));
+          isLoading = false;
+          reject(loadError);
+        }
+      }, 500); // Give the API a moment to initialize fully
     };
     
     script.onerror = (error) => {
