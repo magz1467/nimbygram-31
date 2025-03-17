@@ -27,10 +27,10 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        // Add timestamp to chunk names to bust cache
-        chunkFileNames: 'assets/js/[name]-[hash]-[timestamp].js',
-        entryFileNames: 'assets/js/[name]-[hash]-[timestamp].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash]-[timestamp].[ext]',
+        // Use hash for cache busting without invalid timestamp
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
   }
