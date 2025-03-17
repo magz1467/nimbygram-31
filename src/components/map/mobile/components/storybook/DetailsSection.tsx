@@ -21,7 +21,7 @@ const formatSectionHeader = (text: string) => {
   
   if (headerMatch) {
     return (
-      <h4 className="font-medium text-gray-800 text-left my-3">{headerMatch[1]}</h4>
+      <h4 className="font-bold text-gray-800 text-left my-3">{headerMatch[1]}</h4>
     );
   }
   
@@ -80,7 +80,7 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
             }
             
             // Start a new section
-            currentSection = <h4 key={`header-${i}`} className="font-medium text-gray-800 text-left my-2">{line}</h4>;
+            currentSection = <h4 key={`header-${i}`} className="font-bold text-gray-800 text-left my-2">{line}</h4>;
             sectionContent = [];
           } else if (line.match(/^[•\*\-]\s+/)) {
             // This is a bullet point
@@ -128,7 +128,7 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
   
   return (
     <div className="mb-4">
-      <p className="font-medium text-gray-800 text-left">Key Details</p>
+      <p className="font-bold text-gray-800 text-left">Key Details</p>
       <div className="mt-1">
         {detailContent}
       </div>

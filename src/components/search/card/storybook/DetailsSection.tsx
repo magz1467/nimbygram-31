@@ -20,7 +20,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     return (
       <div className="prose prose-sm max-w-none">
         <div className="rounded-lg p-4 border border-gray-100">
-          <h3 className="text-gray-900 font-semibold mb-3 text-base md:text-lg">Key Details</h3>
+          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg">Key Details</h3>
           <ul className="list-disc pl-5 space-y-2">
             {filteredDetails.map((detail, index) => {
               // Extract emoji if present at the beginning
@@ -134,7 +134,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     return (
       <div className="prose prose-sm max-w-none">
         <div className="rounded-lg p-4 border border-gray-100">
-          <h3 className="text-gray-900 font-semibold mb-3 text-base md:text-lg">Key Details</h3>
+          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg">Key Details</h3>
           <div 
             className="text-gray-700"
             dangerouslySetInnerHTML={{ __html: formattedContent }}

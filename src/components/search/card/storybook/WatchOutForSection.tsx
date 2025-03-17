@@ -65,7 +65,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
   
   return (
     <div className="bg-[#FFDEE2] text-gray-800 rounded-lg p-4">
-      <h3 className="font-semibold mb-2 text-base md:text-lg flex items-center gap-2">
+      <h3 className="font-bold mb-2 text-base md:text-lg flex items-center gap-2">
         <span>👀</span> What to Watch Out For
       </h3>
       <div 

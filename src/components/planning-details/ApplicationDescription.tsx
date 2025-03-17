@@ -51,7 +51,7 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {/* What's the Deal section */}
             {formattedStorybook.sections.find(s => s.type === 'deal') && (
               <div className="mb-4">
-                <h4 className="text-sm font-medium mb-1">What's the Deal</h4>
+                <h4 className="text-sm font-bold mb-1">What's the Deal</h4>
                 <p className="text-sm">
                   {formattedStorybook.sections.find(s => s.type === 'deal')?.content}
                 </p>
@@ -61,7 +61,7 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {/* Key Details section */}
             {formattedStorybook.sections.find(s => s.type === 'details') && (
               <div className="mb-4">
-                <h4 className="text-sm font-medium mb-1">Key Details</h4>
+                <h4 className="text-sm font-bold mb-1">Key Details</h4>
                 <div className="text-sm space-y-2">
                   {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
                     <ul className="list-none ml-0 space-y-2">
@@ -102,7 +102,7 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {/* What to Watch Out For section */}
             {formattedStorybook.sections.find(s => s.type === 'watchOutFor') && (
               <div className="mb-4 p-3 bg-[#FFDEE2] rounded-lg">
-                <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                <h4 className="text-sm font-bold mb-1 flex items-center gap-1">
                   <span>👀</span> What to Watch Out For
                 </h4>
                 <div 
@@ -119,7 +119,7 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {/* Key Regulations section */}
             {formattedStorybook.sections.find(s => s.type === 'keyRegulations') && (
               <div className="mb-4 p-3 bg-[#F2FCE2] rounded-lg">
-                <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                <h4 className="text-sm font-bold mb-1 flex items-center gap-1">
                   <span>📃</span> Key Regulations
                 </h4>
                 <div 
@@ -136,7 +136,7 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {/* Nimbywatch section */}
             {formattedStorybook.sections.find(s => s.type === 'nimby') && (
               <div className="mb-4 p-3 bg-[#8B5CF6] bg-opacity-10 rounded-lg">
-                <h4 className="text-sm font-medium text-[#8B5CF6] mb-1 flex items-center gap-1">
+                <h4 className="text-sm font-bold text-[#8B5CF6] mb-1 flex items-center gap-1">
                   <span>🏘️</span> Nimbywatch
                 </h4>
                 <div 
