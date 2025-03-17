@@ -24,6 +24,7 @@ export const getGoogleMapsApiKey = (): string => {
   
   // IMPORTANT: Always use the CURRENT_GOOGLE_MAPS_API_KEY for all environments
   // This ensures consistency and prevents API key mismatches
+  console.log('🔑 Returning key ending with:', CURRENT_GOOGLE_MAPS_API_KEY.slice(-6));
   return CURRENT_GOOGLE_MAPS_API_KEY;
 };
 
