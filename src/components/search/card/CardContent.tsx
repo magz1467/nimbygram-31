@@ -98,7 +98,7 @@ export const CardContent = ({
   return (
     <div className="space-y-6">
       {/* Render storybook content if available */}
-      {storybook ? (
+      {storybook && formattedStorybook ? (
         <StorybookContent 
           formattedStorybook={formattedStorybook} 
           rawStorybook={storybook} 

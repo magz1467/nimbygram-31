@@ -41,11 +41,22 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
       const bulletMatches = [...cleanedText.matchAll(bulletRegex)];
       
       if (bulletMatches.length > 0) {
-        let formattedHtml = `<ul class="list-disc pl-5 space-y-1">`;
+        let formattedHtml = `<ul class="list-disc pl-5 space-y-2 mb-4">`;
         bulletMatches.forEach(match => {
           const bulletText = match[2].trim();
           if (bulletText) { // Only add if there's content
-            formattedHtml += `<li class="pl-0 mb-1 relative">${bulletText}</li>`;
+            // Check for emoji at the start
+            const emojiMatch = bulletText.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
+            
+            formattedHtml += `<li class="pl-0 mb-2 relative">`;
+            if (emojiMatch) {
+              const emoji = emojiMatch[1];
+              const text = bulletText.substring(emojiMatch[0].length).trim();
+              formattedHtml += `<span class="mr-2 inline-block">${emoji}</span>${text}`;
+            } else {
+              formattedHtml += bulletText;
+            }
+            formattedHtml += `</li>`;
           }
         });
         formattedHtml += `</ul>`;
@@ -55,12 +66,18 @@ export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }
         if (firstBulletStart > 0) {
           const beforeBullets = cleanedText.substring(0, firstBulletStart).trim();
           if (beforeBullets) {
-            formattedHtml = `<p>${beforeBullets}</p>${formattedHtml}`;
+            formattedHtml = `<p class="mb-4">${beforeBullets}</p>${formattedHtml}`;
           }
         }
         
         return formattedHtml;
       }
+    }
+    
+    // Try to detect and format sections
+    const sections = cleanedText.split(/\n\n+/);
+    if (sections.length > 1) {
+      return sections.map(section => `<p class="mb-4">${section}</p>`).join('');
     }
     
     return `<p>${cleanedText}</p>`;

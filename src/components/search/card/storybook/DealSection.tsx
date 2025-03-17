@@ -34,56 +34,87 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
   // Remove any "What to Watch Out For:" section that might be mixed in
   processedContent = processedContent.split(/What to Watch Out For:?/i)[0];
   
-  // Extract bullet points if they exist
-  const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
-  const bulletMatches = [...processedContent.matchAll(bulletRegex)];
+  // Extract mixed content with both text and bullet points
+  const sections = processedContent.split(/(?:\n\n|\r\n\r\n)/);
+  let formattedSections = [];
   
-  let formattedContent;
-  
-  if (bulletMatches.length > 0) {
-    // Process bullet points
-    formattedContent = `<ul class="list-disc pl-5 space-y-2 mt-2">`;
-    bulletMatches.forEach(match => {
-      const bulletText = match[2].trim();
-      if (bulletText) { // Only add if there's actual content
-        // Process any emojis at the start of bullet points
-        const emojiMatch = bulletText.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
-        const emoji = emojiMatch ? emojiMatch[1] : null;
-        const textContent = emoji ? bulletText.substring(emoji.length).trim() : bulletText;
-        
-        formattedContent += `<li class="pl-1 mb-2 text-left">`;
-        if (emoji) {
-          formattedContent += `<span class="mr-1">${emoji}</span>`;
-        }
-        formattedContent += `${textContent}</li>`;
-      }
-    });
-    formattedContent += `</ul>`;
+  for (const section of sections) {
+    if (!section.trim()) continue;
     
-    // Get the content before any bullet points
-    const firstBulletStart = processedContent.indexOf(bulletMatches[0][0]);
-    if (firstBulletStart > 0) {
-      const mainContent = processedContent.substring(0, firstBulletStart).trim();
-      if (mainContent) {
-        formattedContent = `<p class="mt-2 text-left">${mainContent}</p>${formattedContent}`;
+    // Check if section contains bullet points (•, *, -)
+    const hasBullets = /(?:^|\n)\s*[•\*\-]\s+/.test(section);
+    
+    if (hasBullets) {
+      // Process bullet points with emojis
+      const bulletItems = [];
+      const bulletRegex = /(?:^|\n)\s*([•\*\-])\s+(.*?)(?=(?:\n\s*[•\*\-]\s+)|$)/gs;
+      let match;
+      
+      let lastIndex = 0;
+      let introText = '';
+      
+      // Find the first bullet point to extract any intro text
+      const firstBulletMatch = section.match(/(?:^|\n)\s*[•\*\-]\s+/);
+      if (firstBulletMatch && firstBulletMatch.index > 0) {
+        introText = section.substring(0, firstBulletMatch.index).trim();
       }
+      
+      // Extract all bullet points
+      while ((match = bulletRegex.exec(section)) !== null) {
+        const bulletText = match[2].trim();
+        if (bulletText) {
+          // Look for emoji at the start of bullet text
+          const emojiMatch = bulletText.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
+          
+          if (emojiMatch) {
+            const emoji = emojiMatch[1];
+            const text = bulletText.substring(emojiMatch[0].length).trim();
+            bulletItems.push({ emoji, text });
+          } else {
+            bulletItems.push({ emoji: null, text: bulletText });
+          }
+        }
+        lastIndex = match.index + match[0].length;
+      }
+      
+      // Add the intro text if found
+      if (introText) {
+        formattedSections.push(`<p class="mb-3 text-left">${introText}</p>`);
+      }
+      
+      // Add the bullet points list
+      if (bulletItems.length > 0) {
+        let bulletList = `<ul class="list-disc pl-5 space-y-2 mb-3">`;
+        bulletItems.forEach(item => {
+          bulletList += `<li class="pl-0 mb-2 text-left">`;
+          if (item.emoji) {
+            bulletList += `<span class="mr-2 inline-block">${item.emoji}</span>`;
+          }
+          bulletList += `${item.text}</li>`;
+        });
+        bulletList += `</ul>`;
+        formattedSections.push(bulletList);
+      }
+    } else {
+      // For non-bullet text, just add as paragraph
+      formattedSections.push(`<p class="mb-3 text-left">${section}</p>`);
     }
-  } else {
-    // If no bullet points, just render as paragraphs
-    formattedContent = processedContent
-      .split(/\n\n+/)
-      .map(paragraph => paragraph.trim())
-      .filter(paragraph => paragraph.length > 0)
-      .map(paragraph => `<p class="mt-2 text-left">${paragraph}</p>`)
-      .join('');
   }
+  
+  // If no sections were created, fallback to simple paragraph
+  if (formattedSections.length === 0) {
+    formattedSections.push(`<p class="text-left">${processedContent}</p>`);
+  }
+  
+  // Join all formatted sections
+  const formattedContent = formattedSections.join('');
   
   return (
     <div className="prose prose-sm max-w-none">
       <div className="bg-primary/5 rounded-lg p-4">
         <h3 className="text-primary font-semibold mb-3 text-base md:text-lg text-left">What's the Deal</h3>
         <div 
-          className="text-gray-700 text-left"
+          className="text-gray-700"
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>

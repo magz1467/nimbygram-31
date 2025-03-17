@@ -67,10 +67,10 @@ export const formatStorybook = (content: string | null) => {
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>') // Convert HTML entities to HTML tags
     .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>'); // Ensure strong tags are processed
 
-  // Format emoji at beginning of bullet points
+  // Normalize bullet points with emojis - make sure emoji is part of the bullet content
   processedContent = processedContent.replace(
     /(\n\s*[•\*\-]\s*)([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/gu, 
-    '$1'
+    '$1$2 '
   );
 
   // Extract header if it exists
@@ -164,6 +164,19 @@ export const formatStorybook = (content: string | null) => {
         });
         
         if (bulletPoints.length > 0) {
+          // Check for content before the first bullet point
+          const firstBulletStart = sectionContent.indexOf(bulletMatches[0][0]);
+          let introText = '';
+          
+          if (firstBulletStart > 0) {
+            introText = sectionContent.substring(0, firstBulletStart).trim();
+          }
+          
+          // If there's intro text, add it as a separate bullet point
+          if (introText) {
+            bulletPoints.unshift(introText);
+          }
+          
           processedSections.push({
             type: sectionType,
             title: sectionTitle.replace(/:$/, ''),
@@ -184,35 +197,136 @@ export const formatStorybook = (content: string | null) => {
   
   // If no clear sections were found, try looking for emoji markers
   if (processedSections.length === 0) {
-    // Look for emoji markers that indicate special sections
-    const findEmojiSections = (text, emojiPattern, sectionType, sectionTitle) => {
-      const regex = new RegExp(`(${emojiPattern})\\s*${sectionTitle}[:\\s]+(.*?)(?=(?:${emojiPattern})|$)`, 'gi');
-      const matches = [...text.matchAll(regex)];
-      if (matches.length > 0) {
-        matches.forEach(match => {
-          const content = match[2].trim();
-          if (content) {
+    // Try to automatically detect sections by looking for bullet patterns
+    const paragraphs = bodyContent.split(/\n\n+/);
+    let currentSection = '';
+    let currentContent = '';
+    
+    for (const paragraph of paragraphs) {
+      // Check if this paragraph looks like a section header
+      if (paragraph.toLowerCase().includes("what's the deal") || 
+          paragraph.toLowerCase().includes("key details") ||
+          paragraph.toLowerCase().includes("nimbywatch") ||
+          paragraph.toLowerCase().includes("what to watch out for") ||
+          paragraph.toLowerCase().includes("key regulations")) {
+        
+        // If we have accumulated content from a previous section, save it
+        if (currentSection && currentContent) {
+          let sectionType = '';
+          if (currentSection.toLowerCase().includes("what's the deal")) {
+            sectionType = 'deal';
+          } else if (currentSection.toLowerCase().includes("key details")) {
+            sectionType = 'details';
+          } else if (currentSection.toLowerCase().includes("nimbywatch")) {
+            sectionType = 'nimby';
+          } else if (currentSection.toLowerCase().includes("watch out for")) {
+            sectionType = 'watchOutFor';
+          } else if (currentSection.toLowerCase().includes("key regulations")) {
+            sectionType = 'keyRegulations';
+          }
+          
+          if (sectionType) {
             processedSections.push({
               type: sectionType,
-              title: sectionTitle,
-              content: content
+              title: currentSection,
+              content: currentContent.trim()
             });
           }
+        }
+        
+        // Set up the new section
+        currentSection = paragraph;
+        currentContent = '';
+      } else {
+        // This is content for the current section
+        currentContent += paragraph + '\n\n';
+      }
+    }
+    
+    // Don't forget to add the last section
+    if (currentSection && currentContent) {
+      let sectionType = '';
+      if (currentSection.toLowerCase().includes("what's the deal")) {
+        sectionType = 'deal';
+      } else if (currentSection.toLowerCase().includes("key details")) {
+        sectionType = 'details';
+      } else if (currentSection.toLowerCase().includes("nimbywatch")) {
+        sectionType = 'nimby';
+      } else if (currentSection.toLowerCase().includes("watch out for")) {
+        sectionType = 'watchOutFor';
+      } else if (currentSection.toLowerCase().includes("key regulations")) {
+        sectionType = 'keyRegulations';
+      }
+      
+      if (sectionType) {
+        processedSections.push({
+          type: sectionType,
+          title: currentSection,
+          content: currentContent.trim()
         });
       }
-    };
-
-    // Look for Watch Out For sections with emoji indicators
-    findEmojiSections(bodyContent, '[👀🚫⚠️]', 'watchOutFor', 'What to Watch Out For');
-    
-    // Look for Key Regulations sections with emoji indicators
-    findEmojiSections(bodyContent, '[📝📃📜]', 'keyRegulations', 'Key Regulations');
-    
-    // Look for Nimbywatch sections with emoji indicators
-    findEmojiSections(bodyContent, '[🏠🏘️🏡]', 'nimby', 'Nimbywatch');
+    }
   }
   
-  // If we still don't have clear sections, create a basic structure
+  // If we still don't have clear sections, try to extract content based on bullet points
+  if (processedSections.length === 0) {
+    // Check if there are bullet points in the content
+    const hasBulletPoints = bodyContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+    
+    if (hasBulletPoints) {
+      // Assume the content before the first bullet is the "What's the Deal" section
+      const firstBulletMatch = bodyContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+      if (firstBulletMatch && firstBulletMatch.index > 0) {
+        const dealContent = bodyContent.substring(0, firstBulletMatch.index).trim();
+        if (dealContent) {
+          processedSections.push({
+            type: 'deal',
+            title: "What's the Deal",
+            content: dealContent
+          });
+        }
+        
+        // Assume the bullet points are "Key Details"
+        const detailsContent = bodyContent.substring(firstBulletMatch.index).trim();
+        if (detailsContent) {
+          // Extract the bullet points
+          const bulletPoints = [];
+          const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
+          const bulletMatches = [...detailsContent.matchAll(bulletRegex)];
+          
+          bulletMatches.forEach(bulletMatch => {
+            const text = bulletMatch[2].trim();
+            if (text) {
+              bulletPoints.push(text);
+            }
+          });
+          
+          if (bulletPoints.length > 0) {
+            processedSections.push({
+              type: 'details',
+              title: "Key Details",
+              content: bulletPoints
+            });
+          } else {
+            processedSections.push({
+              type: 'details',
+              title: "Key Details",
+              content: detailsContent
+            });
+          }
+        }
+      } else {
+        // If the content starts with bullets, treat it all as key details
+        processedSections.push({
+          type: 'details',
+          title: "Key Details",
+          content: bodyContent
+        });
+      }
+    }
+  }
+  
+  // If we still don't have sections, split the content into "What's the Deal" and "Key Details"
   if (processedSections.length === 0) {
     // Try to find key phrases to split content
     const dealMatch = bodyContent.match(/.*?(?=(?:Key Details:|$))/s);
