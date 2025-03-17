@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { SortType, StatusCounts } from "@/types/application-types";
 import { Map, List, Filter, ArrowUpDown } from "lucide-react";
@@ -44,46 +45,7 @@ export const ResultsHeader = ({
         </div>
       </div>
       
-      <div className="px-4 pb-2 flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onToggleMapView}
-          className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-        >
-          {isMapVisible ? (
-            <>
-              <List className="h-4 w-4" />
-              List
-            </>
-          ) : (
-            <>
-              <Map className="h-4 w-4" />
-              Map
-            </>
-          )}
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5"
-        >
-          <Filter className="h-4 w-4" />
-          Filter
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5"
-        >
-          <ArrowUpDown className="h-4 w-4" />
-          Distance
-        </Button>
-        
-        {extraControls}
-      </div>
+      {/* Removed duplicate buttons here - now only using FilterBar for all controls */}
       
       <FilterBar
         onFilterChange={onFilterChange}
