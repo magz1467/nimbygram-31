@@ -5,6 +5,7 @@ import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
 import { logRouteChange } from "@/utils/reloadTracker";
+import { Header } from "@/components/Header";
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -71,27 +72,27 @@ const SearchResultsPage = () => {
     setError(null);
   }, []);
 
-  // If we don't have search state, show the no search state view
-  if (!searchState?.searchTerm) {
-    return <NoSearchStateView onPostcodeSelect={(postcode) => {
-      // Use URL parameters instead of location state
-      navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
-    }} />;
-  }
-
-  if (error) {
-    return <SearchErrorView 
-      errorDetails={error.message} 
-      onRetry={handleRetry} 
-    />;
-  }
-
   return (
-    <SearchView 
-      initialSearch={searchState}
-      onError={handleError}
-      onSearchComplete={handleSearchComplete}
-    />
+    <>
+      <Header />
+      {!searchState?.searchTerm ? (
+        <NoSearchStateView onPostcodeSelect={(postcode) => {
+          // Use URL parameters instead of location state
+          navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
+        }} />
+      ) : error ? (
+        <SearchErrorView 
+          errorDetails={error.message} 
+          onRetry={handleRetry} 
+        />
+      ) : (
+        <SearchView 
+          initialSearch={searchState}
+          onError={handleError}
+          onSearchComplete={handleSearchComplete}
+        />
+      )}
+    </>
   );
 };
 

@@ -1,5 +1,4 @@
 
-import { Header } from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 
 interface NoResultsViewProps {
@@ -9,7 +8,6 @@ interface NoResultsViewProps {
 export const NoResultsView = ({ onPostcodeSelect }: NoResultsViewProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <SearchSection
         onPostcodeSelect={onPostcodeSelect}
         isMapView={false}
