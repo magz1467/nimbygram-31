@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatStorybook } from "@/utils/storybook-formatter";
@@ -72,6 +73,7 @@ export const CardContent = ({
     } else {
       // On desktop, open the map dialog
       if (applicationId) {
+        console.log('🖥️ Opening desktop map dialog for app:', applicationId);
         setShowMapDialog(true);
         // Ensure this application is selected
         if (handleMarkerClick && applicationId) {
@@ -84,6 +86,7 @@ export const CardContent = ({
   const handleCloseMap = () => {
     console.log('📱 Closing mobile map view');
     setShowMobileMap(false);
+    setShowMapDialog(false);
   };
 
   // Process storybook data
@@ -98,12 +101,12 @@ export const CardContent = ({
       <div className="space-y-6">
         {mapButton}
         
-        {/* Map components - keep these the same for all cases */}
+        {/* Map components - desktop */}
         {!isMobile && applicationId && (
           <DesktopMapDialog
             applications={applications}
             selectedId={applicationId}
-            coordinates={applicationCoords as [number, number]}
+            coordinates={applicationCoords || coordinates as [number, number]}
             searchLocation={coordinates as [number, number]}
             handleMarkerClick={handleMarkerClick}
             isOpen={showMapDialog}
@@ -113,11 +116,12 @@ export const CardContent = ({
           />
         )}
 
-        {isMobile && showMobileMap && applicationId && applicationCoords && (
+        {/* Map components - mobile */}
+        {isMobile && showMobileMap && applicationId && (applicationCoords || coordinates) && (
           <MobileMapView
             applications={applications}
             selectedId={applicationId}
-            coordinates={applicationCoords as [number, number]}
+            coordinates={(applicationCoords || coordinates) as [number, number]}
             handleMarkerClick={handleMarkerClick}
             handleCloseMap={handleCloseMap}
             isLoading={isLoading}

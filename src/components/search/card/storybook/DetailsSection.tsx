@@ -2,85 +2,75 @@
 import { FC } from "react";
 
 interface DetailsSectionProps {
-  content: string[] | string;
+  content: string | string[];
 }
 
 export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
   if (!content) return null;
   
-  // Process HTML tags in content if it's a string
-  const processString = (str: string) => {
-    return str
-      .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
-      .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
-  };
-  
-  // More robust empty content check
-  const isEmptyContent = (str: string) => {
-    // Remove whitespace, bullet characters, and dashes
-    const trimmed = str.replace(/[\s•\-*]/g, '');
-    return trimmed.length === 0;
-  };
-  
-  // Extract emoji from start of content if present
-  const getEmojiPrefix = (str: string) => {
-    const emojiMatch = str.match(/^([\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
-    return emojiMatch ? emojiMatch[1] : null;
-  };
-  
-  // If content is effectively empty after our checks, return null
-  if (
-    (typeof content === 'string' && isEmptyContent(content)) || 
-    (Array.isArray(content) && content.every(item => !item || isEmptyContent(item)))
-  ) {
-    return null;
-  }
-  
-  return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-gray-900 text-left">Key Details</h3>
-      <div className="grid gap-3">
-        {Array.isArray(content) ? (
-          content
-            .filter((detail) => detail && !isEmptyContent(detail)) // Enhanced filter for empty entries
-            .map((detail, index) => {
-              const emoji = getEmojiPrefix(detail);
-              const displayDetail = emoji ? detail.substring(emoji.length).trim() : detail;
-              
+  // Process the content based on its type
+  if (Array.isArray(content)) {
+    // Filter out empty items
+    const filteredDetails = content.filter(detail => detail && detail.trim().length > 0);
+    
+    if (filteredDetails.length === 0) return null;
+    
+    return (
+      <div className="prose prose-sm max-w-none">
+        <div className="rounded-lg p-4 border border-gray-100">
+          <h3 className="text-gray-900 font-semibold mb-3 text-base md:text-lg">Key Details</h3>
+          <ul className="list-disc pl-5 space-y-2">
+            {filteredDetails.map((detail, index) => {
+              // Extract emoji if present at the beginning
+              const emojiMatch = detail.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}])/u);
+              const emoji = emojiMatch ? emojiMatch[1] : null;
+              const textContent = emoji ? detail.substring(emoji.length).trim() : detail.trim();
+                
               return (
-                <div key={index} className="flex gap-2.5 items-start text-left">
-                  {/* More prominent bullet point */}
-                  <div className="min-w-[8px] min-h-[8px] w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                  <div className="text-gray-700 flex-1 break-words">
-                    {emoji && <span className="mr-1.5 inline-block align-middle">{emoji}</span>}
-                    <span 
-                      dangerouslySetInnerHTML={{ 
-                        __html: processString(displayDetail)
-                      }}
-                    />
-                  </div>
-                </div>
+                <li key={index} className="pl-1 mb-2">
+                  {emoji && <span className="mr-2">{emoji}</span>}
+                  <span 
+                    dangerouslySetInnerHTML={{ 
+                      __html: textContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
+                    }}
+                  />
+                </li>
               );
-            })
-        ) : (
-          // If content is a string, check if it has bullet points and format properly
-          <div className="text-gray-700 prose prose-sm max-w-none text-left">
-            {typeof content === 'string' && (content.includes('•') || content.includes('*') || content.includes('-')) ? (
-              <ul className="list-disc pl-5 space-y-2">
-                {content.split(/(?:•|\*|-)\s+/).filter(Boolean).map((part, idx) => (
-                  <li key={idx} className="pl-1 mb-2">{processString(part.trim())}</li>
-                ))}
-              </ul>
-            ) : (
-              <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: processString(typeof content === 'string' ? content : String(content))
-                }}
-              />
-            )}
-          </div>
-        )}
+            })}
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+    // For string content, check if it contains bullet points
+    const stringContent = content as string;
+    
+    if (!stringContent.trim()) return null;
+    
+    // Check if the content contains bullet points
+    const hasBullets = /(?:•|\*|-|🏠|🔍|🏢)/.test(stringContent);
+    
+    let formattedContent;
+    if (hasBullets) {
+      // Split by bullet markers
+      const parts = stringContent.split(/(?:•|\*|-|🏠|🔍|🏢)/).filter(Boolean);
+      formattedContent = `<ul class="list-disc pl-5 space-y-2">
+        ${parts.map(part => `<li class="pl-1 mb-2">${part.trim().replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')}</li>`).join('')}
+      </ul>`;
+    } else {
+      formattedContent = `<p>${stringContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')}</p>`;
+    }
+    
+    return (
+      <div className="prose prose-sm max-w-none">
+        <div className="rounded-lg p-4 border border-gray-100">
+          <h3 className="text-gray-900 font-semibold mb-3 text-base md:text-lg">Key Details</h3>
+          <div 
+            className="text-gray-700"
+            dangerouslySetInnerHTML={{ __html: formattedContent }}
+          />
+        </div>
+      </div>
+    );
+  }
 };

@@ -23,10 +23,21 @@ export const MapView = memo(({
     console.log("🗺️ MapView rendering with coordinates:", coordinates);
   }, [coordinates]);
   
-  // Don't render the map if coordinates aren't available
-  if (!coordinates || coordinates[0] === 0 || coordinates[1] === 0) {
+  // Make sure we have valid coordinates before rendering
+  if (!coordinates || 
+      !Array.isArray(coordinates) || 
+      coordinates.length !== 2 || 
+      !isFinite(coordinates[0]) || 
+      !isFinite(coordinates[1]) ||
+      coordinates[0] === 0 || 
+      coordinates[1] === 0) {
     console.warn("MapView - Invalid coordinates, not rendering map:", coordinates);
-    return <div className="flex h-full w-full items-center justify-center">Loading map location...</div>;
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="ml-3 text-primary">Loading map location...</span>
+      </div>
+    );
   }
   
   return (

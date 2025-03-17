@@ -24,14 +24,25 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
     .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
   
-  // Check for bullet points in the deal section and format properly
+  // Check for bullet points in the content
+  const hasBulletPoints = processedContent.includes('•') || 
+                          processedContent.includes('*') || 
+                          processedContent.includes('-') || 
+                          processedContent.includes('🏠') ||
+                          processedContent.includes('🔍');
+  
+  // Format the content based on whether it contains bullet points
   let formattedContent;
-  if (processedContent.includes('•') || processedContent.includes('*') || processedContent.includes('-')) {
-    const parts = processedContent.split(/(?:•|\*|-)\s+/).filter(Boolean);
+  
+  if (hasBulletPoints) {
+    // Split by common bullet markers and emoji
+    const bulletPattern = /(?:•|\*|-|🏠|🔍|🏢|📝|🔑|📃)/;
+    const parts = processedContent.split(bulletPattern).filter(Boolean);
+    
     if (parts.length > 1) {
-      // This actually has bullet points - create proper HTML list
-      formattedContent = `<ul class="list-disc pl-5 space-y-1 mt-2">
-        ${parts.map(part => `<li class="pl-1 mb-1 text-left">${part.trim()}</li>`).join('')}
+      // Create a proper HTML list for bullet points
+      formattedContent = `<ul class="list-disc pl-5 space-y-2 mt-2">
+        ${parts.map(part => `<li class="pl-1 mb-2 text-left">${part.trim()}</li>`).join('')}
       </ul>`;
     } else {
       formattedContent = `<p class="mt-2 text-left">${processedContent}</p>`;
@@ -43,7 +54,7 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
   return (
     <div className="prose prose-sm max-w-none">
       <div className="bg-primary/5 rounded-lg p-4">
-        <h3 className="text-primary font-semibold mb-2 text-base md:text-lg text-left">What's the Deal</h3>
+        <h3 className="text-primary font-semibold mb-3 text-base md:text-lg text-left">What's the Deal</h3>
         <div 
           className="text-gray-700"
           dangerouslySetInnerHTML={{ __html: formattedContent }}
