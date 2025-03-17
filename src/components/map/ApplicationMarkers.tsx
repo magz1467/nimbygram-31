@@ -30,16 +30,14 @@ export const ApplicationMarkers = ({
   // Create custom markers for regular and selected applications
   useEffect(() => {
     // Create custom icon for regular markers
-    if (!L.Icon.Default.prototype._getIconUrl) {
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: '/marker.svg',
-        iconUrl: '/marker.svg',
-        shadowUrl: null,
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34]
-      });
-    }
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: '/marker.svg',
+      iconUrl: '/marker.svg',
+      shadowUrl: null,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34]
+    });
   }, []);
 
   const createIcon = (isSelected: boolean) => {

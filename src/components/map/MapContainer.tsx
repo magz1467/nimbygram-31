@@ -28,12 +28,17 @@ export const MapContainer = memo(({
   onMarkerClick,
   onCenterChange,
   onMapMove,
-  searchRadius = MAP_DEFAULTS.searchRadius, // Default to constants
+  searchRadius, // Default to constants
 }: MapContainerProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [mapReady, setMapReady] = useState(false);
+  
+  // Use mobile search radius if on mobile
+  const effectiveSearchRadius = isMobile 
+    ? MAP_DEFAULTS.mobileSearchRadius 
+    : (searchRadius || MAP_DEFAULTS.searchRadius);
 
   // Validate coordinates are in correct format [lat, lng]
   const validCoordinates = Array.isArray(coordinates) && 
@@ -94,14 +99,14 @@ export const MapContainer = memo(({
         const distanceInKm = distanceInMeters / 1000;
         
         // Keep only applications within the search radius (plus a small buffer)
-        return distanceInKm <= (searchRadius + 0.1);
+        return distanceInKm <= (effectiveSearchRadius + 0.1);
       } catch (err) {
         console.error('Error calculating distance for app:', app.id, err);
         return false;
       }
     });
     
-    console.log(`Found ${applicationsInRadius.length} applications within ${searchRadius}km radius`);
+    console.log(`Found ${applicationsInRadius.length} applications within ${effectiveSearchRadius}km radius`);
     
     if (applicationsInRadius.length > 0) {
       try {
@@ -133,7 +138,7 @@ export const MapContainer = memo(({
       // If no applications in radius, center on search location
       mapRef.current.setView(searchLocation, isMobile ? MAP_DEFAULTS.mobileMapZoom : MAP_DEFAULTS.initialZoom);
     }
-  }, [applications, searchRadius, searchLocation, isMobile, mapReady]);
+  }, [applications, effectiveSearchRadius, searchLocation, isMobile, mapReady]);
 
   // Handle first mount of the map
   useEffect(() => {
@@ -221,7 +226,7 @@ export const MapContainer = memo(({
           baseCoordinates={searchLocation} // Use searchLocation instead of coordinates
           onMarkerClick={onMarkerClick}
           selectedId={selectedId || null}
-          searchRadius={searchRadius}
+          searchRadius={effectiveSearchRadius}
         />
       </LeafletMapContainer>
     </div>

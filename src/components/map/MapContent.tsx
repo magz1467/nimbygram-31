@@ -3,6 +3,7 @@ import { MobileApplicationCards } from "./mobile/MobileApplicationCards";
 import { MapContainer } from "./MapContainer";
 import { Application } from "@/types/planning";
 import { useEffect, useRef, useState } from "react";
+import { LoadingOverlay } from "@/components/applications/dashboard/components/LoadingOverlay";
 
 interface MapContentProps {
   applications: Application[];
@@ -29,6 +30,7 @@ export const MapContent = ({
 }: MapContentProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [forceRender, setForceRender] = useState(0);
+  const [isMapLoading, setIsMapLoading] = useState(true);
   
   console.log('🗺️ MapContent rendering:', {
     isMobile, 
@@ -41,12 +43,18 @@ export const MapContent = ({
   useEffect(() => {
     if (mapContainerRef.current) {
       console.log('🗺️ Triggering map container resize');
+      setIsMapLoading(true);
       
       // Force resize events to ensure map renders correctly
       const resizeEvents = [0, 100, 300, 500, 1000].map(delay => 
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
           console.log(`🗺️ Dispatched resize event after ${delay}ms`);
+          
+          // After the last resize event, set loading to false
+          if (delay === 1000) {
+            setIsMapLoading(false);
+          }
         }, delay)
       );
       
@@ -61,6 +69,12 @@ export const MapContent = ({
     const handleRefreshMarkers = () => {
       console.log('🔄 Forcing map markers refresh');
       setForceRender(prev => prev + 1);
+      setIsMapLoading(true);
+      
+      // After a short delay, set loading to false
+      setTimeout(() => {
+        setIsMapLoading(false);
+      }, 1000);
     };
 
     window.addEventListener('refresh-map-markers', handleRefreshMarkers);
@@ -75,8 +89,24 @@ export const MapContent = ({
     if (isMobile) {
       console.log('📱 Mobile view detected, forcing marker refresh');
       setForceRender(prev => prev + 1);
+      setIsMapLoading(true);
+      
+      // After a short delay, set loading to false
+      setTimeout(() => {
+        setIsMapLoading(false);
+      }, 800);
     }
   }, [isMobile, selectedId]);
+
+  // Set loading to false after applications are loaded
+  useEffect(() => {
+    if (applications.length > 0) {
+      // Short delay to ensure the map has time to process the applications
+      setTimeout(() => {
+        setIsMapLoading(false);
+      }, 500);
+    }
+  }, [applications]);
 
   return (
     <div className="relative w-full h-full" ref={mapContainerRef}>
@@ -98,6 +128,13 @@ export const MapContent = ({
           onSelectApplication={onMarkerClick}
           postcode={postcode}
         />
+      )}
+      
+      {/* Show loading overlay when map is loading */}
+      {(isLoading || isMapLoading) && (
+        <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-20">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
       )}
     </div>
   );
