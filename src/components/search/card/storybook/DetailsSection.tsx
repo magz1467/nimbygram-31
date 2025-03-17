@@ -22,7 +22,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
           <ul className="list-disc pl-5 space-y-2">
             {filteredDetails.map((detail, index) => {
               // Extract emoji if present at the beginning
-              const emojiMatch = detail.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}])/u);
+              const emojiMatch = detail.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
               const emoji = emojiMatch ? emojiMatch[1] : null;
               const textContent = emoji ? detail.substring(emoji.length).trim() : detail.trim();
                 
@@ -47,18 +47,42 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     
     if (!stringContent.trim()) return null;
     
-    // Check if the content contains bullet points
-    const hasBullets = /(?:•|\*|-|🏠|🔍|🏢)/.test(stringContent);
+    // Strip any "Key Details:" prefix
+    const cleanedContent = stringContent.replace(/^Key Details:?\s*/i, '');
+    
+    // Check if the content contains bullet points or symbols
+    const hasBullets = /(?:[•\*\-✓🔍🏠🏢])/m.test(cleanedContent);
     
     let formattedContent;
     if (hasBullets) {
-      // Split by bullet markers
-      const parts = stringContent.split(/(?:•|\*|-|🏠|🔍|🏢)/).filter(Boolean);
-      formattedContent = `<ul class="list-disc pl-5 space-y-2">
-        ${parts.map(part => `<li class="pl-1 mb-2">${part.trim().replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')}</li>`).join('')}
-      </ul>`;
+      // Extract bullet points
+      const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
+      const bulletMatches = [...cleanedContent.matchAll(bulletRegex)];
+      
+      formattedContent = `<ul class="list-disc pl-5 space-y-2">`;
+      bulletMatches.forEach(match => {
+        const bulletPoint = match[2].trim();
+        if (bulletPoint) {
+          formattedContent += `<li class="pl-1 mb-2">${bulletPoint}</li>`;
+        }
+      });
+      formattedContent += `</ul>`;
+      
+      // Get content before the first bullet point
+      if (bulletMatches.length > 0) {
+        const beforeBullets = cleanedContent.split(bulletMatches[0][0])[0].trim();
+        if (beforeBullets) {
+          formattedContent = `<p class="mb-2">${beforeBullets}</p>${formattedContent}`;
+        }
+      }
     } else {
-      formattedContent = `<p>${stringContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')}</p>`;
+      // Split by paragraphs and format
+      formattedContent = cleanedContent
+        .split(/\n\n+/)
+        .map(paragraph => paragraph.trim())
+        .filter(paragraph => paragraph.length > 0)
+        .map(paragraph => `<p class="mb-2">${paragraph.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')}</p>`)
+        .join('');
     }
     
     return (

@@ -18,37 +18,49 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
   // Return null if content is effectively empty
   if (isEmptyContent(content)) return null;
   
-  // Clean up the content - remove redundant titles and properly format
+  // Clean up the content - remove redundant titles
   let processedContent = content
     .replace(/^What['']s the Deal:?\s*/i, '') // Remove redundant title at start
+    .replace(/What['']s the Deal:?\s*/i, '') // Also remove it if it appears later
     .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
   
-  // Check for bullet points in the content
-  const hasBulletPoints = processedContent.includes('•') || 
-                          processedContent.includes('*') || 
-                          processedContent.includes('-') || 
-                          processedContent.includes('🏠') ||
-                          processedContent.includes('🔍');
+  // Remove any "Key Details:" section that might be mixed in
+  processedContent = processedContent.split(/Key Details:?/i)[0];
   
-  // Format the content based on whether it contains bullet points
+  // Remove any "What to Watch Out For:" section that might be mixed in
+  processedContent = processedContent.split(/What to Watch Out For:?/i)[0];
+  
+  // Extract bullet points if they exist
+  const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
+  const bulletMatches = [...processedContent.matchAll(bulletRegex)];
+  
   let formattedContent;
   
-  if (hasBulletPoints) {
-    // Split by common bullet markers and emoji
-    const bulletPattern = /(?:•|\*|-|🏠|🔍|🏢|📝|🔑|📃)/;
-    const parts = processedContent.split(bulletPattern).filter(Boolean);
+  if (bulletMatches.length > 0) {
+    // Process bullet points
+    formattedContent = `<ul class="list-disc pl-5 space-y-2 mt-2">`;
+    bulletMatches.forEach(match => {
+      const bulletPoint = match[2].trim();
+      if (bulletPoint) {
+        formattedContent += `<li class="pl-1 mb-2 text-left">${bulletPoint}</li>`;
+      }
+    });
+    formattedContent += `</ul>`;
     
-    if (parts.length > 1) {
-      // Create a proper HTML list for bullet points
-      formattedContent = `<ul class="list-disc pl-5 space-y-2 mt-2">
-        ${parts.map(part => `<li class="pl-1 mb-2 text-left">${part.trim()}</li>`).join('')}
-      </ul>`;
-    } else {
-      formattedContent = `<p class="mt-2 text-left">${processedContent}</p>`;
+    // Get the content before any bullet points
+    const mainContent = processedContent.split(bulletMatches[0][0])[0].trim();
+    if (mainContent) {
+      formattedContent = `<p class="mt-2 text-left">${mainContent}</p>${formattedContent}`;
     }
   } else {
-    formattedContent = `<p class="mt-2 text-left">${processedContent}</p>`;
+    // If no bullet points, just render as paragraphs
+    formattedContent = processedContent
+      .split(/\n\n+/)
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0)
+      .map(paragraph => `<p class="mt-2 text-left">${paragraph}</p>`)
+      .join('');
   }
   
   return (
@@ -56,7 +68,7 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
       <div className="bg-primary/5 rounded-lg p-4">
         <h3 className="text-primary font-semibold mb-3 text-base md:text-lg text-left">What's the Deal</h3>
         <div 
-          className="text-gray-700"
+          className="text-gray-700 text-left"
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>

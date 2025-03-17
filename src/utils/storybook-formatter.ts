@@ -40,6 +40,18 @@ export const formatStorybook = (content: string | null) => {
 
   // Clean up formatting issues
   processedContent = processedContent
+    // Normalize section headers (add colon if missing)
+    .replace(/What['']s the Deal(?!\:)/gi, "What's the Deal:")
+    .replace(/Key Details(?!\:)/gi, "Key Details:")
+    .replace(/What to Watch Out For(?!\:)/gi, "What to Watch Out For:")
+    .replace(/Nimbywatch(?!\:)/gi, "Nimbywatch:")
+    .replace(/Key Regulations(?!\:)/gi, "Key Regulations:")
+    // Ensure sections have proper spacing
+    .replace(/(What['']s the Deal:)/gi, "\n$1")
+    .replace(/(Key Details:)/gi, "\n$1")
+    .replace(/(What to Watch Out For:)/gi, "\n$1")
+    .replace(/(Nimbywatch:)/gi, "\n$1")
+    .replace(/(Key Regulations:)/gi, "\n$1")
     // Remove standalone asterisks that appear as bullets
     .replace(/\n\s*\*\s*\n/g, '\n') // Remove asterisks on their own line
     .replace(/^\s*\*\s*$/gm, '') // Remove standalone asterisks at start of lines
@@ -94,169 +106,133 @@ export const formatStorybook = (content: string | null) => {
     }
   }
 
-  // Process sections
+  // Process sections with better section boundary detection
   const processedSections = [];
   
-  // Check if content has "What's the Deal" section
-  const dealMatch = bodyContent.match(/What['']s the Deal:?(.*?)(?=Key Details:|The Details:|Nimbywatch:|What to Watch Out For:|Key Regulations:|$)/si);
-  if (dealMatch && dealMatch[1]) {
-    processedSections.push({
-      type: 'deal',
-      title: "What's the Deal",
-      content: dealMatch[1].trim()
-    });
-  }
+  // Use a more robust pattern to match section titles with their content
+  const sectionPattern = /(?:^|\n)(What['']s the Deal:|Key Details:|Nimbywatch:|What to Watch Out For:|Key Regulations:)(.*?)(?=(?:^|\n)(?:What['']s the Deal:|Key Details:|Nimbywatch:|What to Watch Out For:|Key Regulations:)|$)/gis;
   
-  // Extract and properly format bullet points in the Key Details section
-  const detailsMatch = bodyContent.match(/(?:Key Details:|The Details:)(.*?)(?=Nimbywatch:|What to Watch Out For:|Key Regulations:|Considerations:|$)/si);
-  if (detailsMatch && detailsMatch[1]) {
-    // Strip the content and identify bullet points properly
-    const detailsContent = detailsMatch[1].trim();
-    
-    // First, look for explicit bullet points (•, *, -, or emoji followed by space)
-    let bulletPoints = [];
-    const bulletPattern = /(?:^|\n)[\s]*(?:[•\*\-]|🏠|🔍|🏢|✏️|📝|🔑|📃|🔨|🚧|🔔|⚙️|🔧|📈|📊|📋|📑|✅|❌|⚠️|🚫|👀)[\s]+(.*?)(?=(?:^|\n)[\s]*(?:[•\*\-]|🏠|🔍|🏢|✏️|📝|🔑|📃|🔨|🚧|🔔|⚙️|🔧|📈|📊|📋|📑|✅|❌|⚠️|🚫|👀)[\s]+|$)/gs;
-    const matches = [...detailsContent.matchAll(bulletPattern)];
-    
-    if (matches.length > 0) {
-      // We have proper bullet points
-      bulletPoints = matches.map(match => match[1].trim()).filter(Boolean);
-    } else {
-      // Try to split by newlines and look for patterns that suggest bullet points
-      const lines = detailsContent.split(/\n/).map(line => line.trim()).filter(Boolean);
+  const sectionMatches = [...bodyContent.matchAll(sectionPattern)];
+  
+  if (sectionMatches.length > 0) {
+    sectionMatches.forEach(match => {
+      const sectionTitle = match[1].trim();
+      let sectionContent = match[2].trim();
       
-      // Check if most lines have similar prefixes or patterns
-      const similarPrefixes = lines.filter(line => 
-        line.match(/^[🏠🔍🏢✏️📝🔑📃🔨🚧🔔⚙️🔧📈📊📋📑✅❌⚠️🚫👀]/) ||
-        line.match(/^[A-Z][a-z]+ [a-z]+:/) ||
-        line.match(/^The [a-z]+/)
-      ).length > lines.length / 2;
+      // Skip if section content is empty
+      if (!sectionContent) return;
       
-      if (similarPrefixes) {
-        // These look like they should be bullet points
-        bulletPoints = lines;
-      } else {
-        // Just use the whole content if we can't identify clear bullets
-        bulletPoints = [detailsContent];
+      // Determine section type
+      let sectionType = '';
+      if (/What['']s the Deal:/i.test(sectionTitle)) {
+        sectionType = 'deal';
+      } else if (/Key Details:/i.test(sectionTitle)) {
+        sectionType = 'details';
+      } else if (/Nimbywatch:/i.test(sectionTitle)) {
+        sectionType = 'nimby';
+      } else if (/What to Watch Out For:/i.test(sectionTitle)) {
+        sectionType = 'watchOutFor';
+      } else if (/Key Regulations:/i.test(sectionTitle)) {
+        sectionType = 'keyRegulations';
       }
-    }
-    
-    // Filter out any empty bullet points and clean them up
-    bulletPoints = bulletPoints
-      .filter(point => {
-        if (!point) return false;
-        // Remove bullet markers at the start of each line 
-        const cleanPoint = point.replace(/^[\s]*[•\*\-][\s]*/, '').trim();
-        return cleanPoint.length > 0;
-      })
-      .map(point => {
-        // Clean up each bullet point - remove any leading bullet markers
-        return point.replace(/^[\s]*[•\*\-][\s]*/, '').trim();
-      });
-    
-    // Add to processed sections
-    if (bulletPoints.length > 0) {
-      processedSections.push({
-        type: 'details',
-        title: "Key Details",
-        content: bulletPoints
-      });
-    } else {
-      processedSections.push({
-        type: 'details',
-        title: "Key Details",
-        content: detailsContent
-      });
-    }
-  }
-  
-  // Check if content has "Nimbywatch" section
-  const nimbyMatch = bodyContent.match(/Nimbywatch:?(.*?)(?=What to Watch Out For:|Key Regulations:|$)/si);
-  if (nimbyMatch && nimbyMatch[1]) {
-    processedSections.push({
-      type: 'nimby',
-      title: "Nimbywatch",
-      content: nimbyMatch[1].trim()
-    });
-  }
-
-  // Check if content has "What to Watch Out For" section
-  const watchOutForMatch = bodyContent.match(/What to Watch Out For:?(.*?)(?=Nimbywatch:|Key Regulations:|$)/si);
-  if (watchOutForMatch && watchOutForMatch[1]) {
-    processedSections.push({
-      type: 'watchOutFor',
-      title: "What to Watch Out For",
-      content: watchOutForMatch[1].trim()
-    });
-  }
-
-  // Check if content has "Key Regulations" section
-  const keyRegulationsMatch = bodyContent.match(/Key Regulations:?(.*?)(?=Nimbywatch:|What to Watch Out For:|$)/si);
-  if (keyRegulationsMatch && keyRegulationsMatch[1]) {
-    processedSections.push({
-      type: 'keyRegulations',
-      title: "Key Regulations",
-      content: keyRegulationsMatch[1].trim()
-    });
-  }
-  
-  // Look for emoji markers that indicate special sections
-  const findEmojiSections = (text, emojiPattern, sectionType, sectionTitle) => {
-    const regex = new RegExp(`(${emojiPattern})\\s*${sectionTitle}[:\\s]+(.*?)(?=(?:${emojiPattern})|$)`, 'gi');
-    const matches = [...text.matchAll(regex)];
-    if (matches.length > 0) {
-      matches.forEach(match => {
-        const content = match[2].trim();
-        if (content) {
+      
+      // Extract bullet points if any
+      const hasBulletPoints = sectionContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+      
+      // Process details section for bullet points
+      if (sectionType === 'details' && hasBulletPoints) {
+        // Extract bullet points
+        const bulletPoints = [];
+        const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
+        const bulletMatches = [...sectionContent.matchAll(bulletRegex)];
+        
+        bulletMatches.forEach(bulletMatch => {
+          const emoji = bulletMatch[1];
+          const text = bulletMatch[2].trim();
+          bulletPoints.push(`${emoji} ${text}`);
+        });
+        
+        if (bulletPoints.length > 0) {
           processedSections.push({
             type: sectionType,
-            title: sectionTitle,
-            content: content
+            title: sectionTitle.replace(/:$/, ''),
+            content: bulletPoints
           });
+          return;
         }
+      }
+      
+      // Add the section
+      processedSections.push({
+        type: sectionType,
+        title: sectionTitle.replace(/:$/, ''),
+        content: sectionContent
+      });
+    });
+  }
+  
+  // If no clear sections were found, try looking for emoji markers
+  if (processedSections.length === 0) {
+    // Look for emoji markers that indicate special sections
+    const findEmojiSections = (text, emojiPattern, sectionType, sectionTitle) => {
+      const regex = new RegExp(`(${emojiPattern})\\s*${sectionTitle}[:\\s]+(.*?)(?=(?:${emojiPattern})|$)`, 'gi');
+      const matches = [...text.matchAll(regex)];
+      if (matches.length > 0) {
+        matches.forEach(match => {
+          const content = match[2].trim();
+          if (content) {
+            processedSections.push({
+              type: sectionType,
+              title: sectionTitle,
+              content: content
+            });
+          }
+        });
+      }
+    };
+
+    // Look for Watch Out For sections with emoji indicators
+    findEmojiSections(bodyContent, '[👀🚫⚠️]', 'watchOutFor', 'What to Watch Out For');
+    
+    // Look for Key Regulations sections with emoji indicators
+    findEmojiSections(bodyContent, '[📝📃📜]', 'keyRegulations', 'Key Regulations');
+    
+    // Look for Nimbywatch sections with emoji indicators
+    findEmojiSections(bodyContent, '[🏠🏘️🏡]', 'nimby', 'Nimbywatch');
+  }
+  
+  // If we still don't have clear sections, create a basic structure
+  if (processedSections.length === 0) {
+    // Try to find key phrases to split content
+    const dealMatch = bodyContent.match(/.*?(?=(?:Key Details:|$))/s);
+    if (dealMatch && dealMatch[0].trim()) {
+      processedSections.push({
+        type: 'deal',
+        title: "What's the Deal",
+        content: dealMatch[0].trim()
+      });
+      
+      // Look for key details after the deal section
+      const detailsMatch = bodyContent.substring(dealMatch[0].length).match(/Key Details:(.*?)(?=(?:What to Watch Out For:|Nimbywatch:|$))/s);
+      if (detailsMatch && detailsMatch[1].trim()) {
+        processedSections.push({
+          type: 'details',
+          title: "Key Details",
+          content: detailsMatch[1].trim()
+        });
+      }
+    } else {
+      // If no clear structure, just treat it all as the "deal" section
+      processedSections.push({
+        type: 'deal',
+        title: "What's the Deal",
+        content: bodyContent
       });
     }
-  };
-
-  // Look for Watch Out For sections with emoji indicators
-  findEmojiSections(bodyContent, '[👀🚫⚠️]', 'watchOutFor', 'What to Watch Out For');
+  }
   
-  // Look for Key Regulations sections with emoji indicators
-  findEmojiSections(bodyContent, '[📝📃📜]', 'keyRegulations', 'Key Regulations');
-  
-  // Look for Nimbywatch sections with emoji indicators
-  findEmojiSections(bodyContent, '[🏠🏘️🏡]', 'nimby', 'Nimbywatch');
-  
-  // If no sections were found, provide the raw content as fallback
-  if (processedSections.length === 0) {
-    console.log('No structured sections found in storybook, using raw content as fallback');
-    
-    // Format the content for better display
-    const cleanContent = bodyContent
-      .split(/\n\n+/)
-      .map(paragraph => {
-        if (!paragraph.trim()) return '';
-        
-        // Format bullet points
-        paragraph = paragraph.replace(/^\*\s|-\s|•\s/g, '• ');
-        
-        // Format bold text
-        paragraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        return `<p>${paragraph}</p>`;
-      })
-      .filter(Boolean)
-      .join('\n');
-
-    // Check if we actually have content
-    if (cleanContent) {
-      return { 
-        header: header || 'Planning Application', 
-        content: cleanContent,
-        rawContent: bodyContent // Include the raw content for fallback
-      };
-    }
-  } else {
+  // If we have sections, return them structured
+  if (processedSections.length > 0) {
     console.log(`Found ${processedSections.length} storybook sections:`, 
       processedSections.map(s => s.type).join(', '));
     
