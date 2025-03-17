@@ -8,6 +8,11 @@
 declare global {
   interface Window {
     googleMapsLoaded?: () => void;
+    google?: {
+      maps?: any;
+      // Add potential other Google services that might be present
+      [key: string]: any;
+    };
   }
 }
 
@@ -56,14 +61,14 @@ export const resetGoogleMaps = (forceCleanup = false): void => {
       // Clean up the google.maps object specifically
       if (window.google.maps) {
         console.log('Cleaning up existing Google Maps object');
-        // @ts-ignore - Force delete the google.maps object
+        // Use delete with proper type handling
         delete window.google.maps;
       }
       
       // In extreme cases, remove the entire google object
       if (forceCleanup) {
         console.log('Forcing cleanup of entire google object');
-        // @ts-ignore - Force delete the google object
+        // Use delete with proper window typing
         delete window.google;
       }
     } catch (e) {

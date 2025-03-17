@@ -8,6 +8,11 @@
 declare global {
   interface Window {
     googleMapsLoaded?: () => void;
+    google?: {
+      maps?: any;
+      // Add any other Google services that might be used
+      [key: string]: any;
+    };
   }
 }
 
@@ -56,8 +61,20 @@ const cleanupExpiredKeyScripts = () => {
         delete window.google.maps;
         
         // If no other Google APIs are in use, remove the entire google object
-        if (!window.google.charts && !window.google.visualization) {
-          delete (window as any).google;
+        // Use a type-safe approach with hasOwnProperty checks
+        const googleObj = window.google;
+        let hasOtherApis = false;
+        
+        for (const key in googleObj) {
+          if (key !== 'maps' && Object.prototype.hasOwnProperty.call(googleObj, key)) {
+            hasOtherApis = true;
+            break;
+          }
+        }
+        
+        if (!hasOtherApis) {
+          console.log('🧹 No other Google APIs in use, removing google object');
+          delete window.google;
         }
       }
     }
