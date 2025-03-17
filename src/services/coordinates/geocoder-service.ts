@@ -26,6 +26,7 @@ export const getGoogleGeocoder = (): google.maps.Geocoder | null => {
     // Log successful geocoder creation for debugging
     console.log('✅ Creating Google Geocoder');
     console.log('Current hostname:', getCurrentHostname());
+    console.log('Using API key ending with:', getGoogleMapsApiKey().slice(-6));
     return new google.maps.Geocoder();
   } catch (error) {
     console.error('❌ Error creating Google Geocoder:', error);
@@ -48,7 +49,7 @@ export const testGeocoder = async (): Promise<{success: boolean, status?: string
     if (!geocoder) {
       return {
         success: false,
-        error: 'Geocoder not available'
+        error: 'Geocoder not available - Maps API not loaded'
       };
     }
     

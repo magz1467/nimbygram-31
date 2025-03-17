@@ -12,44 +12,50 @@ export const useSearchLogger = () => {
       console.log(`Logging search: ${postcode} with status: ${status}`);
       console.log('Current hostname:', window.location.hostname);
       
-      // Use 'Post Code' instead of 'search_term' as that's the actual column name
-      const { error } = await supabase
-        .from('Searches')
-        .insert({
-          'Post Code': postcode,  // This is the correct column name
-          'Status': status,
-          'User_logged_in': !!session?.user
-        });
+      // Try both column naming conventions to handle different environments
+      try {
+        // First try with 'Post Code' convention (PascalCase)
+        const { error } = await supabase
+          .from('Searches')
+          .insert({
+            'Post Code': postcode,
+            'Status': status,
+            'User_logged_in': !!session?.user,
+            'Timestamp': new Date().toISOString()
+          });
 
-      if (error) {
-        console.error('Error logging search:', error);
-        console.error('Error details:', error.details, error.hint, error.message);
-        
-        // Handle case where column names might be different in production
-        if (error.message.includes('column') && error.message.includes('does not exist')) {
-          console.log('Attempting fallback with different column names...');
+        if (error) {
+          console.warn('Error with PascalCase column names:', error);
           
-          // Try with snake_case column names as fallback
-          const { error: fallbackError } = await supabase
-            .from('Searches')
-            .insert({
-              'search_term': postcode,
-              'status': status.toLowerCase(),
-              'user_logged_in': !!session?.user
-            });
-            
-          if (fallbackError) {
-            console.error('Fallback search logging also failed:', fallbackError);
+          // If that fails, try with snake_case convention
+          if (error.message.includes('column') && error.message.includes('does not exist')) {
+            const { error: snakeCaseError } = await supabase
+              .from('Searches')
+              .insert({
+                'search_term': postcode,
+                'status': status.toLowerCase(),
+                'user_logged_in': !!session?.user,
+                'timestamp': new Date().toISOString()
+              });
+              
+            if (snakeCaseError) {
+              console.error('Snake case search logging also failed:', snakeCaseError);
+            } else {
+              console.log('Snake case search logging succeeded');
+            }
           } else {
-            console.log('Fallback search logging succeeded');
+            // Error is not related to column names
+            console.error('Search logging error (not column-related):', error);
           }
+        } else {
+          console.log('PascalCase search logging succeeded');
         }
-      } else {
-        console.log('Search logged successfully');
+      } catch (insertError) {
+        console.error('Exception during search logging attempt:', insertError);
       }
     } catch (err) {
       // More detailed error logging for debugging
-      console.error('Error logging search:', err);
+      console.error('Error in useSearchLogger:', err);
     }
   };
 

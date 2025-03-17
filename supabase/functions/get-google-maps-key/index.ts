@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    // IMPORTANT: Using the centralized API key to ensure consistency
+    // IMPORTANT: Always use the centralized API key value
     const apiKey = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
     
     // Log the request origin to help debug domain restriction issues

@@ -25,20 +25,48 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     // Get current user session (if logged in)
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Insert into Searches table
-    const { error } = await supabase
-      .from('Searches')
-      .insert({
-        search_term: searchTerm,
-        search_type: type,
-        tab: tab || 'unknown',
-        user_id: session?.user?.id || null,
-        timestamp: new Date().toISOString()
-      });
-    
-    if (error) {
-      console.error('Failed to log search to database:', error);
-      // Don't throw - we still want to return true to prevent breaking the app
+    // Try to handle differences in column naming between environments
+    try {
+      // First try with original column names
+      const { error } = await supabase
+        .from('Searches')
+        .insert({
+          search_term: searchTerm,
+          search_type: type,
+          tab: tab || 'unknown',
+          user_id: session?.user?.id || null,
+          timestamp: new Date().toISOString()
+        });
+      
+      if (error) {
+        console.warn('Search log failed with standard column names, trying alternate column names:', error);
+        
+        // If first attempt fails with a column name error, try with alternative column names
+        if (error.message.includes('column') && error.message.includes('does not exist')) {
+          // Try with alternative naming convention
+          const { error: altError } = await supabase
+            .from('Searches')
+            .insert({
+              'Post Code': searchTerm,
+              'Status': type,
+              'Tab': tab || 'unknown',
+              'User_logged_in': !!session?.user,
+              'Timestamp': new Date().toISOString()
+            });
+          
+          if (altError) {
+            console.error('Failed to log search with alternative column names too:', altError);
+          } else {
+            console.log('Search logged successfully with alternative column names');
+          }
+        } else {
+          console.error('Failed to log search to database:', error);
+        }
+      } else {
+        console.log('Search logged successfully with standard column names');
+      }
+    } catch (insertError) {
+      console.error('Exception during search logging:', insertError);
     }
     
     // Store this search in recent searches

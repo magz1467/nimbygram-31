@@ -22,27 +22,36 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
     
     console.log('🔍 Enhanced search location:', enhancedLocation);
     
-    // Try to load Google Maps
-    await ensureGoogleMapsLoaded();
-    
-    // Verify Google Maps API is working by running a test
+    // Run a preemptive test of the geocoder to check if API key is working
     const testResult = await testGeocoder();
+    console.log('🧪 Geocoder test result:', testResult);
+
     if (!testResult.success) {
-      console.warn('⚠️ Geocoder test failed:', testResult.error || testResult.status);
-      console.warn('⚠️ Will use fallback coordinates instead');
-      const fallbackCoords = useFallbackCoordinates(locationName);
+      console.warn('⚠️ Geocoder test failed, will try loading maps again:', testResult.error || testResult.status);
       
-      return {
-        coordinates: fallbackCoords as [number, number],
-        postcode: null
-      };
+      // Try to reload Google Maps
+      await ensureGoogleMapsLoaded();
+      
+      // Run the test again after reloading
+      const retestResult = await testGeocoder();
+      console.log('🧪 Geocoder retest result:', retestResult);
+      
+      if (!retestResult.success) {
+        console.warn('⚠️ Geocoder retest also failed, using fallback coordinates');
+        const fallbackCoords = useFallbackCoordinates(locationName);
+        
+        return {
+          coordinates: fallbackCoords as [number, number],
+          postcode: null
+        };
+      }
     }
     
     // Get the geocoder service
     const geocoder = getGoogleGeocoder();
     
     if (!geocoder) {
-      console.warn('⚠️ Geocoder not available, falling back to UK coordinates');
+      console.warn('⚠️ Geocoder not available after tests passed, using fallback coordinates');
       const fallbackCoords = useFallbackCoordinates(locationName);
       
       return {
@@ -70,6 +79,8 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
                   status === google.maps.GeocoderStatus.INVALID_REQUEST || 
                   status === google.maps.GeocoderStatus.REQUEST_DENIED) {
           console.error('🔍 Geocoder API key or request error:', status);
+          console.error('🔍 API key ending with:', getGoogleMapsApiKey().slice(-6));
+          console.error('🔍 Hostname:', getCurrentHostname());
           reject(new Error(`Geocoder API error: ${status}`));
         } else {
           reject(new Error(`Geocoder failed with status: ${status}`));

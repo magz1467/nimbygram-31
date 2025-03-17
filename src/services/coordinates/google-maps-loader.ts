@@ -111,7 +111,7 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
       
       // IMPORTANT: Ensure we're using the consistent key here
       // Add all necessary libraries: places, geocoding, geometry
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=weekly&callback=googleMapsLoaded`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding,geometry&v=quarterly&callback=googleMapsLoaded`;
       script.async = true;
       script.defer = true;
       script.id = 'google-maps-script'; // Add ID for easier identification
