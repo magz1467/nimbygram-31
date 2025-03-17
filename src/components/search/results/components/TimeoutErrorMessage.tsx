@@ -22,17 +22,20 @@ export const TimeoutErrorMessage = ({
      error.message.includes('canceling statement') ||
      error.message.includes('cancel'));
      
+  const isLargeAreaError = error && error.message.includes('large area');
   const isOutcodeError = error && error.message.includes('Invalid outcode');
 
   const locationTerm = displayTerm || searchTerm || postcode || 'this location';
 
-  // Determine appropriate error title and message
   let title = "Error loading results";
   let message = error ? error.message : `We couldn't find any planning applications for ${locationTerm}. Please try another search.`;
   
   if (isTimeoutError) {
-    title = "Search Timeout";
-    message = `The search for "${locationTerm}" is taking longer than expected. We've loaded some results, but there may be more. You can try a more specific location or different filters.`;
+    title = isLargeAreaError ? "Large Area Search" : "Search Timeout";
+    message = `The search for "${locationTerm}" covers a large area. For better results, try:
+    • Using a specific postcode
+    • Searching for a street name
+    • Using a smaller area within ${locationTerm}`;
   } else if (isOutcodeError) {
     title = "Partial Postcode Error";
     message = `"${locationTerm}" appears to be a partial postcode. Please try using a full postcode (e.g., SW1A 1AA) or a more specific location name.`;

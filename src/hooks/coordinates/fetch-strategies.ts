@@ -1,4 +1,3 @@
-
 import { detectErrorType } from "@/utils/errors";
 import { fetchCoordinatesFromPlaceId } from "@/services/coordinates/fetch-coordinates-by-place-id";
 import { fetchCoordinatesByLocationName } from "@/services/coordinates/fetch-coordinates-by-location-name";
@@ -39,7 +38,14 @@ export const fetchCoordinatesForTown = async (
 ) => {
   try {
     console.log('🏙️ Fetching coordinates for town:', townName);
-    const result = await fetchCoordinatesFromTown(townName);
+    
+    // Increase timeout for large cities
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Town search timeout')), 20000); // 20 seconds timeout
+    });
+    
+    const searchPromise = fetchCoordinatesFromTown(townName);
+    const result = await Promise.race([searchPromise, timeoutPromise]);
     
     if (isMounted && result) {
       console.log('🏙️ Found town coordinates:', result);
@@ -48,14 +54,11 @@ export const fetchCoordinatesForTown = async (
       return;
     }
     
-    // If town search fails, fall back to location name search
+    // Fallback to location name search with increased timeout
     console.log('🏙️ Town search failed, falling back to location name search');
     await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
   } catch (error) {
-    console.error('Error fetching coordinates for town name:', error);
-    
-    // Fall back to location name search if town search fails
-    console.log('🏙️ Town search error, falling back to location name search');
+    console.error('Error fetching town coordinates:', error);
     await fetchCoordinatesForLocationName(townName, isMounted, callbacks);
   }
 };

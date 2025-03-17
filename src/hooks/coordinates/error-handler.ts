@@ -1,16 +1,22 @@
-
 import { useToast } from "@/hooks/use-toast";
 
-// Define the Toast type to match what's expected
 type Toast = ReturnType<typeof useToast>["toast"];
 
 export const handleCoordinateError = (error: any, searchTerm: string, toast: Toast) => {
   console.error('Coordinate error:', error);
   
-  // Determine more specific error type
   const errorMessage = error?.message || 'Unknown error';
   
-  // Special handling for outcode errors
+  if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
+    console.log('Timeout error detected for large area search');
+    toast({
+      title: "Large Area Search",
+      description: `"${searchTerm}" is a large area. Try using a more specific location or postcode for better results.`,
+      variant: "default",
+    });
+    return;
+  }
+  
   if (errorMessage.includes('Invalid outcode')) {
     console.log('Outcode error detected, showing toast');
     toast({
