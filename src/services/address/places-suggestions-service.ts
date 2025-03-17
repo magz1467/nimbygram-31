@@ -39,7 +39,10 @@ export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Pr
           id: `fallback-${location}`,
           postcode: location.charAt(0).toUpperCase() + location.slice(1), // Capitalize first letter
           address: `${location.charAt(0).toUpperCase() + location.slice(1)}, United Kingdom`,
-          place_id: `fallback-${location}`
+          place_id: `fallback-${location}`,
+          country: 'United Kingdom',
+          nhs_ha: 'Unknown',
+          admin_district: 'Unknown'
         }));
       }
       
@@ -64,7 +67,10 @@ export const fetchAddressSuggestionsByPlacesAPI = async (searchTerm: string): Pr
               id: prediction.place_id,
               postcode: prediction.structured_formatting.main_text,
               address: prediction.description,
-              place_id: prediction.place_id
+              place_id: prediction.place_id,
+              country: 'United Kingdom', // Default to UK since we're restricting to UK
+              nhs_ha: '', // Required field but we don't have this info from Places API
+              admin_district: prediction.structured_formatting.secondary_text || '' // Use secondary text as district
             }));
             
             resolve(suggestions);
