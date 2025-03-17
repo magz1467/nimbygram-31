@@ -5,7 +5,6 @@ import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
 import { logRouteChange } from "@/utils/reloadTracker";
-import { Header } from "@/components/Header";
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -74,7 +73,6 @@ const SearchResultsPage = () => {
 
   return (
     <>
-      <Header />
       {!searchState?.searchTerm ? (
         <NoSearchStateView onPostcodeSelect={(postcode) => {
           // Use URL parameters instead of location state

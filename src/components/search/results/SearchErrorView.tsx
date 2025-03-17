@@ -1,5 +1,4 @@
 
-import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info } from "lucide-react";
 import { ErrorType } from "@/utils/errors";
@@ -94,7 +93,6 @@ export const SearchErrorView = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
         <ErrorIcon />
         <h2 className="text-2xl font-bold mb-4">{getErrorTitle()}</h2>

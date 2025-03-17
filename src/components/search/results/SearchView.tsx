@@ -6,7 +6,6 @@ import { ErrorView } from './search-views/ErrorView';
 import { ResultsView } from './search-views/ResultsView';
 import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
-import { Header } from '@/components/Header';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // This is the inner component that uses the search state context
@@ -108,8 +107,6 @@ export function SearchView({
 }: SearchViewProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <SearchStateProvider initialSearch={initialSearch}>
           <SearchViewContentWithCallbacks 
