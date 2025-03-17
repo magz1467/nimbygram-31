@@ -7,18 +7,42 @@ interface DealSectionProps {
 const formatBulletPoints = (content: string) => {
   if (!content) return null;
   
+  // Check if content contains bullet point markers
   if (content.includes('•') || content.includes('*') || content.includes('-')) {
-    const parts = content.split(/(?:•|\*|-)\s+/).filter(Boolean);
-    if (parts.length > 1) {
-      return (
-        <ul className="list-disc pl-5 space-y-1 mt-2 text-left">
-          {parts.map((part, idx) => (
-            <li key={idx} className="pl-1 mb-1.5">{part.trim()}</li>
-          ))}
-        </ul>
-      );
+    // Split by common bullet point markers, supporting emoji bullet points
+    // Look for bullet points that might be followed by emoji characters
+    const bulletPointRegex = /(?:^|\n)\s*(?:[•\*\-]|\p{Emoji_Presentation})\s*/gu;
+    const parts = content.split(bulletPointRegex).filter(Boolean);
+    
+    // Check if we have valid parts after splitting
+    if (parts.length > 1 || bulletPointRegex.test(content)) {
+      // Extract bullet points with their markers using regex
+      const matches = [...content.matchAll(/(?:^|\n)\s*((?:[•\*\-]|\p{Emoji_Presentation})\s*)(.*?)(?=(?:\n\s*(?:[•\*\-]|\p{Emoji_Presentation})\s*|$))/gsu)];
+      
+      if (matches.length > 0) {
+        return (
+          <ul className="list-none pl-0 space-y-2 mt-2 text-left">
+            {matches.map((match, idx) => {
+              const marker = match[1]?.trim() || '•';
+              const text = match[2]?.trim();
+              
+              // Skip empty bullet points
+              if (!text) return null;
+              
+              return (
+                <li key={idx} className="flex items-start gap-2 mb-2">
+                  <span className="flex-shrink-0">{marker}</span>
+                  <span>{text}</span>
+                </li>
+              );
+            })}
+          </ul>
+        );
+      }
     }
   }
+  
+  // Fallback to regular paragraph if no bullet points detected
   return <p className="mt-2 text-left">{content}</p>;
 };
 
