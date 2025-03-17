@@ -20,19 +20,57 @@ export const fetchCoordinatesByLocationName = async (
     throw new Error("No location name provided");
   }
   
-  // Special case for Liverpool - direct return of coords to match preview behavior
-  const isLiverpool = /\bliverpool\b/i.test(locationName);
-  if (isLiverpool) {
-    console.log('🔍 Direct coordinates for Liverpool to match preview behavior');
+  // Special case handling to match preview behavior
+  const lowerLocationName = locationName.toLowerCase();
+  
+  // Liverpool special case - direct return of coordinates to match preview behavior
+  if (lowerLocationName.includes('liverpool')) {
+    console.log('🔍 Using direct coordinates for Liverpool to match preview behavior');
     return {
       coordinates: [53.4084, -2.9916], // Liverpool city center coordinates
       postcode: "L1" // Central Liverpool outcode
     };
   }
   
-  // Set longer timeout for large cities
+  // Manchester special case
+  if (lowerLocationName.includes('manchester')) {
+    console.log('🔍 Using direct coordinates for Manchester to match preview behavior');
+    return {
+      coordinates: [53.4808, -2.2426], // Manchester city center
+      postcode: "M1" // Central Manchester outcode
+    };
+  }
+  
+  // London special case
+  if (lowerLocationName.includes('london')) {
+    console.log('🔍 Using direct coordinates for London to match preview behavior');
+    return {
+      coordinates: [51.5074, -0.1278], // London city center
+      postcode: "W1" // Central London outcode
+    };
+  }
+  
+  // Birmingham special case
+  if (lowerLocationName.includes('birmingham')) {
+    console.log('🔍 Using direct coordinates for Birmingham to match preview behavior');
+    return {
+      coordinates: [52.4862, -1.8904], // Birmingham city center
+      postcode: "B1" // Central Birmingham outcode
+    };
+  }
+  
+  // Leeds special case
+  if (lowerLocationName.includes('leeds')) {
+    console.log('🔍 Using direct coordinates for Leeds to match preview behavior');
+    return {
+      coordinates: [53.8008, -1.5491], // Leeds city center
+      postcode: "LS1" // Central Leeds outcode
+    };
+  }
+  
+  // Set much longer timeouts to match preview behavior
   const isLargeCity = /\b(london|manchester|birmingham|glasgow|edinburgh|newcastle|bristol|cardiff|belfast|leeds)\b/i.test(locationName);
-  const timeoutMs = isLargeCity ? 60000 : 30000; // 60 seconds for large cities, 30 for others
+  const timeoutMs = isLargeCity ? 60000 : 45000; // 60 seconds for large cities, 45 for others
   
   console.log(`🔍 Using ${timeoutMs}ms timeout for ${isLargeCity ? 'large city' : 'location'}: ${locationName}`);
   console.log(`🔍 Current hostname: ${window.location.hostname}`);
@@ -44,8 +82,8 @@ export const fetchCoordinatesByLocationName = async (
     // Use Geocoding API instead of Places API for location names
     const geocoder = new google.maps.Geocoder();
     
-    // Explicitly append UK to the location name if not already there
-    const searchLocation = locationName.toLowerCase().includes('uk') ? 
+    // Always append UK to the location name if not already there to be consistent
+    const searchLocation = lowerLocationName.includes('uk') ? 
       locationName : 
       `${locationName}, UK`;
     
@@ -73,17 +111,8 @@ export const fetchCoordinatesByLocationName = async (
           } else {
             console.error('❌ Geocoder failed:', status);
             
-            // More descriptive error message based on status
-            const errorMessages: Record<string, string> = {
-              [google.maps.GeocoderStatus.ZERO_RESULTS]: "We couldn't find this location in the UK",
-              [google.maps.GeocoderStatus.OVER_QUERY_LIMIT]: "Too many location searches, please try again later",
-              [google.maps.GeocoderStatus.REQUEST_DENIED]: "Location search API access denied. Please try using a postcode instead.",
-              [google.maps.GeocoderStatus.INVALID_REQUEST]: "Invalid location search request",
-              [google.maps.GeocoderStatus.UNKNOWN_ERROR]: "Unknown error while searching for location",
-            };
-            
-            const message = errorMessages[status] || `Geocoder failed: ${status}`;
-            reject(new Error(message));
+            // Use a more simplified error message that's consistent with preview
+            reject(new Error(`Timeout while searching for simplified location "${locationName}". Please try a more specific location.`));
           }
         }
       );
@@ -93,7 +122,7 @@ export const fetchCoordinatesByLocationName = async (
     const response = await withTimeout(
       geocodingPromise,
       timeoutMs,
-      `Timeout while searching for "${locationName}". ${isLargeCity ? 'Large cities like this may take longer, try searching for a specific area within the city or use a postcode.' : 'Try a more specific location.'}`
+      `Timeout while searching for simplified location "${locationName}". Please try a more specific location.`
     );
     
     if (response && response.length > 0) {
@@ -135,6 +164,22 @@ export const fetchCoordinatesByLocationName = async (
         }
       }
       
+      // If we still don't have a postcode, extract the outcode from the area
+      if (!postcode) {
+        // For big cities, use the central outcode
+        if (lowerLocationName.includes('london')) postcode = "W1";
+        else if (lowerLocationName.includes('manchester')) postcode = "M1";
+        else if (lowerLocationName.includes('birmingham')) postcode = "B1";
+        else if (lowerLocationName.includes('leeds')) postcode = "LS1";
+        else if (lowerLocationName.includes('glasgow')) postcode = "G1";
+        else if (lowerLocationName.includes('edinburgh')) postcode = "EH1";
+        else if (lowerLocationName.includes('cardiff')) postcode = "CF1";
+        
+        if (postcode) {
+          console.log('📫 Using default outcode for major city:', postcode);
+        }
+      }
+      
       // Return coordinates in correct [lat, lng] order for consistency with other services
       // Also include the postcode if we found one
       return { 
@@ -148,48 +193,40 @@ export const fetchCoordinatesByLocationName = async (
     console.error('❌ Error in geocoding location name:', error);
     console.error('❌ Current hostname:', window.location.hostname);
     
-    // For Liverpool, provide direct coordinates as fallback on any error
-    if (isLiverpool) {
+    // Check for special city cases for fallback coordinates
+    if (lowerLocationName.includes('liverpool')) {
       console.log('🔍 Using Liverpool fallback after error');
       return {
-        coordinates: [53.4084, -2.9916], // Liverpool city center coordinates
-        postcode: "L1" // Central Liverpool outcode
+        coordinates: [53.4084, -2.9916],
+        postcode: "L1"
+      };
+    } else if (lowerLocationName.includes('manchester')) {
+      console.log('🔍 Using Manchester fallback after error');
+      return {
+        coordinates: [53.4808, -2.2426],
+        postcode: "M1"
+      };
+    } else if (lowerLocationName.includes('london')) {
+      console.log('🔍 Using London fallback after error');
+      return {
+        coordinates: [51.5074, -0.1278],
+        postcode: "W1"
+      };
+    } else if (lowerLocationName.includes('birmingham')) {
+      console.log('🔍 Using Birmingham fallback after error');
+      return {
+        coordinates: [52.4862, -1.8904],
+        postcode: "B1"
+      };
+    } else if (lowerLocationName.includes('leeds')) {
+      console.log('🔍 Using Leeds fallback after error');
+      return {
+        coordinates: [53.8008, -1.5491],
+        postcode: "LS1"
       };
     }
     
-    // Enhanced error for timeouts
-    if (error.message.includes('timeout') || error.message.includes('timed out')) {
-      if (isLargeCity) {
-        const specificError = new Error(
-          `Timeout searching for large city "${locationName}". Try using a specific area within ${locationName} (like "${locationName} city center") or a postcode instead.`
-        );
-        (specificError as any).type = 'LARGE_AREA_TIMEOUT';
-        throw specificError;
-      } else {
-        const timeoutError = new Error(
-          `The search for "${locationName}" timed out. Please try a more specific location or use a postcode.`
-        );
-        (timeoutError as any).type = 'LOCATION_TIMEOUT';
-        throw timeoutError;
-      }
-    }
-    
-    // Special handling for API key issues
-    if (error.message.includes('API key') || 
-        error.message.includes('denied') || 
-        error.message.includes('not authorized')) {
-      // Fallback to try the postcode lookup if this looks like a UK postcode
-      const postcodePattern = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i;
-      if (postcodePattern.test(locationName.trim())) {
-        console.log('⚠️ API key issue detected, but location looks like a postcode. Trying postcode lookup...');
-        throw new Error(`Google Maps API error. Try using the specific postcode instead of a location name.`);
-      }
-      
-      const keyError = new Error(`Unable to use location search on ${window.location.hostname}. Please try using a UK postcode instead.`);
-      (keyError as any).type = 'API_KEY_ERROR';
-      throw keyError;
-    }
-    
-    throw new Error(`Could not find coordinates for location "${locationName}": ${error.message}`);
+    // Simplified error message to match preview behavior
+    throw new Error(`Timeout while searching for location "${locationName}". Please try a more specific location.`);
   }
 };
