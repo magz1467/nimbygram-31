@@ -1,3 +1,4 @@
+
 import { detectErrorType } from "@/utils/errors";
 import { fetchCoordinatesFromPlaceId } from "@/services/coordinates/fetch-coordinates-by-place-id";
 import { fetchCoordinatesByLocationName } from "@/services/coordinates/fetch-coordinates-by-location-name";
@@ -45,7 +46,12 @@ export const fetchCoordinatesForTown = async (
     });
     
     const searchPromise = fetchCoordinatesFromTown(townName);
-    const result = await Promise.race([searchPromise, timeoutPromise]);
+    
+    // Add type assertion to handle the unknown type
+    const result = await Promise.race([searchPromise, timeoutPromise]) as { 
+      coordinates: [number, number]; 
+      postcode: string | null;
+    };
     
     if (isMounted && result) {
       console.log('🏙️ Found town coordinates:', result);

@@ -1,3 +1,4 @@
+
 /**
  * Utility for loading Google Maps script - consolidated version
  */
@@ -65,6 +66,8 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
     }
     
     console.log('Loading Google Maps script...');
+    console.log('Current host:', window.location.hostname);
+    console.log('Using API key that ends with:', GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 6));
     
     // Create script element with explicit libraries
     const script = document.createElement('script');
@@ -91,9 +94,17 @@ export const ensureGoogleMapsLoaded = async (): Promise<void> => {
                     status === google.maps.GeocoderStatus.ERROR) {
             const apiError = new Error(`Google Maps API key issue: ${status}`);
             console.error(apiError);
+            console.error('API key may be restricted to specific domains or has usage limits');
             loadError = apiError;
             isLoading = false;
             reject(apiError);
+          } else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+            const limitError = new Error('Google Maps API quota exceeded');
+            console.error(limitError);
+            console.error('The API key has reached its daily quota limit');
+            loadError = limitError;
+            isLoading = false;
+            reject(limitError);
           } else {
             // Other statuses may be normal (e.g., ZERO_RESULTS)
             console.log('Geocoder test status:', status);
@@ -132,3 +143,6 @@ export const resetGoogleMapsLoader = () => {
   loadError = null;
   console.log('Google Maps loader has been reset');
 };
+
+// Export for debugging
+export const getGoogleMapsApiKey = () => GOOGLE_MAPS_API_KEY;
