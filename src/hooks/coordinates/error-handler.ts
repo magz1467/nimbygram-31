@@ -10,6 +10,17 @@ export const handleCoordinateError = (error: any, searchTerm: string, toast: Toa
   // Determine more specific error type
   const errorMessage = error?.message || 'Unknown error';
   
+  // Special handling for outcode errors
+  if (errorMessage.includes('Invalid outcode')) {
+    console.log('Outcode error detected, showing toast');
+    toast({
+      title: "Location format issue",
+      description: `"${searchTerm}" appears to be a partial postcode. Please try using a full postcode or a specific location name.`,
+      variant: "destructive",
+    });
+    return;
+  }
+  
   if (errorMessage.includes('Invalid postcode') && !errorMessage.includes('Invalid outcode')) {
     console.log('Invalid postcode error detected, showing toast');
     toast({

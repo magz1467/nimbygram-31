@@ -41,30 +41,35 @@ export const performFallbackSearch = async (
       }
     }
     
-    const { data, error } = await query;
+    // Add a timeout for the query
+    const queryPromise = query;
+    const timeoutPromise = new Promise<{ data: null, error: Error }>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Query timeout after 15 seconds'));
+      }, 15000);
+    });
     
-    if (error) {
-      console.error('Fallback search error:', error);
-      throw error;
+    const result = await Promise.race([queryPromise, timeoutPromise]);
+    
+    if (result.error) {
+      console.error('Fallback search error:', result.error);
+      throw result.error;
     }
     
-    console.log(`✅ Fallback search found ${data?.length || 0} applications`);
+    console.log(`✅ Fallback search found ${result.data?.length || 0} applications`);
     
     // Check if storybook data is present in the first result
-    if (data && data.length > 0) {
+    if (result.data && result.data.length > 0) {
       console.log('First fallback result storybook check:', {
-        hasStorybook: Boolean(data[0].storybook),
-        id: data[0].id
+        hasStorybook: Boolean(result.data[0].storybook),
+        id: result.data[0].id
       });
-      
-      if (data[0].storybook) {
-        console.log(`Storybook preview: ${data[0].storybook.substring(0, 100)}...`);
-      }
     }
     
-    return transformApplicationsData(data || []);
+    return transformApplicationsData(result.data || []);
   } catch (err) {
     console.error('Error in fallback search:', err);
+    // Return empty array instead of throwing to prevent cascading errors
     return [];
   }
 };
