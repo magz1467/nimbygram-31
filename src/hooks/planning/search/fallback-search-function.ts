@@ -7,7 +7,12 @@ import { calculateBoundingBox } from "../utils/bounding-box";
 import { SearchFilters } from "./types";
 
 // Cache storage for recent application data
-const applicationCache: Record<string, any[]> = {};
+interface CacheEntry {
+  data: any[];
+  timestamp: number;
+}
+
+const applicationCache: Record<string, CacheEntry> = {};
 const MAX_CACHE_SIZE = 20;
 const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 
