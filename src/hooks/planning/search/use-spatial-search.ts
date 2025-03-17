@@ -24,32 +24,28 @@ export const useSpatialSearch = () => {
         });
 
       // Add timeout to query execution
-      const response = await withTimeout<PostgrestResponse<any>>(
+      const response: PostgrestResponse<any> = await withTimeout(
         query, 
         30000, 
         'Spatial search timeout'
       );
       
-      if (response && 'data' in response && 'error' in response) {
-        const { data, error } = response;
-        
-        if (error) {
-          console.error('Error in spatial search:', error);
-          // Check if it's a function not found error (common if PostGIS is not set up)
-          const isFunctionMissingError = 
-            error.message.includes('function') && 
-            (error.message.includes('does not exist') || error.message.includes('not found'));
-            
-          logSearchError('spatial', isFunctionMissingError ? 'function_missing' : 'database_error', JSON.stringify(error));
+      if (response.error) {
+        console.error('Error in spatial search:', response.error);
+        // Check if it's a function not found error (common if PostGIS is not set up)
+        const isFunctionMissingError = 
+          response.error.message.includes('function') && 
+          (response.error.message.includes('does not exist') || response.error.message.includes('not found'));
           
-          // Return error for caller to handle
-          return { data: [], error };
-        }
+        logSearchError('spatial', isFunctionMissingError ? 'function_missing' : 'database_error', JSON.stringify(response.error));
+        
+        // Return error for caller to handle
+        return { data: [], error: response.error };
+      }
 
-        if (data && Array.isArray(data)) {
-          console.log(`Found ${data.length} results from spatial search`);
-          return { data, error: null };
-        }
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`Found ${response.data.length} results from spatial search`);
+        return { data: response.data, error: null };
       }
       
       return { data: [], error: new Error('Invalid response format from database') };

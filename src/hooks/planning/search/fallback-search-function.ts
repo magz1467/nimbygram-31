@@ -92,55 +92,51 @@ export const performFallbackSearch = async (
     query = query.order('updated_at', { ascending: false }).limit(limit);
 
     // Add timeout to query execution
-    const response = await withTimeout<PostgrestResponse<any>>(
+    const response: PostgrestResponse<any> = await withTimeout(
       query,
       20000,
       'Fallback search timeout'
     );
     
-    if (response && 'data' in response && 'error' in response) {
-      const { data, error } = response;
-      
-      if (error) {
-        console.error('Error in fallback search:', error);
-        return [];
-      }
+    if (response.error) {
+      console.error('Error in fallback search:', response.error);
+      return [];
+    }
 
-      // Process and return results with distance calculations
-      if (data && Array.isArray(data)) {
-        const resultsWithDistance = data.map(app => {
-          const appLat = parseFloat(app.latitude);
-          const appLng = parseFloat(app.longitude);
-          
-          // Calculate distance in kilometers
-          const distance = calculateDistance(lat, lng, appLat, appLng);
-          
-          return {
-            ...app,
-            distance,
-            distance_miles: kmToMiles(distance)
-          };
-        });
+    // Process and return results with distance calculations
+    if (response.data && Array.isArray(response.data)) {
+      const resultsWithDistance = response.data.map(app => {
+        const appLat = parseFloat(app.latitude);
+        const appLng = parseFloat(app.longitude);
         
-        // Sort by distance
-        resultsWithDistance.sort((a, b) => a.distance - b.distance);
+        // Calculate distance in kilometers
+        const distance = calculateDistance(lat, lng, appLat, appLng);
         
-        // Store in cache
-        applicationCache[cacheKey] = {
-          data: resultsWithDistance,
-          timestamp: Date.now()
+        return {
+          ...app,
+          distance,
+          distance_miles: kmToMiles(distance)
         };
-        
-        // Maintain cache size
-        if (Object.keys(applicationCache).length > MAX_CACHE_SIZE) {
-          // Remove oldest entry
-          const oldestKey = Object.keys(applicationCache)
-            .sort((a, b) => applicationCache[a].timestamp - applicationCache[b].timestamp)[0];
-          delete applicationCache[oldestKey];
-        }
-        
-        return resultsWithDistance;
+      });
+      
+      // Sort by distance
+      resultsWithDistance.sort((a, b) => a.distance - b.distance);
+      
+      // Store in cache
+      applicationCache[cacheKey] = {
+        data: resultsWithDistance,
+        timestamp: Date.now()
+      };
+      
+      // Maintain cache size
+      if (Object.keys(applicationCache).length > MAX_CACHE_SIZE) {
+        // Remove oldest entry
+        const oldestKey = Object.keys(applicationCache)
+          .sort((a, b) => applicationCache[a].timestamp - applicationCache[b].timestamp)[0];
+        delete applicationCache[oldestKey];
       }
+      
+      return resultsWithDistance;
     }
     
     return [];

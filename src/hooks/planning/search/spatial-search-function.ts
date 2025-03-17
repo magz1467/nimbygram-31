@@ -38,34 +38,30 @@ export const performSpatialSearch = async (
     }
 
     // Add timeout to query execution
-    const response = await withTimeout<PostgrestResponse<any>>(
+    const response: PostgrestResponse<any> = await withTimeout(
       query, 
       30000, 
       'Spatial search timeout'
     );
     
-    if (response && 'data' in response && 'error' in response) {
-      const { data, error } = response;
-      
-      if (error) {
-        console.error('Error in spatial search:', error);
-        // If it's a function missing error, return null to trigger fallback
-        const isFunctionMissingError = 
-          error.message.includes('function') && 
-          (error.message.includes('does not exist') || error.message.includes('not found'));
-          
-        if (isFunctionMissingError) {
-          console.log('Spatial function not available, returning null to trigger fallback');
-          return null;
-        }
+    if (response.error) {
+      console.error('Error in spatial search:', response.error);
+      // If it's a function missing error, return null to trigger fallback
+      const isFunctionMissingError = 
+        response.error.message.includes('function') && 
+        (response.error.message.includes('does not exist') || response.error.message.includes('not found'));
         
-        return [];
+      if (isFunctionMissingError) {
+        console.log('Spatial function not available, returning null to trigger fallback');
+        return null;
       }
+      
+      return [];
+    }
 
-      if (data && Array.isArray(data)) {
-        console.log(`Found ${data.length} results from spatial search`);
-        return data;
-      }
+    if (response.data && Array.isArray(response.data)) {
+      console.log(`Found ${response.data.length} results from spatial search`);
+      return response.data;
     }
     
     return [];

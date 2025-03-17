@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/utils/fetchUtils";
 import { SearchFilters } from "./types";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 interface BatchSearchRequest {
   coordinates: [number, number];
@@ -60,26 +60,22 @@ export const batchSearchLocations = async (
     console.log(`Executing batch search for ${uniqueRequests.length} locations`);
     
     // Execute RPC function for batch search
-    const response = await withTimeout(
+    const response: PostgrestResponse<any> = await withTimeout(
       supabase.rpc('batch_location_search', batchParams),
       40000, // Longer timeout for batch queries
       'Batch search timeout'
     );
     
-    // TypeScript safe response handling
-    if (response && typeof response === 'object' && 'error' in response) {
-      const responseWithError = response as { error: any };
-      if (responseWithError.error) {
-        console.error('Error in batch search:', responseWithError.error);
-        return fallbackToIndividualQueries(uniqueRequests);
-      }
+    // Fixed type handling for Postgrest response
+    if (response && response.error) {
+      console.error('Error in batch search:', response.error);
+      return fallbackToIndividualQueries(uniqueRequests);
     }
     
-    if (response && typeof response === 'object' && 'data' in response) {
-      const responseWithData = response as { data: any };
-      if (responseWithData.data && Array.isArray(responseWithData.data)) {
+    if (response && response.data) {
+      if (Array.isArray(response.data)) {
         // Process the batched results into individual result sets
-        return processBatchedResults(responseWithData.data, uniqueRequests);
+        return processBatchedResults(response.data, uniqueRequests);
       }
     }
     
@@ -152,7 +148,7 @@ const singleLocationSearch = async (
   }
   
   // Execute the query with timeout
-  const response = await withTimeout(
+  const response: PostgrestResponse<any> = await withTimeout(
     query.order('updated_at', { ascending: false }).limit(100),
     20000,
     'Single location search timeout'
@@ -161,12 +157,10 @@ const singleLocationSearch = async (
   const key = getSearchRequestKey(coordinates, radius, filters);
   
   // Handle response safely
-  if (response && typeof response === 'object' && 'data' in response) {
-    const responseWithData = response as { data: any[] };
-    
-    if (Array.isArray(responseWithData.data)) {
+  if (response && response.data) {
+    if (Array.isArray(response.data)) {
       // Add distance calculations and return
-      const resultsWithDistance = responseWithData.data.map(item => {
+      const resultsWithDistance = response.data.map(item => {
         // Calculate distance using coordinates
         // For this example, we just return the item
         return item;
