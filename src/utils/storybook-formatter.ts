@@ -107,21 +107,54 @@ export const formatStorybook = (content: string | null) => {
     });
   }
   
-  // Check if content has "Key Details" or "The Details" section
+  // Extract and properly format bullet points in the Key Details section
   const detailsMatch = bodyContent.match(/(?:Key Details:|The Details:)(.*?)(?=Nimbywatch:|What to Watch Out For:|Key Regulations:|Considerations:|$)/si);
   if (detailsMatch && detailsMatch[1]) {
-    // Extract bullet points
+    // Strip the content and identify bullet points properly
     const detailsContent = detailsMatch[1].trim();
-    const bulletPoints = detailsContent.split(/(?:•|\*|-)\s+/)
-      .map(point => point.trim())
-      .filter(point => {
-        // Enhanced empty point detection
-        if (!point) return false;
-        const contentWithoutFormatting = point.replace(/[\s•\-*<>\/strongem]/g, '');
-        return contentWithoutFormatting.length > 0;
-      }); // Filter out empty bullet points more aggressively
     
-    // If we extracted bullet points, use them; otherwise use the whole content
+    // First, look for explicit bullet points (•, *, -, or emoji followed by space)
+    let bulletPoints = [];
+    const bulletPattern = /(?:^|\n)[\s]*(?:[•\*\-]|🏠|🔍|🏢|✏️|📝|🔑|📃|🔨|🚧|🔔|⚙️|🔧|📈|📊|📋|📑|✅|❌|⚠️|🚫|👀)[\s]+(.*?)(?=(?:^|\n)[\s]*(?:[•\*\-]|🏠|🔍|🏢|✏️|📝|🔑|📃|🔨|🚧|🔔|⚙️|🔧|📈|📊|📋|📑|✅|❌|⚠️|🚫|👀)[\s]+|$)/gs;
+    const matches = [...detailsContent.matchAll(bulletPattern)];
+    
+    if (matches.length > 0) {
+      // We have proper bullet points
+      bulletPoints = matches.map(match => match[1].trim()).filter(Boolean);
+    } else {
+      // Try to split by newlines and look for patterns that suggest bullet points
+      const lines = detailsContent.split(/\n/).map(line => line.trim()).filter(Boolean);
+      
+      // Check if most lines have similar prefixes or patterns
+      const similarPrefixes = lines.filter(line => 
+        line.match(/^[🏠🔍🏢✏️📝🔑📃🔨🚧🔔⚙️🔧📈📊📋📑✅❌⚠️🚫👀]/) ||
+        line.match(/^[A-Z][a-z]+ [a-z]+:/) ||
+        line.match(/^The [a-z]+/)
+      ).length > lines.length / 2;
+      
+      if (similarPrefixes) {
+        // These look like they should be bullet points
+        bulletPoints = lines;
+      } else {
+        // Just use the whole content if we can't identify clear bullets
+        bulletPoints = [detailsContent];
+      }
+    }
+    
+    // Filter out any empty bullet points and clean them up
+    bulletPoints = bulletPoints
+      .filter(point => {
+        if (!point) return false;
+        // Remove bullet markers at the start of each line 
+        const cleanPoint = point.replace(/^[\s]*[•\*\-][\s]*/, '').trim();
+        return cleanPoint.length > 0;
+      })
+      .map(point => {
+        // Clean up each bullet point - remove any leading bullet markers
+        return point.replace(/^[\s]*[•\*\-][\s]*/, '').trim();
+      });
+    
+    // Add to processed sections
     if (bulletPoints.length > 0) {
       processedSections.push({
         type: 'details',
@@ -138,7 +171,7 @@ export const formatStorybook = (content: string | null) => {
   }
   
   // Check if content has "Nimbywatch" section
-  const nimbyMatch = bodyContent.match(/Nimbywatch:(.*?)(?=What to Watch Out For:|Key Regulations:|$)/si);
+  const nimbyMatch = bodyContent.match(/Nimbywatch:?(.*?)(?=What to Watch Out For:|Key Regulations:|$)/si);
   if (nimbyMatch && nimbyMatch[1]) {
     processedSections.push({
       type: 'nimby',
@@ -148,7 +181,7 @@ export const formatStorybook = (content: string | null) => {
   }
 
   // Check if content has "What to Watch Out For" section
-  const watchOutForMatch = bodyContent.match(/What to Watch Out For:(.*?)(?=Nimbywatch:|Key Regulations:|$)/si);
+  const watchOutForMatch = bodyContent.match(/What to Watch Out For:?(.*?)(?=Nimbywatch:|Key Regulations:|$)/si);
   if (watchOutForMatch && watchOutForMatch[1]) {
     processedSections.push({
       type: 'watchOutFor',
@@ -158,7 +191,7 @@ export const formatStorybook = (content: string | null) => {
   }
 
   // Check if content has "Key Regulations" section
-  const keyRegulationsMatch = bodyContent.match(/Key Regulations:(.*?)(?=Nimbywatch:|What to Watch Out For:|$)/si);
+  const keyRegulationsMatch = bodyContent.match(/Key Regulations:?(.*?)(?=Nimbywatch:|What to Watch Out For:|$)/si);
   if (keyRegulationsMatch && keyRegulationsMatch[1]) {
     processedSections.push({
       type: 'keyRegulations',
@@ -167,16 +200,17 @@ export const formatStorybook = (content: string | null) => {
     });
   }
   
-  // Also look for these sections within bullet points
-  const processWatchOutForInBulletPoints = (text) => {
-    const matches = text.match(/(?:👀|🚫|⚠️)\s*What to Watch Out For[:\s]+(.*?)(?=(?:👀|🚫|⚠️)\s*|$)/gi);
-    if (matches && matches.length > 0) {
+  // Look for emoji markers that indicate special sections
+  const findEmojiSections = (text, emojiPattern, sectionType, sectionTitle) => {
+    const regex = new RegExp(`(${emojiPattern})\\s*${sectionTitle}[:\\s]+(.*?)(?=(?:${emojiPattern})|$)`, 'gi');
+    const matches = [...text.matchAll(regex)];
+    if (matches.length > 0) {
       matches.forEach(match => {
-        const content = match.replace(/(?:👀|🚫|⚠️)\s*What to Watch Out For[:\s]+/i, '').trim();
+        const content = match[2].trim();
         if (content) {
           processedSections.push({
-            type: 'watchOutFor',
-            title: "What to Watch Out For",
+            type: sectionType,
+            title: sectionTitle,
             content: content
           });
         }
@@ -184,25 +218,14 @@ export const formatStorybook = (content: string | null) => {
     }
   };
 
-  const processKeyRegulationsInBulletPoints = (text) => {
-    const matches = text.match(/(?:📝|📃|📜)\s*Key Regulations[:\s]+(.*?)(?=(?:📝|📃|📜)\s*|$)/gi);
-    if (matches && matches.length > 0) {
-      matches.forEach(match => {
-        const content = match.replace(/(?:📝|📃|📜)\s*Key Regulations[:\s]+/i, '').trim();
-        if (content) {
-          processedSections.push({
-            type: 'keyRegulations',
-            title: "Key Regulations",
-            content: content
-          });
-        }
-      });
-    }
-  };
-
-  // Process the entire body for inline sections
-  processWatchOutForInBulletPoints(bodyContent);
-  processKeyRegulationsInBulletPoints(bodyContent);
+  // Look for Watch Out For sections with emoji indicators
+  findEmojiSections(bodyContent, '[👀🚫⚠️]', 'watchOutFor', 'What to Watch Out For');
+  
+  // Look for Key Regulations sections with emoji indicators
+  findEmojiSections(bodyContent, '[📝📃📜]', 'keyRegulations', 'Key Regulations');
+  
+  // Look for Nimbywatch sections with emoji indicators
+  findEmojiSections(bodyContent, '[🏠🏘️🏡]', 'nimby', 'Nimbywatch');
   
   // If no sections were found, provide the raw content as fallback
   if (processedSections.length === 0) {
@@ -215,7 +238,7 @@ export const formatStorybook = (content: string | null) => {
         if (!paragraph.trim()) return '';
         
         // Format bullet points
-        paragraph = paragraph.replace(/^\*\s|-\s/g, '• ');
+        paragraph = paragraph.replace(/^\*\s|-\s|•\s/g, '• ');
         
         // Format bold text
         paragraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');

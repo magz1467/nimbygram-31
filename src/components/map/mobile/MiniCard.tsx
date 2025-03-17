@@ -30,6 +30,15 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
   // Get the best available image
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
+  // Extract emoji from beginning of text
+  const extractEmoji = (text: string) => {
+    const emojiMatch = text.match(/^([\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+    return {
+      emoji: emojiMatch ? emojiMatch[1] : null,
+      text: emojiMatch ? text.substring(emojiMatch[0].length).trim() : text
+    };
+  };
+
   useEffect(() => {
     console.log('🔍 MiniCard mounted with styles:', {
       container: document.querySelector('.fixed.bottom-0')?.className,
@@ -90,18 +99,28 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
               <div className="mb-2">
                 <p className="font-medium">Key Details</p>
                 {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
-                  <ul className="list-disc pl-4 mt-1">
+                  <ul className="space-y-1.5 mt-1">
                     {formattedStorybook.sections
                       .find(s => s.type === 'details')
                       ?.content
                       .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
-                      .slice(0, 2) // Show just first 2 points for compact display
-                      .map((detail: string, index: number) => (
-                        <li key={index}>{detail}</li>
-                      ))}
-                      {(formattedStorybook.sections.find(s => s.type === 'details')?.content as string[]).filter((detail: string) => detail && detail.trim().length > 0).length > 2 && (
-                        <li className="text-primary">...more</li>
-                      )}
+                      .slice(0, 3) // Show just first 3 points for compact display
+                      .map((detail: string, index: number) => {
+                        const { emoji, text } = extractEmoji(detail);
+                        return (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="min-w-[5px] min-h-[5px] w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                            <div className="flex-1">
+                              {emoji && <span className="mr-1">{emoji}</span>}
+                              <span>{text}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    {(formattedStorybook.sections.find(s => s.type === 'details')?.content as string[])
+                        .filter((detail: string) => detail && detail.trim().length > 0).length > 3 && (
+                      <li className="text-primary text-xs pl-3 mt-1">...more details</li>
+                    )}
                   </ul>
                 ) : (
                   <p>{formattedStorybook.sections.find(s => s.type === 'details')?.content}</p>
@@ -111,8 +130,10 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             
             {formattedStorybook.sections.find(s => s.type === 'watchOutFor') && (
               <div className="mt-2 p-2 bg-pink-50 rounded-md">
-                <p className="font-medium text-pink-800">What to Watch Out For</p>
-                <p className="text-pink-700">
+                <p className="font-medium text-pink-800 flex items-center gap-1">
+                  <span>👀</span> What to Watch Out For
+                </p>
+                <p className="text-pink-700 mt-1">
                   {formattedStorybook.sections.find(s => s.type === 'watchOutFor')?.content}
                 </p>
               </div>
@@ -120,8 +141,10 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             
             {formattedStorybook.sections.find(s => s.type === 'keyRegulations') && (
               <div className="mt-2 p-2 bg-green-50 rounded-md">
-                <p className="font-medium text-green-800">Key Regulations</p>
-                <p className="text-green-700">
+                <p className="font-medium text-green-800 flex items-center gap-1">
+                  <span>📃</span> Key Regulations
+                </p>
+                <p className="text-green-700 mt-1">
                   {formattedStorybook.sections.find(s => s.type === 'keyRegulations')?.content}
                 </p>
               </div>
@@ -129,8 +152,10 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             
             {formattedStorybook.sections.find(s => s.type === 'nimby') && (
               <div className="mt-2 p-2 bg-purple-50 rounded-md">
-                <p className="font-medium text-purple-800">Nimbywatch</p>
-                <p className="text-purple-700">
+                <p className="font-medium text-purple-800 flex items-center gap-1">
+                  <span>🏘️</span> Nimbywatch
+                </p>
+                <p className="text-purple-700 mt-1">
                   {formattedStorybook.sections.find(s => s.type === 'nimby')?.content}
                 </p>
               </div>

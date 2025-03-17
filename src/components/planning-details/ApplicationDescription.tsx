@@ -24,6 +24,15 @@ const transformText = (text: string) => {
   }).join(' ');
 };
 
+// Extract emoji from beginning of text
+const extractEmoji = (text: string) => {
+  const emojiMatch = text.match(/^([\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+  return {
+    emoji: emojiMatch ? emojiMatch[1] : null,
+    text: emojiMatch ? text.substring(emojiMatch[0].length).trim() : text
+  };
+};
+
 export const ApplicationDescription = ({ application }: ApplicationDescriptionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -53,23 +62,30 @@ export const ApplicationDescription = ({ application }: ApplicationDescriptionPr
             {formattedStorybook.sections.find(s => s.type === 'details') && (
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-1">Key Details</h4>
-                <div className="text-sm space-y-2 ml-5">
+                <div className="text-sm space-y-2">
                   {Array.isArray(formattedStorybook.sections.find(s => s.type === 'details')?.content) ? (
-                    formattedStorybook.sections
-                      .find(s => s.type === 'details')
-                      ?.content
-                      .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
-                      .map((detail: string, index: number) => (
-                        <div key={index} className="flex gap-2">
-                          <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                          <div 
-                            className="flex-1"
-                            dangerouslySetInnerHTML={{ 
-                              __html: detail.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
-                            }}
-                          />
-                        </div>
-                      ))
+                    <ul className="list-none ml-0 space-y-2">
+                      {formattedStorybook.sections
+                        .find(s => s.type === 'details')
+                        ?.content
+                        .filter((detail: string) => detail && detail.trim().length > 0) // Filter out empty bullet points
+                        .map((detail: string, index: number) => {
+                          const { emoji, text } = extractEmoji(detail);
+                          return (
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                              <div className="flex-1 break-words">
+                                {emoji && <span className="mr-1.5">{emoji}</span>}
+                                <span 
+                                  dangerouslySetInnerHTML={{ 
+                                    __html: text.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
+                                  }}
+                                />
+                              </div>
+                            </li>
+                          );
+                        })}
+                    </ul>
                   ) : (
                     <div 
                       dangerouslySetInnerHTML={{ 

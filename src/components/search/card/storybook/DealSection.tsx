@@ -18,10 +18,20 @@ export const DealSection: FC<DealSectionProps> = ({ content }) => {
   // Return null if content is effectively empty
   if (isEmptyContent(content)) return null;
   
-  // Process HTML tags in content
-  const processedContent = content
+  // Clean up the content - handle potential duplicated "What's the Deal:" prefixes
+  let processedContent = content
+    .replace(/^What['']s the Deal:?\s*/i, '') // Remove redundant title at start
     .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
     .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
+  
+  // Check for bullet points in the deal section and format properly
+  if (processedContent.includes('•') || processedContent.includes('*') || processedContent.includes('-')) {
+    const parts = processedContent.split(/(?:•|\*|-)\s+/).filter(Boolean);
+    if (parts.length > 1) {
+      // This actually has bullet points
+      processedContent = parts.map(part => `<p>${part.trim()}</p>`).join('');
+    }
+  }
   
   return (
     <div className="prose prose-sm max-w-none">

@@ -1,4 +1,4 @@
-<lov-codelov-code>
+
 #root {
   margin: 0 auto;
   text-align: center;
@@ -145,4 +145,55 @@
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Improved bullet point styling */
+.bullet-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bullet-point::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  margin-top: 0.5rem;
+}
+
+/* Fix emoji spacing in bullet points */
+.emoji-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.emoji-bullet .emoji {
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+/* Better mobile list styling */
+@media (max-width: 768px) {
+  .list-disc {
+    padding-left: 1rem;
+  }
+  
+  .bullet-point::before {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Fix text overflow on small screens */
+  .text-gray-700, .text-gray-600 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
 }
