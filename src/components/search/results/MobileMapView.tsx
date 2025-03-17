@@ -2,8 +2,9 @@
 import { Application } from "@/types/planning";
 import { MapContent } from "@/components/map/MapContent";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { ArrowLeft, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { SearchResultCard } from "@/components/search/SearchResultCard";
 
 interface MobileMapViewProps {
   applications: Application[];
@@ -25,6 +26,7 @@ export const MobileMapView = ({
   postcode,
 }: MobileMapViewProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [showFullCard, setShowFullCard] = useState(false);
   
   // When mobile map view mounts, prevent body scrolling
   useEffect(() => {
@@ -55,29 +57,47 @@ export const MobileMapView = ({
     };
   }, [applications, selectedId]);
 
+  // Get the selected application
+  const selectedApplication = applications.find(app => app.id === selectedId);
+
   return (
     <div 
-      className="fixed inset-0 z-[9999] bg-white overflow-hidden"
+      className="fixed inset-0 z-[9999] bg-white overflow-hidden flex flex-col"
       ref={overlayRef}
     >
-      <div className="absolute top-4 right-4 z-[10000]">
+      {/* Header with back button */}
+      <div className="bg-white p-4 shadow-sm z-[10000] flex items-center justify-between">
         <Button 
           onClick={handleCloseMap}
-          className="bg-white text-gray-800 hover:bg-gray-100 p-2 rounded-full shadow-md"
+          variant="ghost"
+          className="flex items-center gap-2 text-gray-800"
+          size="sm"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to list
+        </Button>
+        
+        <div className="text-sm font-medium">
+          {selectedId ? 'Application Details' : 'Map View'}
+        </div>
+        
+        <Button 
+          onClick={handleCloseMap}
+          className="text-gray-800 p-1 h-8 w-8"
           size="icon"
-          variant="outline"
-          aria-label="Close map"
+          variant="ghost"
         >
           <X className="h-5 w-5" />
         </Button>
       </div>
       
-      <div className="w-full h-full">
+      {/* Map container */}
+      <div className="w-full flex-1 relative">
         <MapContent 
           applications={applications}
           selectedId={selectedId}
           coordinates={coordinates}
-          searchLocation={coordinates} // Added searchLocation prop
+          searchLocation={coordinates}
           isMobile={true}
           isMapView={true}
           onMarkerClick={handleMarkerClick}
@@ -85,6 +105,34 @@ export const MobileMapView = ({
           postcode={postcode}
         />
       </div>
+      
+      {/* Selected application card (slides up from bottom) */}
+      {selectedId && selectedApplication && (
+        <div className={`absolute bottom-0 left-0 right-0 bg-white shadow-lg rounded-t-xl max-h-[80vh] overflow-y-auto transition-transform duration-300 transform ${showFullCard ? 'translate-y-0' : 'translate-y-[calc(100%-120px)]'}`}>
+          <div 
+            className="p-4 border-b flex justify-between items-center cursor-pointer"
+            onClick={() => setShowFullCard(!showFullCard)}
+          >
+            <h3 className="font-medium text-sm truncate pr-4">
+              {selectedApplication.title || selectedApplication.address || 'Application Details'}
+            </h3>
+            <button className="h-1 w-10 bg-gray-300 rounded-full" aria-label="Toggle card size" />
+          </div>
+          
+          <div className="p-4">
+            <SearchResultCard
+              application={selectedApplication}
+              onSeeOnMap={() => {}}
+              applications={applications}
+              selectedId={selectedId}
+              coordinates={coordinates}
+              handleMarkerClick={handleMarkerClick}
+              isLoading={isLoading}
+              postcode={postcode}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
