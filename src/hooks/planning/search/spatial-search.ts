@@ -1,131 +1,80 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { withTimeout } from "@/utils/fetchUtils";
-import { useSearchLogger } from "@/hooks/use-search-logger";
-import { type PostgrestResponse } from '@supabase/supabase-js';
-import { SearchFilters } from "../use-planning-search";
+import { Application } from "@/types/planning";
+import { transformApplicationsData } from "@/utils/transforms/application-transformer";
 
-// This service uses PostGIS spatial functions to find applications within a radius
-export const useSpatialSearch = () => {
-  const { logSearch, logSearchError } = useSearchLogger();
-
-  const searchNearbyApplications = async (lat: number, lng: number, radius: number, limit = 25) => {
-    try {
-      console.log(`Performing spatial search at ${lat},${lng} with radius ${radius}km`);
-      
-      // Try to use the optimized spatial function if available
-      const query = supabase
-        .rpc('get_nearby_applications', {
-          latitude: lat,
-          longitude: lng,
-          distance_km: radius,
-          max_results: limit
-        });
-
-      // Add timeout to query execution
-      const response = await withTimeout<PostgrestResponse<any>>(
-        query, 
-        30000, 
-        'Spatial search timeout'
-      );
-      
-      if (response && 'data' in response && 'error' in response) {
-        const { data, error } = response;
-        
-        if (error) {
-          console.error('Error in spatial search:', error);
-          // Check if it's a function not found error (common if PostGIS is not set up)
-          const isFunctionMissingError = 
-            error.message.includes('function') && 
-            (error.message.includes('does not exist') || error.message.includes('not found'));
-            
-          logSearchError('spatial', isFunctionMissingError ? 'function_missing' : 'database_error', JSON.stringify(error));
-          
-          // Return error for caller to handle
-          return { data: [], error };
-        }
-
-        if (data && Array.isArray(data)) {
-          console.log(`Found ${data.length} results from spatial search`);
-          return { data, error: null };
-        }
-      }
-      
-      return { data: [], error: new Error('Invalid response format from database') };
-    } catch (error) {
-      console.error('Error in spatial search:', error);
-      logSearchError('spatial', 'exception', error instanceof Error ? error.message : String(error));
-      return { data: [], error };
-    }
-  };
-
-  return { searchNearbyApplications };
-};
-
-// Standalone function for direct use in other modules
+/**
+ * Performs a spatial search using PostGIS for nearby applications
+ */
 export const performSpatialSearch = async (
-  lat: number, 
-  lng: number, 
-  radius: number, 
-  filters?: SearchFilters,
-  limit = 25
-) => {
+  lat: number,
+  lng: number,
+  radius: number = 5,
+  filters: any = {}
+): Promise<Application[] | null> => {
   try {
-    console.log(`Performing standalone spatial search at ${lat},${lng} with radius ${radius}km`);
+    console.log(`🔍 Attempting spatial search near [${lat}, ${lng}] with radius ${radius}km`);
     
-    // Build the query
-    let query = supabase
+    // Try to use the PostGIS function if available
+    const { data: spatialData, error: spatialError } = await supabase
       .rpc('get_nearby_applications', {
-        latitude: lat,
-        longitude: lng,
-        distance_km: radius,
-        max_results: limit
+        center_lat: lat,
+        center_lng: lng,
+        radius_km: radius,
+        result_limit: 100
       });
     
-    // Apply filters if provided (simplified example - expand based on your filter structure)
-    if (filters) {
-      if (filters.status) {
-        query = query.eq('status', filters.status);
+    // If we get a function not found error or other error, return null to trigger fallback
+    if (spatialError) {
+      if (spatialError.message.includes('function') || 
+          spatialError.message.includes('not found')) {
+        console.log('PostGIS function not available, will use fallback');
+        return null;
       }
-      if (filters.type) {
-        query = query.eq('category', filters.type);
-      }
-    }
-
-    // Add timeout to query execution
-    const response = await withTimeout<PostgrestResponse<any>>(
-      query, 
-      30000, 
-      'Spatial search timeout'
-    );
-    
-    if (response && 'data' in response && 'error' in response) {
-      const { data, error } = response;
       
-      if (error) {
-        console.error('Error in spatial search:', error);
-        // If it's a function missing error, return null to trigger fallback
-        const isFunctionMissingError = 
-          error.message.includes('function') && 
-          (error.message.includes('does not exist') || error.message.includes('not found'));
-          
-        if (isFunctionMissingError) {
-          console.log('Spatial function not available, returning null to trigger fallback');
-          return null;
+      console.error('Spatial search error:', spatialError);
+      throw spatialError;
+    }
+    
+    if (spatialData) {
+      console.log(`✅ Spatial search successful, found ${spatialData.length} applications`);
+      
+      // Check if storybook data is present in the first result
+      if (spatialData.length > 0) {
+        console.log('First result storybook check:', {
+          hasStorybook: Boolean(spatialData[0].storybook),
+          id: spatialData[0].id
+        });
+        
+        if (spatialData[0].storybook) {
+          console.log(`Storybook preview: ${spatialData[0].storybook.substring(0, 100)}...`);
+        }
+      }
+      
+      // Apply any filters if needed
+      let filteredData = spatialData;
+      if (filters && Object.keys(filters).length > 0) {
+        // Apply status filter if present
+        if (filters.status) {
+          filteredData = filteredData.filter((app: any) => 
+            app.status?.toLowerCase().includes(filters.status.toLowerCase())
+          );
         }
         
-        return [];
+        // Apply type filter if present
+        if (filters.type) {
+          filteredData = filteredData.filter((app: any) => 
+            app.type?.toLowerCase().includes(filters.type.toLowerCase())
+          );
+        }
       }
-
-      if (data && Array.isArray(data)) {
-        console.log(`Found ${data.length} results from spatial search`);
-        return data;
-      }
+      
+      return transformApplicationsData(filteredData);
     }
     
     return [];
   } catch (error) {
-    console.error('Error in standalone spatial search:', error);
-    return [];
+    console.error('Error in spatial search:', error);
+    return null; // Return null to trigger fallback
   }
 };

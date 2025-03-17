@@ -4,32 +4,6 @@
  */
 import { ensureGoogleMapsLoaded } from "./google-maps-loader";
 
-// Database of coordinates for common UK cities to use as fallback
-const UK_CITIES_COORDINATES: Record<string, { lat: number; lng: number }> = {
-  // Major cities
-  "london": { lat: 51.5074, lng: -0.1278 },
-  "manchester": { lat: 53.4808, lng: -2.2426 },
-  "birmingham": { lat: 52.4862, lng: -1.8904 },
-  "glasgow": { lat: 55.8642, lng: -4.2518 },
-  "liverpool": { lat: 53.4084, lng: -2.9916 },
-  "edinburgh": { lat: 55.9533, lng: -3.1883 },
-  // Medium-sized cities
-  "bristol": { lat: 51.4545, lng: -2.5879 },
-  "cardiff": { lat: 51.4816, lng: -3.1791 },
-  "newcastle": { lat: 54.9783, lng: -1.6178 },
-  "sheffield": { lat: 53.3811, lng: -1.4701 },
-  "leeds": { lat: 53.8008, lng: -1.5491 },
-  "oxford": { lat: 51.7520, lng: -1.2577 },
-  "cambridge": { lat: 52.2053, lng: 0.1218 },
-  // Smaller cities that often get searched
-  "bath": { lat: 51.3751, lng: -2.3617 },
-  "york": { lat: 53.9600, lng: -1.0873 },
-  "cheltenham": { lat: 51.8979, lng: -2.0705 },
-  "gloucester": { lat: 51.8642, lng: -2.2380 },
-  "exeter": { lat: 50.7236, lng: -3.5275 },
-  "canterbury": { lat: 51.2798, lng: 1.0828 }
-};
-
 /**
  * Fetches coordinates for a location name using the Google Geocoding API
  * Also attempts to extract a postcode when possible for UK locations
@@ -43,18 +17,6 @@ export const fetchCoordinatesByLocationName = async (
   
   if (!locationName) {
     throw new Error("No location name provided");
-  }
-  
-  // First, check if this is a well-known UK city we have in our database
-  const simplifiedName = locationName.toLowerCase().replace(/,.*$/, "").trim();
-  
-  if (UK_CITIES_COORDINATES[simplifiedName]) {
-    console.log(`📍 Using cached coordinates for known UK city: ${simplifiedName}`);
-    const { lat, lng } = UK_CITIES_COORDINATES[simplifiedName];
-    return { 
-      coordinates: [lat, lng],
-      postcode: undefined
-    };
   }
   
   try {
@@ -73,11 +35,6 @@ export const fetchCoordinatesByLocationName = async (
     
     // Try to find the location with UK country restriction to improve accuracy
     const response = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-      // Create a timeout for the geocoding operation
-      const timeoutId = setTimeout(() => {
-        reject(new Error("Geocoding request timed out after 10 seconds"));
-      }, 10000); // 10 second timeout
-      
       geocoder.geocode(
         { 
           address: searchLocation, 
@@ -87,9 +44,6 @@ export const fetchCoordinatesByLocationName = async (
           }
         }, 
         (results, status) => {
-          // Clear the timeout as we got a response
-          clearTimeout(timeoutId);
-          
           if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
             console.log('✅ Geocoder found results:', results.length);
             resolve(results);
@@ -163,34 +117,10 @@ export const fetchCoordinatesByLocationName = async (
   } catch (error: any) {
     console.error('❌ Error in geocoding location name:', error);
     
-    // Check if this might be a known UK city with different formatting
-    for (const [cityName, coords] of Object.entries(UK_CITIES_COORDINATES)) {
-      if (locationName.toLowerCase().includes(cityName)) {
-        console.log(`📍 Falling back to cached coordinates for: ${cityName}`);
-        return { 
-          coordinates: [coords.lat, coords.lng],
-          postcode: undefined
-        };
-      }
-    }
-    
     // Special handling for API key issues
     if (error.message.includes('API key') || 
         error.message.includes('denied') || 
-        error.message.includes('not authorized') ||
-        error.message.includes('timed out')) {
-      // If this is a timeout or API key issue, check if we have a partial match in our city database
-      const cityWords = simplifiedName.split(/\s+/);
-      for (const word of cityWords) {
-        if (word.length > 3 && UK_CITIES_COORDINATES[word]) {
-          console.log(`⚠️ API issue detected, using partial match for: ${word}`);
-          const { lat, lng } = UK_CITIES_COORDINATES[word];
-          return { 
-            coordinates: [lat, lng] 
-          };
-        }
-      }
-      
+        error.message.includes('not authorized')) {
       // Fallback to try the postcode lookup if this looks like a UK postcode
       const postcodePattern = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i;
       if (postcodePattern.test(locationName.trim())) {
@@ -204,3 +134,4 @@ export const fetchCoordinatesByLocationName = async (
     throw new Error(`Could not find coordinates for location: ${error.message}`);
   }
 };
+
