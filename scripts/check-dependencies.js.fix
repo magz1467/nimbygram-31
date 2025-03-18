@@ -1,0 +1,14 @@
+// This script should only be run in Node.js environment, not in the browser
+// We'll create a browser-compatible version for development
+
+// Browser-compatible version (no fs dependency)
+const checkDependenciesBrowser = () => {
+  console.log('Dependency checking is disabled in browser environment');
+  return {
+    missingDependencies: [],
+    allDependencies: []
+  };
+};
+
+// Export the browser-compatible version
+export default checkDependenciesBrowser; 

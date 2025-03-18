@@ -4,17 +4,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react({
-      // This enables the new JSX transform
-      jsxImportSource: 'react',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
-      }
-    })
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -30,7 +20,7 @@ export default defineConfig({
   },
   // Make sure all environment variables are properly defined
   define: {
-    'process.env': process.env,
+    'process.env': {},
     'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
     'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0'),
   },
@@ -44,5 +34,13 @@ export default defineConfig({
       'zustand',
       'leaflet'
     ]
-  }
+  },
+  // Handle Node.js built-in modules
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      fs: path.resolve(__dirname, './src/utils/fs-polyfill.js'),
+      path: 'path-browserify',
+    },
+  },
 }); 
