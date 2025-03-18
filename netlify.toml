@@ -1,6 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install @vitejs/plugin-react --legacy-peer-deps && npm install --legacy-peer-deps && npm run build"
   publish = "dist"
   base = "/"
 
