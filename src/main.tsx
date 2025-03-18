@@ -6,6 +6,7 @@ import './index.css';
 import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { installNavigationOverride } from './utils/navigationOverride';
+import { installNavigationTracer } from './utils/navigationTracer';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
@@ -30,7 +31,8 @@ setTimeout(checkLoadedScripts, 3000);
 
 const queryClient = new QueryClient();
 
-// Install navigation override before anything else
+// Install navigation debugging tools before anything else
+installNavigationTracer();
 installNavigationOverride();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
