@@ -1,12 +1,15 @@
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import App from './App';
-// Update the import path to match your actual file structure
-import HomePage from './pages/HomePage'; // or './pages/Home.tsx' depending on your file name
+import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
 import ErrorPage from './pages/ErrorPage';
 import { useMapViewStore } from './store/mapViewStore';
 import { useEffect } from 'react';
+
+// Note: This file is deprecated and kept for reference only
+// Routing is now handled in routes/routes.tsx
 
 // MapRedirect component that sets map view to true and redirects
 function MapRedirect() {
@@ -22,12 +25,13 @@ function MapRedirect() {
   return <Navigate to={`/search-results${location.search}`} replace />;
 }
 
-// Router component that defines all routes
+// Router component that defines all routes - no longer in use
 export function AppRoutes() {
+  // This is kept for reference but not used in the app
   return (
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<Home />} />
         <Route path="search-results" element={<SearchResults />} />
         <Route path="map" element={<MapRedirect />} />
         <Route path="*" element={<ErrorPage />} />
