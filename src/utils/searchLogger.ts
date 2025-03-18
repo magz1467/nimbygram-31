@@ -143,6 +143,7 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     
     return true;
   } catch (err) {
+    const env = getEnvironmentName(); // Added this line to define env within this scope
     console.error(`[SearchLogger][${env}] 🔴 Failed to log search:`, err);
     // Don't throw - we don't want to break the app if logging fails
     return true;
