@@ -64,39 +64,29 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Enhanced logging for storybook data
+  // Debugging to understand what data we have available
   useEffect(() => {
     console.log(`SearchResultCard for application ${application.id}:`, { 
-      hasStorybook: Boolean(application.storybook),
-      storybook: application.storybook ? {
-        type: typeof application.storybook,
-        length: application.storybook.length
-      } : null,
-      description: application.description?.substring(0, 30),
-      title: application.title
+      receivedDate: application.received,
+      hasReceivedDate: Boolean(application.received),
+      receivedDateType: application.received ? typeof application.received : 'undefined'
     });
-    
-    if (application.storybook) {
-      console.log('SearchResultCard storybook preview for app', application.id, ':', 
-        application.storybook.substring(0, 100) + '...');
-    } else {
-      console.log('SearchResultCard missing storybook for app', application.id);
-    }
   }, [application]);
 
-  const formattedSubmittedDate = application.submittedDate || application.received_date
-    ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
-      ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
-      : null
-    : null;
-
+  // Format received date - trying all possible field names
   const formattedReceivedDate = application.received
     ? new Date(application.received).toString() !== "Invalid Date"
       ? format(new Date(application.received), 'dd MMM yyyy')
       : null
     : null;
 
-  const displayDate = formattedReceivedDate || formattedSubmittedDate;
+  const formattedReceivedDateAlt = application.received_date
+    ? new Date(application.received_date).toString() !== "Invalid Date"
+      ? format(new Date(application.received_date), 'dd MMM yyyy')
+      : null
+    : null;
+
+  const displayDate = formattedReceivedDate || formattedReceivedDateAlt;
   
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
@@ -125,7 +115,7 @@ export const SearchResultCard = ({
           <div className="flex items-center gap-1.5 text-sm text-gray-600">
             <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
             <span className="font-medium">Received:</span>
-            <span>{displayDate || 'Date not available'}</span>
+            <span>{displayDate}</span>
           </div>
         </div>
       )}
