@@ -31,7 +31,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
       return `<ul class="list-disc pl-5 space-y-2 my-0">
         ${inputContent
           .filter(item => item && !isEmptyContent(item))
-          .map((item, index) => `<li class="pl-1 mb-2">${processContent(item)}</li>`)
+          .map((item, index) => `<li class="pl-1 mb-2 text-left">${processContent(item)}</li>`)
           .join('')}
       </ul>`;
     } else {
@@ -49,14 +49,14 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
         const parts = contentStr.split(/(?:•|\*|-)\s+/).filter(Boolean);
         if (parts.length > 1) {
           return `<ul class="list-disc pl-5 space-y-2 my-0">
-            ${parts.map((part, i) => `<li class="pl-1 mb-2">${part.trim()}</li>`).join('')}
+            ${parts.map((part, i) => `<li class="pl-1 mb-2 text-left">${part.trim()}</li>`).join('')}
           </ul>`;
         }
       }
       
       // Add paragraph tags if not already present
       if (!contentStr.includes('<p>')) {
-        contentStr = `<p class="my-0 mt-2">${contentStr}</p>`;
+        contentStr = `<p class="my-0 mt-2 text-left">${contentStr}</p>`;
       }
       
       return contentStr;
@@ -71,7 +71,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
   
   return (
     <div className="bg-[#FFDEE2] text-gray-800 rounded-lg p-4">
-      <h3 className="font-bold mb-2 text-base md:text-lg flex items-center gap-2">
+      <h3 className="font-bold mb-2 text-base md:text-lg flex items-center gap-2 text-left">
         <span>👀</span> What to Watch Out For
       </h3>
       <div 

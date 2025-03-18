@@ -20,7 +20,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     return (
       <div className="prose prose-sm max-w-none">
         <div className="rounded-lg p-4 border border-gray-100">
-          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg">Key Details</h3>
+          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
           <ul className="list-disc pl-5 space-y-2">
             {filteredDetails.map((detail, index) => {
               // Extract emoji if present at the beginning
@@ -29,7 +29,7 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
               const textContent = emoji ? detail.substring(emoji.length).trim() : detail.trim();
                 
               return (
-                <li key={index} className="pl-1 mb-2">
+                <li key={index} className="pl-1 mb-2 text-left">
                   {emoji && <span className="mr-2 inline-block">{emoji}</span>}
                   <span 
                     dangerouslySetInnerHTML={{ 
@@ -56,91 +56,92 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
       .replace(/^\s*[\*•-]\s*$/gm, '') // Remove empty bullet points
       .replace(/\n\s*[\*•-]\s*\n/g, '\n'); // Remove empty bullet points with newlines
     
-    // Process the content to separate text and bullet points
-    const sections = cleanedContent.split(/(?:\n\n|\r\n\r\n)/);
-    let formattedSections = [];
+    // Check if content has bullet points
+    const hasBulletPoints = cleanedContent.match(/(?:^|\n)\s*[•\*\-]\s+/);
     
-    for (const section of sections) {
-      if (!section.trim()) continue;
+    if (hasBulletPoints) {
+      // Extract bullet points
+      const bulletPoints = [];
+      const sections = [];
+      let currentText = '';
       
-      // Check if section contains bullet points (•, *, -)
-      const hasBullets = /(?:^|\n)\s*[•\*\-]\s+/.test(section);
+      // Split by lines and process
+      const lines = cleanedContent.split(/\n/);
       
-      if (hasBullets) {
-        // Process bullet points with emojis
-        const bulletItems = [];
-        const bulletRegex = /(?:^|\n)\s*([•\*\-])\s+(.*?)(?=(?:\n\s*[•\*\-]\s+)|$)/gs;
-        let match;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
         
-        let lastIndex = 0;
-        let introText = '';
+        if (!line) continue;
         
-        // Find the first bullet point to extract any intro text
-        const firstBulletMatch = section.match(/(?:^|\n)\s*[•\*\-]\s+/);
-        if (firstBulletMatch && firstBulletMatch.index > 0) {
-          introText = section.substring(0, firstBulletMatch.index).trim();
-        }
-        
-        // Extract all bullet points
-        while ((match = bulletRegex.exec(section)) !== null) {
-          const bulletText = match[2].trim();
-          if (bulletText) {
-            // Look for emoji at the start of bullet text
-            const emojiMatch = bulletText.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
-            
-            if (emojiMatch) {
-              const emoji = emojiMatch[1];
-              const text = bulletText.substring(emojiMatch[0].length).trim();
-              bulletItems.push({ emoji, text });
-            } else {
-              bulletItems.push({ emoji: null, text: bulletText });
-            }
+        // Check if this line is a bullet point
+        if (line.match(/^\s*[•\*\-]\s+/)) {
+          // If we have accumulated text, add it as a paragraph
+          if (currentText.trim()) {
+            sections.push(`<p class="mb-3 text-left">${currentText.trim()}</p>`);
+            currentText = '';
           }
-          lastIndex = match.index + match[0].length;
+          
+          // Process the bullet point
+          const bulletContent = line.replace(/^\s*[•\*\-]\s+/, '');
+          
+          // Check for emoji at the start of the bullet content
+          const emojiMatch = bulletContent.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
+          
+          if (emojiMatch) {
+            const emoji = emojiMatch[1];
+            const text = bulletContent.substring(emojiMatch[0].length).trim();
+            bulletPoints.push({ emoji, text });
+          } else {
+            bulletPoints.push({ emoji: null, text: bulletContent });
+          }
+        } else {
+          // Not a bullet point, add to current text
+          currentText += (currentText ? ' ' : '') + line;
         }
-        
-        // Add the intro text if found
-        if (introText) {
-          formattedSections.push(`<p class="mb-3">${introText}</p>`);
-        }
-        
-        // Add the bullet points list
-        if (bulletItems.length > 0) {
-          let bulletList = `<ul class="list-disc pl-5 space-y-2 mb-3">`;
-          bulletItems.forEach(item => {
-            bulletList += `<li class="pl-0 mb-2">`;
-            if (item.emoji) {
-              bulletList += `<span class="mr-2 inline-block">${item.emoji}</span>`;
-            }
-            bulletList += `${item.text}</li>`;
-          });
-          bulletList += `</ul>`;
-          formattedSections.push(bulletList);
-        }
-      } else {
-        // For non-bullet text, just add as paragraph
-        formattedSections.push(`<p class="mb-3">${section}</p>`);
       }
-    }
-    
-    // If no sections were created, fallback to simple paragraph
-    if (formattedSections.length === 0) {
-      formattedSections.push(`<p>${cleanedContent}</p>`);
-    }
-    
-    // Join all formatted sections
-    const formattedContent = formattedSections.join('');
-    
-    return (
-      <div className="prose prose-sm max-w-none">
-        <div className="rounded-lg p-4 border border-gray-100">
-          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg">Key Details</h3>
-          <div 
-            className="text-gray-700"
-            dangerouslySetInnerHTML={{ __html: formattedContent }}
-          />
+      
+      // Add any remaining text
+      if (currentText.trim()) {
+        sections.push(`<p class="mb-3 text-left">${currentText.trim()}</p>`);
+      }
+      
+      // Format bullet points if we found any
+      if (bulletPoints.length > 0) {
+        let bulletList = `<ul class="list-disc pl-5 space-y-2 mb-3">`;
+        bulletPoints.forEach(item => {
+          bulletList += `<li class="pl-1 mb-2 text-left">`;
+          if (item.emoji) {
+            bulletList += `<span class="mr-2 inline-block">${item.emoji}</span>`;
+          }
+          bulletList += `${item.text}</li>`;
+        });
+        bulletList += `</ul>`;
+        sections.push(bulletList);
+      }
+      
+      const formattedContent = sections.join('');
+      
+      return (
+        <div className="prose prose-sm max-w-none">
+          <div className="rounded-lg p-4 border border-gray-100">
+            <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
+            <div 
+              className="text-gray-700"
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
+            />
+          </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      // No bullet points, treat as simple paragraph content
+      return (
+        <div className="prose prose-sm max-w-none">
+          <div className="rounded-lg p-4 border border-gray-100">
+            <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
+            <p className="text-gray-700 mb-0 text-left">{cleanedContent}</p>
+          </div>
+        </div>
+      );
+    }
   }
 };

@@ -35,7 +35,7 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
   
   if (Array.isArray(content)) {
     detailContent = (
-      <ul className="space-y-2 mt-2">
+      <ul className="space-y-2 mt-2 list-none pl-0">
         {content
           .filter((detail: string) => detail && detail.trim().length > 0)
           .map((detail: string, index: number) => {
@@ -55,70 +55,52 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
   } else {
     // Process string content to handle section headers and bullet points
     if (typeof content === 'string') {
-      // Split the content by lines to find headers and sections
-      const lines = content.split(/\n+/).filter(line => line.trim());
-      
-      if (lines.length > 0) {
-        // Format the lines with proper headers and bullet points
-        const formattedContent = [];
-        let currentSection = null;
-        let sectionContent = [];
+      // Check if content contains bullet points (•, *, -)
+      if (content.includes('•') || content.includes('*') || content.includes('-')) {
+        // Process bullet points with better extraction
+        const bulletMatches = [...content.matchAll(/(?:^|\n)\s*([•\*\-])\s*(.*?)(?=(?:\n\s*[•\*\-]|$))/gs)];
         
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          
-          // Check if the line is a section header
-          if (line.match(/^(The Details:|Details:|Considerations:|Key Considerations:)/i)) {
-            // If we already have a section, add it to the formatted content
-            if (currentSection && sectionContent.length > 0) {
-              formattedContent.push(
-                <div key={`section-${formattedContent.length}`} className="mb-3">
-                  {currentSection}
-                  {sectionContent}
-                </div>
-              );
-            }
-            
-            // Start a new section with bold heading
-            currentSection = <h4 key={`header-${i}`} className="font-bold text-gray-800 text-left my-2">{line}</h4>;
-            sectionContent = [];
-          } else if (line.match(/^[•\*\-]\s+/)) {
-            // This is a bullet point
-            const bulletContent = line.replace(/^[•\*\-]\s+/, '');
-            sectionContent.push(
-              <li key={`bullet-${i}`} className="flex items-start gap-2 mb-2 text-left">
-                <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                <span className="flex-1">{bulletContent}</span>
-              </li>
-            );
-          } else {
-            // Regular text
-            sectionContent.push(<p key={`text-${i}`} className="text-left mb-2">{line}</p>);
-          }
-        }
-        
-        // Add the last section if there is one
-        if (currentSection) {
-          formattedContent.push(
-            <div key={`section-${formattedContent.length}`} className="mb-3">
-              {currentSection}
-              {sectionContent.length > 0 ? (
-                <ul className="list-none pl-0 space-y-1">{sectionContent}</ul>
-              ) : null}
-            </div>
+        if (bulletMatches.length > 0) {
+          detailContent = (
+            <ul className="space-y-2 mt-2 list-none pl-0">
+              {bulletMatches.map((match, index) => {
+                const bulletText = match[2]?.trim();
+                if (!bulletText) return null;
+                
+                // Extract emoji if present
+                const { emoji, text } = extractEmoji(bulletText);
+                
+                return (
+                  <li key={index} className="flex items-start gap-2 mb-2 text-left">
+                    <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <div className="flex-1 break-words">
+                      {emoji && <span className="mr-1 inline-block align-middle">{emoji}</span>}
+                      <span>{text}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           );
-        } else if (sectionContent.length > 0) {
-          formattedContent.push(
-            <div key="content" className="mb-3">
-              <ul className="list-none pl-0 space-y-1">{sectionContent}</ul>
-            </div>
-          );
+        } else {
+          // Fallback for no matches
+          detailContent = <p className="text-left">{content}</p>;
         }
-        
-        detailContent = <div>{formattedContent}</div>;
       } else {
-        // Fallback if no lines were found
-        detailContent = <p className="text-left">{content}</p>;
+        // Split the content by lines to find headers and sections
+        const lines = content.split(/\n+/).filter(line => line.trim());
+        
+        if (lines.length > 1) {
+          // Format the lines with proper headers
+          detailContent = (
+            <div className="space-y-2">
+              {lines.map((line, index) => formatSectionHeader(line))}
+            </div>
+          );
+        } else {
+          // Single line, no special formatting needed
+          detailContent = <p className="text-left">{content}</p>;
+        }
       }
     } else {
       // Fallback for non-string content
