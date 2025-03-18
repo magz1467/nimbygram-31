@@ -1,7 +1,13 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ApplicationProvider } from './context/ApplicationContext';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import SearchResults from './pages/SearchResults';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import ApplicationDetails from './pages/ApplicationDetails';
 import './App.css';
 import { Toaster } from "@/components/ui/toaster";
 import { routes } from "@/routes/routes";
@@ -16,24 +22,29 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="app min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-4">Welcome to NimbyGram</h1>
-        <p className="mb-6">This is a platform for exploring and understanding planning applications in your area.</p>
-        
-        <div className="bg-gray-50 p-6 rounded-lg shadow-sm mb-8">
-          <h2 className="text-2xl font-semibold mb-3">Features</h2>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>View planning applications on a map</li>
-            <li>Search for applications by location</li>
-            <li>Get notifications about new applications</li>
-            <li>Understand the planning process</li>
-          </ul>
+    <ApplicationProvider>
+      <Router>
+        <div className="app min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/application/:id" element={<ApplicationDetails />} />
+              <Route path="*" element={
+                <div className="container mx-auto max-w-6xl px-4 py-16 text-center">
+                  <h2 className="text-3xl font-bold mb-4">Page Not Found</h2>
+                  <p className="text-xl text-gray-600">The page you are looking for doesn't exist or has been moved.</p>
+                </div>
+              } />
+            </Routes>
+          </main>
+          <Footer />
         </div>
-      </main>
-      <Footer />
-    </div>
+      </Router>
+    </ApplicationProvider>
   );
 };
 
