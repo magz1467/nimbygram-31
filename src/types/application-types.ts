@@ -1,34 +1,43 @@
 
-import { Application } from "./planning";
+import { Application } from './planning';
 
-export type SortType = 'distance' | 'newest' | 'closingSoon' | 'date' | 'impact';
+export type SortType = 'newest' | 'distance' | 'closingSoon';
 
-export type FilterType = {
+export interface ApplicationFilterState {
   status?: string;
   type?: string;
-  classification?: string;
-};
+  search?: string;
+  developer?: string;
+  impact?: string;
+  closing?: string;
+}
 
-export type StatusCounts = {
-  'Under Review': number;
-  'Approved': number;
-  'Declined': number;
-  'Other': number;
-};
+export interface SavedApplicationProps {
+  application: Application;
+  onSelectApplication: (id: number) => void;
+  onRemove: (id: number) => void;
+}
 
-export type MapState = {
-  selectedId: number | null;
+export interface ApplicationSortConfig {
+  type: SortType | null;
   applications: Application[];
-  isMapView: boolean;
-  coordinates: [number, number];
-  activeSort: SortType;
-  activeFilters: FilterType;
-};
+}
 
-export type MapAction =
-  | { type: 'SELECT_APPLICATION'; payload: number | null }
-  | { type: 'SET_APPLICATIONS'; payload: Application[] }
-  | { type: 'TOGGLE_VIEW' }
-  | { type: 'SET_COORDINATES'; payload: [number, number] }
-  | { type: 'SET_SORT'; payload: SortType }
-  | { type: 'SET_FILTERS'; payload: FilterType };
+export interface FilterProps {
+  onFilterChange: (filterType: string, value: string) => void;
+  activeFilters: {
+    status?: string;
+    type?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+export interface ApplicationPreviewProps {
+  application: Application;
+  onClose: () => void;
+}
+
+export interface ApplicationDetailsProps {
+  application: Application;
+  onClose: () => void;
+}

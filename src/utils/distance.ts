@@ -1,118 +1,99 @@
 
-import { LatLngTuple } from "leaflet";
-import { Application } from "@/types/planning";
+import { Application } from '@/types/planning';
+
+// Constants for earth calculations
+const EARTH_RADIUS_KM = 6371;
+const EARTH_RADIUS_MILES = 3958.8;
 
 /**
- * Calculate distance between two points using Haversine formula
- * All coordinates must be in [latitude, longitude] format
+ * Calculates the distance between two geographic points using the Haversine formula
  */
-export const calculateDistance = (point1: LatLngTuple, point2: LatLngTuple): number => {
-  // Ensure coordinates are in correct order [lat, lng]
-  const [lat1, lon1] = point1;
-  const [lat2, lon2] = point2;
+export const calculateDistance = (
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number, 
+  unit: 'km' | 'miles' = 'km'
+): number => {
+  const radius = unit === 'km' ? EARTH_RADIUS_KM : EARTH_RADIUS_MILES;
   
-  // Early validation to prevent NaN results
-  if (!isValidCoordinate(lat1) || !isValidCoordinate(lon1) || 
-      !isValidCoordinate(lat2) || !isValidCoordinate(lon2)) {
-    console.error('Invalid coordinates in distance calculation:', { point1, point2 });
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  // Calculate great-circle distance using Haversine formula
-  const R = 6371; // Earth's radius in kilometers
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-           Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-           Math.sin(dLon/2) * Math.sin(dLon/2);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = radius * c;
   
   return distance;
 };
 
-function isValidCoordinate(coord: number): boolean {
-  return typeof coord === 'number' && 
-         !isNaN(coord) && 
-         isFinite(coord) && 
-         Math.abs(coord) <= 180; // Basic range check
-}
-
-function toRad(degrees: number): number {
+/**
+ * Converts degrees to radians
+ */
+const toRad = (degrees: number): number => {
   return degrees * Math.PI / 180;
-}
-
-export const formatDistance = (distanceKm: number): string => {
-  if (typeof distanceKm !== 'number' || isNaN(distanceKm)) {
-    return "Unknown";
-  }
-  const distanceMiles = distanceKm * 0.621371;
-  return `${distanceMiles.toFixed(1)} mi`;
 };
 
 /**
- * Sort applications by distance using Haversine formula
- * This is the primary function for ensuring results are ordered by distance
+ * Formats a distance value with appropriate units
+ */
+export const formatDistance = (distance: number, unit: 'km' | 'miles' = 'miles'): string => {
+  if (distance < 1) {
+    // Show in meters/feet for short distances
+    if (unit === 'km') {
+      return `${Math.round(distance * 1000)}m`;
+    } else {
+      return `${Math.round(distance * 5280)}ft`;
+    }
+  } 
+  
+  // Show in km/miles with decimal place for longer distances
+  return `${distance.toFixed(1)}${unit === 'km' ? 'km' : 'mi'}`;
+};
+
+/**
+ * Add distance information to an application based on reference coordinates
+ */
+export const addDistanceToApplication = (
+  application: Application, 
+  referenceCoords: [number, number]
+): Application => {
+  if (!application.coordinates || !application.coordinates[0] || !application.coordinates[1]) {
+    return { ...application, distance: undefined };
+  }
+  
+  const [refLat, refLng] = referenceCoords;
+  const [appLat, appLng] = application.coordinates;
+  
+  const distanceValue = calculateDistance(refLat, refLng, appLat, appLng, 'miles');
+  
+  return {
+    ...application,
+    _distanceValue: distanceValue, // Keep raw value for sorting
+    distance: formatDistance(distanceValue, 'miles')
+  };
+};
+
+/**
+ * Sort applications by distance from reference coordinates
  */
 export const sortApplicationsByDistance = (
-  applications: Application[],
-  coordinates: [number, number]
+  applications: Application[], 
+  referenceCoords: [number, number]
 ): Application[] => {
-  if (!applications || !coordinates) {
-    console.error('Missing data for distance sorting:', { 
-      hasApplications: !!applications, 
-      coordinates 
+  return applications
+    .map(app => {
+      // Skip adding distance if already present
+      if (app.distance) return app as Application & { _distanceValue?: number };
+      return addDistanceToApplication(app, referenceCoords);
+    })
+    .sort((a, b) => {
+      const distanceA = (a as any)._distanceValue || 0;
+      const distanceB = (b as any)._distanceValue || 0;
+      return distanceA - distanceB;
     });
-    return [...applications];
-  }
-
-  console.log(`Sorting ${applications.length} applications from [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]`);
-  
-  // Create a copy of applications with calculated distances
-  const appsWithDistance = applications.map(app => {
-    // Handle case where application has no coordinates
-    if (!app.coordinates) {
-      // Check if app has latitude/longitude properties directly
-      if (typeof app.latitude === 'number' && typeof app.longitude === 'number') {
-        // Create coordinates from latitude/longitude
-        app.coordinates = [app.latitude, app.longitude];
-      } else {
-        console.warn(`Application ${app.id} missing coordinates`);
-        return { ...app, _distanceValue: Number.MAX_SAFE_INTEGER };
-      }
-    }
-    
-    // Calculate and store distance
-    const distance = calculateDistance(coordinates, app.coordinates);
-    
-    // Store the formatted distance string
-    const formattedDistance = formatDistance(distance);
-    
-    return { 
-      ...app, 
-      _distanceValue: distance,
-      distance: formattedDistance 
-    };
-  });
-  
-  // Sort by the calculated distance
-  const sortedApps = appsWithDistance.sort((a, b) => {
-    // Safely access _distanceValue which we just added
-    const distA = (a as any)._distanceValue;
-    const distB = (b as any)._distanceValue;
-    return distA - distB;
-  });
-  
-  // Log the first few results for debugging
-  console.log("\nSorted applications (first 5):");
-  sortedApps.slice(0, 5).forEach((app, index) => {
-    // Safely access _distanceValue which we just added
-    const dist = (app as any)._distanceValue;
-    console.log(`${index + 1}. ID: ${app.id}, Distance: ${dist.toFixed(2)}km (${app.distance}), Address: ${app.address}`);
-  });
-  
-  // Return sorted applications without the temporary _distanceValue property
-  return sortedApps.map(({ _distanceValue, ...app }: any) => app as Application);
 };
