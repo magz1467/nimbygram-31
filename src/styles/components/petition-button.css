@@ -1,0 +1,14 @@
+
+.petition-button {
+  width: 100%;
+  margin-top: 2rem;
+  background-color: #af5662;
+  color: white;
+  padding: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.petition-button:hover {
+  background-color: #af5662/90;
+}
