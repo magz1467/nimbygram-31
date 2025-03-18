@@ -4,7 +4,17 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // This enables the new JSX transform
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -20,7 +30,7 @@ export default defineConfig({
   },
   // Make sure all environment variables are properly defined
   define: {
-    'process.env': {},
+    'process.env': process.env,
     'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
     'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0'),
   },

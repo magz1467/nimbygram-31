@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Application } from "@/types/planning";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
