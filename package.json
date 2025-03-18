@@ -100,6 +100,9 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "netlify-plugin-cache-killer": "^0.0.5",
+    "@netlify/plugin-nextjs": "^4.41.3",
+    "@netlify/plugin-functions-install-core": "^1.0.0"
   }
 }
