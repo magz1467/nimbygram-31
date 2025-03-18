@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -8,18 +7,6 @@ export default {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
-    "./index.html",
-  ],
-  safelist: [
-    // Add critical classes that should never be purged
-    'prose',
-    'list-disc',
-    'font-playfair',
-    'font-sans',
-    'font-caveat',
-    'bg-white/50',
-    'bg-background',
-    'text-foreground',
   ],
   prefix: "",
   theme: {
@@ -72,9 +59,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Open Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        caveat: ["Caveat", "cursive", "Comic Sans MS"],
-        playfair: ["Playfair Display", "Georgia", "serif"],
+        sans: ["Open Sans", "sans-serif"],
+        caveat: ["Caveat", "cursive"],
+        playfair: ["Playfair Display", "serif"],
       },
       keyframes: {
         "slide-up": {

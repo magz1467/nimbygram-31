@@ -34,37 +34,31 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
   let detailContent: ReactNode;
   
   if (Array.isArray(content)) {
-    // Filter out empty or null items
-    const validItems = content.filter((detail: string) => detail && detail.trim().length > 0);
-    
-    if (validItems.length === 0) return null;
-    
     detailContent = (
       <ul className="space-y-2 mt-2 list-none pl-0">
-        {validItems.map((detail: string, index: number) => {
-          const { emoji, text } = extractEmoji(detail);
-          return (
-            <li key={index} className="flex items-start gap-2 mb-2 text-left">
-              <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <div className="flex-1 break-words">
-                {emoji && <span className="mr-1.5 inline-block align-middle">{emoji}</span>}
-                <span>{text}</span>
-              </div>
-            </li>
-          );
-        })}
+        {content
+          .filter((detail: string) => detail && detail.trim().length > 0)
+          .map((detail: string, index: number) => {
+            const { emoji, text } = extractEmoji(detail);
+            return (
+              <li key={index} className="flex items-start gap-2 mb-2 text-left">
+                <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                <div className="flex-1 break-words">
+                  {emoji && <span className="mr-1 inline-block align-middle">{emoji}</span>}
+                  <span>{text}</span>
+                </div>
+              </li>
+            );
+          })}
       </ul>
     );
   } else {
     // Process string content to handle section headers and bullet points
     if (typeof content === 'string') {
-      const cleanedContent = content.trim();
-      if (!cleanedContent) return null;
-      
       // Check if content contains bullet points (•, *, -)
-      if (cleanedContent.includes('•') || cleanedContent.includes('*') || cleanedContent.includes('-')) {
+      if (content.includes('•') || content.includes('*') || content.includes('-')) {
         // Process bullet points with better extraction
-        const bulletMatches = [...cleanedContent.matchAll(/(?:^|\n)\s*([•\*\-])\s*(.*?)(?=(?:\n\s*[•\*\-]|$))/gs)];
+        const bulletMatches = [...content.matchAll(/(?:^|\n)\s*([•\*\-])\s*(.*?)(?=(?:\n\s*[•\*\-]|$))/gs)];
         
         if (bulletMatches.length > 0) {
           detailContent = (
@@ -80,12 +74,8 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
                   <li key={index} className="flex items-start gap-2 mb-2 text-left">
                     <div className="min-w-[6px] min-h-[6px] w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
                     <div className="flex-1 break-words">
-                      {emoji && <span className="mr-1.5 inline-block align-middle">{emoji}</span>}
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: text.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
-                        }}
-                      />
+                      {emoji && <span className="mr-1 inline-block align-middle">{emoji}</span>}
+                      <span>{text}</span>
                     </div>
                   </li>
                 );
@@ -94,11 +84,11 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
           );
         } else {
           // Fallback for no matches
-          detailContent = <p className="text-left">{cleanedContent}</p>;
+          detailContent = <p className="text-left">{content}</p>;
         }
       } else {
         // Split the content by lines to find headers and sections
-        const lines = cleanedContent.split(/\n+/).filter(line => line.trim());
+        const lines = content.split(/\n+/).filter(line => line.trim());
         
         if (lines.length > 1) {
           // Format the lines with proper headers
@@ -109,7 +99,7 @@ export const DetailsSection = ({ content }: DetailsSectionProps) => {
           );
         } else {
           // Single line, no special formatting needed
-          detailContent = <p className="text-left">{cleanedContent}</p>;
+          detailContent = <p className="text-left">{content}</p>;
         }
       }
     } else {

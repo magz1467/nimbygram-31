@@ -13,25 +13,14 @@
     <meta property="og:url" content="https://nimbygram.com" />
     <!-- Load API key fix script before anything else -->
     <script src="/fixApiKey.js"></script>
-    
-    <!-- Preload critical fonts with high priority -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" as="style">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" as="style">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" as="style">
-    
-    <!-- Add fonts with font-display:swap for better performance -->
+    <!-- Add Playfair Display font -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Add Open Sans font -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Add Caveat font -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Add fallback font styles -->
-    <style>
-      /* Fallback fonts if Google Fonts fail to load */
-      .font-playfair { font-family: 'Playfair Display', Georgia, serif; }
-      .font-sans { font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      .font-caveat { font-family: 'Caveat', cursive, 'Comic Sans MS'; }
-    </style>
-    
+    <!-- Ensure styles are loaded before any scripts -->
+    <link rel="stylesheet" href="/src/index.css" type="text/css">
     <!-- Google Maps API Key Detector Script -->
     <script>
       (function() {

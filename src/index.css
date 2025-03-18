@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
@@ -6,7 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Set up CSS variables with proper fallbacks */
 @layer base {
   :root {
     --background: 39 20% 93%;
@@ -34,65 +32,45 @@
   }
 }
 
-/* Base styles with explicit font-family declarations */
 @layer base {
   * {
     @apply border-border;
-    box-sizing: border-box;
   }
-  
   body {
-    @apply bg-[#F6F6F7] text-foreground min-h-screen overflow-x-hidden;
-    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-[#F6F6F7] text-foreground font-sans min-h-screen overflow-x-hidden;
   }
   
-  /* Root container styling */
+  /* Update the root scaling and ensure proper viewport containment */
   #root {
     max-width: 100%;
     margin: 0 auto;
     transform: none;
     transform-origin: top center;
     padding: 0;
-    min-height: 100vh;
+    min-height: 100vh; /* Ensure the root takes full viewport height */
     display: flex;
     flex-direction: column;
   }
   
-  /* Container styling */
+  /* Add additional container padding for better spacing */
   .container {
     @apply px-4 md:px-8 lg:px-16 bg-background relative;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
-    max-width: 1280px !important;
+    max-width: 1280px !important; /* Ensure container has max width */
   }
   
-  /* Header alignment */
+  /* Make sure header aligns properly with content */
   header .container {
     @apply px-4 md:px-8 lg:px-16;
   }
   
-  /* Footer alignment */
+  /* Make sure footer aligns properly with content */
   footer .container {
     @apply px-4 md:px-8 lg:px-16;
-    margin-bottom: 0;
-  }
-  
-  /* Standardized text styling for consistency */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', Georgia, serif;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-  }
-
-  p {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0; /* Ensure the footer sticks to the bottom */
   }
 }
 
-/* Page separator styling */
 .page-separator {
   background-color: #F6F6F7;
   position: relative;
@@ -106,29 +84,42 @@
   left: 0;
   right: 0;
   height: 1px;
-  background-color: rgba(139, 197, 190, 0.2);
+  background-color: rgba(139, 197, 190, 0.2); /* Light tiffany blue color */
 }
 
-/* Leaflet map styling - consolidated */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 1; /* Lower z-index for the base map container */
 }
 
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Fix z-index for map controls - increase to ensure visibility */
 .leaflet-top,
 .leaflet-bottom {
   z-index: 1000;
 }
 
+/* Ensure markers remain on top */
 .leaflet-marker-pane {
   z-index: 1200;
 }
 
+/* Ensure popup is visible */
 .leaflet-popup-pane {
   z-index: 1300;
 }
 
+/* Custom pin styles */
 .custom-pin {
   background: transparent !important;
   border: none !important;
@@ -140,41 +131,176 @@
   to { opacity: 1; }
 }
 
+/* Map overlay animation with improved z-index */
 .fixed.inset-0.bg-white {
   animation: fadeIn 0.3s ease-out;
+  z-index: 9999 !important; /* Ensure the map overlay is on top of everything */
+}
+
+/* Mobile application cards with improved z-index */
+.mobile-application-cards {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: white;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  max-height: 40%;
+  overflow-y: auto;
+}
+
+/* Ensure mobile map view has correct z-index */
+.mobile-map-overlay {
   z-index: 9999 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: white !important;
 }
 
-/* Consolidated prose and list styling */
-.prose p,
-.prose div > p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+/* Improved bullet point styling, particularly for mobile */
+.prose ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+  padding-left: 1.5rem !important;
 }
 
-.prose ul,
-.list-disc {
-  list-style-type: disc;
-  list-style-position: outside;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-  padding-left: 1.5rem;
+.prose li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+  position: relative !important;
 }
 
-.prose li,
-.list-disc li {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-  position: relative;
-  display: list-item;
+.prose li::marker {
+  color: rgb(74, 132, 128) !important;
 }
 
-.prose li::marker,
-.list-disc li::marker {
-  color: rgb(74, 132, 128);
+.prose p {
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
 }
 
-/* Custom bullet point styling */
+/* Fix empty sections issue */
+h3:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Force map containers to highest z-index on mobile */
+  .fixed.inset-0.z-\[9999\] {
+    z-index: 9999 !important;
+  }
+  
+  /* Ensure buttons in map are clickable */
+  .z-\[10000\] {
+    z-index: 10000 !important;
+  }
+  
+  /* Improve bullet points display on mobile */
+  .prose {
+    font-size: 0.9rem !important;
+  }
+  
+  .prose ul {
+    padding-left: 1.5rem !important;
+    margin-left: 0 !important;
+  }
+  
+  .prose li {
+    padding-left: 0 !important;
+    display: list-item !important;
+  }
+  
+  /* Make bullet points more visible */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128) !important;
+    font-size: 1.2em !important;
+  }
+  
+  /* Ensure "See on map" button is prominent */
+  button:has(.w-4.h-4) {
+    padding: 0.5rem 1rem !important;
+  }
+}
+
+/* Fix emoji spacing in bullet points */
+.emoji-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.emoji-bullet .emoji {
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+/* Better mobile list styling */
+@media (max-width: 768px) {
+  .list-disc {
+    padding-left: 1rem;
+  }
+  
+  .bullet-point::before {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Fix text overflow on small screens */
+  .text-gray-700, .text-gray-600 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Enhanced bullet point styling for mobile */
+  ul.list-disc {
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  /* Ensure section headers have proper spacing */
+  .font-semibold.mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Make bullet points more visible on mobile */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
+  }
+  
+  /* Fix empty detail sections showing title only */
+  h3:only-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Improve section title readability */
+  h3.font-semibold {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Improved bullet point styling */
 .bullet-point {
   display: flex;
   align-items: flex-start;
@@ -188,11 +314,11 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: rgb(74, 132, 128);
+  background-color: currentColor;
   margin-top: 0.5rem;
 }
 
-/* Emoji bullet styling */
+/* Fix emoji spacing in bullet points */
 .emoji-bullet {
   display: inline-flex;
   align-items: center;
@@ -205,104 +331,128 @@
   margin-right: 0.25rem;
 }
 
-/* Hide scrollbar but keep functionality */
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Testimonial and quote styling */
-.relative.bg-white\/50.rounded-lg,
-.relative.bg-background.rounded-lg {
-  position: relative;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  border-radius: 0.5rem;
-}
-
-.relative.bg-white\/50.rounded-lg blockquote,
-.relative.bg-background.rounded-lg blockquote {
-  position: relative;
-  z-index: 10;
-  font-style: italic;
-  text-align: center;
-  padding: 0 2rem;
-  font-weight: 600;
-  font-family: 'Playfair Display', Georgia, serif;
-}
-
-/* Mobile optimizations - consolidated */
+/* Better mobile list styling */
 @media (max-width: 768px) {
-  /* Improved typography */
-  .prose {
-    font-size: 0.9rem;
-  }
-  
-  /* List styling */
-  .prose ul,
   .list-disc {
-    padding-left: 1.5rem;
-    margin-left: 0;
-    list-style-position: outside;
+    padding-left: 1rem;
   }
   
-  .prose li,
-  .list-disc li {
-    display: list-item;
-    margin-bottom: 0.625rem;
-    padding-left: 0.25rem;
+  .bullet-point::before {
+    width: 4px;
+    height: 4px;
   }
   
-  /* Bullet point visibility */
-  .list-disc li::marker,
-  .prose li::marker {
-    color: rgb(74, 132, 128);
-    font-size: 1.2em;
-  }
-  
-  /* Text handling */
-  .text-gray-700, 
-  .text-gray-600 {
+  /* Fix text overflow on small screens */
+  .text-gray-700, .text-gray-600 {
     overflow-wrap: break-word;
     word-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
   }
   
-  /* Header styling */
+  /* Enhanced bullet point styling for mobile */
+  ul.list-disc {
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  /* Ensure section headers have proper spacing */
+  .font-semibold.mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Make bullet points more visible on mobile */
+  .list-disc li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
+  }
+  
+  /* Fix empty detail sections showing title only */
+  h3:only-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Improve section title readability */
   h3.font-semibold {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* Improved prose formatting, particularly for mobile */
+.prose ul {
+  list-style-type: disc;
+  list-style-position: outside;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Ensure bullets are properly visible */
+.prose li::marker {
+  color: rgb(74, 132, 128);
+}
+
+/* Fix empty sections issue */
+h3:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure mobile content doesn't overflow */
+@media (max-width: 768px) {
+  .prose {
+    font-size: 0.9rem;
+  }
+  
+  .prose ul {
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    padding-left: 0.25rem;
+  }
+  
+  .prose h3 {
     font-size: 1rem;
-    line-height: 1.5;
+    margin-bottom: 0.5rem;
   }
   
-  /* Map handling */
-  .mobile-map-container {
-    height: 70vh !important;
-    z-index: 10;
-    position: relative;
+  /* Fix section formatting */
+  .space-y-6 > div {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
   }
   
-  .mobile-map-container .leaflet-control-zoom {
-    margin-top: 10px !important;
+  /* Improve card content spacing */
+  .p-4 > div:not(:last-child) {
+    margin-bottom: 1rem;
   }
-  
-  /* Card handling */
-  .fixed.bottom-0 {
-    z-index: 1500;
-    max-height: 70vh;
-    overflow-y: auto;
-    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Quote styling on mobile */
-  .relative.bg-white\/50.rounded-lg blockquote,
-  .relative.bg-background.rounded-lg blockquote {
-    padding: 0 1rem;
-    font-size: 0.95rem;
-  }
+}
+
+/* Fix bullet point rendering in storybook content */
+ul.list-disc {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Fix bullet points that use • character */
+ul li, p:has(• ), div:has(• ) {
+  position: relative;
+}
+
+p:has(• ):before, div:has(• ):before {
+  content: "•";
+  position: absolute;
+  left: -1rem;
 }

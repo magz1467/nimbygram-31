@@ -8,9 +8,7 @@ export function AppLayout() {
     <>
       <RouteChangeTracker />
       <Header />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
+      <Outlet />
     </>
   );
 }
