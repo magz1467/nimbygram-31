@@ -1,9 +1,10 @@
+import React from 'react';
 import { Header } from "@/components/Header";
 import Footer from "@/components/Footer";
 import Image from "@/components/ui/image";
 import GetInTouch from "@/components/GetInTouch";
 
-const About = () => {
+const About: React.FC = () => {
   return (
     <>
       <Header />
