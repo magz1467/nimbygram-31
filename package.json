@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "test": "vite ",
-    "build": "npm install --legacy-peer-deps && vite build",
+    "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:preview": "vite build --mode preview",
     "build:production": "vite build --mode production",
@@ -102,7 +102,6 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
     "netlify-plugin-cache-killer": "^0.0.5",
-    "@netlify/plugin-nextjs": "^4.41.3",
-    "@netlify/plugin-functions-install-core": "^1.0.0"
+    "@netlify/plugin-nextjs": "^4.41.3"
   }
 }
