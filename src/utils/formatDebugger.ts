@@ -51,7 +51,9 @@ export const initFormatDebugging = () => {
   // Check after dynamic content updates
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
+      // Type guard to check if target is an Element
       if (mutation.type === 'childList' && 
+          mutation.target instanceof Element && 
           mutation.target.querySelector('.mobile-application-cards')) {
         console.log('🔄 Content updated, rechecking formatting...');
         debugFormatting();
@@ -64,4 +66,3 @@ export const initFormatDebugging = () => {
     subtree: true
   });
 };
-
