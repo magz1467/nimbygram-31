@@ -41,18 +41,18 @@ export const performSpatialSearch = async (
       if (testError) {
         if (testError.message.includes('function') || 
             testError.message.includes('not found')) {
-          console.log(`[SpatialSearch][${env}] PostGIS function not available: ${testError.message}`);
+          console.log(`[SpatialSearch][${env}] 🔴 PostGIS function not available: ${testError.message}`);
           console.log(`[SpatialSearch][${env}] Will use fallback search method`);
           return null;
         }
         
         // Other errors should be logged but we'll still try the full search
-        console.warn(`[SpatialSearch][${env}] Test query had error, but will try full search: ${testError.message}`);
+        console.warn(`[SpatialSearch][${env}] ⚠️ Test query had error, but will try full search: ${testError.message}`);
       } else {
-        console.log(`[SpatialSearch][${env}] PostGIS function exists, proceeding with full search`);
+        console.log(`[SpatialSearch][${env}] ✅ PostGIS function exists, proceeding with full search`);
       }
     } catch (testErr) {
-      console.error(`[SpatialSearch][${env}] Error testing PostGIS function:`, testErr);
+      console.error(`[SpatialSearch][${env}] 🔴 Error testing PostGIS function:`, testErr);
       // Continue to full search despite test error
     }
     
@@ -80,11 +80,11 @@ export const performSpatialSearch = async (
     if (spatialError) {
       if (spatialError.message.includes('function') || 
           spatialError.message.includes('not found')) {
-        console.log(`[SpatialSearch][${env}] PostGIS function not available: ${spatialError.message}`);
+        console.log(`[SpatialSearch][${env}] 🔴 PostGIS function not available: ${spatialError.message}`);
         return null;
       }
       
-      console.error(`[SpatialSearch][${env}] Spatial search error:`, spatialError);
+      console.error(`[SpatialSearch][${env}] 🔴 Spatial search error:`, spatialError);
       throw spatialError;
     }
     
@@ -136,7 +136,7 @@ export const performSpatialSearch = async (
     
     return [];
   } catch (error) {
-    console.error(`[SpatialSearch][${env}] Error in spatial search:`, error);
+    console.error(`[SpatialSearch][${env}] 🔴 Error in spatial search:`, error);
     return null; // Return null to trigger fallback
   }
 }

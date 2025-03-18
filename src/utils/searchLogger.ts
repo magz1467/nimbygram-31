@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentHostname, getEnvironmentName } from "@/utils/environment";
 
@@ -12,7 +13,7 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     const env = getEnvironmentName();
     const hostname = getCurrentHostname();
     
-    console.log(`[SearchLogger][${env}][${hostname}] Attempting to log search: "${searchTerm}" (${type})`);
+    console.log(`[SearchLogger][${env}][${hostname}] 🔍 Attempting to log search: "${searchTerm}" (${type}) from ${tab || 'unknown'} tab`);
     
     // Check if we've logged this search recently (within 10 seconds)
     const now = Date.now();
@@ -24,8 +25,8 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
       return true;
     }
     
-    // Log to console
-    console.log(`[SearchLogger][${env}] Logging search: "${searchTerm}" (${type}) from ${tab || 'unknown'} tab`);
+    // Log to console with environment info
+    console.log(`[SearchLogger][${env}][${hostname}] Logging search: "${searchTerm}" (${type}) from ${tab || 'unknown'} tab`);
     
     // Get current user session (if logged in)
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -43,14 +44,14 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
         .limit(1);
       
       if (countError) {
-        console.warn(`[SearchLogger][${env}] Table check failed:`, countError.message);
+        console.warn(`[SearchLogger][${env}] Table check failed:`, countError.message, countError.details);
         return true;
       }
       
-      console.log(`[SearchLogger][${env}] Searches table exists, proceeding with insert`);
+      console.log(`[SearchLogger][${env}] ✅ Searches table exists, proceeding with insert`);
       
-      // Successfully validated table exists, now insert with error handling
-      const insertPayload = {
+      // Standard format payload
+      const standardPayload = {
         search_term: searchTerm,
         type: type, 
         tab: tab || 'unknown',
@@ -60,22 +61,77 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
         hostname: hostname
       };
       
-      console.log(`[SearchLogger][${env}] Insert payload:`, insertPayload);
+      console.log(`[SearchLogger][${env}] Standard format payload:`, standardPayload);
       
-      const { error } = await supabase
+      // Try with the standard column names first
+      const { error: standardError } = await supabase
         .from('Searches')
-        .insert(insertPayload);
+        .insert(standardPayload);
       
-      if (error) {
-        console.warn(`[SearchLogger][${env}] Search log failed:`, error.message, error.details);
+      if (standardError) {
+        console.log(`[SearchLogger][${env}] 🔴 Failed with standard column names:`, standardError.message, standardError.details);
+        
+        // If the first attempt fails, try with alternative column names
+        console.log(`[SearchLogger][${env}] Trying alternative column format...`);
+        
+        const alternativePayload = {
+          'Post Code': searchTerm,
+          'Status': type,
+          'User_logged_in': !!session?.user,
+          'Timestamp': new Date().toISOString(),
+          'Environment': env,
+          'Tab': tab || 'unknown',
+          'Hostname': hostname
+        };
+        
+        console.log(`[SearchLogger][${env}] Alternative format payload:`, alternativePayload);
+        
+        const { error: altError } = await supabase
+          .from('Searches')
+          .insert(alternativePayload);
+        
+        if (altError) {
+          console.log(`[SearchLogger][${env}] 🔴 Alternative format also failed:`, altError.message, altError.details);
+          
+          // Attempt to get table structure to debug column names
+          console.log(`[SearchLogger][${env}] Attempting to get table structure...`);
+          const { data: columnInfo, error: infoError } = await supabase
+            .rpc('get_table_columns', { table_name: 'Searches' })
+            .select('*');
+          
+          if (infoError) {
+            console.log(`[SearchLogger][${env}] 🔴 Could not retrieve table structure:`, infoError.message);
+          } else {
+            console.log(`[SearchLogger][${env}] 📊 Table structure:`, columnInfo);
+          }
+          
+          // Last resort: try using a simple key-value format
+          console.log(`[SearchLogger][${env}] Trying minimal format as last attempt...`);
+          const simplePayload = {
+            search: searchTerm,
+            env: env
+          };
+          
+          const { error: simpleError } = await supabase
+            .from('Searches')
+            .insert(simplePayload);
+          
+          if (simpleError) {
+            console.log(`[SearchLogger][${env}] 🔴 All insertion attempts failed. Last error:`, simpleError.message, simpleError.details);
+          } else {
+            console.log(`[SearchLogger][${env}] ✅ Successfully logged with minimal format`);
+          }
+        } else {
+          console.log(`[SearchLogger][${env}] ✅ Successfully logged with alternative format`);
+        }
       } else {
-        console.log(`[SearchLogger][${env}] Search logged successfully`);
+        console.log(`[SearchLogger][${env}] ✅ Successfully logged with standard format`);
       }
     } catch (insertError) {
-      console.error(`[SearchLogger][${env}] Exception during search logging:`, insertError);
+      console.error(`[SearchLogger][${env}] 🔴 Exception during search logging:`, insertError);
     }
     
-    // Store this search in recent searches
+    // Store this search in recent searches regardless of logging success
     recentSearches.set(key, now);
     
     // Clean up old entries
@@ -87,7 +143,7 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     
     return true;
   } catch (err) {
-    console.error(`[SearchLogger] Failed to log search:`, err);
+    console.error(`[SearchLogger][${env}] 🔴 Failed to log search:`, err);
     // Don't throw - we don't want to break the app if logging fails
     return true;
   }

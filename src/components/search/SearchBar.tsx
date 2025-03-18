@@ -26,10 +26,10 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
   const handleSubmit = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
-    console.log(`[SearchBar][${env}][${hostname}] Search submitted: "${searchTerm}"`);
+    console.log(`[SearchBar][${env}][${hostname}] 🔍 Search submitted: "${searchTerm}"`);
     
     if (!searchTerm.trim() || isSubmitting) {
-      console.log(`[SearchBar][${env}] Invalid search term or already submitting`);
+      console.log(`[SearchBar][${env}] ⚠️ Invalid search term or already submitting`);
       toast({
         title: "Error",
         description: "Please enter a valid postcode, street name or area",
@@ -39,13 +39,13 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     }
 
     setIsSubmitting(true);
-    console.log(`[SearchBar][${env}] Starting search for: "${searchTerm.trim()}"`);
+    console.log(`[SearchBar][${env}] 🔍 Starting search for: "${searchTerm.trim()}"`);
     
     try {
       // Log search - using multiple column format attempts for compatibility
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
       await logSearch(searchTerm.trim(), 'location', 'search');
-      console.log(`[SearchBar][${env}] logSearch completed successfully`);
+      console.log(`[SearchBar][${env}] logSearch completed`);
       
       // Call onSearch callback if provided
       if (onSearch) {
@@ -61,9 +61,9 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       
       // Navigate to search results with URL parameters
       navigate(`/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`);
-      console.log(`[SearchBar][${env}] Navigation initiated`);
+      console.log(`[SearchBar][${env}] ✅ Navigation initiated`);
     } catch (error) {
-      console.error(`[SearchBar][${env}] Search error:`, error);
+      console.error(`[SearchBar][${env}] 🔴 Search error:`, error);
       toast({
         title: "Error",
         description: "There was a problem with your search. Please try again.",
