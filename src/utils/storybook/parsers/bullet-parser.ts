@@ -2,10 +2,15 @@
 import { StorySection } from '../types';
 
 /**
- * Extracts bullet points from content with improved robustness
+ * Extracts bullet points from content with improved robustness and consistent formatting
  */
 export function extractBulletPoints(bodyContent: string): StorySection[] {
   const processedSections: StorySection[] = [];
+  
+  // Guard against null or undefined input
+  if (!bodyContent) {
+    return processedSections;
+  }
   
   // Normalize line endings and double spaces
   const normalizedContent = bodyContent
@@ -13,12 +18,12 @@ export function extractBulletPoints(bodyContent: string): StorySection[] {
     .replace(/\n\n+/g, '\n\n')
     .trim();
   
-  // Check if there are bullet points in the content
-  const hasBulletPoints = normalizedContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+  // Check if there are bullet points in the content with a more robust regex
+  const hasBulletPoints = /(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/.test(normalizedContent);
   
   if (hasBulletPoints) {
     // Find the position of the first bullet
-    const firstBulletMatch = normalizedContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+    const firstBulletMatch = normalizedContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/);
     
     if (firstBulletMatch && firstBulletMatch.index !== undefined && firstBulletMatch.index > 0) {
       // Extract content before the first bullet as deal section

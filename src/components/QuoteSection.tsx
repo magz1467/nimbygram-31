@@ -8,10 +8,10 @@ export const QuoteSection = () => {
         <div className="relative bg-background rounded-lg p-6">
           {/* Large quote mark in the background */}
           <div className="absolute -top-4 md:-top-4 left-4 text-secondary/10">
-            <Quote size={60} />
+            <Quote size={60} strokeWidth={1.5} />
           </div>
           <div className="absolute -bottom-4 right-4 text-secondary/10 transform rotate-180">
-            <Quote size={60} />
+            <Quote size={60} strokeWidth={1.5} />
           </div>
           
           {/* Quote text */}

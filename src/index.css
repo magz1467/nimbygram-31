@@ -6,6 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Set up CSS variables with proper fallbacks */
 @layer base {
   :root {
     --background: 39 20% 93%;
@@ -33,6 +34,7 @@
   }
 }
 
+/* Base styles with explicit font-family declarations */
 @layer base {
   * {
     @apply border-border;
@@ -40,40 +42,53 @@
   }
   
   body {
-    @apply bg-[#F6F6F7] text-foreground font-sans min-h-screen overflow-x-hidden;
+    @apply bg-[#F6F6F7] text-foreground min-h-screen overflow-x-hidden;
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Update the root scaling and ensure proper viewport containment */
+  /* Root container styling */
   #root {
     max-width: 100%;
     margin: 0 auto;
     transform: none;
     transform-origin: top center;
     padding: 0;
-    min-height: 100vh; /* Ensure the root takes full viewport height */
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
   }
   
-  /* Add additional container padding for better spacing */
+  /* Container styling */
   .container {
     @apply px-4 md:px-8 lg:px-16 bg-background relative;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
-    max-width: 1280px !important; /* Ensure container has max width */
+    max-width: 1280px !important;
   }
   
-  /* Make sure header aligns properly with content */
+  /* Header alignment */
   header .container {
     @apply px-4 md:px-8 lg:px-16;
   }
   
-  /* Make sure footer aligns properly with content */
+  /* Footer alignment */
   footer .container {
     @apply px-4 md:px-8 lg:px-16;
-    margin-bottom: 0; /* Ensure the footer sticks to the bottom */
+    margin-bottom: 0;
+  }
+  
+  /* Standardized text styling for consistency */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
   }
 }
 
@@ -91,43 +106,29 @@
   left: 0;
   right: 0;
   height: 1px;
-  background-color: rgba(139, 197, 190, 0.2); /* Light tiffany blue color */
+  background-color: rgba(139, 197, 190, 0.2);
 }
 
-/* Leaflet map styling */
+/* Leaflet map styling - consolidated */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  z-index: 1; /* Lower z-index for the base map container */
+  z-index: 1;
 }
 
-/* Hide scrollbar but keep functionality */
-.hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
-}
-
-/* Fix z-index for map controls - increase to ensure visibility */
 .leaflet-top,
 .leaflet-bottom {
   z-index: 1000;
 }
 
-/* Ensure markers remain on top */
 .leaflet-marker-pane {
   z-index: 1200;
 }
 
-/* Ensure popup is visible */
 .leaflet-popup-pane {
   z-index: 1300;
 }
 
-/* Custom pin styles */
 .custom-pin {
   background: transparent !important;
   border: none !important;
@@ -139,45 +140,28 @@
   to { opacity: 1; }
 }
 
-/* Map overlay animation with improved z-index */
 .fixed.inset-0.bg-white {
   animation: fadeIn 0.3s ease-out;
-  z-index: 9999 !important; /* Ensure the map overlay is on top of everything */
+  z-index: 9999 !important;
 }
 
-/* Prose content styles for consistent text formatting */
-.prose p {
+/* Consolidated prose and list styling */
+.prose p,
+.prose div > p {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
-.prose ul {
-  list-style-type: disc;
-  list-style-position: outside;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-  padding-left: 1.5rem;
-}
-
-.prose li {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-  position: relative;
-}
-
-.prose li::marker {
-  color: rgb(74, 132, 128);
-}
-
-/* Standard list styles that match prose formatting */
+.prose ul,
 .list-disc {
   list-style-type: disc;
   list-style-position: outside;
-  padding-left: 1.5rem;
   margin-top: 0.5em;
   margin-bottom: 0.5em;
+  padding-left: 1.5rem;
 }
 
+.prose li,
 .list-disc li {
   margin-top: 0.25em;
   margin-bottom: 0.25em;
@@ -185,11 +169,12 @@
   display: list-item;
 }
 
+.prose li::marker,
 .list-disc li::marker {
   color: rgb(74, 132, 128);
 }
 
-/* Custom bullet point styling for special cases */
+/* Custom bullet point styling */
 .bullet-point {
   display: flex;
   align-items: flex-start;
@@ -203,11 +188,11 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: currentColor;
+  background-color: rgb(74, 132, 128);
   margin-top: 0.5rem;
 }
 
-/* Fix emoji spacing in bullet points */
+/* Emoji bullet styling */
 .emoji-bullet {
   display: inline-flex;
   align-items: center;
@@ -220,82 +205,17 @@
   margin-right: 0.25rem;
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  /* Improve bullet points display on mobile */
-  .prose {
-    font-size: 0.9rem;
-  }
-  
-  .prose ul {
-    padding-left: 1.5rem;
-    margin-left: 0;
-  }
-  
-  .prose li {
-    padding-left: 0;
-    display: list-item;
-  }
-  
-  /* Make bullet points more visible */
-  .list-disc li::marker,
-  .prose li::marker {
-    color: rgb(74, 132, 128);
-    font-size: 1.2em;
-  }
-  
-  /* Text overflow handling */
-  .text-gray-700, .text-gray-600 {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-word;
-    hyphens: auto;
-  }
-  
-  /* Better list styling */
-  ul.list-disc {
-    list-style-position: outside;
-    padding-left: 1.5rem;
-  }
-  
-  /* Fix empty detail sections showing title only */
-  h3:only-child {
-    margin-bottom: 0;
-  }
-  
-  /* Improve section title readability */
-  h3.font-semibold {
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-  
-  /* Fix map display on mobile */
-  .mobile-map-container {
-    height: 70vh !important;
-    z-index: 10;
-    position: relative;
-  }
-  
-  /* Ensure map controls don't overlap with back/close buttons */
-  .mobile-map-container .leaflet-control-zoom {
-    margin-top: 10px !important;
-  }
-  
-  /* Make sure application cards are visible even with map */
-  .fixed.bottom-0 {
-    z-index: 1500;
-    max-height: 70vh;
-    overflow-y: auto;
-    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Card content spacing */
-  .p-4 > div:not(:last-child) {
-    margin-bottom: 1rem;
-  }
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Fix for testimonial styles */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Testimonial and quote styling */
 .relative.bg-white\/50.rounded-lg,
 .relative.bg-background.rounded-lg {
   position: relative;
@@ -313,4 +233,76 @@
   text-align: center;
   padding: 0 2rem;
   font-weight: 600;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Mobile optimizations - consolidated */
+@media (max-width: 768px) {
+  /* Improved typography */
+  .prose {
+    font-size: 0.9rem;
+  }
+  
+  /* List styling */
+  .prose ul,
+  .list-disc {
+    padding-left: 1.5rem;
+    margin-left: 0;
+    list-style-position: outside;
+  }
+  
+  .prose li,
+  .list-disc li {
+    display: list-item;
+    margin-bottom: 0.625rem;
+    padding-left: 0.25rem;
+  }
+  
+  /* Bullet point visibility */
+  .list-disc li::marker,
+  .prose li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
+  }
+  
+  /* Text handling */
+  .text-gray-700, 
+  .text-gray-600 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Header styling */
+  h3.font-semibold {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Map handling */
+  .mobile-map-container {
+    height: 70vh !important;
+    z-index: 10;
+    position: relative;
+  }
+  
+  .mobile-map-container .leaflet-control-zoom {
+    margin-top: 10px !important;
+  }
+  
+  /* Card handling */
+  .fixed.bottom-0 {
+    z-index: 1500;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Quote styling on mobile */
+  .relative.bg-white\/50.rounded-lg blockquote,
+  .relative.bg-background.rounded-lg blockquote {
+    padding: 0 1rem;
+    font-size: 0.95rem;
+  }
 }

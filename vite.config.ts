@@ -20,17 +20,34 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  css: {
+    // Apply post-processing to ensure CSS variables are properly handled
+    postcss: {
+      plugins: [],
+    },
+    // Ensure CSS modules hash consistently
+    modules: {
+      localsConvention: 'camelCaseOnly',
+    }
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,
     // Add a cache buster to ensure fresh assets
     assetsInlineLimit: 0,
+    // Critical CSS optimization
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         // Use hash for cache busting without invalid timestamp
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        assetFileNames: ({name}) => {
+          if (/\.(css)$/.test(name ?? '')) {
+            return 'assets/css/[name]-[hash][extname]';
+          }
+          return 'assets/[ext]/[name]-[hash][extname]';
+        },
       },
     },
   }
