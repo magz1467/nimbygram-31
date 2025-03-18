@@ -1,9 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { formatDistance } from "@/utils/formatDistance";
+import { formatDistance, calculateDistance } from "@/utils/distance";
 import { SearchFilters } from "../use-planning-search";
-import { calculateDistance } from "@/utils/distanceUtils";
 
 // Function to perform a fallback search using bounding box + manual distance calculation
 export async function performFallbackSearch(
@@ -55,10 +54,8 @@ export async function performFallbackSearch(
         
         // Calculate actual distance
         const distanceInKm = calculateDistance(
-          lat, 
-          lng, 
-          app.latitude, 
-          app.longitude
+          [lat, lng] as [number, number], 
+          [app.latitude, app.longitude] as [number, number]
         );
         const distanceInMiles = distanceInKm * 0.621371; // Convert km to miles
         

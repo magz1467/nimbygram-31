@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types/planning";
-import { formatDistance } from "@/utils/formatDistance";
+import { formatDistance } from "@/utils/distance";
 import { SearchFilters } from "../use-planning-search";
 
 // Function to perform a spatial search using PostGIS
