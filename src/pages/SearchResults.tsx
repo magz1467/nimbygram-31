@@ -97,18 +97,23 @@ const SearchResultsPage = () => {
     const search = searchParams.get('search');
     const searchTypeParam = searchParams.get('searchType');
     
+    console.log("Search params:", { search, searchTypeParam });
+    
     // Validate the searchType to ensure it matches the expected union type
     const searchType = searchTypeParam === "location" || searchTypeParam === "postcode" 
       ? searchTypeParam 
       : "location"; // Default to location if invalid
     
     if (search) {
-      setSearchState({
+      const searchStateObj = {
         searchTerm: search,
         searchType: searchType,
         displayTerm: search,
         timestamp: Date.now()
-      });
+      };
+      
+      console.log("Setting search state:", searchStateObj);
+      setSearchState(searchStateObj);
       setIsLoading(true);
     } else {
       setSearchState(null);
@@ -182,19 +187,27 @@ const SearchResultsPage = () => {
             </div>
           )}
           {error && (
-            <SearchErrorView 
-              errorDetails={error.message || "An unknown error occurred"}
-              errorType={ErrorType.UNKNOWN}
-              onRetry={() => {
-                setIsLoading(true);
-                setIsSubmitting(true);
+            <div className="search-error">
+              <p>Error: {error.message}</p>
+              <button onClick={() => {
                 setError(null);
-              }} 
-            />
+                setIsLoading(true);
+                // Re-trigger the search
+                if (searchState) {
+                  const newSearchState = {...searchState, timestamp: Date.now()};
+                  setSearchState(newSearchState);
+                }
+              }}>
+                Retry
+              </button>
+            </div>
           )}
           <SearchView 
             initialSearch={searchState}
-            onError={handleError}
+            onError={(err) => {
+              console.error("Search error details:", err);
+              handleError(err);
+            }}
             onSearchComplete={handleSearchComplete}
             onSearchStart={handleSearchStart}
             aria-busy={isLoading}

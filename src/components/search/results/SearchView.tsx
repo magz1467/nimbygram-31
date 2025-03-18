@@ -192,6 +192,17 @@ export function SearchView({
     }
   }, [initialSearch, onSearchStart]);
 
+  useEffect(() => {
+    if (initialSearch) {
+      console.log("SearchView received initialSearch:", initialSearch);
+      // Log the actual Supabase query being constructed
+      console.log("Constructing Supabase query with:", {
+        searchTerm: initialSearch.searchTerm,
+        searchType: initialSearch.searchType
+      });
+    }
+  }, [initialSearch]);
+
   return (
     <div className="min-h-screen bg-gray-50" aria-busy={ariaBusy}>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
