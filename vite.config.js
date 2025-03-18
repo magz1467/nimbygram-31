@@ -2,34 +2,37 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// Consolidate into a single default export
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@types': path.resolve(__dirname, './src/types'),
-      '@api': path.resolve(__dirname, './src/api'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-    }
+    },
   },
   build: {
-    // Force cache invalidation with a timestamp
-    rollupOptions: {
-      output: {
-        entryFileNames: `assets/[name].${new Date().getTime()}.js`,
-        chunkFileNames: `assets/[name].${new Date().getTime()}.js`,
-        assetFileNames: `assets/[name].${new Date().getTime()}.[ext]`
-      }
-    },
-    // Ensure consistent sourcemap generation
+    outDir: 'dist',
     sourcemap: true,
+    // Ensure all modules are bundled, not externalized
+    rollupOptions: {
+      external: [], // Don't externalize any modules
+    },
   },
-  // Add consistent environment variable handling
+  // Make sure all environment variables are properly defined
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    'process.env.BUILD_TIME': JSON.stringify(new Date().toISOString()),
+    'process.env': {},
+    'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0'),
+  },
+  // Disable optimizations that might cause issues
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'zustand',
+      'leaflet'
+    ]
   }
 }); 
