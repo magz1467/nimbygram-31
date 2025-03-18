@@ -90,7 +90,7 @@ a:hover {
 
 .prose p {
   margin-top: 1em;
-  margin-bottom: 1em;
+  margin-bottom:, 1em;
 }
 
 /* List styling - THIS IS THE CRITICAL PART FOR CONSISTENT BULLETS */
