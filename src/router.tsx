@@ -1,50 +1,36 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { useMapViewStore } from './store/mapViewStore';
+import React from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import App from './App';
-import { HomePage } from './pages/HomePage';
-import { SearchResults } from './pages/SearchResults';
+import HomePage from './pages/HomePage';
+import SearchResults from './pages/SearchResults';
+import ErrorPage from './pages/ErrorPage';
+import { useMapViewStore } from './store/mapViewStore';
 import { useEffect } from 'react';
-import { useLocation, navigate } from 'react-router-dom';
 
-// Create a wrapper component to handle the map redirect
+// MapRedirect component that sets map view to true and redirects
 function MapRedirect() {
-  const { setMapView } = useMapViewStore();
   const location = useLocation();
+  const { setMapView } = useMapViewStore();
   
   useEffect(() => {
-    console.log("MapRedirect: Setting map view to true and redirecting to search-results");
+    // Set map view to true
     setMapView(true);
-    
-    // We'll keep the URL params for the redirect
-    const searchParams = new URLSearchParams(location.search);
-    const redirectPath = searchParams.toString() 
-      ? `/search-results?${searchParams.toString()}`
-      : '/search-results';
-      
-    navigate(redirectPath, { replace: true });
   }, [setMapView]);
   
-  return <div>Redirecting...</div>;
+  // Redirect to search results with the current query parameters
+  return <Navigate to={`/search-results${location.search}`} replace />;
 }
 
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />
-      },
-      {
-        path: 'search-results',
-        element: <SearchResults />
-      },
-      // Redirect /map to /search-results with isMapView=true
-      {
-        path: 'map',
-        element: <MapRedirect />
-      }
-    ]
-  }
-]);
+// Router component that defines all routes
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<App />}>
+        <Route index element={<HomePage />} />
+        <Route path="search-results" element={<SearchResults />} />
+        <Route path="map" element={<MapRedirect />} />
+        <Route path="*" element={<ErrorPage />} />
+      </Route>
+    </Routes>
+  );
+}
