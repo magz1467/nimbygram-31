@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
@@ -5,8 +6,6 @@ import { SortType } from "@/types/application-types";
 import { AlertSection } from "./AlertSection";
 import { formatStorybook } from "@/utils/storybook";
 import { MapPin } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { useMapViewStore } from '../../../store/mapViewStore';
 
 interface ApplicationListViewProps {
   applications: Application[];
@@ -40,14 +39,6 @@ export const ApplicationListView = ({
   hideFilterBar,
   onClose
 }: ApplicationListViewProps) => {
-  const navigate = useNavigate();
-  const { setMapView } = useMapViewStore();
-  
-  const handleListView = () => {
-    console.log("Setting map view to false from ApplicationListView");
-    setMapView(false);
-  };
-
   return (
     <div className="h-full flex flex-col">
       {!hideFilterBar && (

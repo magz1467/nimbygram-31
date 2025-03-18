@@ -1,5 +1,4 @@
-
-import { Application } from "@/types/application-types";
+import { PlanningApplication } from "@/types/planning";
 import { fetchSearch } from "@/api/search";
 
-// Rest of your file...
+// Rest of your file... 

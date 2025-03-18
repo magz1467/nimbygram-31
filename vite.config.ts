@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -30,11 +31,6 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-      },
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        // Use the new entry point
-        app: path.resolve(__dirname, 'src/entry.tsx'),
       },
     },
   }

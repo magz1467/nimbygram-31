@@ -3,7 +3,7 @@ import ApplicationsDashboardMapPage from "@/pages/applications/dashboard/map";
 import SavedApplicationsPage from "@/pages/saved";
 import { RouteObject } from "react-router-dom";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
-import { MapView } from "@/components/MapView";
+import MapViewPage from "@/pages/MapView";
 
 export const applicationRoutes: RouteObject[] = [
   {
@@ -18,7 +18,7 @@ export const applicationRoutes: RouteObject[] = [
   },
   {
     path: "/map",
-    element: <MapView />,
+    element: <MapViewPage />,
     errorElement: <RouteErrorBoundary />,
   },
 ];

@@ -1,47 +1,35 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useMapViewStore } from './store/mapViewStore';
-import { Header } from './components/Header';
-import { MapView } from './components/MapView';
-import { NavigationTracker } from './debug/NavigationTracker';
-import { DomScanner } from './debug/DomScanner';
+import { createBrowserRouter, RouterProvider, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { routes } from "@/routes/routes";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useEffect } from "react";
+import { initReloadTracker } from "@/utils/reloadTracker";
+import { AppLayout } from "@/components/AppLayout";
+import Home from "./pages/Home";
+import SearchResultsPage from "./pages/SearchResultsPage";
+import MapView from "./pages/MapView";
+
+// Create a router instance
+const router = createBrowserRouter(routes);
 
 function App() {
-  const { isMapView, setMapView } = useMapViewStore();
-  const location = useLocation();
-  
-  // Check if we need to show the map view based on URL parameters
+  // Initialize the reload tracker on app mount
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.has('showMap') && params.get('showMap') === 'true') {
-      console.log("App detected showMap=true in URL, setting map view to true");
-      setMapView(true);
-    }
-  }, [location.search, setMapView]);
-  
-  // Listen for our custom mapViewRequested event
-  useEffect(() => {
-    const handleMapViewRequested = (event) => {
-      console.log("🎯 Map view requested via custom event:", event.detail);
-      setMapView(true);
-    };
-    
-    window.addEventListener('mapViewRequested', handleMapViewRequested);
-    
-    return () => {
-      window.removeEventListener('mapViewRequested', handleMapViewRequested);
-    };
-  }, [setMapView]);
-  
+    initReloadTracker();
+  }, []);
+
   return (
-    <div className="flex flex-col h-screen">
-      <NavigationTracker />
-      <DomScanner />
-      <Header />
-      <main className="flex-1 overflow-hidden">
-        {isMapView ? <MapView /> : <Outlet />}
-      </main>
-    </div>
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Home />} />
+          <Route path="search-results" element={<SearchResultsPage />} />
+          <Route path="map" element={<MapView />} />
+          {/* other routes */}
+        </Route>
+      </Routes>
+      <Toaster />
+    </ErrorBoundary>
   );
 }
 

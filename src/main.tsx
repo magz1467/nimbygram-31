@@ -1,40 +1,38 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider } from 'react-router-dom';
-import { AppRoutes } from './router';
+import App from './App';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { installNavigationTracer } from './utils/navigationTracer';
-import { installNavigationOverride } from './utils/navigationOverride';
-import { installComponentInspector } from './utils/componentInspector';
-import { installClickTracer } from './utils/clickTracer';
 
-// Create a new QueryClient instance
-const queryClient = new QueryClient();
-
-// Debug logs
+// Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
-console.log('App version: 1.0.6');
-console.log('Build timestamp: ' + new Date().toISOString());
-console.log('Checking loaded scripts at: ' + new Date().toISOString());
+console.log('App version:', '1.0.6'); // Increment this to verify you're seeing the latest deployment
+console.log('Build timestamp:', new Date().toISOString());
 
-// Install utilities with error handling
-try {
-  installNavigationTracer();
-  installNavigationOverride();
-  installComponentInspector();
-  installClickTracer();
-} catch (error) {
-  console.error('Error installing utilities:', error);
+// Create a function to check loaded scripts
+function checkLoadedScripts() {
+  console.log('Checking loaded scripts at:', new Date().toISOString());
+  const scripts = document.querySelectorAll('script');
+  scripts.forEach(script => {
+    const src = script.getAttribute('src') || '';
+    if (src.includes('maps.googleapis.com')) {
+      console.log('Google Maps script source:', src);
+    }
+  });
 }
 
-// Create React root and render the application
+// Run script check immediately and after a delay
+checkLoadedScripts();
+setTimeout(checkLoadedScripts, 3000);
+
+const queryClient = new QueryClient();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={AppRoutes} />
+      <App />
     </QueryClientProvider>
   </React.StrictMode>
 );
