@@ -1,4 +1,3 @@
-
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
@@ -22,15 +21,15 @@ function App() {
   
   // Listen for our custom mapViewRequested event
   useEffect(() => {
-    const handleMapViewRequested = (event: CustomEvent) => {
+    const handleMapViewRequested = (event) => {
       console.log("🎯 Map view requested via custom event:", event.detail);
       setMapView(true);
     };
     
-    window.addEventListener('mapViewRequested', handleMapViewRequested as EventListener);
+    window.addEventListener('mapViewRequested', handleMapViewRequested);
     
     return () => {
-      window.removeEventListener('mapViewRequested', handleMapViewRequested as EventListener);
+      window.removeEventListener('mapViewRequested', handleMapViewRequested);
     };
   }, [setMapView]);
   
@@ -40,7 +39,7 @@ function App() {
       <DomScanner />
       <Header />
       <main className="flex-1 overflow-hidden">
-        <Outlet />
+        {isMapView ? <MapView /> : <Outlet />}
       </main>
     </div>
   );
