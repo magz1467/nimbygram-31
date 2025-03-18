@@ -6,6 +6,8 @@ import { useCallback } from "react";
 import { Button } from "./ui/button";
 import { Map, List, Filter, ArrowUpDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useMapViewStore } from "../store/mapViewStore";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 interface FilterBarProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -45,6 +47,8 @@ export const FilterBar = ({
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isMapView: mapViewStore, setMapView } = useMapViewStore();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const handleFilterChange = useCallback((filterType: string, value: string) => {
     if (onFilterChange) {
@@ -58,60 +62,39 @@ export const FilterBar = ({
     }
   }, [onSortChange]);
 
-  const handleMapToggle = useCallback(() => {
-    // Check if we're currently on the map page
-    const isOnMapPage = location.pathname === '/map';
-    
-    if (isOnMapPage) {
-      // If on map page, go back to search results, preserving the search state
-      const searchParams = new URLSearchParams(location.search);
-      const postcode = searchParams.get('postcode');
-      
-      // Navigate with state to preserve application data
-      navigate(`/search-results${postcode ? `?postcode=${postcode}` : ''}`, {
-        state: {
-          ...location.state, // Preserve existing state
-          fromMap: true // Mark that we're coming from map view
-        }
-      });
-    } else {
-      // If not on map page, go to map with application data
-      const searchParams = new URLSearchParams(location.search);
-      const postcode = searchParams.get('postcode');
-      
-      // Navigate with state to ensure applications are preserved
-      navigate(`/map${postcode ? `?postcode=${postcode}` : ''}`, {
-        state: {
-          ...location.state, // Preserve existing state
-          applications: applications, // Pass along applications
-          fromList: true // Mark that we're coming from list view
-        }
-      });
+  const handleMapToggle = () => {
+    // On desktop, we don't need to do anything as the SplitView handles the display
+    // On mobile, toggle between map and list view
+    if (!isDesktop) {
+      setMapView(!mapViewStore);
     }
-  }, [navigate, location, applications]);
+  };
 
   return (
-    <div className="flex flex-col bg-white border-b w-full">
-      <div className="px-4 pb-2 flex items-center gap-2">
-        {/* Map/List toggle button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleMapToggle}
-          className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-        >
-          {location.pathname === '/map' ? (
-            <>
-              <List className="h-4 w-4" />
-              List
-            </>
-          ) : (
-            <>
-              <Map className="h-4 w-4" />
-              Map
-            </>
-          )}
-        </Button>
+    <div className="flex justify-between items-center p-4 border-b">
+      {/* Sort options and other filter controls */}
+      <div>
+        {/* Map toggle button - only visible on mobile */}
+        {!isDesktop && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMapToggle}
+            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+          >
+            {mapViewStore ? (
+              <>
+                <List className="h-4 w-4" />
+                List
+              </>
+            ) : (
+              <>
+                <Map className="h-4 w-4" />
+                Map
+              </>
+            )}
+          </Button>
+        )}
         
         {/* Filter button */}
         <Button
