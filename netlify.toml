@@ -39,3 +39,7 @@
   https = true
 
 # Remove all plugin references unless you've specifically added them in the Netlify UI
+
+# Remove any plugin references to non-existent packages
+# [[plugins]]
+#   package = "netlify-plugin-cache-killer"  # This package doesn't exist
