@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, WifiOff, Clock, Search, Info } from "lucide-react";
 import { ErrorType } from "@/utils/errors";

@@ -1,7 +1,24 @@
 import React, { useState, useCallback, useEffect } from "react";
 // Fix: Create better fallback implementations for react-router-dom
 
-// Fallback implementation for useLocation
+// Comprehensive fix for the main search page
+import { SearchView } from "@/components/search/results/SearchView";
+import { SearchErrorView } from "@/components/search/results/SearchErrorView";
+import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
+import { logRouteChange } from "@/utils/reloadTracker";
+import '../styles/search-results.css'; // Using relative path instead of alias
+import { logStorybook } from "@/utils/storybook/logger";
+import { ErrorType } from "@/utils/errors";
+
+// Define proper interfaces for type safety
+interface SearchState {
+  searchType: "location" | "postcode";
+  searchTerm: string;
+  displayTerm?: string;
+  timestamp?: number;
+}
+
+// Simple router implementation
 const useLocation = () => {
   const [location, setLocation] = useState({
     pathname: window.location.pathname,
@@ -19,7 +36,6 @@ const useLocation = () => {
         state: history.state || {}
       });
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
@@ -30,23 +46,11 @@ const useLocation = () => {
 // Fallback implementation for useNavigate
 const useNavigate = () => {
   return useCallback((path: string, options?: any) => {
-    console.log('Navigating to:', path, options);
-    
     if (options?.replace) {
-      window.history.replaceState(
-        options?.state || {},
-        '',
-        path
-      );
+      window.history.replaceState(options?.state || {}, '', path);
     } else {
-      window.history.pushState(
-        options?.state || {},
-        '',
-        path
-      );
+      window.history.pushState(options?.state || {}, '', path);
     }
-    
-    // Dispatch a custom event to notify about the navigation
     window.dispatchEvent(new Event('popstate'));
   }, []);
 };
@@ -61,40 +65,20 @@ const useSearchParams = () => {
     const handlePopState = () => {
       setSearchParamsState(new URLSearchParams(window.location.search));
     };
-    
     window.addEventListener('popstate', handlePopState);
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
   
-  const setSearchParams = useCallback((newParams: URLSearchParams) => {
-    const newUrl = `${window.location.pathname}?${newParams.toString()}${window.location.hash}`;
+  const setSearchParams = useCallback((newParams: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams)) => {
+    const params = typeof newParams === 'function' ? newParams(searchParams) : newParams;
+    const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
     window.history.pushState({}, '', newUrl);
-    setSearchParamsState(newParams);
-    
-    // Dispatch a popstate event to notify about the change
+    setSearchParamsState(params);
     window.dispatchEvent(new Event('popstate'));
-  }, []);
+  }, [searchParams]);
   
   return [searchParams, setSearchParams] as const;
 };
-
-import { SearchView } from "@/components/search/results/SearchView";
-import { SearchErrorView } from "@/components/search/results/SearchErrorView";
-import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
-import { logRouteChange } from "@/utils/reloadTracker";
-import '../styles/search-results.css'; // Using relative path instead of alias
-import { logStorybook } from "@/utils/storybook/logger";
-
-// Define proper interfaces for type safety
-interface SearchStateType {
-  searchType: 'postcode' | 'location';
-  searchTerm: string;
-  displayTerm: string;
-  timestamp: number;
-}
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -102,37 +86,35 @@ const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
   
   // State for search parameters and loading state
-  const [searchState, setSearchState] = useState<SearchStateType | null>(null);
+  const [searchState, setSearchState] = useState<SearchState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Extract search parameters from URL on component mount and when URL changes
+  // Extract search parameters from URL
   useEffect(() => {
-    const searchTerm = searchParams.get('search');
-    const searchType = searchParams.get('searchType') as 'postcode' | 'location';
-    const timestamp = parseInt(searchParams.get('timestamp') || '0', 10);
+    const searchParams = new URLSearchParams(window.location.search);
+    const search = searchParams.get('search');
+    const searchTypeParam = searchParams.get('searchType');
     
-    console.log('Search params changed:', { searchTerm, searchType, timestamp });
+    // Validate the searchType to ensure it matches the expected union type
+    const searchType = searchTypeParam === "location" || searchTypeParam === "postcode" 
+      ? searchTypeParam 
+      : "location"; // Default to location if invalid
     
-    if (searchTerm && searchType) {
+    if (search) {
       setSearchState({
-        searchTerm,
-        searchType,
-        displayTerm: searchTerm,
-        timestamp
+        searchTerm: search,
+        searchType: searchType,
+        displayTerm: search,
+        timestamp: Date.now()
       });
-      
-      // Automatically start search when parameters are available
       setIsLoading(true);
-      setIsSubmitting(true);
-      setError(null);
     } else {
       setSearchState(null);
       setIsLoading(false);
-      setIsSubmitting(false);
     }
-  }, [searchParams]);
+  }, [window.location.search]);
   
   // Track route changes for analytics
   useEffect(() => {
@@ -150,37 +132,41 @@ const SearchResultsPage = () => {
     }
   }, [location, navigate]);
   
-  // Handle search errors
+  // Add this effect to log API errors
+  useEffect(() => {
+    if (error) {
+      console.error('Search API error:', error);
+      // You could also add a more user-friendly error message here
+    }
+  }, [error]);
+  
+  // Handle errors
   const handleError = useCallback((error: Error | null) => {
+    console.error('Search error:', error);
     setError(error);
     setIsLoading(false);
     setIsSubmitting(false);
-    if (error) {
-      console.error('Search error:', error.message);
-    }
   }, []);
   
   // Handle search completion
   const handleSearchComplete = useCallback(() => {
+    console.log('Search complete');
     setIsSubmitting(false);
     setIsLoading(false);
-    console.log('Search complete');
   }, []);
   
   // Handle search start
   const handleSearchStart = useCallback(() => {
+    console.log('Search started');
     setIsSubmitting(true);
     setIsLoading(true);
     setError(null);
-    console.log('Search started');
   }, []);
   
   // Handle postcode selection
   const handlePostcodeSelect = useCallback((postcode: string) => {
     console.log('Postcode selected:', postcode);
-    // Use URL parameters with proper encoding
-    const newPath = `/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`;
-    navigate(newPath);
+    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
   }, [navigate]);
   
   return (
@@ -194,6 +180,17 @@ const SearchResultsPage = () => {
               <p>Loading results...</p>
               {/* You could add a spinner component here */}
             </div>
+          )}
+          {error && (
+            <SearchErrorView 
+              errorDetails={error.message || "An unknown error occurred"}
+              errorType={ErrorType.UNKNOWN}
+              onRetry={() => {
+                setIsLoading(true);
+                setIsSubmitting(true);
+                setError(null);
+              }} 
+            />
           )}
           <SearchView 
             initialSearch={searchState}
