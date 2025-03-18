@@ -10,7 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { applications, loading } = useApplications();
+  const { applications, loading, error } = useApplications();
   
   const handleSearch = (query: string, location: string, radius: number) => {
     navigate(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&radius=${radius}`);
@@ -25,10 +25,15 @@ const Home: React.FC = () => {
   };
 
   // Get featured applications for the map (limit to 3)
-  const mapApplications = applications.slice(0, 3);
+  const mapApplications = applications?.slice(0, 3) || [];
   
   // Get recent applications for the list (limit to 6)
-  const recentApplications = applications.slice(0, 6);
+  const recentApplications = applications?.slice(0, 6) || [];
+
+  // Handle error state
+  if (error) {
+    console.error("Error loading applications:", error);
+  }
 
   return (
     <div>
@@ -120,7 +125,8 @@ const Home: React.FC = () => {
               alt="Planning information" 
               className="rounded-lg w-full h-auto"
               onError={(e) => {
-                e.currentTarget.src = "https://via.placeholder.com/600x400?text=About+NimbyGram";
+                const target = e.currentTarget as HTMLImageElement;
+                target.src = "https://via.placeholder.com/600x400?text=About+NimbyGram";
               }}
             />
           </div>

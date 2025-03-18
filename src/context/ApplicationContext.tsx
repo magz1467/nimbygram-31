@@ -1,158 +1,133 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
-// Define types
-interface Location {
-  lat: number;
-  lng: number;
-}
-
-export interface PlanningApplication {
+// Define types for our application data
+interface Application {
   id: string;
   title: string;
   description: string;
   status: string;
   date: string;
-  address: string;
-  applicant?: string;
-  reference?: string;
-  location?: Location;
-  imageUrl?: string;
-  documents?: Array<{
-    id: string;
-    title: string;
-    url: string;
-    type: string;
-  }>;
+  location: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  // Add other properties as needed
 }
 
 interface ApplicationContextType {
-  applications: PlanningApplication[];
+  applications: Application[];
   loading: boolean;
-  error: string | null;
+  error: Error | null;
+  getApplicationById: (id: string) => Application | undefined;
   fetchApplications: (query?: string, location?: string, radius?: number) => Promise<void>;
-  getApplicationById: (id: string) => PlanningApplication | undefined;
 }
 
-// Create context
+// Create the context with a default value
 const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
 
-// Sample data
-const sampleApplications: PlanningApplication[] = [
+// Sample data for development
+const sampleApplications: Application[] = [
   {
     id: '1',
-    title: 'Two-story extension to existing dwelling',
-    description: 'Proposed two-story side extension to create additional bedroom and enlarged kitchen area.',
+    title: 'New Residential Development',
+    description: 'Construction of 24 new residential units with associated parking and landscaping.',
     status: 'Pending',
-    date: '2023-05-15',
-    address: '123 High Street, Anytown, AN1 2BC',
-    applicant: 'John Smith',
-    reference: 'APP/2023/0123',
-    location: { lat: 51.505, lng: -0.09 },
-    imageUrl: 'https://via.placeholder.com/400x300?text=House+Extension',
-    documents: [
-      { id: 'd1', title: 'Application Form', url: '#', type: 'PDF' },
-      { id: 'd2', title: 'Site Plan', url: '#', type: 'PDF' },
-      { id: 'd3', title: 'Elevation Drawings', url: '#', type: 'PDF' }
-    ]
+    date: '2023-06-15',
+    location: {
+      lat: 51.5074,
+      lng: -0.1278,
+      address: '123 Main St, London'
+    }
   },
   {
     id: '2',
-    title: 'Change of use from retail to restaurant',
-    description: 'Application for change of use from Class E(a) retail to Class E(b) restaurant with outdoor seating area.',
+    title: 'Commercial Office Extension',
+    description: 'Extension to existing office building to provide additional 500sqm of office space.',
     status: 'Approved',
-    date: '2023-04-22',
-    address: '45 Market Square, Anytown, AN1 3DF',
-    applicant: 'Sarah Johnson',
-    reference: 'APP/2023/0089',
-    location: { lat: 51.507, lng: -0.095 },
-    imageUrl: 'https://via.placeholder.com/400x300?text=Restaurant',
-    documents: [
-      { id: 'd4', title: 'Application Form', url: '#', type: 'PDF' },
-      { id: 'd5', title: 'Floor Plans', url: '#', type: 'PDF' },
-      { id: 'd6', title: 'Noise Assessment', url: '#', type: 'PDF' }
-    ]
+    date: '2023-05-20',
+    location: {
+      lat: 51.5174,
+      lng: -0.1378,
+      address: '456 Business Ave, London'
+    }
   },
   {
     id: '3',
-    title: 'New residential development',
-    description: 'Construction of 12 new residential units with associated parking and landscaping.',
-    status: 'In Progress',
-    date: '2023-06-01',
-    address: 'Land at West Road, Anytown, AN2 4GH',
-    applicant: 'Anytown Developments Ltd',
-    reference: 'APP/2023/0156',
-    location: { lat: 51.51, lng: -0.1 },
-    imageUrl: 'https://via.placeholder.com/400x300?text=Housing+Development',
-    documents: [
-      { id: 'd7', title: 'Application Form', url: '#', type: 'PDF' },
-      { id: 'd8', title: 'Site Layout', url: '#', type: 'PDF' },
-      { id: 'd9', title: 'Design & Access Statement', url: '#', type: 'PDF' },
-      { id: 'd10', title: 'Environmental Impact Assessment', url: '#', type: 'PDF' }
-    ]
+    title: 'Change of Use - Retail to Restaurant',
+    description: 'Change of use from retail (Class E) to restaurant (Class E) with external alterations.',
+    status: 'Under Review',
+    date: '2023-07-01',
+    location: {
+      lat: 51.4974,
+      lng: -0.1178,
+      address: '789 High Street, London'
+    }
   }
 ];
 
-// Provider component
 export const ApplicationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [applications, setApplications] = useState<PlanningApplication[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Load initial data
-  useEffect(() => {
-    setApplications(sampleApplications);
-  }, []);
-
-  // Fetch applications based on search criteria
-  const fetchApplications = async (query?: string, location?: string, radius?: number): Promise<void> => {
+  // Function to fetch applications
+  const fetchApplications = async (query?: string, location?: string, radius?: number) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Simulate API call with timeout
+      // In a real app, this would be an API call
+      // For now, we'll use sample data with a delay to simulate network request
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Filter applications based on search criteria
+      // Filter applications based on query if provided
       let filteredApplications = [...sampleApplications];
       
       if (query) {
-        const queryLower = query.toLowerCase();
+        const lowerQuery = query.toLowerCase();
         filteredApplications = filteredApplications.filter(app => 
-          app.title.toLowerCase().includes(queryLower) || 
-          app.description.toLowerCase().includes(queryLower)
+          app.title.toLowerCase().includes(lowerQuery) || 
+          app.description.toLowerCase().includes(lowerQuery)
         );
       }
       
-      // In a real app, you would use location and radius for filtering
+      // In a real app, location and radius would filter based on coordinates
       
       setApplications(filteredApplications);
     } catch (err) {
-      setError('Failed to fetch applications. Please try again.');
+      setError(err instanceof Error ? err : new Error('An unknown error occurred'));
       console.error('Error fetching applications:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Get application by ID
-  const getApplicationById = (id: string): PlanningApplication | undefined => {
+  // Function to get application by ID
+  const getApplicationById = (id: string): Application | undefined => {
     return applications.find(app => app.id === id);
   };
 
+  // Fetch applications on initial load
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
   return (
-    <ApplicationContext.Provider value={{
-      applications,
-      loading,
-      error,
-      fetchApplications,
-      getApplicationById
+    <ApplicationContext.Provider value={{ 
+      applications, 
+      loading, 
+      error, 
+      getApplicationById,
+      fetchApplications
     }}>
       {children}
     </ApplicationContext.Provider>
   );
 };
 
-// Custom hook for using the context
+// Custom hook to use the application context
 export const useApplications = (): ApplicationContextType => {
   const context = useContext(ApplicationContext);
   if (context === undefined) {
