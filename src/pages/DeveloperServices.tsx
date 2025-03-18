@@ -1,4 +1,4 @@
-import { Header } from "@/components/Header";
+
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +80,6 @@ const DeveloperServices = () => {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-16">
           <h1 className="text-4xl font-bold text-center mb-4">Planning Made Simple</h1>
