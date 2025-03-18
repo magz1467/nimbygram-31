@@ -1,0 +1,42 @@
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import { useMapViewStore } from './store/mapViewStore';
+import { useEffect } from 'react';
+
+// Other imports...
+
+// Fix the MapRedirect component to use useLocation instead of directly accessing window.location
+function MapRedirect() {
+  const location = useLocation();
+  const { setMapView } = useMapViewStore();
+  
+  useEffect(() => {
+    // Set map view to true
+    setMapView(true);
+  }, [setMapView]);
+  
+  // Redirect to search results with the current query parameters
+  return <Navigate to={`/search-results${location.search}`} replace />;
+}
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'search-results',
+        element: <SearchResults />,
+      },
+      {
+        path: 'map',
+        element: <MapRedirect />,
+      },
+      // Other routes...
+    ],
+  },
+]); 
