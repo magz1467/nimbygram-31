@@ -4,19 +4,7 @@
   publish = "dist"
   base = "/"
 
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
-  # Ensure we're using npm, not bun
-  USE_NPM_INSTALL = "true"
-  # Add cache settings for faster builds
-  NETLIFY_USE_YARN = "false"
-  NETLIFY_USE_PNPM = "false"
-  NETLIFY_USE_BUN = "false"
-  NPM_FLAGS = "--legacy-peer-deps"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
-
-# Handle SPA routing
+# Handle client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -43,3 +31,16 @@
 # Remove any plugin references to non-existent packages
 # [[plugins]]
 #   package = "netlify-plugin-cache-killer"  # This package doesn't exist
+
+# Specify Node.js version
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  # Ensure we're using npm, not bun
+  USE_NPM_INSTALL = "true"
+  # Add cache settings for faster builds
+  NETLIFY_USE_YARN = "false"
+  NETLIFY_USE_PNPM = "false"
+  NETLIFY_USE_BUN = "false"
+  NPM_FLAGS = "--legacy-peer-deps"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
