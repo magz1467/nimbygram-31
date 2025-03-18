@@ -1,5 +1,4 @@
 import React, { useState, FormEvent } from 'react';
-import { useAddressSuggestions } from '../hooks/use-address-suggestions';
 
 interface SearchFormProps {
   onSearch: (query: string, location: string, radius: number) => void;
@@ -17,19 +16,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({
   const [query, setQuery] = useState<string>(initialQuery);
   const [location, setLocation] = useState<string>(initialLocation);
   const [radius, setRadius] = useState<number>(initialRadius);
-  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
-  
-  const { suggestions, loading } = useAddressSuggestions(location);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSearch(query, location, radius);
-    setShowSuggestions(false);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setLocation(suggestion);
-    setShowSuggestions(false);
   };
 
   return (
@@ -41,38 +31,19 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           id="query"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. extension, new build, change of use"
+          placeholder="Enter keywords (e.g., extension, new build)"
         />
       </div>
       
-      <div className="form-group location-group">
-        <label htmlFor="location">Location</label>
+      <div className="form-group">
+        <label htmlFor="location">Near</label>
         <input
           type="text"
           id="location"
           value={location}
-          onChange={(e) => {
-            setLocation(e.target.value);
-            setShowSuggestions(true);
-          }}
-          onFocus={() => setShowSuggestions(true)}
+          onChange={(e) => setLocation(e.target.value)}
           placeholder="Enter postcode or address"
         />
-        
-        {showSuggestions && suggestions.length > 0 && (
-          <ul className="suggestions">
-            {suggestions.map((suggestion) => (
-              <li 
-                key={suggestion.id} 
-                onClick={() => handleSuggestionClick(suggestion.text)}
-              >
-                {suggestion.text}
-              </li>
-            ))}
-          </ul>
-        )}
-        
-        {loading && <div className="loading-indicator">Loading...</div>}
       </div>
       
       <div className="form-group">
