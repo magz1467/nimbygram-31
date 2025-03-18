@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
 import { Header } from './components/Header';
 import { MapView } from './components/MapView';
-import { SplitView } from './components/SplitView';
+import { NavigationTracker } from './debug/NavigationTracker';
+import { DomScanner } from './debug/DomScanner';
 
 function App() {
   const { isMapView, setMapView } = useMapViewStore();
@@ -19,6 +20,8 @@ function App() {
   
   return (
     <div className="flex flex-col h-screen">
+      <NavigationTracker />
+      <DomScanner />
       <Header />
       <main className="flex-1 overflow-hidden">
         {isMapView ? <MapView /> : <Outlet />}
