@@ -4,12 +4,15 @@ import { StatusCounts } from '@/types/application-types';
 import { FilterType } from '@/types/application-types';
 import { SortType } from '@/types/application-types';
 
-interface FilterBarProps {
+export interface FilterBarProps {
   onFilterChange: (filterType: string, value: string) => void;
   onSortChange: (sortType: string) => void;
   activeFilters: FilterType;
   activeSort: string;
   statusCounts: StatusCounts;
+  isMapView?: boolean;
+  onToggleView?: () => void;
+  applications?: any[];
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -17,7 +20,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onSortChange,
   activeFilters,
   activeSort,
-  statusCounts
+  statusCounts,
+  isMapView,
+  onToggleView,
+  applications
 }) => {
   const handleStatusChange = (status: string) => {
     onFilterChange('status', status);
@@ -69,6 +75,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <option value="impact">Impact Score</option>
           </select>
         </div>
+
+        {onToggleView && (
+          <button 
+            onClick={onToggleView}
+            className="px-3 py-1 rounded-full text-sm bg-pink-100 hover:bg-pink-200"
+          >
+            {isMapView ? 'List View' : 'Map View'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -6,14 +6,23 @@ import { PlanningApplicationList } from '@/components/PlanningApplicationList';
 import { FilterBar } from '@/components/FilterBar';
 import { MapToggle } from '@/components/MapToggle';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { StatusCounts } from '@/types/application-types';
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
   const postcode = searchParams.get('postcode') || '';
-  const { applications, isLoading, error, coordinates, statusCounts } = useApplicationsData({ postcode });
+  const { applications, isLoading, error, coordinates, statusCounts: fetchedStatusCounts } = useApplicationsData({ postcode });
   const { isMapView, setSelectedId } = useMapViewStore();
   const [activeSort, setActiveSort] = useState('distance');
   const [activeFilters, setActiveFilters] = useState({});
+  
+  // Initialize status counts with proper structure
+  const statusCounts: StatusCounts = {
+    'Under Review': fetchedStatusCounts?.['Under Review'] || 0,
+    'Approved': fetchedStatusCounts?.['Approved'] || 0,
+    'Declined': fetchedStatusCounts?.['Declined'] || 0,
+    'Other': fetchedStatusCounts?.['Other'] || 0
+  };
 
   const handleSortChange = (sortType: string) => {
     setActiveSort(sortType);

@@ -22,6 +22,6 @@ export const calculateFormattedDistance = (
     return 'Invalid coords';
   }
   
-  const distanceInKm = calculateDistance(center, coordinates);
+  const distanceInKm = calculateDistance(center[0], center[1], coordinates[0], coordinates[1]);
   return formatDistance(distanceInKm);
 };

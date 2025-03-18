@@ -41,6 +41,52 @@ function deg2rad(deg: number): number {
 }
 
 /**
+ * Sort applications by distance from a reference point
+ * @param applications Array of applications
+ * @param coordinates Reference coordinates [lat, lng]
+ * @returns Sorted applications array
+ */
+export function sortApplicationsByDistance(applications: Application[], coordinates: [number, number]): Application[] {
+  if (!applications?.length || !coordinates) {
+    return applications || [];
+  }
+
+  const [refLat, refLng] = coordinates;
+
+  return [...applications].sort((a, b) => {
+    // Calculate distance for application A
+    let distanceA = Infinity;
+    if (a.coordinates && a.coordinates.length === 2) {
+      distanceA = calculateDistance(refLat, refLng, a.coordinates[0], a.coordinates[1]);
+    } else if (typeof a.latitude === 'number' && typeof a.longitude === 'number') {
+      distanceA = calculateDistance(refLat, refLng, a.latitude, a.longitude);
+    }
+
+    // Calculate distance for application B
+    let distanceB = Infinity;
+    if (b.coordinates && b.coordinates.length === 2) {
+      distanceB = calculateDistance(refLat, refLng, b.coordinates[0], b.coordinates[1]);
+    } else if (typeof b.latitude === 'number' && typeof b.longitude === 'number') {
+      distanceB = calculateDistance(refLat, refLng, b.latitude, b.longitude);
+    }
+
+    return distanceA - distanceB;
+  });
+}
+
+/**
+ * Calculate and format the distance between an application and a set of coordinates
+ */
+export function getFormattedDistanceToCoordinates(application: Application, coordinates: [number, number]): string {
+  if (!application.coordinates && (!application.latitude || !application.longitude)) {
+    return 'Unknown distance';
+  }
+  
+  const distance = getDistanceToApplication(coordinates[0], coordinates[1], application);
+  return formatDistance(distance);
+}
+
+/**
  * Calculate distance between a coordinate and an application
  * @param lat Latitude
  * @param lng Longitude
@@ -77,16 +123,4 @@ export function formatDistance(distanceKm: number): string {
   } else {
     return `${distanceMiles.toFixed(1)} miles`;
   }
-}
-
-/**
- * Calculate and format the distance between an application and a set of coordinates
- */
-export function getFormattedDistanceToCoordinates(application: Application, coordinates: [number, number]): string {
-  if (!application.coordinates && (!application.latitude || !application.longitude)) {
-    return 'Unknown distance';
-  }
-  
-  const distance = getDistanceToApplication(coordinates[0], coordinates[1], application);
-  return formatDistance(distance);
 }
