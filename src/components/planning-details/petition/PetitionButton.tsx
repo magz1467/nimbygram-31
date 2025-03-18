@@ -1,7 +1,7 @@
 
 import { FC } from 'react';
 import { Button } from "@/components/ui/button";
-import "../../styles/components/petition-button.css";
+import "@/styles/components/petition-button.css";
 
 interface PetitionButtonProps {
   onClick: () => void;

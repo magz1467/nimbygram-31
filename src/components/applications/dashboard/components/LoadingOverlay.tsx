@@ -1,6 +1,6 @@
 
 import Image from "@/components/ui/image";
-import "../../../styles/components/loading-overlay.css";
+import "@/styles/components/loading-overlay.css";
 
 export const LoadingOverlay = () => {
   return (
