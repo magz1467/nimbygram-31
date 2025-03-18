@@ -60,75 +60,26 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     const hasBulletPoints = cleanedContent.match(/(?:^|\n)\s*[•\*\-]\s+/);
     
     if (hasBulletPoints) {
-      // Extract bullet points
-      const bulletPoints = [];
-      const sections = [];
-      let currentText = '';
-      
-      // Split by lines and process
-      const lines = cleanedContent.split(/\n/);
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        if (!line) continue;
-        
-        // Check if this line is a bullet point
-        if (line.match(/^\s*[•\*\-]\s+/)) {
-          // If we have accumulated text, add it as a paragraph
-          if (currentText.trim()) {
-            sections.push(`<p class="mb-3 text-left">${currentText.trim()}</p>`);
-            currentText = '';
-          }
-          
-          // Process the bullet point
-          const bulletContent = line.replace(/^\s*[•\*\-]\s+/, '');
-          
-          // Check for emoji at the start of the bullet content
-          const emojiMatch = bulletContent.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
-          
-          if (emojiMatch) {
-            const emoji = emojiMatch[1];
-            const text = bulletContent.substring(emojiMatch[0].length).trim();
-            bulletPoints.push({ emoji, text });
-          } else {
-            bulletPoints.push({ emoji: null, text: bulletContent });
-          }
-        } else {
-          // Not a bullet point, add to current text
-          currentText += (currentText ? ' ' : '') + line;
-        }
-      }
-      
-      // Add any remaining text
-      if (currentText.trim()) {
-        sections.push(`<p class="mb-3 text-left">${currentText.trim()}</p>`);
-      }
-      
-      // Format bullet points if we found any
-      if (bulletPoints.length > 0) {
-        let bulletList = `<ul class="list-disc pl-5 space-y-2 mb-3">`;
-        bulletPoints.forEach(item => {
-          bulletList += `<li class="pl-1 mb-2 text-left">`;
-          if (item.emoji) {
-            bulletList += `<span class="mr-2 inline-block">${item.emoji}</span>`;
-          }
-          bulletList += `${item.text}</li>`;
-        });
-        bulletList += `</ul>`;
-        sections.push(bulletList);
-      }
-      
-      const formattedContent = sections.join('');
+      // Extract bullet points with emojis
+      const bulletPoints = extractFormattedBulletPoints(cleanedContent);
       
       return (
         <div className="prose prose-sm max-w-none">
           <div className="rounded-lg p-4 border border-gray-100">
             <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
-            <div 
-              className="text-gray-700"
-              dangerouslySetInnerHTML={{ __html: formattedContent }}
-            />
+            <ul className="list-disc pl-5 space-y-2 mb-3">
+              {bulletPoints.map((item, index) => {
+                // Handle emoji bullet points
+                const emojiMatch = item.text.match(/^([\u{1F300}-\u{1F64F}\u{2600}-\u{26FF}✓])/u);
+                
+                return (
+                  <li key={index} className="pl-1 mb-2 text-left">
+                    {item.emoji && <span className="mr-2 inline-block">{item.emoji}</span>}
+                    {item.text}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       );
@@ -145,3 +96,34 @@ export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
     }
   }
 };
+
+// Extract formatted bullet points from content as objects with emoji and text
+function extractFormattedBulletPoints(content: string): Array<{emoji: string | null, text: string}> {
+  const bulletPoints: Array<{emoji: string | null, text: string}> = [];
+  
+  // Process bullet points with emoji markers and traditional bullets
+  const bulletRegex = /(?:^|\n)\s*([\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]|\*|•|-)\s+(.*?)(?=(?:^|\n)\s*(?:[\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]|\*|•|-)\s+|\n\n|$)/gsu;
+  
+  const matches = Array.from(content.matchAll(bulletRegex));
+  
+  matches.forEach(match => {
+    const marker = match[1];
+    const text = match[2].trim();
+    
+    // For emoji bullets, separate the emoji from the text
+    if (/[\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]/u.test(marker)) {
+      bulletPoints.push({
+        emoji: marker,
+        text: text
+      });
+    } else {
+      // For traditional bullet points
+      bulletPoints.push({
+        emoji: null,
+        text: text
+      });
+    }
+  });
+  
+  return bulletPoints;
+}
