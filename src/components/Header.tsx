@@ -1,21 +1,20 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-import { useLocation } from "react-router-dom";
-import { Logo } from "./header/Logo";
-import { MobileMenu } from "./header/MobileMenu";
-
-export const Header = () => {
-  const location = useLocation();
-
+function Header() {
   return (
-    <header className="w-full bg-white border-b">
-      <div className="container mx-auto">
-        <div className="flex items-center justify-between h-16">
-          <Logo />
-          <MobileMenu />
-        </div>
+    <header className="header">
+      <div className="container">
+        <Link to="/" className="logo">Your App Name</Link>
+        <nav>
+          <ul>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/search-results">Search</Link></li>
+          </ul>
+        </nav>
       </div>
     </header>
   );
-};
+}
 
 export default Header;
