@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
 import { Header } from './components/Header';
-import { MapView } from './components/MapView';
 import { NavigationTracker } from './debug/NavigationTracker';
 import { DomScanner } from './debug/DomScanner';
 

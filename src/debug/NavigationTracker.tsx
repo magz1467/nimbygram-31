@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -55,4 +56,4 @@ export function NavigationTracker() {
   }, [navigate]);
 
   return null;
-} 
+}

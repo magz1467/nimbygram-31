@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 
 export function DomScanner() {
@@ -58,4 +59,4 @@ export function DomScanner() {
   }, []);
   
   return null;
-} 
+}
