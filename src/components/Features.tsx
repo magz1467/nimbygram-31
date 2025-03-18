@@ -1,8 +1,49 @@
-
+import React from 'react';
 import { PenLine, Map, FileText } from "lucide-react";
 import Image from "@/components/ui/image";
 
+interface FeatureProps {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const Feature: React.FC<FeatureProps> = ({ icon, title, description }) => {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="text-blue-600 mb-4 text-3xl">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-gray-600">{description}</p>
+    </div>
+  );
+};
+
 const Features = () => {
+  const features = [
+    {
+      icon: "🔍",
+      title: "Search by Location",
+      description: "Find planning applications in your area using postcode, address, or interactive map."
+    },
+    {
+      icon: "🔔",
+      title: "Get Notifications",
+      description: "Receive alerts when new applications are submitted in your areas of interest."
+    },
+    {
+      icon: "📊",
+      title: "Track Applications",
+      description: "Follow the progress of applications through the planning process."
+    },
+    {
+      icon: "📱",
+      title: "Mobile Friendly",
+      description: "Access planning information on any device, anywhere, anytime."
+    }
+  ];
+
   return (
     <div className="bg-white py-16 w-full">
       <div className="w-full px-4 md:container md:mx-auto md:px-4">

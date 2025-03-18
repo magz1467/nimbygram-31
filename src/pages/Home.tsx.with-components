@@ -1,0 +1,33 @@
+import React from 'react';
+import Hero from '../components/Hero';
+import Features from '../components/Features';
+import SearchForm from '../components/SearchForm';
+
+const Home: React.FC = () => {
+  return (
+    <div>
+      <Hero />
+      
+      <div className="container mx-auto max-w-6xl px-4 py-12">
+        <h2 className="text-3xl font-bold mb-6">Find Planning Applications</h2>
+        <SearchForm />
+      </div>
+      
+      <Features />
+      
+      <div className="container mx-auto max-w-6xl px-4 py-12">
+        <h2 className="text-3xl font-bold mb-6">About NimbyGram</h2>
+        <p className="text-lg mb-4">
+          NimbyGram is a platform for exploring and understanding planning applications in your area.
+          Our mission is to make planning information accessible and transparent for everyone.
+        </p>
+        <p className="text-lg">
+          Whether you're a homeowner, a planning professional, or just curious about developments in your neighborhood,
+          NimbyGram provides the tools you need to stay informed.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Home; 
