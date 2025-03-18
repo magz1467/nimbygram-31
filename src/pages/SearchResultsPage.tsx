@@ -1,17 +1,17 @@
 import { useSearchParams } from 'react-router-dom';
 import { useApplicationData } from '../hooks/useApplicationData';
 import { FilterBar } from '../components/FilterBar';
-import { MapComponent } from '../components/MapComponent';
+import { ApplicationList } from '../components/ApplicationList';
 
-export function MapView() {
+export function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const postcode = searchParams.get('postcode');
   const { applications } = useApplicationData(postcode);
   
   return (
-    <div className="h-full">
+    <div className="container mx-auto py-6">
       <FilterBar />
-      <MapComponent applications={applications} />
+      <ApplicationList applications={applications} />
     </div>
   );
-}
+} 

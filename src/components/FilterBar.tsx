@@ -1,4 +1,3 @@
-
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewToggle } from "./map/filter/ViewToggle";
 import { FilterControls } from "./map/filter/FilterControls";
@@ -16,7 +15,7 @@ interface FilterBarProps {
     type?: string;
     classification?: string;
   };
-  activeSort: SortType;
+  activeSort: string;
   isMapView?: boolean;
   onToggleView?: () => void;
   applications?: any[];
