@@ -15,12 +15,12 @@ export function installNavigationOverride() {
   
   // Override pushState
   history.pushState = function(...args) {
-    const [state, title, url] = args;
-    console.log('🔍 history.pushState intercepted:', { state, title, url });
+    console.log('🔍 pushState intercepted:', args);
     
-    // Check if trying to navigate to /map
-    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
-      console.log('🛑 Prevented navigation to /map via pushState');
+    // Check if this is a navigation to /map
+    const url = args[2];
+    if (typeof url === 'string' && url.includes('/map')) {
+      console.log('🚨 Intercepted navigation to /map via pushState');
       
       // Instead of navigating, dispatch a custom event that our app can listen for
       window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
@@ -34,12 +34,12 @@ export function installNavigationOverride() {
   
   // Override replaceState
   history.replaceState = function(...args) {
-    const [state, title, url] = args;
-    console.log('🔍 history.replaceState intercepted:', { state, title, url });
+    console.log('🔍 replaceState intercepted:', args);
     
-    // Check if trying to navigate to /map
-    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
-      console.log('🛑 Prevented navigation to /map via replaceState');
+    // Check if this is a navigation to /map
+    const url = args[2];
+    if (typeof url === 'string' && url.includes('/map')) {
+      console.log('🚨 Intercepted navigation to /map via replaceState');
       
       // Instead of navigating, dispatch a custom event that our app can listen for
       window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
@@ -110,7 +110,7 @@ export function installNavigationOverride() {
     });
   }
   
-  // Also intercept all link clicks
+  // Intercept all link clicks
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const link = target.closest('a');
@@ -118,10 +118,9 @@ export function installNavigationOverride() {
     if (link && link.href) {
       const url = new URL(link.href);
       
-      // Check if trying to navigate to /map
-      if (url.pathname === '/map' || url.pathname.includes('/map?')) {
-        console.log('🔍 Link click intercepted:', link.href);
-        console.log('🛑 Prevented navigation to /map via link click');
+      // Check if this is a navigation to /map
+      if (url.pathname.includes('/map')) {
+        console.log('🚨 Intercepted click on link to /map:', url.pathname);
         
         e.preventDefault();
         e.stopPropagation();
