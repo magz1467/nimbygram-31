@@ -4,18 +4,27 @@ import App from './App';
 import { HomePage } from './pages/HomePage';
 import { SearchResults } from './pages/SearchResults';
 import { useEffect } from 'react';
+import { useLocation, navigate } from 'react-router-dom';
 
 // Create a wrapper component to handle the map redirect
 function MapRedirect() {
   const { setMapView } = useMapViewStore();
+  const location = useLocation();
   
   useEffect(() => {
-    console.log("MapRedirect: Setting map view to true and redirecting to /");
+    console.log("MapRedirect: Setting map view to true and redirecting to search-results");
     setMapView(true);
-    // No need to navigate, the state change will trigger the correct view
+    
+    // We'll keep the URL params for the redirect
+    const searchParams = new URLSearchParams(location.search);
+    const redirectPath = searchParams.toString() 
+      ? `/search-results?${searchParams.toString()}`
+      : '/search-results';
+      
+    navigate(redirectPath, { replace: true });
   }, [setMapView]);
   
-  return <Navigate to="/" replace />;
+  return <div>Redirecting...</div>;
 }
 
 export const router = createBrowserRouter([
@@ -31,11 +40,11 @@ export const router = createBrowserRouter([
         path: 'search-results',
         element: <SearchResults />
       },
-      // Redirect /map to / with isMapView=true
+      // Redirect /map to /search-results with isMapView=true
       {
         path: 'map',
         element: <MapRedirect />
       }
     ]
   }
-]); 
+]);

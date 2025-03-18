@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useMapViewStore } from '../store/mapViewStore';
 import { ApplicationList } from './ApplicationList';
@@ -10,7 +11,7 @@ export function SplitView({ applications }) {
   const [searchLocation, setSearchLocation] = useState(null);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   
-  // Get search location from URL or state
+  // Get search location from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const postcode = params.get('postcode');
@@ -42,27 +43,36 @@ export function SplitView({ applications }) {
     setMapView(!isMapView);
   };
 
-  // On desktop: show split view, On mobile: toggle between views
+  // On desktop: show split view when isMapView is true
+  // On mobile: toggle between views
   return (
     <div className="h-full">
       {isDesktop ? (
-        <div className="flex h-[calc(100vh-64px)]">
-          <div className="w-1/2 overflow-y-auto">
-            <ApplicationList 
-              applications={applications} 
-              selectedId={selectedApplicationId}
-              onCardClick={handleCardClick}
-            />
+        isMapView ? (
+          <div className="flex h-[calc(100vh-64px)]">
+            <div className="w-1/2 overflow-y-auto">
+              <ApplicationList 
+                applications={applications} 
+                selectedId={selectedApplicationId}
+                onCardClick={handleCardClick}
+              />
+            </div>
+            <div className="w-1/2">
+              <MapComponent 
+                applications={applications}
+                selectedId={selectedApplicationId}
+                searchLocation={searchLocation}
+                onPinClick={handlePinClick}
+              />
+            </div>
           </div>
-          <div className="w-1/2">
-            <MapComponent 
-              applications={applications}
-              selectedId={selectedApplicationId}
-              searchLocation={searchLocation}
-              onPinClick={handlePinClick}
-            />
-          </div>
-        </div>
+        ) : (
+          <ApplicationList 
+            applications={applications} 
+            selectedId={selectedApplicationId}
+            onCardClick={handleCardClick}
+          />
+        )
       ) : (
         <div className="h-full">
           <button 
@@ -110,4 +120,4 @@ async function fetchPostcodeCoordinates(postcode) {
     console.error('Error fetching postcode coordinates:', error);
     return null;
   }
-} 
+}

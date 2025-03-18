@@ -1,3 +1,4 @@
+
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
@@ -10,13 +11,14 @@ function App() {
   const { isMapView, setMapView } = useMapViewStore();
   const location = useLocation();
   
-  // Check if the URL contains /map and set the state accordingly
+  // Check if we need to show the map view based on URL parameters
   useEffect(() => {
-    if (location.pathname === '/map') {
-      console.log("App detected /map URL, setting map view to true");
+    const params = new URLSearchParams(location.search);
+    if (params.has('showMap') && params.get('showMap') === 'true') {
+      console.log("App detected showMap=true in URL, setting map view to true");
       setMapView(true);
     }
-  }, [location.pathname, setMapView]);
+  }, [location.search, setMapView]);
   
   // Listen for our custom mapViewRequested event
   useEffect(() => {
@@ -38,7 +40,7 @@ function App() {
       <DomScanner />
       <Header />
       <main className="flex-1 overflow-hidden">
-        {isMapView ? <MapView /> : <Outlet />}
+        <Outlet />
       </main>
     </div>
   );

@@ -1,24 +1,16 @@
+
 import { Button } from "./ui/button";
 import { Map, List } from "lucide-react";
 import { useMapViewStore } from "../store/mapViewStore";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 export function MapToggle() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { isMapView, setMapView } = useMapViewStore();
   
   const handleToggle = () => {
-    const searchParams = new URLSearchParams(location.search);
-    const postcode = searchParams.get('postcode');
-    const queryString = postcode ? `?postcode=${postcode}` : '';
-    
-    if (isMapView) {
-      navigate(`/search-results${queryString}`);
-    } else {
-      navigate(`/map${queryString}`);
-    }
-    
+    console.log("Toggling map view in MapToggle, current state:", isMapView);
+    // Simply toggle the state in the store, no navigation
     setMapView(!isMapView);
   };
   
