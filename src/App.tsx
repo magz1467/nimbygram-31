@@ -1,36 +1,37 @@
-import { createBrowserRouter, RouterProvider, Routes, Route } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { routes } from "@/routes/routes";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useMapViewStore } from './store/mapViewStore';
+import { HomePage } from './pages/HomePage';
+import { MapView } from './pages/MapView';
+import { SearchResults } from './pages/SearchResults';
 import { useEffect } from "react";
-import { initReloadTracker } from "@/utils/reloadTracker";
-import { AppLayout } from "@/components/AppLayout";
-import Home from "./pages/Home";
-import SearchResultsPage from "./pages/SearchResultsPage";
-import MapView from "./pages/MapView";
-
-// Create a router instance
-const router = createBrowserRouter(routes);
+import { useNavigate } from 'react-router-dom';
 
 function App() {
-  // Initialize the reload tracker on app mount
-  useEffect(() => {
-    initReloadTracker();
-  }, []);
-
+  const { isMapView } = useMapViewStore();
+  
   return (
-    <ErrorBoundary>
+    <Router>
       <Routes>
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Home />} />
-          <Route path="search-results" element={<SearchResultsPage />} />
-          <Route path="map" element={<MapView />} />
-          {/* other routes */}
-        </Route>
+        <Route path="/" element={isMapView ? <MapView /> : <HomePage />} />
+        <Route path="/search-results" element={isMapView ? <MapView /> : <SearchResults />} />
+        <Route path="/map" element={<MapRedirect />} />
       </Routes>
-      <Toaster />
-    </ErrorBoundary>
+    </Router>
   );
+}
+
+// Helper component to handle redirects from /map URL
+function MapRedirect() {
+  const { setMapView } = useMapViewStore();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    console.log("MapRedirect: Setting map view to true and redirecting to /");
+    setMapView(true);
+    navigate('/', { replace: true });
+  }, [setMapView, navigate]);
+  
+  return null;
 }
 
 export default App;
