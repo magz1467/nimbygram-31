@@ -1,3 +1,5 @@
+
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMapViewStore } from '../store/mapViewStore';
 
@@ -15,4 +17,4 @@ export function SearchBar() {
       <button onClick={handleViewMap}>View Map</button>
     </div>
   );
-} 
+}

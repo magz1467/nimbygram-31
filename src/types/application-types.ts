@@ -32,3 +32,17 @@ export type MapAction =
   | { type: 'SET_COORDINATES'; payload: [number, number] }
   | { type: 'SET_SORT'; payload: SortType }
   | { type: 'SET_FILTERS'; payload: FilterType };
+
+export interface Application {
+  id: number;
+  reference?: string;
+  address: string;
+  description: string;
+  status?: string;
+  date?: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  distance?: number;
+}

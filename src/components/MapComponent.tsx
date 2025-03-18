@@ -1,7 +1,9 @@
+
 import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { LatLngExpression, LatLngTuple } from 'leaflet';
 
 // Use existing pin icons from your project
 // Adjust these paths to match your actual pin locations
@@ -26,8 +28,26 @@ const searchIcon = L.icon({
   popupAnchor: [1, -34]
 });
 
+interface MapLocation {
+  lat: number;
+  lng: number;
+}
+
+interface Application {
+  id: number;
+  location: MapLocation;
+  address: string;
+  description: string;
+}
+
+interface MapControllerProps {
+  selectedId: number | null;
+  applications: Application[];
+  searchLocation: MapLocation | null;
+}
+
 // Component to center map on selected application
-function MapController({ selectedId, applications, searchLocation }) {
+function MapController({ selectedId, applications, searchLocation }: MapControllerProps) {
   const map = useMap();
   
   useEffect(() => {
@@ -40,7 +60,7 @@ function MapController({ selectedId, applications, searchLocation }) {
       map.setView([searchLocation.lat, searchLocation.lng], 13);
     } else if (applications.length > 0) {
       // Fit bounds to show all applications
-      const bounds = L.latLngBounds(applications.map(app => [app.location.lat, app.location.lng]));
+      const bounds = L.latLngBounds(applications.map(app => [app.location.lat, app.location.lng] as LatLngTuple));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [selectedId, applications, searchLocation, map]);
@@ -48,11 +68,18 @@ function MapController({ selectedId, applications, searchLocation }) {
   return null;
 }
 
-export function MapComponent({ applications, selectedId, searchLocation, onPinClick }) {
+interface MapComponentProps {
+  applications: Application[];
+  selectedId: number | null;
+  searchLocation: MapLocation | null;
+  onPinClick: (id: number) => void;
+}
+
+export function MapComponent({ applications, selectedId, searchLocation, onPinClick }: MapComponentProps) {
   const mapRef = useRef(null);
   
   // Find center point for initial map view
-  const getInitialCenter = () => {
+  const getInitialCenter = (): LatLngTuple => {
     if (searchLocation) {
       return [searchLocation.lat, searchLocation.lng];
     }
@@ -84,7 +111,7 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
       {/* Search location marker */}
       {searchLocation && (
         <Marker 
-          position={[searchLocation.lat, searchLocation.lng]}
+          position={[searchLocation.lat, searchLocation.lng] as LatLngTuple}
           icon={searchIcon}
         >
           <Popup>Search location</Popup>
@@ -95,7 +122,7 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
       {applications.map(app => (
         <Marker 
           key={app.id}
-          position={[app.location.lat, app.location.lng]}
+          position={[app.location.lat, app.location.lng] as LatLngTuple}
           icon={app.id === selectedId ? selectedIcon : defaultIcon}
           eventHandlers={{
             click: () => onPinClick(app.id)
@@ -117,4 +144,4 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
       ))}
     </MapContainer>
   );
-} 
+}

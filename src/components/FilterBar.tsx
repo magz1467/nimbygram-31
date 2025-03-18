@@ -1,3 +1,4 @@
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewToggle } from "./map/filter/ViewToggle";
 import { FilterControls } from "./map/filter/FilterControls";
@@ -58,6 +59,8 @@ export const FilterBar = ({
               onFilterChange={onFilterChange} 
               activeFilters={activeFilters}
               statusCounts={statusCounts}
+              onSortChange={handleSortChange}
+              activeSort={activeSort as SortType}
             />
           </div>
           <div className="flex items-center gap-2">

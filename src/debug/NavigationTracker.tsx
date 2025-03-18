@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -15,9 +16,9 @@ export function NavigationTracker() {
     const originalNavigate = navigate;
     
     // @ts-ignore - Overriding for debugging
-    window.navigate = (...args: any[]) => {
-      console.log('🔍 Navigate called with:', args);
-      return originalNavigate(...args);
+    window.navigate = (to: string, options?: any) => {
+      console.log('🔍 Navigate called with:', to, options);
+      return originalNavigate(to, options);
     };
 
     // Also track history API usage
@@ -55,4 +56,4 @@ export function NavigationTracker() {
   }, [navigate]);
 
   return null;
-} 
+}
