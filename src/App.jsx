@@ -1,17 +1,23 @@
+
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './components/Header';
+import { useMapViewStore } from './store/mapViewStore';
+import { MapView } from './components/MapView';
 import './App.css';
 
 function App() {
+  const { isMapView } = useMapViewStore();
+  const location = useLocation();
+  
   return (
     <div className="app">
       <Header />
       <main>
-        <Outlet />
+        {isMapView ? <MapView /> : <Outlet />}
       </main>
     </div>
   );
 }
 
-export default App; 
+export default App;

@@ -1,11 +1,13 @@
+
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import App from './App';
 import HomePage from './pages/HomePage';
 import SearchResults from './pages/SearchResults';
 import ErrorPage from './pages/ErrorPage';
 import { useMapViewStore } from './store/mapViewStore';
 import { useEffect } from 'react';
+import Index from './pages/Index';
 
 // MapRedirect component that sets map view to true and redirects
 function MapRedirect() {
@@ -21,16 +23,29 @@ function MapRedirect() {
   return <Navigate to={`/search-results${location.search}`} replace />;
 }
 
-// Router component that defines all routes
-export function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<App />}>
-        <Route index element={<HomePage />} />
-        <Route path="search-results" element={<SearchResults />} />
-        <Route path="map" element={<MapRedirect />} />
-        <Route path="*" element={<ErrorPage />} />
-      </Route>
-    </Routes>
-  );
-}
+// Create and export the router
+export const AppRoutes = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        index: true,
+        element: <Index />,
+      },
+      {
+        path: "search-results",
+        element: <SearchResults />,
+      },
+      {
+        path: "map",
+        element: <MapRedirect />,
+      },
+      {
+        path: "*",
+        element: <ErrorPage />,
+      }
+    ],
+  },
+]);
