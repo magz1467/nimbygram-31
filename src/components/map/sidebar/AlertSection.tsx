@@ -1,8 +1,9 @@
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMapViewStore } from '../../../store/mapViewStore';
 
 interface AlertSectionProps {
   postcode: string;
@@ -12,6 +13,8 @@ interface AlertSectionProps {
 export const AlertSection = ({ postcode, onShowEmailDialog }: AlertSectionProps) => {
   const [session, setSession] = useState<any>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { setMapView } = useMapViewStore();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -26,6 +29,11 @@ export const AlertSection = ({ postcode, onShowEmailDialog }: AlertSectionProps)
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleViewToggle = () => {
+    console.log("Setting map view to false from AlertSection");
+    setMapView(false);
+  };
 
   return (
     <div className="p-4 border-b bg-white">

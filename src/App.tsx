@@ -1,37 +1,30 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
-import { HomePage } from './pages/HomePage';
-import { MapView } from './pages/MapView';
-import { SearchResults } from './pages/SearchResults';
-import { useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
+import { Header } from './components/Header';
+import { MapView } from './components/MapView';
+import { SplitView } from './components/SplitView';
 
 function App() {
-  const { isMapView } = useMapViewStore();
+  const { isMapView, setMapView } = useMapViewStore();
+  const location = useLocation();
+  
+  // Check if the URL contains /map and set the state accordingly
+  useEffect(() => {
+    if (location.pathname === '/map') {
+      console.log("App detected /map URL, setting map view to true");
+      setMapView(true);
+    }
+  }, [location.pathname, setMapView]);
   
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={isMapView ? <MapView /> : <HomePage />} />
-        <Route path="/search-results" element={isMapView ? <MapView /> : <SearchResults />} />
-        <Route path="/map" element={<MapRedirect />} />
-      </Routes>
-    </Router>
+    <div className="flex flex-col h-screen">
+      <Header />
+      <main className="flex-1 overflow-hidden">
+        {isMapView ? <MapView /> : <Outlet />}
+      </main>
+    </div>
   );
-}
-
-// Helper component to handle redirects from /map URL
-function MapRedirect() {
-  const { setMapView } = useMapViewStore();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    console.log("MapRedirect: Setting map view to true and redirecting to /");
-    setMapView(true);
-    navigate('/', { replace: true });
-  }, [setMapView, navigate]);
-  
-  return null;
 }
 
 export default App;
