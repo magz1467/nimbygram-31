@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Header } from './components/Header';
 import './App.css';
 import { Toaster } from "@/components/ui/toaster";
 import { routes } from "@/routes/routes";
@@ -19,9 +19,12 @@ function App() {
 
   return (
     <div className="app">
-      <ErrorBoundary>
-        <RouterProvider router={router} />
-      </ErrorBoundary>
+      <Header />
+      <main>
+        <ErrorBoundary>
+          <RouterProvider router={router} />
+        </ErrorBoundary>
+      </main>
       <Toaster />
     </div>
   );
