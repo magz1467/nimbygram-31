@@ -8,13 +8,13 @@ interface WatchOutForSectionProps {
 export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => {
   if (!content) return null;
   
-  // Process HTML content
+  // Process HTML content with more robust handling
   const processContent = (str: string) => {
-    // Clean up common prefix issues
     return str
       .replace(/^What to Watch Out For:?\s*/i, '') // Remove redundant title at start
       .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
-      .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
+      .replace(/&lt;(\/?strong)&gt;/g, '<$1>') // Convert encoded HTML tags
+      .replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>'); // Convert markdown bold to HTML
   };
   
   // More robust empty content check
@@ -28,17 +28,20 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
   const formatHtmlContent = (inputContent: string | string[]) => {
     if (Array.isArray(inputContent)) {
       // Handle array content - create proper bullet points
+      const validItems = inputContent.filter(item => item && !isEmptyContent(item));
+      
+      if (validItems.length === 0) return '';
+      
       return `<ul class="list-disc pl-5 space-y-2 my-0">
-        ${inputContent
-          .filter(item => item && !isEmptyContent(item))
-          .map((item, index) => `<li class="pl-1 mb-2 text-left">${processContent(item)}</li>`)
-          .join('')}
+        ${validItems.map(item => `<li class="pl-1 mb-2 text-left">${processContent(item)}</li>`).join('')}
       </ul>`;
     } else {
       // Handle string content
       let contentStr = processContent(inputContent);
       
-      // Make "Considerations:" and other headers bold
+      if (isEmptyContent(contentStr)) return '';
+      
+      // Make headers bold
       contentStr = contentStr.replace(
         /(The Details:|Details:|Considerations:|Key Considerations:)/gi,
         '<strong class="font-bold text-gray-800">$1</strong>'
@@ -49,7 +52,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
         const parts = contentStr.split(/(?:•|\*|-)\s+/).filter(Boolean);
         if (parts.length > 1) {
           return `<ul class="list-disc pl-5 space-y-2 my-0">
-            ${parts.map((part, i) => `<li class="pl-1 mb-2 text-left">${part.trim()}</li>`).join('')}
+            ${parts.map(part => `<li class="pl-1 mb-2 text-left">${part.trim()}</li>`).join('')}
           </ul>`;
         }
       }
@@ -68,6 +71,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
       (Array.isArray(content) && content.every(isEmptyContent))) return null;
   
   const htmlContent = formatHtmlContent(content);
+  if (!htmlContent) return null;
   
   return (
     <div className="bg-[#FFDEE2] text-gray-800 rounded-lg p-4">
@@ -76,9 +80,7 @@ export const WatchOutForSection: FC<WatchOutForSectionProps> = ({ content }) => 
       </h3>
       <div 
         className="space-y-2 text-gray-700 prose prose-sm max-w-none"
-        dangerouslySetInnerHTML={{ 
-          __html: htmlContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
-        }}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
     </div>
   );
