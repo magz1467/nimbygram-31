@@ -1,5 +1,22 @@
 /* Search Results Page Specific Styles */
 
+/* Add this at the top of your CSS file */
+.search-results-container * {
+  box-sizing: border-box;
+}
+
+.search-results-container {
+  /* Reset any inherited text alignment */
+  text-align: left !important;
+}
+
+/* Override any global styles that might affect text alignment */
+body .search-results-container,
+#root .search-results-container,
+.app .search-results-container {
+  text-align: left !important;
+}
+
 /* Container for search results */
 .search-results-container {
   width: 100%;
@@ -36,16 +53,27 @@
   min-height: 200px;
 }
 
+/* Search results specific text styles - with higher specificity */
+.search-results-container p,
+.search-results-container h1,
+.search-results-container h2,
+.search-results-container h3,
+.search-results-container div {
+  text-align: left;
+}
+
 /* Content formatting */
 .search-results-container ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
-  margin-bottom: 1rem;
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  padding-left: 1rem !important;
+  text-align: left !important;
 }
 
 .search-results-container li {
-  margin-bottom: 0.5rem;
-  display: list-item;
+  display: list-item !important;
+  text-align: left !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Ensure bullet points display properly */
@@ -67,6 +95,7 @@
 .search-results-container ol {
   padding-left: 2rem;
   margin-bottom: 1rem;
+  text-align: left;
 }
 
 /* Mobile optimizations */
@@ -88,4 +117,35 @@
   .results-list > div {
     margin-bottom: 0.75rem;
   }
+  
+  /* Override any text alignment from App.css */
+  .search-results-container p,
+  .search-results-container h1,
+  .search-results-container h2,
+  .search-results-container h3,
+  .search-results-container div,
+  .search-results-container li {
+    text-align: left !important;
+  }
+}
+
+/* Target the specific content area where your bullet points appear */
+.application-details p,
+.application-details ul,
+.application-details li,
+.what-deal-section p,
+.what-deal-section ul,
+.what-deal-section li {
+  text-align: left !important;
+}
+
+/* Ensure emoji bullet points display properly */
+.search-results-container p:has(span[role="img"]) {
+  display: flex !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+.search-results-container span[role="img"] {
+  margin-right: 0.5rem !important;
 } 

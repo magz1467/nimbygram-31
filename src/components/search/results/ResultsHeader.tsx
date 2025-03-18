@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { SortType, StatusCounts } from "@/types/application-types";
 import { Map, List, Filter, ArrowUpDown } from "lucide-react";
@@ -6,14 +5,14 @@ import { FilterBar } from "@/components/FilterBar";
 import { ReactNode } from "react";
 
 interface ResultsHeaderProps {
-  searchTerm: string;
+  searchTerm?: string;
   resultCount: number;
   isLoading: boolean;
   isMapVisible: boolean;
   onToggleMapView: () => void;
   activeSort: SortType;
   activeFilters: Record<string, any>;
-  onFilterChange: (type: string, value: any) => void;
+  onFilterChange: (filters: Record<string, any>) => void;
   onSortChange: (sortType: SortType) => void;
   statusCounts: StatusCounts;
   extraControls?: ReactNode;

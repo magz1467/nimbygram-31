@@ -1,4 +1,3 @@
-
 import { Application } from "@/types/planning";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { LoadMoreButton } from "./LoadMoreButton";
@@ -17,6 +16,7 @@ interface ResultsListProps {
   onRetry?: () => void;
   handleLoadMore: () => Promise<void>;
   hideControls?: boolean;
+  formatDescription: (content: string) => React.ReactNode;
 }
 
 export const ResultsList = ({
@@ -32,7 +32,8 @@ export const ResultsList = ({
   isLastPage,
   onRetry,
   handleLoadMore,
-  hideControls = false
+  hideControls = false,
+  formatDescription
 }: ResultsListProps) => {
   // Make sure coordinates are valid before passing them
   const validSearchCoordinates = coordinates ? (Array.isArray(coordinates) && coordinates.length === 2 ? coordinates as [number, number] : undefined) : undefined;

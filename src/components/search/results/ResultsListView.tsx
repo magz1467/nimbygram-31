@@ -1,10 +1,11 @@
-
+import React from 'react';
 import { Application } from "@/types/planning";
-import { useResultsListState } from "@/hooks/search/useResultsListState";
 import { LoadingState } from "./components/LoadingState";
 import { TimeoutErrorMessage } from "./components/TimeoutErrorMessage";
 import { NoResultsMessage } from "./components/NoResultsMessage";
 import { ResultsList } from "./components/ResultsList";
+import { formatContentWithBullets } from '@/utils/formatters';
+import { useSearchState } from '@/hooks/search/useSearchState';
 
 interface ResultsListViewProps {
   applications: Application[];
@@ -19,12 +20,6 @@ interface ResultsListViewProps {
   allApplications?: Application[];
   postcode?: string;
   error?: Error | null;
-  currentPage?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
-  totalCount?: number;
-  hasPartialResults?: boolean;
-  isSearchInProgress?: boolean;
 }
 
 export const ResultsListView = ({ 
@@ -39,64 +34,50 @@ export const ResultsListView = ({
   handleMarkerClick,
   allApplications,
   postcode,
-  error,
-  currentPage = 0,
-  totalPages = 1,
-  onPageChange,
-  totalCount = 0,
-  hasPartialResults = false,
-  isSearchInProgress = false
+  error
 }: ResultsListViewProps) => {
-  
+  // Use the global search state for consistent state management
   const {
-    loadedApplications,
-    isLongSearchDetected,
-    showErrorMessage,
-    hasStartedLoading,
-    initialLoadComplete,
-    isLastPage,
-    handleLoadMore,
-    searchDuration,
-    loadingState,
-    hadResults
-  } = useResultsListState({
-    applications,
-    isLoading,
-    error: error || null,
-    pageSize: 10,
-    currentPage,
-    onPageChange,
     hasPartialResults,
-    isSearchInProgress
-  });
+    isSearchInProgress,
+    searchDuration,
+    currentPage,
+    totalPages,
+    loadMore
+  } = useSearchState();
+  
+  const isLastPage = currentPage >= totalPages;
   
   // First priority: Show results if we have them
-  if (applications?.length > 0 || loadedApplications?.length > 0) {
+  if (applications?.length > 0) {
     return (
-      <ResultsList
-        loadedApplications={loadedApplications.length > 0 ? loadedApplications : applications.slice(0, 10)}
-        applications={applications}
-        allApplications={allApplications}
-        onSeeOnMap={onSeeOnMap}
-        selectedId={selectedId}
-        coordinates={coordinates} // Pass search coordinates
-        handleMarkerClick={handleMarkerClick}
-        isLoading={isLoading}
-        postcode={postcode}
-        isLastPage={isLastPage}
-        onRetry={onRetry}
-        handleLoadMore={handleLoadMore}
-      />
+      <div className="results-list-view">
+        <ResultsList
+          loadedApplications={applications.slice(0, currentPage * 10)}
+          applications={applications}
+          allApplications={allApplications}
+          onSeeOnMap={onSeeOnMap}
+          selectedId={selectedId}
+          coordinates={coordinates}
+          handleMarkerClick={handleMarkerClick}
+          isLoading={isLoading}
+          postcode={postcode}
+          isLastPage={isLastPage}
+          onRetry={onRetry}
+          handleLoadMore={loadMore}
+          formatContent={formatContentWithBullets}
+        />
+      </div>
     );
   }
 
-  // Second priority: Show loading state while searching or if we haven't completed initial load
-  if (isLoading || isSearchInProgress || (!initialLoadComplete && hasStartedLoading)) {
+  // Second priority: Show loading state while searching
+  if (isLoading || isSearchInProgress) {
     return (
       <LoadingState
-        isLongSearchDetected={isLongSearchDetected}
+        isLongSearchDetected={searchDuration > 5000}
         onRetry={onRetry}
-        showErrorMessage={showErrorMessage}
+        showErrorMessage={!!error}
         error={error || null}
         searchTerm={searchTerm}
         displayTerm={displayTerm}
@@ -105,7 +86,7 @@ export const ResultsListView = ({
   }
 
   // Third priority: Show error if there's an error and we have no results
-  if (!isLoading && error && !hadResults) {
+  if (!isLoading && error) {
     return (
       <TimeoutErrorMessage
         error={error}
@@ -118,7 +99,6 @@ export const ResultsListView = ({
   }
 
   // Fourth priority: Show "no results" with appropriate messaging
-  // We don't check searchDuration here to avoid component switching
   return (
     <NoResultsMessage
       searchTerm={searchTerm}
