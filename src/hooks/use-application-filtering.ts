@@ -1,5 +1,8 @@
-
+import { useState, useMemo } from 'react';
 import { Application } from "@/types/planning";
+
+export type SortType = 'date' | 'relevance' | 'distance';
+export type FilterType = 'all' | 'pending' | 'approved' | 'rejected';
 
 interface FilterConfig {
   status?: string;
@@ -8,98 +11,53 @@ interface FilterConfig {
   classification?: string;
 }
 
-export const useApplicationFiltering = (applications: Application[], filters: FilterConfig) => {
-  if (!applications?.length) return [];
-  let filtered = [...applications];
+interface UseApplicationFilteringProps {
+  applications: Application[];
+  initialSortType?: SortType;
+  initialFilterType?: FilterType;
+}
 
-  if (filters.status) {
-    filtered = filtered.filter(app => {
-      if (!app.status) {
-        return filters.status === "Other";
-      }
+export function useApplicationFiltering({
+  applications,
+  initialSortType = 'date',
+  initialFilterType = 'all'
+}: UseApplicationFilteringProps) {
+  const [sortType, setSortType] = useState<SortType>(initialSortType);
+  const [filterType, setFilterType] = useState<FilterType>(initialFilterType);
 
-      const appStatus = app.status.trim();
-      const filterStatus = filters.status;
-      
-      if (filterStatus === "Under Review") {
-        return appStatus.toLowerCase().includes('under consideration');
-      }
-      
-      if (filterStatus === "Other") {
-        const predefinedStatuses = ["Under Review", "Approved", "Declined"];
-        const predefinedMatches = predefinedStatuses.some(status => {
-          if (status === "Under Review") {
-            return appStatus.toLowerCase().includes('under consideration');
-          }
-          return appStatus.toLowerCase().includes(status.toLowerCase());
-        });
-        return !predefinedMatches;
-      }
-      
-      return appStatus.toLowerCase().includes(filterStatus.toLowerCase());
-    });
-  }
-
-  if (filters.classification) {
-    filtered = filtered.filter(app => {
-      // Extract relevant keywords from the title/description to determine category
-      const titleLower = (app.description || app.title || '').toLowerCase();
-      
-      switch (filters.classification) {
-        case 'residential':
-          return titleLower.includes('residential') || 
-                 titleLower.includes('dwelling') || 
-                 titleLower.includes('house') || 
-                 titleLower.includes('flat');
-        case 'commercial':
-          return titleLower.includes('commercial') || 
-                 titleLower.includes('shop') || 
-                 titleLower.includes('retail') || 
-                 titleLower.includes('office');
-        case 'industrial':
-          return titleLower.includes('industrial') || 
-                 titleLower.includes('warehouse') || 
-                 titleLower.includes('factory');
-        case 'mixed_use':
-          return titleLower.includes('mixed use');
-        case 'green_space':
-          return titleLower.includes('garden') || 
-                 titleLower.includes('park') || 
-                 titleLower.includes('landscape');
-        case 'religious':
-          return titleLower.includes('church') || 
-                 titleLower.includes('mosque') || 
-                 titleLower.includes('temple') ||
-                 titleLower.includes('religious');
-        case 'storage':
-          return titleLower.includes('storage') || 
-                 titleLower.includes('garage');
-        case 'other':
-          // If no other category matches, consider it as "other"
-          return true;
-        default:
-          return true;
-      }
-    });
-  }
-
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
-    filtered = filtered.filter(app => {
-      const searchableFields = [
-        app.description,
-        app.address,
-        app.reference,
-        app.title,
-        app.category
-      ];
-      return searchableFields.some(field => 
-        field?.toLowerCase().includes(searchLower)
+  const filteredApplications = useMemo(() => {
+    // First apply filters
+    let filtered = [...applications];
+    
+    if (filterType !== 'all') {
+      filtered = filtered.filter(app => 
+        app.status.toLowerCase() === filterType.toLowerCase()
       );
+    }
+    
+    // Then apply sorting
+    return filtered.sort((a, b) => {
+      if (sortType === 'date') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } 
+      
+      if (sortType === 'distance' && a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance;
+      }
+      
+      if (sortType === 'relevance' && a.relevanceScore !== undefined && b.relevanceScore !== undefined) {
+        return b.relevanceScore - a.relevanceScore;
+      }
+      
+      return 0;
     });
-  }
+  }, [applications, sortType, filterType]);
 
-  // Debug logging to see filtered results
-  console.log('Filtered applications:', filtered.length);
-  return filtered;
-};
+  return {
+    filteredApplications,
+    sortType,
+    filterType,
+    setSortType,
+    setFilterType
+  };
+}

@@ -20,7 +20,7 @@ export default defineConfig({
   },
   // Make sure all environment variables are properly defined
   define: {
-    'process.env': {},
+    'process.env': process.env,
     'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
     'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0'),
   },
