@@ -403,58 +403,61 @@
   }
 }
 
-/* Fix for search result cards formatting */
-.application-card {
+/* Card formatting fixes - only affects display, not functionality */
+.search-results-container .result-card {
   display: flex;
   flex-direction: column;
   border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   height: 100%;
-  transition: all 0.2s ease-in-out;
+  background-color: white;
 }
 
-/* Ensure consistent padding in cards */
-.application-card .card-content {
+.search-results-container .result-card .card-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.search-results-container .result-card .card-content {
   padding: 1rem;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* Fix image aspect ratio and sizing */
-.application-card .card-image {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-/* Ensure consistent text alignment */
-.application-card .card-title {
+.search-results-container .result-card .card-title {
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  text-align: left;
+  color: #333;
 }
 
-.application-card .card-address {
+.search-results-container .result-card .card-address {
   font-size: 0.875rem;
   color: #6b7280;
   margin-bottom: 0.5rem;
-  text-align: left;
 }
 
-/* Fix status badge styling */
-.application-card .status-badge {
+.search-results-container .result-card .card-distance {
+  font-size: 0.75rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.search-results-container .result-card .card-status {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
+  background-color: #e5e7eb;
+  color: #374151;
 }
 
-/* Ensure consistent button styling */
-.application-card .card-actions {
+.search-results-container .result-card .card-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -462,22 +465,19 @@
   padding-top: 0.5rem;
 }
 
-/* Fix for mobile view */
+/* Ensure consistent spacing between cards */
+.search-results-container .results-grid {
+  gap: 1rem;
+}
+
+/* Mobile responsiveness */
 @media (max-width: 768px) {
-  .application-card {
+  .search-results-container .result-card {
     margin-bottom: 1rem;
   }
   
-  .application-card .card-content {
+  .search-results-container .result-card .card-content {
     padding: 0.75rem;
-  }
-  
-  .application-card .card-title {
-    font-size: 0.875rem;
-  }
-  
-  .application-card .card-address {
-    font-size: 0.75rem;
   }
 }
 
