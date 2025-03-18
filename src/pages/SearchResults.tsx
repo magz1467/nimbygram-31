@@ -95,21 +95,21 @@ const SearchResultsPage = () => {
   const handleError = useCallback((error: Error | null) => {
     setError(error);
     if (error) {
-      logStorybook.input('search_error', undefined);
+      console.error('Search error:', error.message);
     }
   }, []);
   
   // Handle search completion
   const handleSearchComplete = useCallback(() => {
     setIsLoading(false);
-    logStorybook.input('search_complete', undefined);
+    console.log('Search complete');
   }, []);
   
   // Handle search start
   const handleSearchStart = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    logStorybook.input('search_start', undefined);
+    console.log('Search started');
   }, []);
   
   // Handle postcode selection
