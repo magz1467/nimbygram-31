@@ -1,12 +1,15 @@
-
-import { Outlet, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useMapViewStore } from './store/mapViewStore';
 import { Header } from './components/Header';
 import { NavigationTracker } from './debug/NavigationTracker';
 import { DomScanner } from './debug/DomScanner';
 
-function App() {
+const App = () => {
+  console.log('🎨 App component rendering');
+  
   const { isMapView, setMapView } = useMapViewStore();
   const location = useLocation();
   
@@ -43,6 +46,6 @@ function App() {
       </main>
     </div>
   );
-}
+};
 
 export default App;

@@ -29,14 +29,27 @@ function MapRedirect() {
   return <div>Redirecting...</div>;
 }
 
+// Simple fallback component for debugging
+const FallbackComponent = () => {
+  console.log('🎨 Fallback component rendering');
+  return (
+    <div className="p-4 bg-yellow-100 border border-yellow-300 rounded">
+      <h2 className="text-xl font-bold">Loading...</h2>
+      <p>If you see this message for more than a few seconds, there might be an issue with the application.</p>
+    </div>
+  );
+};
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+    errorElement: <div className="p-4 bg-red-100">Error loading route</div>,
     children: [
       {
         index: true,
-        element: <Index />
+        element: <Index />,
+        errorElement: <div className="p-4 bg-red-100">Error loading Index</div>,
       },
       {
         path: 'search-results',
@@ -49,4 +62,10 @@ export const router = createBrowserRouter([
       }
     ]
   }
-]);
+], {
+  // Add a fallback component while routes are loading
+  future: {
+    v7_startTransition: true,
+  },
+  basename: '/',
+});
