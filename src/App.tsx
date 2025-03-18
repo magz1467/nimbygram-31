@@ -1,3 +1,7 @@
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import Header from './components/Header';
+import './App.css';
 import { createBrowserRouter, RouterProvider, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { routes } from "@/routes/routes";
@@ -19,17 +23,22 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <Routes>
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Home />} />
-          <Route path="search-results" element={<SearchResultsPage />} />
-          <Route path="map" element={<MapView />} />
-          {/* other routes */}
-        </Route>
-      </Routes>
+    <div className="app">
+      <Header />
+      <main>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<Home />} />
+              <Route path="search-results" element={<SearchResultsPage />} />
+              <Route path="map" element={<MapView />} />
+              {/* other routes */}
+            </Route>
+          </Routes>
+        </ErrorBoundary>
+      </main>
       <Toaster />
-    </ErrorBoundary>
+    </div>
   );
 }
 

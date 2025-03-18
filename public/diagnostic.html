@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Diagnostic</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    .warning {
+      color: orange;
+    }
+    button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    pre {
+      background-color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .test-result {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .test-success {
+      background-color: rgba(0, 128, 0, 0.1);
+    }
+    .test-error {
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+    .test-warning {
+      background-color: rgba(255, 165, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Application Diagnostic Tool</h1>
+    
+    <div class="card">
+      <h2>Environment Information</h2>
+      <div id="env-info"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Dependency Tests</h2>
+      <div id="dependency-tests"></div>
+    </div>
+    
+    <div class="card">
+      <h2>DOM Tests</h2>
+      <div id="dom-tests"></div>
+    </div>
+    
+    <div class="card">
+      <h2>React Tests</h2>
+      <div id="react-tests"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Network Tests</h2>
+      <div id="network-tests"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Actions</h2>
+      <button id="clear-cache">Clear Cache & Reload</button>
+      <button id="load-minimal">Load Minimal Version</button>
+      <button id="check-build">Check Build Files</button>
+    </div>
+    
+    <div class="card">
+      <h2>Console Output</h2>
+      <pre id="console-output"></pre>
+    </div>
+  </div>
+
+  <script>
+    // Capture console output
+    const originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn,
+      info: console.info
+    };
+    
+    const consoleOutput = document.getElementById('console-output');
+    
+    function captureConsole(method, args) {
+      const message = Array.from(args).map(arg => {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch (e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' ');
+      
+      consoleOutput.textContent += `[${method}] ${message}\n`;
+      originalConsole[method].apply(console, args);
+    }
+    
+    console.log = function() { captureConsole('log', arguments); };
+    console.error = function() { captureConsole('error', arguments); };
+    console.warn = function() { captureConsole('warn', arguments); };
+    console.info = function() { captureConsole('info', arguments); };
+    
+    // Environment information
+    function displayEnvironmentInfo() {
+      const envInfo = document.getElementById('env-info');
+      envInfo.innerHTML = `
+        <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+        <p><strong>URL:</strong> ${window.location.href}</p>
+        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+      `;
+    }
+    
+    // Test dependencies
+    async function testDependencies() {
+      const testsContainer = document.getElementById('dependency-tests');
+      
+      // Test React
+      try {
+        const reactScript = document.createElement('script');
+        reactScript.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+        document.head.appendChild(reactScript);
+        
+        await new Promise((resolve, reject) => {
+          reactScript.onload = resolve;
+          reactScript.onerror = reject;
+          setTimeout(reject, 5000); // 5 second timeout
+        });
+        
+        addTestResult(testsContainer, 'React loaded successfully', 'success');
+      } catch (error) {
+        addTestResult(testsContainer, `Failed to load React: ${error}`, 'error');
+      }
+      
+      // Test React DOM
+      try {
+        const reactDOMScript = document.createElement('script');
+        reactDOMScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+        document.head.appendChild(reactDOMScript);
+        
+        await new Promise((resolve, reject) => {
+          reactDOMScript.onload = resolve;
+          reactDOMScript.onerror = reject;
+          setTimeout(reject, 5000); // 5 second timeout
+        });
+        
+        addTestResult(testsContainer, 'React DOM loaded successfully', 'success');
+      } catch (error) {
+        addTestResult(testsContainer, `Failed to load React DOM: ${error}`, 'error');
+      }
+    }
+    
+    // Test DOM
+    function testDOM() {
+      const testsContainer = document.getElementById('dom-tests');
+      
+      // Test if we can create and append elements
+      try {
+        const testDiv = document.createElement('div');
+        testDiv.textContent = 'DOM manipulation test';
+        testsContainer.appendChild(testDiv);
+        testsContainer.removeChild(testDiv);
+        addTestResult(testsContainer, 'DOM manipulation works', 'success');
+      } catch (error) {
+        addTestResult(testsContainer, `DOM manipulation failed: ${error}`, 'error');
+      }
+    }
+    
+    // Test React
+    function testReact() {
+      const testsContainer = document.getElementById('react-tests');
+      
+      // Test if React is available
+      if (window.React) {
+        addTestResult(testsContainer, 'React is available', 'success');
+        
+        // Test if we can create a React element
+        try {
+          const element = React.createElement('div', null, 'React element test');
+          addTestResult(testsContainer, 'React.createElement works', 'success');
+        } catch (error) {
+          addTestResult(testsContainer, `React.createElement failed: ${error}`, 'error');
+        }
+      } else {
+        addTestResult(testsContainer, 'React is not available', 'error');
+      }
+      
+      // Test if ReactDOM is available
+      if (window.ReactDOM) {
+        addTestResult(testsContainer, 'ReactDOM is available', 'success');
+        
+        // Test if we can render a React element
+        try {
+          const container = document.createElement('div');
+          testsContainer.appendChild(container);
+          
+          const element = React.createElement('div', null, 'ReactDOM render test');
+          ReactDOM.render(element, container);
+          
+          if (container.textContent.includes('ReactDOM render test')) {
+            addTestResult(testsContainer, 'ReactDOM.render works', 'success');
+          } else {
+            addTestResult(testsContainer, 'ReactDOM.render did not produce expected output', 'error');
+          }
+          
+          testsContainer.removeChild(container);
+        } catch (error) {
+          addTestResult(testsContainer, `ReactDOM.render failed: ${error}`, 'error');
+        }
+      } else {
+        addTestResult(testsContainer, 'ReactDOM is not available', 'error');
+      }
+    }
+    
+    // Test network
+    async function testNetwork() {
+      const testsContainer = document.getElementById('network-tests');
+      
+      // Test if we can fetch a resource
+      try {
+        const response = await fetch('/');
+        if (response.ok) {
+          addTestResult(testsContainer, 'Fetch works', 'success');
+        } else {
+          addTestResult(testsContainer, `Fetch returned status ${response.status}`, 'warning');
+        }
+      } catch (error) {
+        addTestResult(testsContainer, `Fetch failed: ${error}`, 'error');
+      }
+      
+      // Test if we can load a script
+      try {
+        const script = document.createElement('script');
+        script.src = '/test-script.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          setTimeout(() => reject(new Error('Timeout')), 5000); // 5 second timeout
+        });
+        
+        addTestResult(testsContainer, 'Script loading works', 'success');
+      } catch (error) {
+        addTestResult(testsContainer, `Script loading failed: ${error}`, 'error');
+      }
+    }
+    
+    // Helper function to add test results
+    function addTestResult(container, message, status) {
+      const resultElement = document.createElement('div');
+      resultElement.className = `test-result test-${status}`;
+      resultElement.innerHTML = `
+        <span class="${status}">${status === 'success' ? '✓' : status === 'warning' ? '⚠' : '✗'}</span>
+        ${message}
+      `;
+      container.appendChild(resultElement);
+    }
+    
+    // Button actions
+    document.getElementById('clear-cache').addEventListener('click', () => {
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+          });
+        });
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(';').forEach(cookie => {
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      });
+      
+      console.log('Cache cleared, reloading page...');
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 1000);
+    });
+    
+    document.getElementById('load-minimal').addEventListener('click', () => {
+      window.location.href = '/minimal.html';
+    });
+    
+    document.getElementById('check-build').addEventListener('click', async () => {
+      console.log('Checking build files...');
+      
+      try {
+        const response = await fetch('/asset-manifest.json');
+        if (response.ok) {
+          const manifest = await response.json();
+          console.log('Asset manifest:', manifest);
+        } else {
+          console.error('Failed to load asset manifest');
+        }
+      } catch (error) {
+        console.error('Error checking build files:', error);
+      }
+    });
+    
+    // Run tests
+    async function runAllTests() {
+      displayEnvironmentInfo();
+      testDOM();
+      await testDependencies();
+      setTimeout(testReact, 1000); // Wait for React to load
+      await testNetwork();
+    }
+    
+    runAllTests();
+  </script>
+</body>
+</html> 
