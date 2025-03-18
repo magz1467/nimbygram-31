@@ -1,14 +1,14 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css'; // Main CSS first
+import 'leaflet/dist/leaflet.css'; // Then any third-party CSS
 import App from './App';
-import './index.css';
-import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
-console.log('App version:', '1.0.6'); // Increment this to verify you're seeing the latest deployment
+console.log('App version:', '1.0.9'); // Increment this to verify you're seeing the latest deployment
 console.log('Build timestamp:', new Date().toISOString());
 
 // Create a function to check loaded scripts

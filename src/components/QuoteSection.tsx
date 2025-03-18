@@ -1,3 +1,4 @@
+
 import { Quote } from "lucide-react";
 
 export const QuoteSection = () => {

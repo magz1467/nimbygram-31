@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
@@ -35,9 +36,14 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
+  
   body {
     @apply bg-[#F6F6F7] text-foreground font-sans min-h-screen overflow-x-hidden;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* Update the root scaling and ensure proper viewport containment */
@@ -71,6 +77,7 @@
   }
 }
 
+/* Page separator styling */
 .page-separator {
   background-color: #F6F6F7;
   position: relative;
@@ -87,6 +94,7 @@
   background-color: rgba(139, 197, 190, 0.2); /* Light tiffany blue color */
 }
 
+/* Leaflet map styling */
 .leaflet-container {
   width: 100%;
   height: 100%;
@@ -137,170 +145,51 @@
   z-index: 9999 !important; /* Ensure the map overlay is on top of everything */
 }
 
-/* Mobile application cards with improved z-index */
-.mobile-application-cards {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 2000;
-  background: white;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  max-height: 40%;
-  overflow-y: auto;
+/* Prose content styles for consistent text formatting */
+.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
-/* Ensure mobile map view has correct z-index */
-.mobile-map-overlay {
-  z-index: 9999 !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background: white !important;
-}
-
-/* Improved bullet point styling, particularly for mobile */
 .prose ul {
-  list-style-type: disc !important;
-  list-style-position: outside !important;
-  margin-top: 0.5em !important;
-  margin-bottom: 0.5em !important;
-  padding-left: 1.5rem !important;
+  list-style-type: disc;
+  list-style-position: outside;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-left: 1.5rem;
 }
 
 .prose li {
-  margin-top: 0.25em !important;
-  margin-bottom: 0.25em !important;
-  position: relative !important;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  position: relative;
 }
 
 .prose li::marker {
-  color: rgb(74, 132, 128) !important;
+  color: rgb(74, 132, 128);
 }
 
-.prose p {
-  margin-top: 0.5em !important;
-  margin-bottom: 0.5em !important;
+/* Standard list styles that match prose formatting */
+.list-disc {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 1.5rem;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
-/* Fix empty sections issue */
-h3:last-child {
-  margin-bottom: 0 !important;
+.list-disc li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  position: relative;
+  display: list-item;
 }
 
-/* Mobile-specific improvements */
-@media (max-width: 768px) {
-  /* Force map containers to highest z-index on mobile */
-  .fixed.inset-0.z-\[9999\] {
-    z-index: 9999 !important;
-  }
-  
-  /* Ensure buttons in map are clickable */
-  .z-\[10000\] {
-    z-index: 10000 !important;
-  }
-  
-  /* Improve bullet points display on mobile */
-  .prose {
-    font-size: 0.9rem !important;
-  }
-  
-  .prose ul {
-    padding-left: 1.5rem !important;
-    margin-left: 0 !important;
-  }
-  
-  .prose li {
-    padding-left: 0 !important;
-    display: list-item !important;
-  }
-  
-  /* Make bullet points more visible */
-  .list-disc li::marker {
-    color: rgb(74, 132, 128) !important;
-    font-size: 1.2em !important;
-  }
-  
-  /* Ensure "See on map" button is prominent */
-  button:has(.w-4.h-4) {
-    padding: 0.5rem 1rem !important;
-  }
+.list-disc li::marker {
+  color: rgb(74, 132, 128);
 }
 
-/* Fix emoji spacing in bullet points */
-.emoji-bullet {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.emoji-bullet .emoji {
-  flex-shrink: 0;
-  margin-right: 0.25rem;
-}
-
-/* Better mobile list styling */
-@media (max-width: 768px) {
-  .list-disc {
-    padding-left: 1rem;
-  }
-  
-  .bullet-point::before {
-    width: 4px;
-    height: 4px;
-  }
-  
-  /* Fix text overflow on small screens */
-  .text-gray-700, .text-gray-600 {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-word;
-    hyphens: auto;
-  }
-  
-  /* Enhanced bullet point styling for mobile */
-  ul.list-disc {
-    list-style-position: outside !important;
-    padding-left: 1.5rem !important;
-  }
-  
-  /* Ensure section headers have proper spacing */
-  .font-semibold.mb-2 {
-    margin-bottom: 0.5rem !important;
-  }
-  
-  /* Make bullet points more visible on mobile */
-  .list-disc li::marker {
-    color: rgb(74, 132, 128);
-    font-size: 1.2em;
-  }
-  
-  /* Fix empty detail sections showing title only */
-  h3:only-child {
-    margin-bottom: 0 !important;
-  }
-  
-  /* Improve section title readability */
-  h3.font-semibold {
-    font-size: 1rem !important;
-    line-height: 1.5 !important;
-  }
-}
-
-/* Hide scrollbar but keep functionality */
-.hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
-}
-
-/* Improved bullet point styling */
+/* Custom bullet point styling for special cases */
 .bullet-point {
   display: flex;
   align-items: flex-start;
@@ -331,18 +220,31 @@ h3:last-child {
   margin-right: 0.25rem;
 }
 
-/* Better mobile list styling */
+/* Mobile optimizations */
 @media (max-width: 768px) {
-  .list-disc {
-    padding-left: 1rem;
+  /* Improve bullet points display on mobile */
+  .prose {
+    font-size: 0.9rem;
   }
   
-  .bullet-point::before {
-    width: 4px;
-    height: 4px;
+  .prose ul {
+    padding-left: 1.5rem;
+    margin-left: 0;
   }
   
-  /* Fix text overflow on small screens */
+  .prose li {
+    padding-left: 0;
+    display: list-item;
+  }
+  
+  /* Make bullet points more visible */
+  .list-disc li::marker,
+  .prose li::marker {
+    color: rgb(74, 132, 128);
+    font-size: 1.2em;
+  }
+  
+  /* Text overflow handling */
   .text-gray-700, .text-gray-600 {
     overflow-wrap: break-word;
     word-wrap: break-word;
@@ -350,109 +252,65 @@ h3:last-child {
     hyphens: auto;
   }
   
-  /* Enhanced bullet point styling for mobile */
+  /* Better list styling */
   ul.list-disc {
-    list-style-position: outside !important;
-    padding-left: 1.5rem !important;
-  }
-  
-  /* Ensure section headers have proper spacing */
-  .font-semibold.mb-2 {
-    margin-bottom: 0.5rem !important;
-  }
-  
-  /* Make bullet points more visible on mobile */
-  .list-disc li::marker {
-    color: rgb(74, 132, 128);
-    font-size: 1.2em;
+    list-style-position: outside;
+    padding-left: 1.5rem;
   }
   
   /* Fix empty detail sections showing title only */
   h3:only-child {
-    margin-bottom: 0 !important;
+    margin-bottom: 0;
   }
   
   /* Improve section title readability */
   h3.font-semibold {
-    font-size: 1rem !important;
-    line-height: 1.5 !important;
-  }
-}
-
-/* Improved prose formatting, particularly for mobile */
-.prose ul {
-  list-style-type: disc;
-  list-style-position: outside;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.prose li {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-}
-
-.prose p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-/* Ensure bullets are properly visible */
-.prose li::marker {
-  color: rgb(74, 132, 128);
-}
-
-/* Fix empty sections issue */
-h3:last-child {
-  margin-bottom: 0;
-}
-
-/* Ensure mobile content doesn't overflow */
-@media (max-width: 768px) {
-  .prose {
-    font-size: 0.9rem;
-  }
-  
-  .prose ul {
-    padding-left: 1.5rem;
-  }
-  
-  .prose li {
-    padding-left: 0.25rem;
-  }
-  
-  .prose h3 {
     font-size: 1rem;
-    margin-bottom: 0.5rem;
+    line-height: 1.5;
   }
   
-  /* Fix section formatting */
-  .space-y-6 > div {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+  /* Fix map display on mobile */
+  .mobile-map-container {
+    height: 70vh !important;
+    z-index: 10;
+    position: relative;
   }
   
-  /* Improve card content spacing */
+  /* Ensure map controls don't overlap with back/close buttons */
+  .mobile-map-container .leaflet-control-zoom {
+    margin-top: 10px !important;
+  }
+  
+  /* Make sure application cards are visible even with map */
+  .fixed.bottom-0 {
+    z-index: 1500;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Card content spacing */
   .p-4 > div:not(:last-child) {
     margin-bottom: 1rem;
   }
 }
 
-/* Fix bullet point rendering in storybook content */
-ul.list-disc {
-  list-style-type: disc !important;
-  padding-left: 1.5rem !important;
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-/* Fix bullet points that use • character */
-ul li, p:has(• ), div:has(• ) {
+/* Fix for testimonial styles */
+.relative.bg-white\/50.rounded-lg,
+.relative.bg-background.rounded-lg {
   position: relative;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border-radius: 0.5rem;
 }
 
-p:has(• ):before, div:has(• ):before {
-  content: "•";
-  position: absolute;
-  left: -1rem;
+.relative.bg-white\/50.rounded-lg blockquote,
+.relative.bg-background.rounded-lg blockquote {
+  position: relative;
+  z-index: 10;
+  font-style: italic;
+  text-align: center;
+  padding: 0 2rem;
+  font-weight: 600;
 }
