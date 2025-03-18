@@ -7,6 +7,10 @@ import { StorySection } from '../types';
 export function extractBulletPoints(bodyContent: string): StorySection[] {
   const processedSections: StorySection[] = [];
   
+  if (!bodyContent || typeof bodyContent !== 'string') {
+    return processedSections;
+  }
+  
   // Normalize line endings and double spaces
   const normalizedContent = bodyContent
     .replace(/\r\n/g, '\n')
