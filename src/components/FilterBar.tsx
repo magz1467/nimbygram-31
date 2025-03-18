@@ -4,10 +4,10 @@ import { FilterControls } from "./map/filter/FilterControls";
 import { SortType } from "@/types/application-types";
 import { useCallback } from "react";
 import { Button } from "./ui/button";
-import { Map, List, Filter, ArrowUpDown } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Filter, ArrowUpDown } from "lucide-react";
 import { useMapViewStore } from "../store/mapViewStore";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { MapToggleButton } from "./MapToggleButton";
 
 interface FilterBarProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -29,98 +29,82 @@ interface FilterBarProps {
   };
 }
 
-export const FilterBar = ({
-  onFilterChange,
-  onSortChange,
-  activeFilters = {},
-  activeSort,
-  isMapView,
+export const FilterBar = ({ 
+  onFilterChange, 
+  onSortChange, 
+  activeFilters = { status: 'All', type: 'All', classification: 'All' },
+  activeSort = 'distance',
+  isMapView = false,
   onToggleView,
   applications = [],
-  statusCounts = {
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
-  }
+  statusCounts = { 'Under Review': 0, 'Approved': 0, 'Declined': 0, 'Other': 0 }
 }: FilterBarProps) => {
-  const isMobile = useIsMobile();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isMapView: mapViewStore, setMapView } = useMapViewStore();
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
-
-  const handleFilterChange = useCallback((filterType: string, value: string) => {
-    if (onFilterChange) {
-      onFilterChange(filterType, value);
-    }
-  }, [onFilterChange]);
-
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const { setMapView } = useMapViewStore();
+  
   const handleSortChange = useCallback((sortType: SortType) => {
     if (onSortChange) {
       onSortChange(sortType);
     }
   }, [onSortChange]);
 
-  const handleMapToggle = () => {
-    console.log("Map toggle clicked in FilterBar");
-    setMapView(!mapViewStore);
-  };
-
   return (
-    <div className="flex justify-between items-center p-4 border-b">
-      {/* Sort options and other filter controls */}
-      <div>
-        {/* Map toggle button - only visible on mobile */}
-        {!isDesktop && (
+    <div className="bg-white border-b p-3 flex items-center justify-between">
+      {/* Desktop view */}
+      {!isMobile && (
+        <>
+          <div className="flex items-center gap-2">
+            <FilterControls 
+              onFilterChange={onFilterChange} 
+              activeFilters={activeFilters}
+              statusCounts={statusCounts}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <ViewToggle 
+              isMapView={isMapView} 
+              onToggleView={() => {
+                console.log("ViewToggle clicked, setting map view to", !isMapView);
+                setMapView(!isMapView);
+              }} 
+            />
+          </div>
+        </>
+      )}
+      
+      {/* Mobile view */}
+      {isMobile && (
+        <div className="flex items-center gap-2 w-full">
+          {/* Map toggle button - REPLACED WITH OUR CUSTOM COMPONENT */}
+          <MapToggleButton className="flex-1" />
+          
+          {/* Filter button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleMapToggle}
-            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-            data-testid="map-toggle-button"
+            className="flex items-center gap-1.5 flex-1"
+            onClick={() => {
+              if (onFilterChange) {
+                onFilterChange('status', activeFilters.status === 'All' ? '' : 'All');
+              }
+            }}
           >
-            {mapViewStore ? (
-              <>
-                <List className="h-4 w-4" />
-                List
-              </>
-            ) : (
-              <>
-                <Map className="h-4 w-4" />
-                Map
-              </>
-            )}
+            <Filter className="h-4 w-4" />
+            Filter
           </Button>
-        )}
-        
-        {/* Filter button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5"
-          onClick={() => {
-            // We could trigger a modal/dropdown here for filters
-            if (onFilterChange) {
-              onFilterChange('status', activeFilters.status === 'All' ? '' : 'All');
-            }
-          }}
-        >
-          <Filter className="h-4 w-4" />
-          Filter
-        </Button>
-        
-        {/* Distance/sort button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5"
-          onClick={() => handleSortChange('distance')}
-        >
-          <ArrowUpDown className="h-4 w-4" />
-          Distance
-        </Button>
-      </div>
+          
+          {/* Distance/sort button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1.5 flex-1"
+            onClick={() => handleSortChange('distance')}
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            Distance
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
