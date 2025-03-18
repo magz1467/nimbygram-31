@@ -7,6 +7,7 @@ import { MapView } from '@/components/map/MapView';
 import { useMapViewStore } from '@/store/mapViewStore';
 import { useApplicationSearch } from '@/hooks/use-application-search';
 import { useApplicationFiltering, SortType, FilterType } from '@/hooks/use-application-filtering';
+import PlanningApplicationList from '../components/PlanningApplicationList';
 
 interface Application {
   id: string;
@@ -24,9 +25,29 @@ interface Application {
   imageUrl?: string;
 }
 
+interface Location {
+  lat: number;
+  lng: number;
+}
+
+interface PlanningApplication {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  date: string;
+  address: string;
+  applicant?: string;
+  reference?: string;
+  location?: Location;
+  imageUrl?: string;
+}
+
 const SearchResults: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isMapView, setMapView } = useMapViewStore();
+  const [applications, setApplications] = useState<PlanningApplication[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   
   // Get search parameters from URL
   const query = searchParams.get('q') || '';
@@ -46,7 +67,7 @@ const SearchResults: React.FC = () => {
   // Search for applications
   const { 
     results, 
-    loading, 
+    loading: searchLoading, 
     error, 
     updateSearchParams 
   } = useApplicationSearch({
@@ -113,6 +134,62 @@ const SearchResults: React.FC = () => {
     setFilterType(newFilterType);
   };
 
+  // Fetch applications when search parameters change
+  useEffect(() => {
+    const fetchApplications = async () => {
+      setLoading(true);
+      
+      // Simulate API call with timeout
+      setTimeout(() => {
+        // Mock data for demonstration
+        const mockApplications: PlanningApplication[] = [
+          {
+            id: '1',
+            title: 'Two-story extension to existing dwelling',
+            description: 'Proposed two-story side extension to create additional bedroom and enlarged kitchen area.',
+            status: 'Pending',
+            date: '2023-05-15',
+            address: '123 High Street, Anytown, AN1 2BC',
+            reference: 'APP/2023/0123',
+            location: { lat: 51.505, lng: -0.09 },
+            imageUrl: 'https://via.placeholder.com/400x300?text=House+Extension'
+          },
+          {
+            id: '2',
+            title: 'Change of use from retail to restaurant',
+            description: 'Application for change of use from Class E(a) retail to Class E(b) restaurant with outdoor seating area.',
+            status: 'Approved',
+            date: '2023-04-22',
+            address: '45 Market Square, Anytown, AN1 3DF',
+            reference: 'APP/2023/0089',
+            location: { lat: 51.507, lng: -0.095 },
+            imageUrl: 'https://via.placeholder.com/400x300?text=Restaurant'
+          },
+          {
+            id: '3',
+            title: 'New residential development',
+            description: 'Construction of 12 new residential units with associated parking and landscaping.',
+            status: 'In Progress',
+            date: '2023-06-01',
+            address: 'Land at West Road, Anytown, AN2 4GH',
+            reference: 'APP/2023/0156',
+            location: { lat: 51.51, lng: -0.1 },
+            imageUrl: 'https://via.placeholder.com/400x300?text=Housing+Development'
+          }
+        ];
+        
+        setApplications(mockApplications);
+        setLoading(false);
+      }, 1000);
+    };
+
+    if (query || location) {
+      fetchApplications();
+    } else {
+      setApplications([]);
+    }
+  }, [query, location, radius]);
+
   return (
     <div className="search-results-page">
       <Header />
@@ -150,8 +227,8 @@ const SearchResults: React.FC = () => {
           <>
             <div className="results-header">
               <h2>
-                {filteredApplications.length} 
-                {filteredApplications.length === 1 ? ' result' : ' results'} 
+                {applications.length} 
+                {applications.length === 1 ? ' result' : ' results'} 
                 {query && ` for "${query}"`}
                 {location && ` near "${location}"`}
               </h2>
@@ -199,13 +276,8 @@ const SearchResults: React.FC = () => {
               </div>
             ) : (
               <div className="results-list">
-                {filteredApplications.length > 0 ? (
-                  filteredApplications.map(app => (
-                    <SearchResultCard 
-                      key={app.id} 
-                      application={app} 
-                    />
-                  ))
+                {applications.length > 0 ? (
+                  <PlanningApplicationList applications={applications} />
                 ) : (
                   <div className="no-results">
                     No applications found. Try adjusting your search criteria.

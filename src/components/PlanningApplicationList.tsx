@@ -18,46 +18,41 @@ interface PlanningApplication {
   status: string;
   date: string;
   address: string;
-  location: Location;
-  distance?: number;
-  relevanceScore?: number;
+  applicant?: string;
+  reference?: string;
+  location?: Location;
   imageUrl?: string;
 }
 
 interface PlanningApplicationListProps {
   applications: PlanningApplication[];
-  isLoading?: boolean;
-  error?: string | null;
   onApplicationClick?: (application: PlanningApplication) => void;
 }
 
 export const PlanningApplicationList: React.FC<PlanningApplicationListProps> = ({
   applications,
-  isLoading = false,
-  error = null,
   onApplicationClick
 }) => {
-  if (isLoading) {
-    return <div className="loading">Loading applications...</div>;
-  }
-
-  if (error) {
-    return <div className="error">Error: {error}</div>;
-  }
-
-  if (applications.length === 0) {
-    return <div className="no-results">No planning applications found.</div>;
+  if (!applications || applications.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-xl font-medium text-gray-600">No applications found</h3>
+        <p className="text-gray-500 mt-2">Try adjusting your search criteria</p>
+      </div>
+    );
   }
 
   return (
-    <div className="planning-application-list">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {applications.map(application => (
         <PlanningApplicationCard
           key={application.id}
           application={application}
-          onClick={onApplicationClick ? () => onApplicationClick(application) : undefined}
+          onClick={onApplicationClick}
         />
       ))}
     </div>
   );
 };
+
+export default PlanningApplicationList;

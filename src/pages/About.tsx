@@ -9,55 +9,53 @@ const About: React.FC = () => {
     <>
       <Header />
       <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-6xl mx-auto">
-            {/* Hero section with title and intro */}
-            <div className="mb-16">
-              <h1 className="text-4xl md:text-5xl font-bold text-black mb-6">
-                About Nimbygram
-              </h1>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                Nimbygram is revolutionizing the way communities engage with local planning applications. Our platform bridges the gap between residents, developers, and local authorities, making the planning process more transparent and efficient.
-              </p>
-            </div>
-
-            {/* Our Vision section */}
-            <div className="grid md:grid-cols-2 gap-12 mb-16">
-              <div className="bg-white rounded-xl shadow-sm p-8 space-y-4 hover:shadow-md transition-shadow">
-                <h2 className="text-2xl font-semibold text-primary">Our Vision</h2>
-                <p className="text-lg text-gray-600">
-                  We envision a future where planning decisions are made collaboratively, with genuine input from all stakeholders. By leveraging technology, we're making this vision a reality.
-                </p>
-              </div>
-              <div>
-                <Image
-                  src="/lovable-uploads/86ad94f3-f27f-4a04-898c-eca329e3ff65.png"
-                  alt="Community members using mobile phones to engage with planning applications"
-                  className="rounded-2xl shadow-xl w-full h-[300px] object-cover"
-                  width={500}
-                  height={300}
-                />
-              </div>
-            </div>
-
-            {/* Our Impact section - Alternated layout */}
-            <div className="grid md:grid-cols-2 gap-12">
-              <div>
-                <Image
-                  src="/lovable-uploads/2c0140af-5067-4789-85ab-48d4476e179c.png"
-                  alt="Professional team standing in front of a rural property"
-                  className="rounded-2xl shadow-xl w-full h-[300px] object-cover"
-                  width={500}
-                  height={300}
-                />
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-8 space-y-4 hover:shadow-md transition-shadow">
-                <h2 className="text-2xl font-semibold text-primary">Our Impact</h2>
-                <p className="text-lg text-gray-600">
-                  Since our launch, we've helped thousands of residents have their say on local developments, while helping developers better understand community needs and concerns.
-                </p>
-              </div>
-            </div>
+        <div className="container mx-auto max-w-4xl px-4 py-12">
+          <h1 className="text-4xl font-bold mb-8">About NimbyGram</h1>
+          
+          <div className="prose prose-lg max-w-none">
+            <p>
+              NimbyGram is a platform dedicated to making planning information accessible and transparent for everyone.
+              Our mission is to empower communities by providing easy access to planning applications and development
+              information in their local area.
+            </p>
+            
+            <h2>Our Mission</h2>
+            <p>
+              We believe that everyone should have easy access to information about developments that might affect their
+              community. By making planning data more accessible, we aim to:
+            </p>
+            
+            <ul>
+              <li>Increase transparency in the planning process</li>
+              <li>Help residents stay informed about local developments</li>
+              <li>Provide tools for meaningful community engagement</li>
+              <li>Support better decision-making through improved access to information</li>
+            </ul>
+            
+            <h2>How It Works</h2>
+            <p>
+              NimbyGram aggregates planning application data from local authorities across the UK. Our platform allows you to:
+            </p>
+            
+            <ul>
+              <li>Search for planning applications by location</li>
+              <li>View applications on an interactive map</li>
+              <li>Set up alerts for new applications in your area</li>
+              <li>Track the progress of applications through the planning process</li>
+            </ul>
+            
+            <h2>Our Team</h2>
+            <p>
+              NimbyGram was founded by a team of urban planners, developers, and civic tech enthusiasts who are passionate
+              about improving access to planning information. We're committed to building tools that make it easier for
+              communities to engage with the planning process.
+            </p>
+            
+            <h2>Contact Us</h2>
+            <p>
+              We'd love to hear from you! If you have any questions, feedback, or suggestions, please don't hesitate to
+              get in touch at <a href="mailto:info@nimbygram.com" className="text-blue-600 hover:text-blue-800">info@nimbygram.com</a>.
+            </p>
           </div>
         </div>
 
