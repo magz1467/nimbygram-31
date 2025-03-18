@@ -7,6 +7,8 @@ import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { installNavigationOverride } from './utils/navigationOverride';
 import { installNavigationTracer } from './utils/navigationTracer';
+import { installComponentInspector } from './utils/componentInspector';
+import { installClickTracer } from './utils/clickTracer';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
@@ -31,9 +33,11 @@ setTimeout(checkLoadedScripts, 3000);
 
 const queryClient = new QueryClient();
 
-// Install navigation debugging tools before anything else
+// Install debugging tools before anything else
 installNavigationTracer();
 installNavigationOverride();
+installComponentInspector();
+installClickTracer();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
