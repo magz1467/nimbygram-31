@@ -1,7 +1,7 @@
-
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { useMapViewStore } from './store/mapViewStore';
 import App from './App';
+import Index from './pages/Index';
 import { HomePage } from './pages/HomePage';
 import SearchResults from './pages/SearchResults';
 import { useEffect } from 'react';
@@ -36,7 +36,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />
+        element: <Index />
       },
       {
         path: 'search-results',
