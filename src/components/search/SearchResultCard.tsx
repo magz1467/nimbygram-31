@@ -10,6 +10,7 @@ import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
 import { getImageUrl } from "@/utils/imageUtils";
 import { CalendarDays } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SearchResultCardProps {
   application: Application;
@@ -33,13 +34,29 @@ export const SearchResultCard = ({
   postcode = ""
 }: SearchResultCardProps) => {
   const [showComments, setShowComments] = useState(false);
+  const { toast } = useToast();
 
   const handleShare = async () => {
-    const url = window.location.href;
+    // Create a shareable URL that includes the application ID
+    const baseUrl = window.location.origin + window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('application', application.id.toString());
+    const shareUrl = `${baseUrl}?${searchParams.toString()}`;
+    
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: "Share this link to show this planning application to others.",
+        duration: 3000,
+      });
     } catch (err) {
       console.error("Couldn't copy link:", err);
+      toast({
+        title: "Couldn't copy link",
+        description: "Please try again or copy the URL from your browser.",
+        variant: "destructive",
+      });
     }
   };
 

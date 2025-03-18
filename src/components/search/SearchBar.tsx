@@ -44,7 +44,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     try {
       // Log search - fixing the incorrect number of arguments
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
-      await logSearch(searchTerm.trim(), 'search'); // Reduced to 2 arguments
+      await logSearch(searchTerm.trim(), 'search'); // Fixed: using 2 arguments instead of 3
       console.log(`[SearchBar][${env}] logSearch completed`);
       
       // Call onSearch callback if provided
