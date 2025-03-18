@@ -6,60 +6,131 @@
 export function installNavigationOverride() {
   console.log('🔧 Installing navigation override');
   
-  try {
-    // Create a navigation utility object that logs navigation actions
-    // without trying to override native browser properties
-    window.navigationUtils = {
-      // Safe navigation methods
-      navigate: (url: string) => {
-        console.log('🔄 Navigation utility: navigating to', url);
-        window.location.href = url;
-      },
-      
-      assign: (url: string) => {
-        console.log('🔄 Navigation utility: assigning to', url);
-        window.location.assign(url);
-      },
-      
-      replace: (url: string) => {
-        console.log('🔄 Navigation utility: replacing with', url);
-        window.location.replace(url);
-      },
-      
-      // History API wrappers
-      pushState: (state: any, title: string, url?: string) => {
-        console.log('🔄 Navigation utility: history.pushState to', url);
-        window.history.pushState(state, title, url);
-      },
-      
-      replaceState: (state: any, title: string, url?: string) => {
-        console.log('🔄 Navigation utility: history.replaceState to', url);
-        window.history.replaceState(state, title, url);
-      }
-    };
+  // Store original functions
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  const originalAssign = window.location.assign;
+  const originalReplace = window.location.replace;
+  const originalHref = Object.getOwnPropertyDescriptor(window.location, 'href');
+  
+  // Override pushState
+  history.pushState = function(...args) {
+    const [state, title, url] = args;
+    console.log('🔍 history.pushState intercepted:', { state, title, url });
     
-    // Monitor navigation events without modifying native objects
-    window.addEventListener('popstate', (event) => {
-      console.log('🔄 Navigation detected: popstate', {
-        state: event.state,
-        url: window.location.href
-      });
-    });
+    // Check if trying to navigate to /map
+    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
+      console.log('🛑 Prevented navigation to /map via pushState');
+      
+      // Instead of navigating, dispatch a custom event that our app can listen for
+      window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
+      
+      // Return without actually navigating
+      return;
+    }
     
-    // Monitor clicks that might lead to navigation
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      const link = target.closest('a');
-      if (link) {
-        const href = link.getAttribute('href');
-        if (href) {
-          console.log('🔄 Potential navigation: clicked link to', href);
+    return originalPushState.apply(this, args);
+  };
+  
+  // Override replaceState
+  history.replaceState = function(...args) {
+    const [state, title, url] = args;
+    console.log('🔍 history.replaceState intercepted:', { state, title, url });
+    
+    // Check if trying to navigate to /map
+    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
+      console.log('🛑 Prevented navigation to /map via replaceState');
+      
+      // Instead of navigating, dispatch a custom event that our app can listen for
+      window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
+      
+      // Return without actually navigating
+      return;
+    }
+    
+    return originalReplaceState.apply(this, args);
+  };
+  
+  // Override location.assign
+  window.location.assign = function(url) {
+    console.log('🔍 location.assign intercepted:', url);
+    
+    // Check if trying to navigate to /map
+    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
+      console.log('🛑 Prevented navigation to /map via location.assign');
+      
+      // Instead of navigating, dispatch a custom event that our app can listen for
+      window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
+      
+      // Return without actually navigating
+      return;
+    }
+    
+    return originalAssign.call(this, url);
+  };
+  
+  // Override location.replace
+  window.location.replace = function(url) {
+    console.log('🔍 location.replace intercepted:', url);
+    
+    // Check if trying to navigate to /map
+    if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
+      console.log('🛑 Prevented navigation to /map via location.replace');
+      
+      // Instead of navigating, dispatch a custom event that our app can listen for
+      window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
+      
+      // Return without actually navigating
+      return;
+    }
+    
+    return originalReplace.call(this, url);
+  };
+  
+  // Override location.href setter
+  if (originalHref && originalHref.set) {
+    Object.defineProperty(window.location, 'href', {
+      ...originalHref,
+      set(url) {
+        console.log('🔍 location.href setter intercepted:', url);
+        
+        // Check if trying to navigate to /map
+        if (url && typeof url === 'string' && (url === '/map' || url.includes('/map?'))) {
+          console.log('🛑 Prevented navigation to /map via location.href');
+          
+          // Instead of navigating, dispatch a custom event that our app can listen for
+          window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url } }));
+          
+          // Return without actually navigating
+          return;
         }
+        
+        return originalHref.set.call(this, url);
       }
-    }, true);
-    
-    console.log('✅ Navigation override installed safely');
-  } catch (error) {
-    console.error('❌ Failed to install navigation override:', error);
+    });
   }
+  
+  // Also intercept all link clicks
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest('a');
+    
+    if (link && link.href) {
+      const url = new URL(link.href);
+      
+      // Check if trying to navigate to /map
+      if (url.pathname === '/map' || url.pathname.includes('/map?')) {
+        console.log('🔍 Link click intercepted:', link.href);
+        console.log('🛑 Prevented navigation to /map via link click');
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Instead of navigating, dispatch a custom event that our app can listen for
+        window.dispatchEvent(new CustomEvent('mapViewRequested', { detail: { url: url.pathname + url.search } }));
+      }
+    }
+  }, true);
+  
+  console.log('✅ Navigation override installed');
 } 

@@ -1,14 +1,42 @@
 
-export function getEnvironmentName(): string {
-  if (typeof window === 'undefined') return 'server';
-  
-  const hostname = window.location.hostname;
-  if (hostname.includes('localhost')) return 'local';
-  if (hostname.includes('staging')) return 'staging';
-  return 'production';
-}
+/**
+ * Environment detection utilities
+ * Provides consistent functions for working with environment information
+ */
 
-export function getCurrentHostname(): string {
-  if (typeof window === 'undefined') return '';
+/**
+ * Returns the current hostname, safely handling server-side rendering
+ * @returns Current hostname or 'server' if not in browser
+ */
+export const getCurrentHostname = (): string => {
+  if (typeof window === 'undefined') return 'server';
   return window.location.hostname;
-}
+};
+
+/**
+ * Checks if the current hostname is a production domain
+ * @returns Boolean indicating if this is a production domain
+ */
+export const isProdDomain = (): boolean => {
+  const hostname = getCurrentHostname();
+  return hostname.includes('nimbygram.com');
+};
+
+/**
+ * Checks if the current environment is development
+ * @returns Boolean indicating if this is a development environment
+ */
+export const isDevEnvironment = (): boolean => {
+  const hostname = getCurrentHostname();
+  return hostname === 'localhost' || hostname.includes('127.0.0.1');
+};
+
+/**
+ * Gets the environment name as a string
+ * @returns Environment name: 'production', 'development', or 'unknown'
+ */
+export const getEnvironmentName = (): string => {
+  if (isProdDomain()) return 'production';
+  if (isDevEnvironment()) return 'development';
+  return 'unknown';
+};

@@ -33,17 +33,11 @@ setTimeout(checkLoadedScripts, 3000);
 
 const queryClient = new QueryClient();
 
-// Install debugging tools with error handling
-try {
-  installNavigationTracer();
-  installNavigationOverride();
-  installComponentInspector();
-  installClickTracer();
-  console.log('✅ All debugging tools installed successfully');
-} catch (error) {
-  console.error('❌ Error installing debugging tools:', error);
-  // Continue with application initialization even if debugging tools fail
-}
+// Install debugging tools before anything else
+installNavigationTracer();
+installNavigationOverride();
+installComponentInspector();
+installClickTracer();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

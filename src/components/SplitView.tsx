@@ -16,7 +16,7 @@ export function SplitView({ applications }) {
     const params = new URLSearchParams(window.location.search);
     const postcode = params.get('postcode');
     if (postcode) {
-      // Mocked function for now
+      // You'll need a function to convert postcode to coordinates
       fetchPostcodeCoordinates(postcode).then(coords => {
         setSearchLocation(coords);
       });
@@ -102,12 +102,22 @@ export function SplitView({ applications }) {
   );
 }
 
-// Mocked helper function to convert postcode to coordinates
+// Helper function to convert postcode to coordinates
 async function fetchPostcodeCoordinates(postcode) {
-  console.log("Fetching coordinates for postcode:", postcode);
-  // Return mock data for now
-  return {
-    lat: 51.5074,
-    lng: -0.1278
-  };
+  // Implement your postcode lookup logic here
+  // This could use a service like postcodes.io
+  try {
+    const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+    const data = await response.json();
+    if (data.status === 200) {
+      return {
+        lat: data.result.latitude,
+        lng: data.result.longitude
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching postcode coordinates:', error);
+    return null;
+  }
 }

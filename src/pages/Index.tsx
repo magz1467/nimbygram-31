@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+
 import { Hero } from "@/components/Hero";
 import Features from "@/components/Features";
 import Services from "@/components/Services";
@@ -11,12 +11,6 @@ import { QuoteSection } from "@/components/QuoteSection";
 import { PageSeparator } from "@/components/ui/page-separator";
 
 const Index = () => {
-  useEffect(() => {
-    return () => {
-      // Cleanup any subscriptions, timers, or async operations here
-    };
-  }, []);
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <PageSeparator />
