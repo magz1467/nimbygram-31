@@ -18,6 +18,20 @@ function App() {
     }
   }, [location.pathname, setMapView]);
   
+  // Listen for our custom mapViewRequested event
+  useEffect(() => {
+    const handleMapViewRequested = (event: CustomEvent) => {
+      console.log("🎯 Map view requested via custom event:", event.detail);
+      setMapView(true);
+    };
+    
+    window.addEventListener('mapViewRequested', handleMapViewRequested as EventListener);
+    
+    return () => {
+      window.removeEventListener('mapViewRequested', handleMapViewRequested as EventListener);
+    };
+  }, [setMapView]);
+  
   return (
     <div className="flex flex-col h-screen">
       <NavigationTracker />

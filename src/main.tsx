@@ -1,10 +1,11 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { installNavigationOverride } from './utils/navigationOverride';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
@@ -29,10 +30,15 @@ setTimeout(checkLoadedScripts, 3000);
 
 const queryClient = new QueryClient();
 
+// Install navigation override before anything else
+installNavigationOverride();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>
 );
