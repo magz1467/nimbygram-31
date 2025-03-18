@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAlertSignup } from "@/hooks/useAlertSignup"
 import { EmailDialog } from "./EmailDialog"
 import { AlertSignupButton } from "./alerts/AlertSignupButton"
@@ -16,7 +16,7 @@ export const AlertSignup = ({ postcode }: AlertSignupProps) => {
   const [session, setSession] = useState<any>(null)
 
   // Check session on mount
-  useState(() => {
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
@@ -25,7 +25,7 @@ export const AlertSignup = ({ postcode }: AlertSignupProps) => {
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
-  })
+  }, [])
 
   if (!session) {
     return <AlertSignupLoggedOut />
