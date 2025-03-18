@@ -1,129 +1,136 @@
 
-import { FC } from "react";
+import { FC, useEffect } from "react";
+import { logStorybook } from "@/utils/storybook/logger";
 
 interface DetailsSectionProps {
-  content: string | string[];
+  content: string | string[] | null;
+  applicationId?: number;
 }
 
-export const DetailsSection: FC<DetailsSectionProps> = ({ content }) => {
+export const DetailsSection: FC<DetailsSectionProps> = ({ content, applicationId }) => {
   if (!content) return null;
   
-  // Process the content based on its type
-  if (Array.isArray(content)) {
-    // Filter out empty items and clean up content
-    const filteredDetails = content
-      .filter(detail => detail && detail.trim().length > 0)
-      .map(detail => detail.replace(/\*\*/g, '')); // Remove ** markers
+  // Debug logging
+  useEffect(() => {
+    logStorybook.section('details', content, applicationId);
+  }, [content, applicationId]);
+  
+  // Process HTML content
+  const processContent = (str: string) => {
+    // Clean up common prefix issues
+    return str
+      .replace(/^Key Details:?\s*/i, '') // Remove redundant title at start
+      .replace(/<\/?strong>/g, '') // Remove literal <strong> tags
+      .replace(/&lt;(\/?strong)&gt;/g, '<$1>'); // Convert encoded HTML tags
+  };
+  
+  // More robust empty content check
+  const isEmptyContent = (str: string) => {
+    // Remove whitespace, bullet characters, and dashes
+    const trimmed = str.replace(/[\s•\-*]/g, '');
+    return trimmed.length === 0;
+  };
+  
+  // Enhanced emoji detection
+  const extractEmoji = (text: string) => {
+    const emojiRegex = /^([\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Component}]+)/u;
+    const match = text.match(emojiRegex);
     
-    if (filteredDetails.length === 0) return null;
+    if (match) {
+      return {
+        emoji: match[1],
+        text: text.substring(match[0].length).trim()
+      };
+    }
     
-    return (
-      <div className="prose prose-sm max-w-none">
-        <div className="rounded-lg p-4 border border-gray-100">
-          <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
-          <ul className="list-disc pl-5 space-y-2">
-            {filteredDetails.map((detail, index) => {
-              // Extract emoji if present at the beginning
-              const emojiMatch = detail.match(/^([\u{1F300}-\u{1F64F}\u{2600}-\u{26FF}✓])/u);
-              const emoji = emojiMatch ? emojiMatch[1] : null;
-              const textContent = emoji ? detail.substring(emoji.length).trim() : detail.trim();
-                
+    return { emoji: null, text };
+  };
+  
+  // Format the content with proper bullet points
+  const formatBulletPoints = (inputContent: string | string[]) => {
+    if (Array.isArray(inputContent)) {
+      // If the content is already an array, format each item
+      return (
+        <ul className="list-disc pl-5 space-y-2 my-0 text-left">
+          {inputContent
+            .filter(item => item && !isEmptyContent(item))
+            .map((item, index) => {
+              const { emoji, text } = extractEmoji(processContent(item));
               return (
-                <li key={index} className="pl-1 mb-2 text-left">
-                  {emoji && <span className="mr-2 inline-block">{emoji}</span>}
-                  <span 
-                    dangerouslySetInnerHTML={{ 
-                      __html: textContent.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>') 
-                    }}
-                  />
+                <li key={index} className="pl-1 mb-2 text-left flex items-start gap-2">
+                  {emoji ? (
+                    <>
+                      <span className="flex-shrink-0 mr-2">{emoji}</span>
+                      <span 
+                        dangerouslySetInnerHTML={{ 
+                          __html: text.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                        }}
+                        className="flex-1"
+                      />
+                    </>
+                  ) : (
+                    <span
+                      dangerouslySetInnerHTML={{ 
+                        __html: processContent(item).replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                      }}
+                    />
+                  )}
                 </li>
               );
             })}
-          </ul>
-        </div>
-      </div>
-    );
-  } else {
-    // For string content, check if it contains bullet points
-    const stringContent = content as string;
-    
-    if (!stringContent.trim()) return null;
-    
-    // Strip any "Key Details:" prefix and ** markers
-    const cleanedContent = stringContent
-      .replace(/^Key Details:?\s*/i, '')
-      .replace(/\*\*/g, '')
-      .replace(/^\s*[\*•-]\s*$/gm, '') // Remove empty bullet points
-      .replace(/\n\s*[\*•-]\s*\n/g, '\n'); // Remove empty bullet points with newlines
-    
-    // Check if content has bullet points
-    const hasBulletPoints = cleanedContent.match(/(?:^|\n)\s*[•\*\-]\s+/);
-    
-    if (hasBulletPoints) {
-      // Extract bullet points with emojis
-      const bulletPoints = extractFormattedBulletPoints(cleanedContent);
+        </ul>
+      );
+    } else {
+      // Handle string content by detecting bullet points
+      const contentStr = processContent(inputContent);
       
-      return (
-        <div className="prose prose-sm max-w-none">
-          <div className="rounded-lg p-4 border border-gray-100">
-            <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
-            <ul className="list-disc pl-5 space-y-2 mb-3">
-              {bulletPoints.map((item, index) => {
-                // Handle emoji bullet points
-                const emojiMatch = item.text.match(/^([\u{1F300}-\u{1F64F}\u{2600}-\u{26FF}✓])/u);
-                
-                return (
-                  <li key={index} className="pl-1 mb-2 text-left">
-                    {item.emoji && <span className="mr-2 inline-block">{item.emoji}</span>}
-                    {item.text}
-                  </li>
-                );
-              })}
+      // Check if content has recognizable bullet points
+      const hasBulletPoints = /(?:^|\n)\s*(?:[•\*\-]|\p{Emoji_Presentation})\s+/u.test(contentStr);
+      
+      if (hasBulletPoints) {
+        // Split by bullet point markers
+        const bulletPoints = contentStr.split(/(?:^|\n)\s*(?:[•\*\-]|\p{Emoji_Presentation})\s+/u)
+          .filter(Boolean)
+          .map(item => item.trim());
+        
+        if (bulletPoints.length > 1) {
+          return (
+            <ul className="list-disc pl-5 space-y-2 my-0 text-left">
+              {bulletPoints.map((item, i) => (
+                <li key={i} className="pl-1 mb-2 text-left">
+                  <span 
+                    dangerouslySetInnerHTML={{ 
+                      __html: item.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+                    }}
+                  />
+                </li>
+              ))}
             </ul>
-          </div>
-        </div>
-      );
-    } else {
-      // No bullet points, treat as simple paragraph content
+          );
+        }
+      }
+      
+      // If no bullet points or only one item, render as paragraph
       return (
-        <div className="prose prose-sm max-w-none">
-          <div className="rounded-lg p-4 border border-gray-100">
-            <h3 className="text-gray-900 font-bold mb-3 text-base md:text-lg text-left">Key Details</h3>
-            <p className="text-gray-700 mb-0 text-left">{cleanedContent}</p>
-          </div>
-        </div>
+        <p className="my-0 mt-2 text-left whitespace-pre-line" 
+          dangerouslySetInnerHTML={{ 
+            __html: contentStr.replace(/\*\*(.*?):\*\*/g, '<strong>$1:</strong>')
+          }}
+        />
       );
     }
-  }
+  };
+  
+  // If after processing we have no content, return null
+  if ((typeof content === 'string' && isEmptyContent(content)) || 
+      (Array.isArray(content) && content.every(isEmptyContent))) return null;
+  
+  return (
+    <div className="bg-white border border-gray-100 rounded-lg p-4">
+      <h3 className="font-semibold mb-2 text-base md:text-lg text-left">Key Details</h3>
+      <div className="space-y-2 text-gray-700">
+        {formatBulletPoints(content)}
+      </div>
+    </div>
+  );
 };
-
-// Extract formatted bullet points from content as objects with emoji and text
-function extractFormattedBulletPoints(content: string): Array<{emoji: string | null, text: string}> {
-  const bulletPoints: Array<{emoji: string | null, text: string}> = [];
-  
-  // Process bullet points with emoji markers and traditional bullets
-  const bulletRegex = /(?:^|\n)\s*([\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]|\*|•|-)\s+(.*?)(?=(?:^|\n)\s*(?:[\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]|\*|•|-)\s+|\n\n|$)/gsu;
-  
-  const matches = Array.from(content.matchAll(bulletRegex));
-  
-  matches.forEach(match => {
-    const marker = match[1];
-    const text = match[2].trim();
-    
-    // For emoji bullets, separate the emoji from the text
-    if (/[\u{1F300}-\u{1F6FF}\u{2600}-\u{27BF}✓]/u.test(marker)) {
-      bulletPoints.push({
-        emoji: marker,
-        text: text
-      });
-    } else {
-      // For traditional bullet points
-      bulletPoints.push({
-        emoji: null,
-        text: text
-      });
-    }
-  });
-  
-  return bulletPoints;
-}
