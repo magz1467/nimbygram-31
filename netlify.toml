@@ -1,8 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "npm run build"
-  publish = "dist"
-  base = "/"
+  publish = "."
 
 # Handle client-side routing
 [[redirects]]
