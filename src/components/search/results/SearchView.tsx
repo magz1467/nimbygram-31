@@ -36,13 +36,17 @@ function SearchViewContent() {
     hasError: !!loadingState.error,
     errorMessage: loadingState.error?.message
   });
-  console.log(`[SearchViewContent][${env}] Applications count:`, applications?.length || 0);
-  console.log(`[SearchViewContent][${env}] Coordinates:`, coordinates);
-  console.log(`[SearchViewContent][${env}] Search state:`, {
-    hasSearched,
-    hasPartialResults,
-    isSearchInProgress
-  });
+  
+  useEffect(() => {
+    // Debug to track if component remounts or rerenders
+    console.log(`[SearchViewContent][${env}] MOUNTED/UPDATED with searchTerm:`, 
+      initialSearch?.searchTerm, 'timestamp:', initialSearch?.timestamp);
+    
+    return () => {
+      console.log(`[SearchViewContent][${env}] UNMOUNTED with searchTerm:`, 
+        initialSearch?.searchTerm);
+    };
+  }, [initialSearch, env]);
   
   // Handle navigation to the map view
   const handleToggleMapView = () => {
@@ -137,6 +141,15 @@ export function SearchView({
   const env = getEnvironmentName();
   
   console.log(`[SearchView][${env}] Initializing with search params:`, initialSearch);
+  
+  // Add debugging for initialSearch props
+  useEffect(() => {
+    console.log(`[SearchView][${env}] initialSearch CHANGED:`, {
+      searchTerm: initialSearch?.searchTerm,
+      searchType: initialSearch?.searchType,
+      timestamp: initialSearch?.timestamp
+    });
+  }, [initialSearch, env]);
   
   return (
     <div className="min-h-screen bg-gray-50">

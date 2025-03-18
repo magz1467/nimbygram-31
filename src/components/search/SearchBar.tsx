@@ -42,7 +42,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     console.log(`[SearchBar][${env}] 🔍 Starting search for: "${searchTerm.trim()}"`);
     
     try {
-      // Log search - fixing the incorrect number of arguments
+      // Log search
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
       await logSearch(searchTerm.trim(), 'search');
       console.log(`[SearchBar][${env}] logSearch completed`);
@@ -59,14 +59,22 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       
       console.log(`[SearchBar][${env}] Navigating to search results with: "${searchTerm.trim()}", type: ${searchType}`);
       
-      // Fix: Use direct navigation with state to avoid recursive search
-      const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`;
+      // Create a unique URL that won't cause rerendering issues
+      const timestamp = Date.now();
+      const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${timestamp}`;
       console.log(`[SearchBar][${env}] Navigation URL: ${url}`);
       
-      // Key fix: Use replace instead of push to avoid adding to history stack
-      navigate(url, { replace: true });
+      // Use replace to avoid history stacking, and pass minimal state
+      navigate(url, { 
+        replace: true,
+        state: {
+          searchTerm: searchTerm.trim(),
+          searchType,
+          timestamp
+        }
+      });
       
-      console.log(`[SearchBar][${env}] ✅ Navigation initiated`);
+      console.log(`[SearchBar][${env}] ✅ Navigation initiated to ${url}`);
     } catch (error) {
       console.error(`[SearchBar][${env}] 🔴 Search error:`, error);
       toast({
@@ -75,10 +83,10 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
         variant: "destructive",
       });
     } finally {
-      // Reset isSubmitting after a short delay to avoid multiple rapid clicks
+      // Reset isSubmitting after a delay to prevent multiple submissions
       setTimeout(() => {
         setIsSubmitting(false);
-      }, 300);
+      }, 500);
     }
   };
 

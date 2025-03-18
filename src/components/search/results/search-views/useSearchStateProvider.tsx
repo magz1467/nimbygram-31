@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLoadingState } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
@@ -14,11 +15,31 @@ export function useSearchStateProvider(initialSearch?: {
 }) {
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const searchInitiatedRef = useRef(false);
+  
+  // Track if this is a fresh search vs a component remount
+  const searchTimestampRef = useRef<number | null>(null);
+  
+  // Debug info
+  console.log('[useSearchStateProvider] Initializing with search:', 
+    initialSearch ? { term: initialSearch.searchTerm, timestamp: initialSearch.timestamp } : 'none');
   
   const performanceTracker = useMemo(() => 
     getSearchPerformanceTracker(`search-${initialSearch?.timestamp || Date.now()}`),
     [initialSearch?.timestamp]
   );
+  
+  // Reset search initiated flag when search term changes
+  useEffect(() => {
+    // Check if this is a new search (new timestamp) or the first search
+    const isNewSearch = initialSearch?.timestamp !== searchTimestampRef.current;
+    
+    if (initialSearch?.searchTerm && isNewSearch) {
+      console.log('[useSearchStateProvider] New search detected:', initialSearch.searchTerm);
+      searchInitiatedRef.current = false;
+      searchTimestampRef.current = initialSearch.timestamp || Date.now();
+    }
+  }, [initialSearch]);
   
   const loadingState = useLoadingState({
     timeout: 45000,
@@ -41,10 +62,25 @@ export function useSearchStateProvider(initialSearch?: {
   } = useCoordinates(initialSearch?.searchTerm || '');
   
   useEffect(() => {
+    // Only start searching if we have a search term and haven't already initiated this search
+    if (initialSearch?.searchTerm && !searchInitiatedRef.current) {
+      searchInitiatedRef.current = true;
+      console.log('[useSearchStateProvider] Initiating search for:', initialSearch.searchTerm);
+      
+      performanceTracker.mark('searchInitiated');
+      loadingState.startLoading('coordinates');
+      
+      // Reset error state for new searches
+      setError(null);
+    }
+  }, [initialSearch]);
+  
+  useEffect(() => {
     if (initialSearch?.searchTerm && !coordinates && isLoadingCoords) {
       performanceTracker.mark('coordinatesStart');
       loadingState.startLoading('coordinates');
     } else if (initialSearch?.searchTerm && coordinates) {
+      console.log('[useSearchStateProvider] Got coordinates:', coordinates);
       performanceTracker.mark('coordinatesEnd');
       performanceTracker.addMetadata('coordinates', coordinates);
       if (postcode) {
@@ -52,6 +88,7 @@ export function useSearchStateProvider(initialSearch?: {
       }
       loadingState.setStage('searching');
     } else if (coordsError) {
+      console.error('[useSearchStateProvider] Coordinates error:', coordsError);
       performanceTracker.mark('coordinatesError');
       performanceTracker.addMetadata('coordinatesError', coordsError.message);
       
@@ -109,6 +146,7 @@ export function useSearchStateProvider(initialSearch?: {
   
   useEffect(() => {
     if (searchError && !error) {
+      console.error('[useSearchStateProvider] Search error:', searchError);
       performanceTracker.mark('searchError');
       performanceTracker.addMetadata('searchError', searchError.message);
       
@@ -133,15 +171,16 @@ export function useSearchStateProvider(initialSearch?: {
   }, [filters, updateFilters]);
   
   const retry = useCallback(() => {
+    console.log('[useSearchStateProvider] Retry requested for:', initialSearch?.searchTerm);
     setError(null);
     loadingState.startLoading('coordinates');
     setHasSearched(false);
+    searchInitiatedRef.current = false;
     
-    getSearchPerformanceTracker(`search-retry-${Date.now()}`);
-    
-    // Removed window.location.reload() to prevent page reload
-    console.log('Retry search requested');
-  }, []);
+    // Create a new performance tracker for the retry
+    const newTracker = getSearchPerformanceTracker(`search-retry-${Date.now()}`);
+    newTracker.mark('retryInitiated');
+  }, [initialSearch]);
   
   return {
     initialSearch: initialSearch || null,

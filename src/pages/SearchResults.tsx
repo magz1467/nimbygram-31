@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { SearchView } from "@/components/search/results/SearchView";
@@ -90,20 +89,46 @@ const SearchResultsPage = () => {
     setError(null);
   }, [env]);
 
-  // Fix: Add a guard to prevent rerendering if already on this page with same params
-  const currentSearchKey = useRef<string>('');
+  // Fix: Track already processed searches to prevent loops
+  const processedSearches = useRef<Set<string>>(new Set());
   
   useEffect(() => {
-    // Create a unique key for this search to prevent duplicate renders
+    if (!searchTerm) return;
+    
+    // Create a unique search identifier
     const searchKey = `${searchTerm}-${searchType}-${timestamp}`;
     
-    if (currentSearchKey.current === searchKey) {
-      console.log(`[SearchResultsPage][${env}] 🔄 Duplicate search detected, preventing rerender`);
+    // If we've already processed this exact search, don't reprocess
+    if (processedSearches.current.has(searchKey)) {
+      console.log(`[SearchResultsPage][${env}] 🔄 Search already processed: ${searchKey}`);
       return;
     }
     
-    currentSearchKey.current = searchKey;
+    // Mark this search as processed
+    processedSearches.current.add(searchKey);
+    console.log(`[SearchResultsPage][${env}] 🔄 Processing new search: ${searchKey}`);
+    
+    // For very old searches (keep only last 5)
+    if (processedSearches.current.size > 5) {
+      const oldestSearch = Array.from(processedSearches.current)[0];
+      processedSearches.current.delete(oldestSearch);
+    }
   }, [searchTerm, searchType, timestamp, env]);
+
+  const handlePostcodeSelect = useCallback((postcode: string) => {
+    console.log(`[SearchResultsPage][${env}] 📍 Postcode selected from NoSearchStateView: ${postcode}`);
+    
+    const newTimestamp = Date.now();
+    // Use URL parameters AND state to ensure the search works
+    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=postcode&timestamp=${newTimestamp}`, {
+      replace: true,
+      state: {
+        searchTerm: postcode,
+        searchType: 'postcode',
+        timestamp: newTimestamp
+      }
+    });
+  }, [navigate, env]);
 
   console.log(`[SearchResultsPage][${env}] 🖥️ Rendering with searchState:`, 
     searchState ? { ...searchState, hasSearchTerm: !!searchState.searchTerm } : 'null');
@@ -112,11 +137,7 @@ const SearchResultsPage = () => {
   return (
     <>
       {!searchState?.searchTerm ? (
-        <NoSearchStateView onPostcodeSelect={(postcode) => {
-          console.log(`[SearchResultsPage][${env}] 📍 Postcode selected from NoSearchStateView: ${postcode}`);
-          // Use URL parameters instead of location state
-          navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
-        }} />
+        <NoSearchStateView onPostcodeSelect={handlePostcodeSelect} />
       ) : error ? (
         <SearchErrorView 
           errorDetails={error.message} 
