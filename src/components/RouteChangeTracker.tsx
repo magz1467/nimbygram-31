@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 import { logRouteChange } from '@/utils/reloadTracker';
