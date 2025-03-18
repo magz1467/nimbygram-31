@@ -1,7 +1,9 @@
+
 import { Application } from "@/types/planning";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
-import { MapPin } from "lucide-react";
+import { MapPin, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
 
 interface MobileListViewProps {
   applications: Application[];
@@ -39,6 +41,13 @@ export const MobileListView = ({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">
         {applications.map((app) => {
+          // Format received date
+          const formattedReceivedDate = app.received || app.received_date
+            ? new Date(app.received || app.received_date).toString() !== "Invalid Date"
+              ? format(new Date(app.received || app.received_date), 'dd MMM yyyy')
+              : null
+            : null;
+            
           return (
             <div
               key={app.id}
@@ -63,6 +72,15 @@ export const MobileListView = ({
                   <div className="text-sm text-gray-600 mt-1 truncate">
                     {app.description}
                   </div>
+                  
+                  {/* Received date display */}
+                  {formattedReceivedDate && (
+                    <div className="flex items-center gap-1 mt-1 text-gray-600">
+                      <CalendarDays className="w-3 h-3" />
+                      <p className="text-xs">Received: {formattedReceivedDate}</p>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col gap-1.5 mt-2">
                     <ApplicationBadges
                       status={app.status}

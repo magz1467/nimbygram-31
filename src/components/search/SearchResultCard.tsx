@@ -96,6 +96,8 @@ export const SearchResultCard = ({
       : null
     : null;
 
+  const displayDate = formattedReceivedDate || formattedSubmittedDate;
+  
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   const handleSeeOnMap = () => {
@@ -118,12 +120,12 @@ export const SearchResultCard = ({
         title={application.title || ''} 
       />
 
-      {(formattedReceivedDate || formattedSubmittedDate) && (
+      {displayDate && (
         <div className="px-4 py-2 bg-gray-50 border-y border-gray-100">
           <div className="flex items-center gap-1.5 text-sm text-gray-600">
             <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
             <span className="font-medium">Received:</span>
-            <span>{formattedReceivedDate || formattedSubmittedDate || 'Date not available'}</span>
+            <span>{displayDate || 'Date not available'}</span>
           </div>
         </div>
       )}

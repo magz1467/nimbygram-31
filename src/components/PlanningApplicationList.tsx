@@ -28,6 +28,12 @@ export const PlanningApplicationList = ({
   });
 
   console.log('PlanningApplicationList - Rendering with applications:', applications?.length);
+  
+  // Log received date for debugging
+  if (applications?.length > 0) {
+    console.log('Sample received date:', applications[0].received || 
+    applications[0].received_date || 'Not available');
+  }
 
   if (!applications?.length) {
     return <EmptyState />;

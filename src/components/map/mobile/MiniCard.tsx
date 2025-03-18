@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { MapPin } from "lucide-react";
+import { MapPin, CalendarDays } from "lucide-react";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getImageUrl } from "@/utils/imageUtils";
@@ -8,6 +8,7 @@ import { formatStorybook } from "@/utils/storybook";
 import { DragHandle } from "./components/DragHandle";
 import { LocationInfo } from "./components/LocationInfo";
 import { PullUpHint } from "./components/PullUpHint";
+import { format } from "date-fns";
 
 interface MiniCardProps {
   application: Application;
@@ -19,6 +20,13 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
   
   // Get the best available image
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
+  
+  // Format received date
+  const formattedReceivedDate = application.received || application.received_date
+    ? new Date(application.received || application.received_date).toString() !== "Invalid Date"
+      ? format(new Date(application.received || application.received_date), 'dd MMM yyyy')
+      : null
+    : null;
 
   return (
     <div 
@@ -48,6 +56,14 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
             
             {application.address && (
               <LocationInfo address={application.address} />
+            )}
+            
+            {/* Received date */}
+            {formattedReceivedDate && (
+              <div className="flex items-center gap-1 mt-1 text-gray-600">
+                <CalendarDays className="w-3 h-3 text-gray-500" />
+                <span className="text-xs">Received: {formattedReceivedDate}</span>
+              </div>
             )}
           </div>
         </div>
