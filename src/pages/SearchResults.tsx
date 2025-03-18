@@ -32,32 +32,22 @@ const useNavigate = () => {
   return useCallback((path: string, options?: any) => {
     console.log('Navigating to:', path, options);
     
-    // Extract search params from the path
-    const searchParamMatch = path.match(/\?(.+)/);
-    const searchParams = searchParamMatch ? searchParamMatch[1] : '';
-    
     if (options?.replace) {
       window.history.replaceState(
         options?.state || {},
         '',
         path
       );
-      // Force a re-render by reloading if needed
-      if (path !== window.location.pathname + window.location.search) {
-        window.location.href = path;
-      }
     } else {
       window.history.pushState(
         options?.state || {},
         '',
         path
       );
-      
-      // Dispatch a custom event to notify about the navigation
-      window.dispatchEvent(new CustomEvent('navigation', { 
-        detail: { path, options } 
-      }));
     }
+    
+    // Dispatch a custom event to notify about the navigation
+    window.dispatchEvent(new Event('popstate'));
   }, []);
 };
 
@@ -68,16 +58,14 @@ const useSearchParams = () => {
   );
   
   useEffect(() => {
-    const handleNavigation = () => {
+    const handlePopState = () => {
       setSearchParamsState(new URLSearchParams(window.location.search));
     };
     
-    window.addEventListener('navigation', handleNavigation);
-    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('popstate', handlePopState);
     
     return () => {
-      window.removeEventListener('navigation', handleNavigation);
-      window.removeEventListener('popstate', handleNavigation);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
   
@@ -86,8 +74,8 @@ const useSearchParams = () => {
     window.history.pushState({}, '', newUrl);
     setSearchParamsState(newParams);
     
-    // Dispatch a custom event
-    window.dispatchEvent(new CustomEvent('navigation'));
+    // Dispatch a popstate event to notify about the change
+    window.dispatchEvent(new Event('popstate'));
   }, []);
   
   return [searchParams, setSearchParams] as const;
@@ -123,7 +111,7 @@ const SearchResultsPage = () => {
   useEffect(() => {
     const searchTerm = searchParams.get('search');
     const searchType = searchParams.get('searchType') as 'postcode' | 'location';
-    const timestamp = parseInt(searchParams.get('timestamp') || Date.now().toString(), 10);
+    const timestamp = parseInt(searchParams.get('timestamp') || '0', 10);
     
     console.log('Search params changed:', { searchTerm, searchType, timestamp });
     
@@ -134,8 +122,15 @@ const SearchResultsPage = () => {
         displayTerm: searchTerm,
         timestamp
       });
+      
+      // Automatically start search when parameters are available
+      setIsLoading(true);
+      setIsSubmitting(true);
+      setError(null);
     } else {
       setSearchState(null);
+      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }, [searchParams]);
   
@@ -158,6 +153,8 @@ const SearchResultsPage = () => {
   // Handle search errors
   const handleError = useCallback((error: Error | null) => {
     setError(error);
+    setIsLoading(false);
+    setIsSubmitting(false);
     if (error) {
       console.error('Search error:', error.message);
     }
@@ -182,7 +179,8 @@ const SearchResultsPage = () => {
   const handlePostcodeSelect = useCallback((postcode: string) => {
     console.log('Postcode selected:', postcode);
     // Use URL parameters with proper encoding
-    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
+    const newPath = `/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`;
+    navigate(newPath);
   }, [navigate]);
   
   return (
