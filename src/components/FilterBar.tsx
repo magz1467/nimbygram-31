@@ -63,7 +63,7 @@ export const FilterBar = ({
   }, [onSortChange]);
 
   const handleMapToggle = () => {
-    // Instead of navigating, just update the state
+    console.log("Map toggle clicked in FilterBar");
     setMapView(!mapViewStore);
   };
 
@@ -78,6 +78,7 @@ export const FilterBar = ({
             size="sm"
             onClick={handleMapToggle}
             className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+            data-testid="map-toggle-button"
           >
             {mapViewStore ? (
               <>
