@@ -45,6 +45,7 @@ const ApplicationsDashboardMap = () => {
         handlePostcodeSelect={handlePostcodeSelect}
         handleSortChange={handleSortChange}
         setIsMapView={setShowMap}
+        // We're removing the header from DashboardLayout, so no need to pass skipHeader
       >
         <SearchSection 
           onPostcodeSelect={handlePostcodeSelect}
