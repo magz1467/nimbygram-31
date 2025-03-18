@@ -63,11 +63,8 @@ export const FilterBar = ({
   }, [onSortChange]);
 
   const handleMapToggle = () => {
-    // On desktop, we don't need to do anything as the SplitView handles the display
-    // On mobile, toggle between map and list view
-    if (!isDesktop) {
-      setMapView(!mapViewStore);
-    }
+    // Instead of navigating, just update the state
+    setMapView(!mapViewStore);
   };
 
   return (
