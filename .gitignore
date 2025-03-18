@@ -30,6 +30,3 @@ london/populate/bin/
 *.ropeproject/*
 london-populate/.ropeproject/autoimport.db
 london-populate/london_populate/__pycache__
-
-# Local Netlify folder
-.netlify

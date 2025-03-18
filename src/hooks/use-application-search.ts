@@ -1,91 +1,38 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 
-interface Application {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  date: string;
-  location?: {
-    lat: number;
-    lng: number;
-  };
-  // Add other properties as needed
+interface SearchResult {
+  result: string
+  error?: string
 }
 
-interface SearchParams {
-  query: string;
-  location?: string;
-  radius?: number;
-  status?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
+export const useApplicationSearch = () => {
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
 
-export function useApplicationSearch(initialParams: SearchParams) {
-  const [params, setParams] = useState<SearchParams>(initialParams);
-  const [results, setResults] = useState<Application[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const searchApplication = useCallback(async (applicationNumber: string, council: string) => {
+    setIsSearching(true)
+    setSearchResult(null)
 
-  useEffect(() => {
-    const searchApplications = async () => {
-      // Skip empty searches
-      if (!params.query && !params.location) {
-        setResults([]);
-        setTotalCount(0);
-        return;
-      }
+    try {
+      const { data, error } = await supabase.functions.invoke('search-planning-application', {
+        body: { applicationNumber, council }
+      })
 
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Mock API call - replace with your actual API
-        const queryParams = new URLSearchParams();
-        
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && value !== '') {
-            queryParams.append(key, String(value));
-          }
-        });
-        
-        const response = await fetch(`/api/applications/search?${queryParams.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to search applications');
-        }
-        
-        const data = await response.json();
-        setResults(data.applications || []);
-        setTotalCount(data.totalCount || 0);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        setResults([]);
-        setTotalCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
+      if (error) throw error
 
-    // Debounce the search
-    const timeoutId = setTimeout(searchApplications, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [params]);
-
-  const updateSearchParams = (newParams: Partial<SearchParams>) => {
-    setParams(prev => ({ ...prev, ...newParams }));
-  };
+      setSearchResult(data as SearchResult)
+    } catch (error) {
+      console.error('Error searching application:', error)
+      setSearchResult({ result: '', error: error.message })
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
 
   return {
-    results,
-    loading,
-    error,
-    totalCount,
-    params,
-    updateSearchParams
-  };
+    searchApplication,
+    isSearching,
+    searchResult
+  }
 }

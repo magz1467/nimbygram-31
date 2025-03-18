@@ -1,9 +1,12 @@
-# This file is overriding the UI settings
+
 [build]
   command = "npm run build"
   publish = "dist"
 
-# Handle client-side routing
+[build.environment]
+  NODE_VERSION = "18"
+
+# Handle SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -24,24 +27,3 @@
 # SSL settings
 [dev]
   https = true
-
-# Remove all plugin references unless you've specifically added them in the Netlify UI
-
-# Remove any plugin references to non-existent packages
-# [[plugins]]
-#   package = "netlify-plugin-cache-killer"  # This package doesn't exist
-
-# Specify Node.js version
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
-  # Ensure we're using npm, not bun
-  USE_NPM_INSTALL = "true"
-  # Add cache settings for faster builds
-  NETLIFY_USE_YARN = "false"
-  NETLIFY_USE_PNPM = "false"
-  NETLIFY_USE_BUN = "false"
-  NPM_FLAGS = "--legacy-peer-deps"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
-  VITE_APP_ENV = "production"
-  VITE_SKIP_TS_CHECK = "true"

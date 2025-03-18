@@ -4,15 +4,13 @@ export interface Application {
   title?: string;
   address: string;
   status: string;
-  description?: string;
-  location?: string;
   distance?: string;
   reference?: string;
+  description?: string;
   applicant?: string;
   submissionDate?: string;
   submittedDate?: string;
   decisionDue?: string;
-  decision?: string;
   type?: string;
   ward?: string;
   officer?: string;
@@ -57,6 +55,7 @@ export interface Application {
   };
   category?: string;
   received?: string;
+  decision?: string;
   storybook?: string;
   storybook_header?: string;
   received_date?: string | null;

@@ -8,6 +8,7 @@ import { LoadingOverlay } from "./LoadingOverlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
 import { SearchSection } from "./SearchSection";
+import { Header } from "@/components/Header";
 
 interface DashboardLayoutProps {
   applications: Application[];
@@ -50,56 +51,58 @@ export const DashboardLayout = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full overflow-hidden">
-      {/* Header is removed - we'll use the one from AppLayout */}
-      <SearchSection 
-        onPostcodeSelect={handlePostcodeSelect}
-        applications={applications}
-        isMapView={isMapView}
-      />
-      
-      <DashboardHeader 
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        activeFilters={activeFilters}
-        activeSort={activeSort}
-        isMapView={isMapView}
-        onToggleView={() => setIsMapView(!isMapView)}
-      />
-      
-      <div className="flex flex-1 min-h-0 relative">
-        {isLoading && <LoadingOverlay />}
-        
-        <SidebarSection 
-          isMobile={isMobile}
+    <>
+      {!isMobile && <Header />}
+      <div className="flex flex-col h-[100dvh] w-full overflow-hidden">
+        <SearchSection 
+          onPostcodeSelect={handlePostcodeSelect}
+          applications={applications}
           isMapView={isMapView}
-          applications={filteredApplications}
-          selectedId={selectedId}
-          postcode={searchTerm}
-          coordinates={coordinates as [number, number]}
-          activeFilters={activeFilters}
-          activeSort={activeSort}
+        />
+        
+        <DashboardHeader 
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
-          onSelectApplication={handleMarkerClick}
-          onClose={() => handleMarkerClick(null)}
+          activeFilters={activeFilters}
+          activeSort={activeSort}
+          isMapView={isMapView}
+          onToggleView={() => setIsMapView(!isMapView)}
         />
         
-        <MapSection 
-          isMobile={isMobile}
-          isMapView={isMapView}
-          coordinates={coordinates}
-          applications={filteredApplications}
-          selectedId={selectedId}
-          dispatch={{
-            type: 'SELECT_APPLICATION',
-            payload: handleMarkerClick
-          }}
-          postcode={searchTerm}
-        />
+        <div className="flex flex-1 min-h-0 relative">
+          {isLoading && <LoadingOverlay />}
+          
+          <SidebarSection 
+            isMobile={isMobile}
+            isMapView={isMapView}
+            applications={filteredApplications}
+            selectedId={selectedId}
+            postcode={searchTerm}
+            coordinates={coordinates as [number, number]}
+            activeFilters={activeFilters}
+            activeSort={activeSort}
+            onFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            onSelectApplication={handleMarkerClick}
+            onClose={() => handleMarkerClick(null)}
+          />
+          
+          <MapSection 
+            isMobile={isMobile}
+            isMapView={isMapView}
+            coordinates={coordinates}
+            applications={filteredApplications}
+            selectedId={selectedId}
+            dispatch={{
+              type: 'SELECT_APPLICATION',
+              payload: handleMarkerClick
+            }}
+            postcode={searchTerm}
+          />
+        </div>
+        
+        {children}
       </div>
-      
-      {children}
-    </div>
+    </>
   );
 };

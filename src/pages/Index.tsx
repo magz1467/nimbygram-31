@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Hero } from "@/components/Hero";
 import Features from "@/components/Features";
 import Services from "@/components/Services";
@@ -10,15 +10,7 @@ import Header from "@/components/Header";
 import { QuoteSection } from "@/components/QuoteSection";
 import { PageSeparator } from "@/components/ui/page-separator";
 
-// Fix the type incompatibility by ensuring consistent types
-// The error suggests there's a mismatch between string and number types for 'id'
-interface ComponentProps {
-  // Use string type for id to ensure consistency
-  id?: string;
-}
-
-// Apply the interface to components that might be using id props
-const Index: React.FC = () => {
+const Index = () => {
   return (
     <div className="flex flex-col min-h-screen w-full">
       <PageSeparator />

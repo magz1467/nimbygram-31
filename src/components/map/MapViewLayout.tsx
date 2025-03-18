@@ -1,5 +1,6 @@
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Header from "@/components/Header";
 import { SearchSection } from "@/components/applications/dashboard/components/SearchSection";
 import { SidebarSection } from "@/components/applications/dashboard/components/SidebarSection";
 import { MapContent } from "@/components/map/MapContent";
@@ -45,7 +46,7 @@ export const MapViewLayout = ({
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen">
-        {/* Header removed - now using AppLayout's header */}
+        <Header />
         <SearchSection 
           onPostcodeSelect={onPostcodeSelect}
           onFilterChange={onFilterChange}

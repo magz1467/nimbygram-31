@@ -1,50 +1,37 @@
-import { useState, useEffect } from 'react';
 
-interface AddressSuggestion {
-  id: string;
-  text: string;
-  description?: string;
+import { useQuery } from "@tanstack/react-query";
+import { PostcodeSuggestion } from "@/types/address-suggestions";
+import { fetchAddressSuggestions } from "@/services/address/postcode-autocomplete";
+import { useDebounce } from "./use-debounce";
+
+export interface UseAddressSuggestionsProps {
+  input: string;
 }
 
-export function useAddressSuggestions(query: string) {
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+export const useAddressSuggestions = ({ input }: UseAddressSuggestionsProps) => {
+  const debouncedSearch = useDebounce(input, 300);
+  
+  const { 
+    data: suggestions = [], 
+    isLoading, 
+    isFetching,
+    isError,
+    isSuccess
+  } = useQuery({
+    queryKey: ["address-suggestions", debouncedSearch],
+    queryFn: () => fetchAddressSuggestions(debouncedSearch),
+    enabled: debouncedSearch.length >= 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+  });
 
-  useEffect(() => {
-    // Skip empty queries
-    if (!query || query.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    const fetchSuggestions = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Mock API call - replace with your actual API
-        const response = await fetch(`/api/address-suggestions?query=${encodeURIComponent(query)}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch address suggestions');
-        }
-        
-        const data = await response.json();
-        setSuggestions(data.suggestions || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        setSuggestions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Debounce the API call
-    const timeoutId = setTimeout(fetchSuggestions, 300);
-    
-    return () => clearTimeout(timeoutId);
-  }, [query]);
-
-  return { suggestions, loading, error };
-}
+  return {
+    suggestions,
+    isLoading,
+    isFetching,
+    isError,
+    isSuccess,
+    input,
+    setInput: () => {}, // This is a placeholder since we're not using a state setter directly
+  };
+};

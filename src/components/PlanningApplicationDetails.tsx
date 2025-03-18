@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Application } from "@/types/planning";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,43 +14,15 @@ import { ApplicationMetadata } from "./planning-details/ApplicationMetadata";
 import { ApplicationActions } from "./planning-details/ApplicationActions";
 import { ApplicationContent } from "./planning-details/ApplicationContent";
 
-interface Document {
-  id: string;
-  title: string;
-  url: string;
-  type: string;
-}
-
-interface Location {
-  lat: number;
-  lng: number;
-}
-
-interface PlanningApplication {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  date: string;
-  address: string;
-  applicant: string;
-  reference: string;
-  documents: Document[];
-  location: Location;
-  imageUrl: string | null;
-}
-
 interface PlanningApplicationDetailsProps {
-  application: PlanningApplication;
-  isLoading?: boolean;
-  error?: string | null;
+  application?: Application;
+  onClose: () => void;
 }
 
-export const PlanningApplicationDetails: React.FC<PlanningApplicationDetailsProps> = ({
+export const PlanningApplicationDetails = ({
   application,
-  isLoading = false,
-  error = null
-}) => {
+  onClose,
+}: PlanningApplicationDetailsProps) => {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -74,14 +46,6 @@ export const PlanningApplicationDetails: React.FC<PlanningApplicationDetailsProp
       document.body.style.overflow = '';
     };
   }, [application]);
-
-  if (isLoading) {
-    return <div className="loading">Loading application details...</div>;
-  }
-
-  if (error) {
-    return <div className="error">Error: {error}</div>;
-  }
 
   if (!currentApplication) return null;
 
@@ -145,70 +109,17 @@ export const PlanningApplicationDetails: React.FC<PlanningApplicationDetailsProp
     });
   };
 
-  // Format date for display
-  const formattedDate = new Date(currentApplication.date).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-
-  // Determine status class for styling
-  const getStatusClass = (status: string): string => {
-    const statusLower = status.toLowerCase();
-    if (statusLower === 'approved') return 'status-approved';
-    if (statusLower === 'rejected') return 'status-rejected';
-    return 'status-pending';
-  };
-
-  const statusClass = getStatusClass(currentApplication.status);
-
   return (
-    <div className="planning-application-details">
-      <div className="header">
-        <h1>{currentApplication.title}</h1>
-        <div className="meta">
-          <span className={`status ${statusClass}`}>{currentApplication.status}</span>
-          <span className="date">Submitted on {formattedDate}</span>
-          <span className="reference">Ref: {currentApplication.reference}</span>
+    <div className="p-6 space-y-4 pb-20">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <ApplicationMetadata 
+            application={currentApplication}
+            onShowEmailDialog={() => setShowEmailDialog(true)}
+          />
         </div>
       </div>
-
-      <div className="content">
-        <div className="main-info">
-          <h2>Description</h2>
-          <p>{currentApplication.description}</p>
-
-          <h2>Location</h2>
-          <p className="address">{currentApplication.address}</p>
-
-          <h2>Applicant</h2>
-          <p>{currentApplication.applicant}</p>
-        </div>
-
-        <div className="documents">
-          <h2>Documents</h2>
-          {currentApplication.documents.length > 0 ? (
-            <ul>
-              {currentApplication.documents.map(doc => (
-                <li key={doc.id}>
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                    {doc.title} ({doc.type})
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No documents available</p>
-          )}
-        </div>
-      </div>
-
-      {currentApplication.imageUrl && (
-        <div className="image">
-          <img src={currentApplication.imageUrl} alt={currentApplication.title} />
-        </div>
-      )}
-
+      
       <ApplicationActions 
         applicationId={currentApplication.id}
         reference={currentApplication.reference}

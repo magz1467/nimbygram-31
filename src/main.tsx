@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
-console.log('App version:', '1.0.7'); // Increment this to verify you're seeing the latest deployment
+console.log('App version:', '1.0.6'); // Increment this to verify you're seeing the latest deployment
 console.log('Build timestamp:', new Date().toISOString());
 
 // Create a function to check loaded scripts

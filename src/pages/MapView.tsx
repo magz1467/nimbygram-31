@@ -1,62 +1,87 @@
 
-import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useApplicationData } from '../hooks/useApplicationData';
-import { FilterBar } from '../components/FilterBar';
-import { MapComponent } from '../components/MapComponent';
-import { StatusCounts } from '@/types/application-types';
+import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
+import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
+import { useCoordinates } from "@/hooks/use-coordinates";
+import { useApplicationSorting } from "@/hooks/use-application-sorting";
+import { MapViewLayout } from "@/components/map/MapViewLayout";
+import { useMapApplications } from "@/hooks/use-map-applications";
 
-const MapView = () => {
-  const [searchParams] = useSearchParams();
-  const postcode = searchParams.get('postcode');
-  const { applications } = useApplicationData(postcode);
+const MapViewPage = () => {
+  const location = useLocation();
   
-  // Default status counts for the filter bar
-  const statusCounts: StatusCounts = {
-    'Under Review': 0,
-    'Approved': 0,
-    'Declined': 0,
-    'Other': 0
-  };
-  
-  // Count applications by status
-  applications.forEach(app => {
-    const status = app.status?.toLowerCase();
-    if (status?.includes('review') || status?.includes('pending')) {
-      statusCounts['Under Review']++;
-    } else if (status?.includes('approved') || status?.includes('granted')) {
-      statusCounts['Approved']++;
-    } else if (status?.includes('declined') || status?.includes('refused')) {
-      statusCounts['Declined']++;
-    } else {
-      statusCounts['Other']++;
-    }
+  const [postcode, setPostcode] = useState<string>(() => {
+    const locationPostcode = location.state?.postcode;
+    return locationPostcode || "SW1A 1AA";
   });
   
-  const handleFilterChange = (filterType: string, value: string) => {
-    console.log(`Filter changed: ${filterType} = ${value}`);
-    // Would handle filtering logic here
-  };
+  const [isSearching, setIsSearching] = useState(false);
+  const { activeFilters, activeSort, showMap, handleFilterChange, handleSortChange } = useFilterSortState();
   
-  const handleSortChange = (sortType: string) => {
-    console.log(`Sort changed: ${sortType}`);
-    // Would handle sorting logic here
+  const { coordinates, isLoading: isLoadingCoordinates } = useCoordinates(postcode);
+  const { applications, isLoading: isLoadingApplications } = useMapApplications(coordinates);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Handle postcode updates
+  const handlePostcodeUpdate = useCallback((newPostcode: string) => {
+    if (newPostcode !== postcode) {
+      setPostcode(newPostcode);
+      setIsSearching(true);
+      setSelectedId(null);
+    }
+  }, [postcode]);
+
+  // Reset search state when loading is complete
+  useEffect(() => {
+    if (!isLoadingCoordinates && !isLoadingApplications && isSearching) {
+      setIsSearching(false);
+    }
+  }, [isLoadingCoordinates, isLoadingApplications, isSearching]);
+
+  // Apply filters
+  const filteredApplications = applications.filter(app => {
+    if (activeFilters.status && !app.status?.toLowerCase().includes(activeFilters.status.toLowerCase())) {
+      return false;
+    }
+    if (activeFilters.type && 
+        !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase()) &&
+        !app.application_type_full?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  // Apply sorting
+  const sortedApplications = useApplicationSorting(
+    filteredApplications, 
+    activeSort, 
+    coordinates
+  );
+
+  const handlePostcodeSelect = (newPostcode: string) => {
+    handlePostcodeUpdate(newPostcode);
   };
 
+  const isLoading = isLoadingCoordinates || isLoadingApplications || isSearching;
+
   return (
-    <div className="h-full">
-      <FilterBar 
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        activeFilters={{}}
-        activeSort="distance"
-        statusCounts={statusCounts}
-      />
-      <div className="h-[calc(100vh-120px)]">
-        <MapComponent applications={applications} />
-      </div>
-    </div>
+    <MapViewLayout
+      applications={sortedApplications}
+      selectedId={selectedId}
+      postcode={postcode}
+      coordinates={coordinates || [51.5074, -0.1278]} // Fallback coordinates
+      isLoading={isLoading}
+      activeFilters={activeFilters}
+      activeSort={activeSort}
+      onPostcodeSelect={handlePostcodeSelect}
+      onFilterChange={handleFilterChange}
+      onSortChange={handleSortChange}
+      onMarkerClick={(id) => {
+        setSelectedId(id);
+      }}
+      onSelectApplication={setSelectedId}
+    />
   );
 };
 
-export default MapView;
+export default MapViewPage;

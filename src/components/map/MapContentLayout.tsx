@@ -1,5 +1,5 @@
-
 import { Application } from "@/types/planning";
+import { MapHeader } from "./MapHeader";
 import { EmailDialog } from "@/components/EmailDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -8,7 +8,6 @@ import { MapSection } from "./layout/MapSection";
 import { DesktopSidebarSection } from "./layout/DesktopSidebarSection";
 import { MapAction } from "@/types/map-reducer";
 import { useErrorHandling } from "@/hooks/use-error-handling";
-import { MapHeader } from "./MapHeader";
 
 interface MapContentLayoutProps {
   isLoading: boolean;
