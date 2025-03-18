@@ -1,24 +1,18 @@
 
-import ApplicationsDashboardMapPage from "@/pages/applications/dashboard/map";
-import SavedApplicationsPage from "@/pages/saved";
-import { RouteObject } from "react-router-dom";
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
-import MapViewPage from "@/pages/MapView";
+import React from 'react';
+import { RouteObject } from 'react-router-dom';
+import SearchResultsPage from '../pages/SearchResultsPage';
+import MapView from '../pages/MapView';
 
-export const applicationRoutes: RouteObject[] = [
+const applicationRoutes: RouteObject[] = [
   {
-    path: "/applications/dashboard/map",
-    element: <ApplicationsDashboardMapPage />,
-    errorElement: <RouteErrorBoundary />,
+    path: "search-results",
+    element: <SearchResultsPage />
   },
   {
-    path: "/saved",
-    element: <SavedApplicationsPage />,
-    errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: "/map",
-    element: <MapViewPage />,
-    errorElement: <RouteErrorBoundary />,
-  },
+    path: "map",
+    element: <MapView />
+  }
 ];
+
+export default applicationRoutes;
