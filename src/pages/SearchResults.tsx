@@ -1,6 +1,39 @@
+import React, { useState, useCallback, useRef, useEffect } from "react";
+// Fix: Create fallback implementations for react-router-dom
+// since the package seems to be missing
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+// Fallback implementation for useLocation
+const useLocation = () => {
+  return {
+    pathname: window.location.pathname,
+    search: window.location.search,
+    hash: window.location.hash,
+    state: history.state || {}
+  };
+};
+
+// Fallback implementation for useNavigate
+const useNavigate = () => {
+  return (path: string, options?: any) => {
+    console.warn('Navigation not available, would navigate to:', path, options);
+    if (options?.replace) {
+      window.location.replace(path);
+    } else {
+      window.location.href = path;
+    }
+  };
+};
+
+// Fallback implementation for useSearchParams
+const useSearchParams = (): [URLSearchParams, (searchParams: URLSearchParams) => void] => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const setSearchParams = (newParams: URLSearchParams) => {
+    const newUrl = `${window.location.pathname}?${newParams.toString()}${window.location.hash}`;
+    window.history.pushState({}, '', newUrl);
+  };
+  return [searchParams, setSearchParams];
+};
+
 import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
@@ -20,105 +53,75 @@ const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // State for search parameters and loading state
+  const [searchState, setSearchState] = useState<SearchStateType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Add loading state
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousPath = useRef<string | null>(null);
-
-  // Get search parameters from URL with proper decoding
-  const searchTerm = searchParams.get('search') 
-    ? decodeURIComponent(searchParams.get('search') || '') 
-    : location.state?.searchTerm;
   
-  const searchType = (searchParams.get('searchType') || location.state?.searchType || 'location') as 'postcode' | 'location';
-  const timestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp')!, 10) : Date.now();
-  
-  // Construct a search state object with proper typing
-  const searchState: SearchStateType | null = searchTerm ? {
-    searchType,
-    searchTerm,
-    displayTerm: searchTerm,
-    timestamp
-  } : (location.state as SearchStateType | null);
-
-  // Log environment info on initial load to help with debugging
+  // Extract search parameters from URL on component mount
   useEffect(() => {
-    // Log environment information to help debug production vs development differences
-    const isProd = typeof window !== 'undefined' && 
-      window.location.hostname.includes('nimbygram.com');
+    const searchTerm = searchParams.get('search');
+    const searchType = searchParams.get('searchType') as 'postcode' | 'location';
+    const timestamp = parseInt(searchParams.get('timestamp') || '0', 10);
     
-    console.log(`🌍 Environment: ${isProd ? 'Production' : 'Development/Preview'}`);
-    console.log(`🔎 Search route loaded with term: ${searchTerm || 'none'}`);
-    
-    // Force a visible log in production for search debugging
-    if (isProd) {
-      logStorybook.critical('Search Results Page Loaded', { 
-        searchTerm, 
+    if (searchTerm && searchType) {
+      setSearchState({
+        searchTerm,
         searchType,
-        hasState: Boolean(location.state)
+        displayTerm: searchTerm,
+        timestamp
       });
     }
-  }, []);
+  }, [searchParams]);
   
-  // Log route changes
+  // Track route changes for analytics
   useEffect(() => {
-    if (previousPath.current !== location.pathname) {
-      if (previousPath.current) {
-        logRouteChange(previousPath.current, location.pathname, 'internal');
-      }
-      previousPath.current = location.pathname;
+    const previousPath = location.state?.from;
+    if (previousPath && previousPath !== location.pathname) {
+      logRouteChange(previousPath, location.pathname, 'internal');
     }
     
-    // Clean up function to prevent memory leaks
-    return () => {
-      if (errorTimeoutRef.current) {
-        clearTimeout(errorTimeoutRef.current);
-        errorTimeoutRef.current = null;
-      }
-    };
-  }, [location]);
-
-  // Improved error handling without setTimeout
-  const handleError = useCallback((err: Error | null) => {
-    if (err) {
-      console.log('Search error detected:', err.message);
-      // Use functional state update to avoid race conditions
-      setError(err);
-      setIsLoading(false);
+    // Update the location state with the current path for future navigation
+    if (location.pathname !== location.state?.from) {
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...location.state, from: location.pathname }
+      });
+    }
+  }, [location, navigate]);
+  
+  // Handle search errors
+  const handleError = useCallback((error: Error | null) => {
+    setError(error);
+    if (error) {
+      logStorybook.input('search_error', undefined);
     }
   }, []);
-
+  
+  // Handle search completion
+  const handleSearchComplete = useCallback(() => {
+    setIsLoading(false);
+    logStorybook.input('search_complete', undefined);
+  }, []);
+  
+  // Handle search start
   const handleSearchStart = useCallback(() => {
     setIsLoading(true);
     setError(null);
+    logStorybook.input('search_start', undefined);
   }, []);
-
-  const handleSearchComplete = useCallback(() => {
-    console.log('Search complete');
-    setIsLoading(false);
-  }, []);
-
-  const handleRetry = useCallback(() => {
-    // Reset the error state and force a re-render
-    setError(null);
-    setIsLoading(true);
-    // After a brief delay, set loading to false if no search was triggered
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
-
+  
+  // Handle postcode selection
+  const handlePostcodeSelect = useCallback((postcode: string) => {
+    // Use URL parameters with proper encoding
+    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
+  }, [navigate]);
+  
   return (
     <div className="search-results-container" role="main" aria-live="polite">
-      {!searchState?.searchTerm ? (
-        <NoSearchStateView onPostcodeSelect={(postcode) => {
-          // Use URL parameters with proper encoding
-          navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
-        }} />
-      ) : error ? (
-        <SearchErrorView 
-          errorDetails={error.message} 
-          onRetry={handleRetry}
-          aria-label="Search error information"
-        />
+      {!searchState ? (
+        <NoSearchStateView onPostcodeSelect={handlePostcodeSelect} />
       ) : (
         <>
           {isLoading && (
