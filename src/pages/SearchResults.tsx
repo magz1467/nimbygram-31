@@ -174,8 +174,60 @@ const SearchResultsPage = () => {
     navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=location&timestamp=${Date.now()}`);
   }, [navigate]);
   
+  // Add this debugging code to see what's happening with the Supabase request
+  useEffect(() => {
+    // Create a fetch interceptor to see the actual request being made
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init) {
+      // Only log Supabase requests
+      if (typeof input === 'string' && input.includes('supabase')) {
+        console.log('Supabase Request:', {
+          url: input,
+          method: init?.method || 'GET',
+          headers: init?.headers,
+          body: init?.body ? JSON.parse(init.body.toString()) : undefined
+        });
+      }
+      return originalFetch.apply(this, [input, init]);
+    };
+
+    return () => {
+      // Restore original fetch when component unmounts
+      window.fetch = originalFetch;
+    };
+  }, []);
+  
+  // Add this function to manually trigger a search
+  const triggerSearch = useCallback(() => {
+    if (searchState) {
+      console.log("Manually triggering search with:", searchState);
+      // Force a re-render with a new timestamp to trigger the search
+      setSearchState({
+        ...searchState,
+        timestamp: Date.now()
+      });
+      setIsLoading(true);
+      setError(null);
+    }
+  }, [searchState]);
+  
   return (
     <div className="search-results-container" role="main" aria-live="polite">
+      {/* Add this button at the top */}
+      <button 
+        onClick={triggerSearch}
+        style={{
+          padding: '8px 16px',
+          margin: '10px',
+          background: '#4285f4',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px'
+        }}
+      >
+        Trigger Search Manually
+      </button>
+      
       {!searchState ? (
         <NoSearchStateView onPostcodeSelect={handlePostcodeSelect} />
       ) : (
