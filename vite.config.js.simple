@@ -1,0 +1,31 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    // Disable minification for easier debugging
+    minify: false,
+    // Ensure all modules are bundled
+    rollupOptions: {
+      external: []
+    }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
+  // Disable type checking during build for speed
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
+  // Simplify environment variables
+  define: {
+    'process.env': {}
+  }
+}); 
