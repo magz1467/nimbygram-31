@@ -1,4 +1,5 @@
-import { PlanningApplication } from "@/types/planning";
-import { searchByLocation, searchByPostcode } from "@/api/search";
+
+import { Application } from "@/types/planning";
+// Remove incorrect import from '@/api/search'
 
 // Rest of your file... 

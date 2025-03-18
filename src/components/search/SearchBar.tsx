@@ -42,9 +42,9 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     console.log(`[SearchBar][${env}] 🔍 Starting search for: "${searchTerm.trim()}"`);
     
     try {
-      // Log search - using multiple column format attempts for compatibility
+      // Log search - fixing the incorrect number of arguments
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
-      await logSearch(searchTerm.trim(), 'location', 'search');
+      await logSearch(searchTerm.trim(), 'search'); // Reduced to 2 arguments
       console.log(`[SearchBar][${env}] logSearch completed`);
       
       // Call onSearch callback if provided
