@@ -1,0 +1,58 @@
+/* Search Results Page Specific Styles */
+
+/* Container for search results */
+.search-results-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Header section with search info */
+.search-results-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Results count display */
+.results-count {
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+/* No results state */
+.no-results {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+/* Loading state */
+.results-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .search-results-container {
+    padding: 0.5rem;
+  }
+  
+  .search-results-header {
+    margin-bottom: 1rem;
+  }
+  
+  /* Improve scrolling on mobile */
+  .results-list {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better spacing for mobile results */
+  .results-list > div {
+    margin-bottom: 0.75rem;
+  }
+} 
