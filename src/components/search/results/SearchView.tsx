@@ -7,6 +7,7 @@ import { ResultsView } from './search-views/ResultsView';
 import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getCurrentHostname, getEnvironmentName } from '@/utils/environment';
 
 // This is the inner component that uses the search state context
 function SearchViewContent() {
@@ -25,14 +26,34 @@ function SearchViewContent() {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const env = getEnvironmentName();
+  const hostname = getCurrentHostname();
+  
+  console.log(`[SearchViewContent][${env}][${hostname}] Rendering with initialSearch:`, initialSearch);
+  console.log(`[SearchViewContent][${env}] LoadingState:`, {
+    stage: loadingState.stage,
+    isLoading: loadingState.isLoading,
+    hasError: !!loadingState.error,
+    errorMessage: loadingState.error?.message
+  });
+  console.log(`[SearchViewContent][${env}] Applications count:`, applications?.length || 0);
+  console.log(`[SearchViewContent][${env}] Coordinates:`, coordinates);
+  console.log(`[SearchViewContent][${env}] Search state:`, {
+    hasSearched,
+    hasPartialResults,
+    isSearchInProgress
+  });
   
   // Handle navigation to the map view
   const handleToggleMapView = () => {
+    console.log(`[SearchViewContent][${env}] Toggling to map view`);
     // Navigate to the map view with search parameters
     const params = new URLSearchParams();
     if (initialSearch?.searchTerm) {
       params.set('postcode', initialSearch.searchTerm);
     }
+    
+    console.log(`[SearchViewContent][${env}] Navigating to map with postcode:`, initialSearch?.searchTerm);
     
     // Store the current search results and coordinates in state
     navigate(`/map?${params.toString()}`, { 
@@ -45,6 +66,7 @@ function SearchViewContent() {
   };
   
   if (!initialSearch?.searchTerm) {
+    console.log(`[SearchViewContent][${env}] No search term provided, showing NoSearchStateView`);
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
   
@@ -52,6 +74,11 @@ function SearchViewContent() {
   if ((loadingState.error || loadingState.stage === 'error') && hasSearched) {
     const error = loadingState.error || new Error('Unknown search error');
     const errorType = 'type' in error ? error.type as ErrorType : detectErrorType(error);
+    
+    console.log(`[SearchViewContent][${env}] Showing error view:`, {
+      message: error.message,
+      type: errorType
+    });
     
     return (
       <ErrorView 
@@ -64,6 +91,7 @@ function SearchViewContent() {
   
   // Show loading view if we're loading
   if (loadingState.isLoading || loadingState.stage !== 'complete') {
+    console.log(`[SearchViewContent][${env}] Showing loading view. Stage:`, loadingState.stage);
     return (
       <LoadingView 
         stage={loadingState.stage}
@@ -75,6 +103,7 @@ function SearchViewContent() {
   }
   
   // Show results view when we have applications
+  console.log(`[SearchViewContent][${env}] Showing results view with ${applications.length} applications`);
   return (
     <ResultsView 
       applications={applications}
@@ -105,6 +134,10 @@ export function SearchView({
   onError,
   onSearchComplete
 }: SearchViewProps) {
+  const env = getEnvironmentName();
+  
+  console.log(`[SearchView][${env}] Initializing with search params:`, initialSearch);
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -128,20 +161,23 @@ function SearchViewContentWithCallbacks({
   onSearchComplete?: () => void;
 }) {
   const { loadingState, hasSearched } = useSearchState();
+  const env = getEnvironmentName();
   
   // Call onError when there's an error
   useEffect(() => {
     if (onError && loadingState.error) {
+      console.log(`[SearchViewCallbacks][${env}] Calling onError with:`, loadingState.error.message);
       onError(loadingState.error);
     }
-  }, [loadingState.error, onError]);
+  }, [loadingState.error, onError, env]);
   
   // Call onSearchComplete when search is complete
   useEffect(() => {
     if (onSearchComplete && loadingState.stage === 'complete' && hasSearched) {
+      console.log(`[SearchViewCallbacks][${env}] Calling onSearchComplete`);
       onSearchComplete();
     }
-  }, [loadingState.stage, hasSearched, onSearchComplete]);
+  }, [loadingState.stage, hasSearched, onSearchComplete, env]);
   
   return <SearchViewContent />;
 }

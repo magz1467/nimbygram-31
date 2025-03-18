@@ -5,6 +5,7 @@ import { PostcodeSearch } from "@/components/postcode/PostcodeSearch";
 import { useToast } from "@/hooks/use-toast";
 import { logSearch } from "@/utils/searchLogger";
 import { SearchButton } from "@/components/search/SearchButton";
+import { getCurrentHostname, getEnvironmentName } from "@/utils/environment";
 
 interface SearchBarProps {
   onSearch?: (term: string) => void;
@@ -19,11 +20,16 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const env = getEnvironmentName();
+  const hostname = getCurrentHostname();
 
   const handleSubmit = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
+    console.log(`[SearchBar][${env}][${hostname}] Search submitted: "${searchTerm}"`);
+    
     if (!searchTerm.trim() || isSubmitting) {
+      console.log(`[SearchBar][${env}] Invalid search term or already submitting`);
       toast({
         title: "Error",
         description: "Please enter a valid postcode, street name or area",
@@ -33,13 +39,17 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     }
 
     setIsSubmitting(true);
+    console.log(`[SearchBar][${env}] Starting search for: "${searchTerm.trim()}"`);
     
     try {
       // Log search - using multiple column format attempts for compatibility
+      console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
       await logSearch(searchTerm.trim(), 'location', 'search');
+      console.log(`[SearchBar][${env}] logSearch completed successfully`);
       
       // Call onSearch callback if provided
       if (onSearch) {
+        console.log(`[SearchBar][${env}] Calling onSearch callback`);
         onSearch(searchTerm.trim());
       }
 
@@ -47,16 +57,20 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       const isLikelyPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(searchTerm.trim());
       const searchType = isLikelyPostcode ? 'postcode' : 'location';
       
+      console.log(`[SearchBar][${env}] Navigating to search results with: "${searchTerm.trim()}", type: ${searchType}`);
+      
       // Navigate to search results with URL parameters
       navigate(`/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`);
+      console.log(`[SearchBar][${env}] Navigation initiated`);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error(`[SearchBar][${env}] Search error:`, error);
       toast({
         title: "Error",
         description: "There was a problem with your search. Please try again.",
         variant: "destructive",
       });
     } finally {
+      console.log(`[SearchBar][${env}] Search process completed`);
       setIsSubmitting(false);
     }
   };
