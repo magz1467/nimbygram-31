@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps --no-optional"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
 
 # Handle SPA routing
 [[redirects]]
