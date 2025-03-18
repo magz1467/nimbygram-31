@@ -2,19 +2,28 @@
 import { StorySection } from '../types';
 
 /**
- * Extracts bullet points from content
+ * Extracts bullet points from content with improved robustness
  */
 export function extractBulletPoints(bodyContent: string): StorySection[] {
   const processedSections: StorySection[] = [];
   
+  // Normalize line endings and double spaces
+  const normalizedContent = bodyContent
+    .replace(/\r\n/g, '\n')
+    .replace(/\n\n+/g, '\n\n')
+    .trim();
+  
   // Check if there are bullet points in the content
-  const hasBulletPoints = bodyContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+  const hasBulletPoints = normalizedContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
   
   if (hasBulletPoints) {
-    // Assume the content before the first bullet is the "What's the Deal" section
-    const firstBulletMatch = bodyContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
-    if (firstBulletMatch && firstBulletMatch.index > 0) {
-      const dealContent = bodyContent.substring(0, firstBulletMatch.index).trim();
+    // Find the position of the first bullet
+    const firstBulletMatch = normalizedContent.match(/(?:^|\n)\s*[•\*\-✓🔍🏠🏢]/m);
+    
+    if (firstBulletMatch && firstBulletMatch.index !== undefined && firstBulletMatch.index > 0) {
+      // Extract content before the first bullet as deal section
+      const dealContent = normalizedContent.substring(0, firstBulletMatch.index).trim();
+      
       if (dealContent) {
         processedSections.push({
           type: 'deal',
@@ -23,20 +32,21 @@ export function extractBulletPoints(bodyContent: string): StorySection[] {
         });
       }
       
-      // Assume the bullet points are "Key Details"
-      const detailsContent = bodyContent.substring(firstBulletMatch.index).trim();
+      // Extract the bullet points for details section
+      const detailsContent = normalizedContent.substring(firstBulletMatch.index).trim();
+      
       if (detailsContent) {
-        // Extract the bullet points
-        const bulletPoints = [];
-        const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:^|\n)\s*[•\*\-✓🔍🏠🏢]|$)/gs;
-        const bulletMatches = [...detailsContent.matchAll(bulletRegex)];
+        // Extract individual bullet points with a more robust regex
+        const bulletPoints: string[] = [];
+        const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:\n\s*[•\*\-✓🔍🏠🏢]|$))/gs;
         
-        bulletMatches.forEach(bulletMatch => {
-          const text = bulletMatch[2].trim();
-          if (text) {
-            bulletPoints.push(text);
+        let match;
+        while ((match = bulletRegex.exec(detailsContent)) !== null) {
+          const bulletText = match[2].trim();
+          if (bulletText) {
+            bulletPoints.push(bulletText);
           }
-        });
+        }
         
         if (bulletPoints.length > 0) {
           processedSections.push({
@@ -45,6 +55,7 @@ export function extractBulletPoints(bodyContent: string): StorySection[] {
             content: bulletPoints
           });
         } else {
+          // If bullet extraction failed, use the whole content
           processedSections.push({
             type: 'details',
             title: "Key Details",
@@ -53,13 +64,39 @@ export function extractBulletPoints(bodyContent: string): StorySection[] {
         }
       }
     } else {
-      // If the content starts with bullets, treat it all as key details
-      processedSections.push({
-        type: 'details',
-        title: "Key Details",
-        content: bodyContent
-      });
+      // If content starts with bullets or matching failed, treat it all as key details
+      const bulletPoints: string[] = [];
+      const bulletRegex = /(?:^|\n)\s*([•\*\-✓🔍🏠🏢])\s+(.*?)(?=(?:\n\s*[•\*\-✓🔍🏠🏢]|$))/gs;
+      
+      let match;
+      while ((match = bulletRegex.exec(normalizedContent)) !== null) {
+        const bulletText = match[2].trim();
+        if (bulletText) {
+          bulletPoints.push(bulletText);
+        }
+      }
+      
+      if (bulletPoints.length > 0) {
+        processedSections.push({
+          type: 'details',
+          title: "Key Details",
+          content: bulletPoints
+        });
+      } else {
+        processedSections.push({
+          type: 'details',
+          title: "Key Details",
+          content: normalizedContent
+        });
+      }
     }
+  } else if (normalizedContent.length > 0) {
+    // No bullet points found, treat all content as the deal section
+    processedSections.push({
+      type: 'deal',
+      title: "What's the Deal",
+      content: normalizedContent
+    });
   }
 
   return processedSections;

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Keep track of recent search terms to prevent duplicate logging
@@ -25,62 +24,35 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     // Get current user session (if logged in)
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Try to handle differences in column naming between environments
+    // Check if the Searches table exists before trying to insert
     try {
-      // First try with search_term - this is the most likely column name
+      const { count, error: countError } = await supabase
+        .from('Searches')
+        .select('*', { count: 'exact', head: true })
+        .limit(1);
+      
+      if (countError) {
+        console.warn('Skipping search logging - table may not exist:', countError.message);
+        return true;
+      }
+      
+      // Successfully validated table exists, now insert with error handling
       const { error } = await supabase
         .from('Searches')
         .insert({
           search_term: searchTerm,
-          search_type: type,
+          type: type, 
           tab: tab || 'unknown',
           user_id: session?.user?.id || null,
           timestamp: new Date().toISOString()
         });
       
       if (error) {
-        console.warn('Search log failed with standard column names, trying alternate column names:', error);
-        
-        // If first attempt fails, try with just 'term' as the column name
-        if (error.message.includes('column') && error.message.includes('does not exist')) {
-          const { error: termError } = await supabase
-            .from('Searches')
-            .insert({
-              term: searchTerm,
-              type: type,
-              tab: tab || 'unknown',
-              user_id: session?.user?.id || null,
-              timestamp: new Date().toISOString()
-            });
-          
-          if (termError) {
-            console.warn('Search log failed with term column name, trying Post Code:', termError);
-            
-            // Try with alternative 'Post Code' naming convention as final fallback
-            const { error: altError } = await supabase
-              .from('Searches')
-              .insert({
-                'Post Code': searchTerm,
-                'Status': type,
-                'Tab': tab || 'unknown',
-                'User_logged_in': !!session?.user,
-                'Timestamp': new Date().toISOString()
-              });
-            
-            if (altError) {
-              console.error('Failed to log search with all column naming attempts:', altError);
-              console.error('Column options tried: search_term, term, Post Code');
-            } else {
-              console.log('Search logged successfully with Post Code column name');
-            }
-          } else {
-            console.log('Search logged successfully with term column name');
-          }
-        } else {
-          console.error('Failed to log search to database:', error);
-        }
+        console.warn('Search log failed:', error.message);
+        // Don't try alternative column names as this creates confusion
+        // Just log the error and move on
       } else {
-        console.log('Search logged successfully with search_term column name');
+        console.log('Search logged successfully');
       }
     } catch (insertError) {
       console.error('Exception during search logging:', insertError);
