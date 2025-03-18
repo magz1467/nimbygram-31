@@ -1,94 +1,60 @@
 import React from 'react';
-import { PenLine, Map, FileText } from "lucide-react";
-import Image from "@/components/ui/image";
 
-interface FeatureProps {
-  icon: string;
-  title: string;
-  description: string;
-}
-
-const Feature: React.FC<FeatureProps> = ({ icon, title, description }) => {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="text-blue-600 mb-4 text-3xl">
-        {icon}
-      </div>
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
-    </div>
-  );
-};
-
-const Features = () => {
+const Features: React.FC = () => {
   const features = [
     {
-      icon: "🔍",
-      title: "Search by Location",
-      description: "Find planning applications in your area using postcode, address, or interactive map."
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      ),
+      title: 'Search Planning Applications',
+      description: 'Easily search for planning applications in your area using keywords, postcodes, or your current location.'
     },
     {
-      icon: "🔔",
-      title: "Get Notifications",
-      description: "Receive alerts when new applications are submitted in your areas of interest."
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+      ),
+      title: 'Interactive Maps',
+      description: 'View planning applications on interactive maps to understand their location and context within your neighborhood.'
     },
     {
-      icon: "📊",
-      title: "Track Applications",
-      description: "Follow the progress of applications through the planning process."
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      ),
+      title: 'Stay Informed',
+      description: 'Get notified about new planning applications in your area of interest and track their progress.'
     },
     {
-      icon: "📱",
-      title: "Mobile Friendly",
-      description: "Access planning information on any device, anywhere, anytime."
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      title: 'Detailed Information',
+      description: 'Access comprehensive details about each planning application, including documents, timelines, and decisions.'
     }
   ];
 
   return (
-    <div className="bg-white py-16 w-full">
-      <div className="w-full px-4 md:container md:mx-auto md:px-4">
-        <h2 className="text-2xl md:text-3xl font-bold mb-12 text-center text-foreground font-playfair">
-          The easy way to have your say on local developments
-        </h2>
+    <div className="bg-gray-50 py-16 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
         
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Image Section */}
-          <div className="relative">
-            <Image
-              src="/lovable-uploads/2dfd74e5-fc91-48b5-bbeb-34d3332bd7d6.png"
-              alt="Three women checking their phones in a picturesque village setting"
-              className="rounded-xl shadow-lg w-full h-auto"
-              width={600}
-              height={600}
-            />
-          </div>
-
-          {/* Features List Section */}
-          <div className="space-y-8">
-            <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <FileText className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="text-lg font-semibold mb-2">1. Instant petition</h3>
-                <p className="text-foreground">Unleash your inner Nimby by creating a petition against ghastly developments</p>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((feature, index) => (
+            <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+              <div className="flex justify-center mb-4">
+                {feature.icon}
               </div>
+              <h3 className="text-xl font-semibold text-center mb-2">{feature.title}</h3>
+              <p className="text-gray-600 text-center">{feature.description}</p>
             </div>
-
-            <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <Map className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="text-lg font-semibold mb-2">2. Nimby or Yimby</h3>
-                <p className="text-foreground">Upvote or downsvote applications</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <PenLine className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="text-lg font-semibold mb-2">3. Easy Share</h3>
-                <p className="text-foreground">Instantly share great or ghastly applications with your network to get more local feedback</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

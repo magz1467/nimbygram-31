@@ -107,46 +107,7 @@
   </head>
 
   <body>
-    <header>
-      <h1>NimbyGram</h1>
-      <nav>
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="/about">About</a></li>
-          <li><a href="/contact">Contact</a></li>
-        </ul>
-      </nav>
-    </header>
-    
-    <main>
-      <h2>Welcome to NimbyGram</h2>
-      <p>This is a static version of the site while we resolve build issues.</p>
-      
-      <div class="card">
-        <h3>About NimbyGram</h3>
-        <p>NimbyGram is a platform for exploring and understanding planning applications in your area.</p>
-      </div>
-      
-      <div class="card">
-        <h3>Features</h3>
-        <ul>
-          <li>View planning applications on a map</li>
-          <li>Search for applications by location</li>
-          <li>Get notifications about new applications</li>
-          <li>Understand the planning process</li>
-        </ul>
-      </div>
-    </main>
-    
-    <footer>
-      <p>&copy; 2023 NimbyGram. All rights reserved.</p>
-    </footer>
-
-    <script>
-      // Simple JavaScript to show the site is working
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('NimbyGram static site loaded successfully');
-      });
-    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
