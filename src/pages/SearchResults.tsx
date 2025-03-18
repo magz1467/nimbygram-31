@@ -4,7 +4,7 @@ import { SearchView } from "@/components/search/results/SearchView";
 import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
 import { logRouteChange } from "@/utils/reloadTracker";
-import '@/styles/search-results.css'; // CSS import for styling
+import '../styles/search-results.css'; // Using relative path instead of alias
 
 // Define proper interfaces for type safety
 interface SearchStateType {
