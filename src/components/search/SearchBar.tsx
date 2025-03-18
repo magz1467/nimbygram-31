@@ -44,7 +44,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     try {
       // Log search - using multiple column format attempts for compatibility
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
-      await logSearch(searchTerm.trim(), 'location', 'search');
+      await logSearch(searchTerm.trim(), 'location');
       console.log(`[SearchBar][${env}] logSearch completed`);
       
       // Call onSearch callback if provided

@@ -45,12 +45,12 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
   // Find center point for initial map view
   const getInitialCenter = () => {
     if (searchLocation && searchLocation.lat && searchLocation.lng) {
-      return [searchLocation.lat, searchLocation.lng];
+      return [searchLocation.lat, searchLocation.lng] as [number, number];
     }
     if (applications.length > 0 && applications[0].latitude && applications[0].longitude) {
-      return [applications[0].latitude, applications[0].longitude];
+      return [applications[0].latitude, applications[0].longitude] as [number, number];
     }
-    return [51.505, -0.09]; // Default to London
+    return [51.505, -0.09] as [number, number]; // Default to London
   };
   
   return (
@@ -75,7 +75,7 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
       {/* Search location marker */}
       {searchLocation && searchLocation.lat && searchLocation.lng && (
         <Marker 
-          position={[searchLocation.lat, searchLocation.lng]}
+          position={[searchLocation.lat, searchLocation.lng] as [number, number]}
           icon={defaultIcon}
         >
           <Popup>Search location</Popup>
@@ -88,7 +88,7 @@ export function MapComponent({ applications, selectedId, searchLocation, onPinCl
         return (
           <Marker 
             key={app.id}
-            position={[app.latitude, app.longitude]}
+            position={[app.latitude, app.longitude] as [number, number]}
             icon={defaultIcon}
             eventHandlers={{
               click: () => onPinClick && onPinClick(app.id)

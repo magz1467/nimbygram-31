@@ -16,23 +16,23 @@ export function NavigationTracker() {
     const originalNavigate = navigate;
     
     // @ts-ignore - Overriding for debugging
-    window.navigate = (...args: any[]) => {
-      console.log('🔍 Navigate called with:', args);
-      return originalNavigate(...args);
+    window.navigate = (to: string, options?: object) => {
+      console.log('🔍 Navigate called with:', to, options);
+      return originalNavigate(to, options);
     };
 
     // Also track history API usage
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
-    history.pushState = function(...args) {
-      console.log('🔍 history.pushState called with:', args);
-      return originalPushState.apply(this, args);
+    history.pushState = function(state, title, url) {
+      console.log('🔍 history.pushState called with:', state, title, url);
+      return originalPushState.apply(this, [state, title, url]);
     };
 
-    history.replaceState = function(...args) {
-      console.log('🔍 history.replaceState called with:', args);
-      return originalReplaceState.apply(this, args);
+    history.replaceState = function(state, title, url) {
+      console.log('🔍 history.replaceState called with:', state, title, url);
+      return originalReplaceState.apply(this, [state, title, url]);
     };
 
     // Track link clicks
