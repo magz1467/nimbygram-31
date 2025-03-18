@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 // https://vitejs.dev/config/
@@ -8,15 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'path': 'path-browserify',
     },
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // Ensure all modules are bundled, not externalized
-    rollupOptions: {
-      external: [], // Don't externalize any modules
-    },
+    minify: false,
   },
   // Make sure all environment variables are properly defined
   define: {

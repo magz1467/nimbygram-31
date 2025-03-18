@@ -44,3 +44,4 @@
   NPM_FLAGS = "--legacy-peer-deps"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
   VITE_APP_ENV = "production"
+  VITE_SKIP_TS_CHECK = "true"

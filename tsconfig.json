@@ -18,13 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    },
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "strictNullChecks": false,
-    "strictFunctionTypes": false,
-    "strictBindCallApply": false,
-    "strictPropertyInitialization": false
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
