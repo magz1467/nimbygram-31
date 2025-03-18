@@ -1,0 +1,21 @@
+
+/* Map visibility improvements */
+.mobile-map-container {
+  height: 70vh !important;
+  z-index: 10;
+  position: relative;
+}
+
+.leaflet-control-container .leaflet-top,
+.leaflet-control-container .leaflet-bottom {
+  z-index: 1000;
+}
+
+/* Map navigation controls */
+.mobile-map-container .leaflet-control-container .leaflet-top {
+  top: 60px;
+}
+
+.mobile-map-container .leaflet-control-zoom {
+  margin-top: 10px !important;
+}
