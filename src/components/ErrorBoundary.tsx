@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, AlertTriangle } from "lucide-react";

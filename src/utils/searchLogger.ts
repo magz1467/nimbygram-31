@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentHostname, getEnvironmentName } from "@/utils/environment";
 
@@ -8,25 +7,25 @@ const recentSearches = new Map<string, number>();
 /**
  * Log search terms to Supabase Searches table and console
  */
-export const logSearch = async (searchTerm: string, type: string, tab?: string) => {
+export async function logSearch(searchTerm: string, searchType: string) {
   try {
     const env = getEnvironmentName();
     const hostname = getCurrentHostname();
     
-    console.log(`[SearchLogger][${env}][${hostname}] 🔍 Attempting to log search: "${searchTerm}" (${type}) from ${tab || 'unknown'} tab`);
+    console.log(`[SearchLogger][${env}][${hostname}] 🔍 Attempting to log search: "${searchTerm}" (${searchType})`);
     
     // Check if we've logged this search recently (within 10 seconds)
     const now = Date.now();
-    const key = `${searchTerm}:${type}:${tab || 'unknown'}`;
+    const key = `${searchTerm}:${searchType}:${hostname}`;
     const lastLogged = recentSearches.get(key);
     
     if (lastLogged && now - lastLogged < 10000) {
-      console.log(`[SearchLogger][${env}] Skipping duplicate search log: "${searchTerm}" (${type})`);
+      console.log(`[SearchLogger][${env}] Skipping duplicate search log: "${searchTerm}" (${searchType})`);
       return true;
     }
     
     // Log to console with environment info
-    console.log(`[SearchLogger][${env}][${hostname}] Logging search: "${searchTerm}" (${type}) from ${tab || 'unknown'} tab`);
+    console.log(`[SearchLogger][${env}][${hostname}] Logging search: "${searchTerm}" (${searchType})`);
     
     // Get current user session (if logged in)
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -50,82 +49,36 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
       
       console.log(`[SearchLogger][${env}] ✅ Searches table exists, proceeding with insert`);
       
-      // Standard format payload
-      const standardPayload = {
-        search_term: searchTerm,
-        type: type, 
-        tab: tab || 'unknown',
-        user_id: session?.user?.id || null,
-        timestamp: new Date().toISOString(),
-        environment: env,
-        hostname: hostname
-      };
-      
-      console.log(`[SearchLogger][${env}] Standard format payload:`, standardPayload);
-      
-      // Try with the standard column names first
-      const { error: standardError } = await supabase
+      // Try to log with current schema
+      const { error } = await supabase
         .from('Searches')
-        .insert(standardPayload);
+        .insert({
+          search_term: searchTerm,
+          search_type: searchType,
+          timestamp: new Date().toISOString()
+        });
       
-      if (standardError) {
-        console.log(`[SearchLogger][${env}] 🔴 Failed with standard column names:`, standardError.message, standardError.details);
+      if (error) {
+        console.warn('Search log failed:', error.message);
         
-        // If the first attempt fails, try with alternative column names
-        console.log(`[SearchLogger][${env}] Trying alternative column format...`);
-        
-        const alternativePayload = {
-          'Post Code': searchTerm,
-          'Status': type,
-          'User_logged_in': !!session?.user,
-          'Timestamp': new Date().toISOString(),
-          'Environment': env,
-          'Tab': tab || 'unknown',
-          'Hostname': hostname
-        };
-        
-        console.log(`[SearchLogger][${env}] Alternative format payload:`, alternativePayload);
-        
-        const { error: altError } = await supabase
-          .from('Searches')
-          .insert(alternativePayload);
-        
-        if (altError) {
-          console.log(`[SearchLogger][${env}] 🔴 Alternative format also failed:`, altError.message, altError.details);
-          
-          // Attempt to get table structure to debug column names
-          console.log(`[SearchLogger][${env}] Attempting to get table structure...`);
-          const { data: columnInfo, error: infoError } = await supabase
-            .rpc('get_table_columns', { table_name: 'Searches' })
-            .select('*');
-          
-          if (infoError) {
-            console.log(`[SearchLogger][${env}] 🔴 Could not retrieve table structure:`, infoError.message);
-          } else {
-            console.log(`[SearchLogger][${env}] 📊 Table structure:`, columnInfo);
-          }
-          
-          // Last resort: try using a simple key-value format
-          console.log(`[SearchLogger][${env}] Trying minimal format as last attempt...`);
-          const simplePayload = {
-            search: searchTerm,
-            env: env
-          };
-          
-          const { error: simpleError } = await supabase
+        // If the error is about missing columns, try with only the columns we know exist
+        if (error.code === 'PGRST204') {
+          // Fall back to logging just the search term if search_type column doesn't exist
+          const { error: fallbackError } = await supabase
             .from('Searches')
-            .insert(simplePayload);
+            .insert({
+              search_term: searchTerm,
+              timestamp: new Date().toISOString()
+            });
           
-          if (simpleError) {
-            console.log(`[SearchLogger][${env}] 🔴 All insertion attempts failed. Last error:`, simpleError.message, simpleError.details);
+          if (fallbackError) {
+            console.error('Failed to log search even with fallback:', fallbackError);
           } else {
-            console.log(`[SearchLogger][${env}] ✅ Successfully logged with minimal format`);
+            console.log('Search logged with fallback schema');
           }
-        } else {
-          console.log(`[SearchLogger][${env}] ✅ Successfully logged with alternative format`);
         }
       } else {
-        console.log(`[SearchLogger][${env}] ✅ Successfully logged with standard format`);
+        console.log('Search logged successfully');
       }
     } catch (insertError) {
       console.error(`[SearchLogger][${env}] 🔴 Exception during search logging:`, insertError);
@@ -143,8 +96,9 @@ export const logSearch = async (searchTerm: string, type: string, tab?: string) 
     
     return true;
   } catch (err) {
+    const env = getEnvironmentName(); // Added this line to define env within this scope
     console.error(`[SearchLogger][${env}] 🔴 Failed to log search:`, err);
     // Don't throw - we don't want to break the app if logging fails
     return true;
   }
-};
+}
