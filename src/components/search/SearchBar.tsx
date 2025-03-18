@@ -44,7 +44,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     try {
       // Log search - fixing the incorrect number of arguments
       console.log(`[SearchBar][${env}] Calling logSearch for: "${searchTerm.trim()}"`);
-      await logSearch(searchTerm.trim(), 'search'); // Fixed: using 2 arguments instead of 3
+      await logSearch(searchTerm.trim(), 'search');
       console.log(`[SearchBar][${env}] logSearch completed`);
       
       // Call onSearch callback if provided
@@ -59,8 +59,13 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       
       console.log(`[SearchBar][${env}] Navigating to search results with: "${searchTerm.trim()}", type: ${searchType}`);
       
-      // Navigate to search results with URL parameters
-      navigate(`/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`);
+      // Fix: Use direct navigation with state to avoid recursive search
+      const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${Date.now()}`;
+      console.log(`[SearchBar][${env}] Navigation URL: ${url}`);
+      
+      // Key fix: Use replace instead of push to avoid adding to history stack
+      navigate(url, { replace: true });
+      
       console.log(`[SearchBar][${env}] ✅ Navigation initiated`);
     } catch (error) {
       console.error(`[SearchBar][${env}] 🔴 Search error:`, error);
@@ -70,8 +75,10 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
         variant: "destructive",
       });
     } finally {
-      console.log(`[SearchBar][${env}] Search process completed`);
-      setIsSubmitting(false);
+      // Reset isSubmitting after a short delay to avoid multiple rapid clicks
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 300);
     }
   };
 

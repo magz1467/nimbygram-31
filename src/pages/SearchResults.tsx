@@ -90,6 +90,21 @@ const SearchResultsPage = () => {
     setError(null);
   }, [env]);
 
+  // Fix: Add a guard to prevent rerendering if already on this page with same params
+  const currentSearchKey = useRef<string>('');
+  
+  useEffect(() => {
+    // Create a unique key for this search to prevent duplicate renders
+    const searchKey = `${searchTerm}-${searchType}-${timestamp}`;
+    
+    if (currentSearchKey.current === searchKey) {
+      console.log(`[SearchResultsPage][${env}] 🔄 Duplicate search detected, preventing rerender`);
+      return;
+    }
+    
+    currentSearchKey.current = searchKey;
+  }, [searchTerm, searchType, timestamp, env]);
+
   console.log(`[SearchResultsPage][${env}] 🖥️ Rendering with searchState:`, 
     searchState ? { ...searchState, hasSearchTerm: !!searchState.searchTerm } : 'null');
   console.log(`[SearchResultsPage][${env}] 🖥️ Error state:`, error?.message || 'null');
