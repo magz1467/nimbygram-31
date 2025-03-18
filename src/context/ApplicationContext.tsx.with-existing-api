@@ -1,0 +1,181 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// Define types
+interface Location {
+  lat: number;
+  lng: number;
+}
+
+export interface PlanningApplication {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  date: string;
+  address: string;
+  applicant?: string;
+  reference?: string;
+  location?: Location;
+  imageUrl?: string;
+  documents?: Array<{
+    id: string;
+    title: string;
+    url: string;
+    type: string;
+  }>;
+}
+
+interface ApplicationContextType {
+  applications: PlanningApplication[];
+  loading: boolean;
+  error: string | null;
+  fetchApplications: (query?: string, location?: string, radius?: number) => Promise<void>;
+  getApplicationById: (id: string) => Promise<PlanningApplication | undefined>;
+}
+
+// Create context
+const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
+
+// API base URL - adjust this to match your existing API endpoint
+const API_BASE_URL = '/api';
+
+// Provider component
+export const ApplicationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [applications, setApplications] = useState<PlanningApplication[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [applicationCache, setApplicationCache] = useState<Record<string, PlanningApplication>>({});
+
+  // Fetch applications based on search criteria
+  const fetchApplications = async (query?: string, location?: string, radius?: number): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (query) params.append('query', query);
+      if (location) params.append('location', location);
+      if (radius) params.append('radius', radius.toString());
+      
+      // Make API request to your existing endpoint
+      const response = await fetch(`${API_BASE_URL}/applications/search?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setApplications(data);
+      
+      // Update cache
+      const newCache = { ...applicationCache };
+      data.forEach((app: PlanningApplication) => {
+        newCache[app.id] = app;
+      });
+      setApplicationCache(newCache);
+    } catch (err) {
+      setError('Failed to fetch applications. Please try again.');
+      console.error('Error fetching applications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get application by ID
+  const getApplicationById = async (id: string): Promise<PlanningApplication | undefined> => {
+    // Check cache first
+    if (applicationCache[id]) {
+      return applicationCache[id];
+    }
+    
+    // If not in cache, fetch from API
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/applications/${id}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return undefined;
+        }
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const application = await response.json();
+      
+      // Update cache
+      setApplicationCache(prev => ({
+        ...prev,
+        [id]: application
+      }));
+      
+      return application;
+    } catch (err) {
+      console.error(`Error fetching application ${id}:`, err);
+      return undefined;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load initial featured applications
+  useEffect(() => {
+    const loadFeaturedApplications = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/applications/featured`);
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setApplications(data);
+        
+        // Cache applications
+        const cache: Record<string, PlanningApplication> = {};
+        data.forEach((app: PlanningApplication) => {
+          cache[app.id] = app;
+        });
+        setApplicationCache(cache);
+      } catch (err) {
+        console.error('Error loading featured applications:', err);
+        // Fallback to regular applications if featured endpoint fails
+        try {
+          const response = await fetch(`${API_BASE_URL}/applications`);
+          if (response.ok) {
+            const data = await response.json();
+            setApplications(data.slice(0, 5)); // Just get first 5
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback error:', fallbackErr);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadFeaturedApplications();
+  }, []);
+
+  return (
+    <ApplicationContext.Provider value={{
+      applications,
+      loading,
+      error,
+      fetchApplications,
+      getApplicationById
+    }}>
+      {children}
+    </ApplicationContext.Provider>
+  );
+};
+
+// Custom hook for using the context
+export const useApplications = (): ApplicationContextType => {
+  const context = useContext(ApplicationContext);
+  if (context === undefined) {
+    throw new Error('useApplications must be used within an ApplicationProvider');
+  }
+  return context;
+}; 
