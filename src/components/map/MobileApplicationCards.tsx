@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { useState, useEffect } from "react";
 import { FullScreenDetails } from "./mobile/FullScreenDetails";

@@ -6,8 +6,7 @@ import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { getImageUrl } from "@/utils/imageUtils";
 import { formatStorybook } from "@/utils/storybook";
 import { DragHandle } from "./components/DragHandle";
-import { ApplicationTitle } from "./components/ApplicationTitle";
-import { StorybookContent } from "./components/StorybookContent";
+import { LocationInfo } from "./components/LocationInfo";
 import { PullUpHint } from "./components/PullUpHint";
 
 interface MiniCardProps {
@@ -23,57 +22,59 @@ export const MiniCard = ({ application, onClick }: MiniCardProps) => {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white border-t rounded-t-lg shadow-lg z-[1000] max-h-[75vh] overflow-y-auto"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t rounded-t-lg shadow-lg z-[1000] max-h-[40vh] overflow-y-auto"
       onClick={onClick}
     >
       <DragHandle />
       
-      <div className="flex flex-col p-4 cursor-pointer touch-pan-y">
-        {/* Title Section */}
-        <ApplicationTitle 
-          title={application.title} 
-          storybook={application.storybook} 
-        />
-
-        {/* Main Image */}
-        <div className="w-full aspect-video mb-4 rounded-lg overflow-hidden bg-gray-100">
-          <ImageWithFallback
-            src={imageUrl}
-            alt={formattedStorybook?.header || application.title || ''}
-            className="w-full h-full object-cover"
-            fallbackSrc="/placeholder.svg"
-          />
+      <div className="p-3 cursor-pointer touch-pan-y">
+        {/* Compact header with image and title */}
+        <div className="flex gap-3 mb-2">
+          {/* Small image */}
+          <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+            <ImageWithFallback
+              src={imageUrl}
+              alt={formattedStorybook?.header || application.title || ''}
+              className="w-full h-full object-cover"
+              fallbackSrc="/placeholder.svg"
+            />
+          </div>
+          
+          {/* Title and location */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-primary text-sm leading-tight line-clamp-2 mb-1">
+              {formattedStorybook?.header || application.title || 'Planning Application'}
+            </h3>
+            
+            {application.address && (
+              <LocationInfo address={application.address} />
+            )}
+          </div>
         </div>
+        
+        {/* Brief description - limited to 2 lines */}
+        {formattedStorybook?.content && (
+          <div 
+            className="text-xs text-gray-600 mb-2 line-clamp-2"
+            dangerouslySetInnerHTML={{ 
+              __html: formattedStorybook.content
+            }}
+          />
+        )}
 
-        {/* Address with icon */}
-        <p className="text-sm text-gray-600 mb-3 text-left">
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="w-3 h-3 flex-shrink-0" />
-            <span className="line-clamp-2">{application.address}</span>
-          </span>
-        </p>
-
-        {/* Formatted Storybook Content */}
-        <StorybookContent 
-          formattedStorybook={formattedStorybook}
-          storybook={application.storybook}
-          description={application.description}
-        />
-
-        {/* Badges and Distance */}
-        <div className="flex items-center gap-2 mt-auto">
+        {/* Badges and distance in footer */}
+        <div className="flex items-center justify-between mt-auto">
           <ApplicationBadges
             status={application.status}
             lastDateConsultationComments={application.last_date_consultation_comments}
             impactScore={application.final_impact_score}
           />
           {application.distance && (
-            <span className="text-xs text-gray-500">{application.distance}</span>
+            <span className="text-xs text-gray-500 ml-2">{application.distance}</span>
           )}
         </div>
       </div>
 
-      {/* Pull up hint */}
       <PullUpHint />
     </div>
   );

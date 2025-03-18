@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Application } from "@/types/planning";
 import { MobileApplicationCards } from "../../mobile/MobileApplicationCards";
