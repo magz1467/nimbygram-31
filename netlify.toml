@@ -1,6 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "npm install lovable-tagger && npm run build"
+  command = "npm run build"
   publish = "dist"
 
 # Handle client-side routing

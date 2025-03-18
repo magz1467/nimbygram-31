@@ -17,14 +17,12 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      <Header />
-      <main className="main-content">
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
+      <header>
+        <h1>NimbyGram</h1>
+      </header>
+      <main>
+        <p>Welcome to NimbyGram - Site under construction</p>
       </main>
-      <Footer />
-      <Toaster />
     </div>
   );
 };
