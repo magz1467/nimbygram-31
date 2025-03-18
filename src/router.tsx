@@ -36,7 +36,12 @@ export const AppRoutes: React.FC = () => {
       <Route path="/" element={<App />}>
         <Route index element={<Home />} />
         <Route path="search-results" element={<SearchResults />} />
-        <Route path="application/:id" element={<ApplicationDetails />} />
+        <Route path="application/:id" element={
+          <div className="application-details-page">
+            <h1>Application Details</h1>
+            <p>This is a placeholder for application details.</p>
+          </div>
+        } />
         <Route path="profile" element={<Profile />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />

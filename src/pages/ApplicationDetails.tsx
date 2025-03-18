@@ -11,6 +11,11 @@ interface Document {
   type: string;
 }
 
+interface Location {
+  lat: number;
+  lng: number;
+}
+
 interface Application {
   id: string;
   title: string;
@@ -21,10 +26,7 @@ interface Application {
   applicant: string;
   reference: string;
   documents: Document[];
-  location: {
-    lat: number;
-    lng: number;
-  };
+  location: Location;
   imageUrl: string | null;
 }
 
@@ -35,86 +37,69 @@ const ApplicationDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    const fetchApplication = async () => {
-      if (!id) {
-        setError('Application ID is missing');
-        setLoading(false);
-        return;
-      }
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Mock API call - replace with your actual API
-        // In a real app, you would fetch from your API
-        // const response = await fetch(`/api/applications/${id}`);
-        
-        // For now, simulate a delay and return mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data
+    // Simulate fetching application data
+    setLoading(true);
+    
+    // Mock data for demonstration
+    setTimeout(() => {
+      if (id) {
         const mockApplication: Application = {
-          id: id,
-          title: 'Two-story extension to existing property',
-          description: 'Proposal to add a two-story extension to the rear of the property, including a new kitchen and bedroom.',
-          status: 'Pending',
-          date: '2023-05-15',
-          address: '123 Example Street, London, SW1A 1AA',
-          applicant: 'John Smith',
-          reference: 'APP/2023/0123',
+          id,
+          title: "Sample Planning Application",
+          description: "This is a sample planning application for demonstration purposes.",
+          status: "Pending",
+          date: "2023-06-15",
+          address: "123 Sample Street, Sample City, AB12 3CD",
+          applicant: "Sample Applicant",
+          reference: `REF-${id}`,
           documents: [
-            { id: 'doc1', title: 'Application Form', url: '#', type: 'PDF' },
-            { id: 'doc2', title: 'Site Plans', url: '#', type: 'PDF' },
-            { id: 'doc3', title: 'Elevation Drawings', url: '#', type: 'PDF' }
+            { id: "doc1", title: "Application Form", url: "#", type: "PDF" },
+            { id: "doc2", title: "Site Plan", url: "#", type: "PDF" }
           ],
-          location: {
-            lat: 51.505,
-            lng: -0.09
-          },
-          imageUrl: 'https://via.placeholder.com/800x600'
+          location: { lat: 51.505, lng: -0.09 },
+          imageUrl: null
         };
         
         setApplication(mockApplication);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
+        setLoading(false);
+      } else {
+        setError("Application ID not provided");
         setLoading(false);
       }
-    };
-    
-    fetchApplication();
+    }, 1000);
   }, [id]);
+
+  if (loading) {
+    return <div>Loading application details...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!application) {
+    return <div>Application not found</div>;
+  }
 
   return (
     <div className="application-details-page">
       <Header />
       
       <div className="container">
-        {loading ? (
-          <div className="loading">Loading application details...</div>
-        ) : error ? (
-          <div className="error">Error: {error}</div>
-        ) : application ? (
-          <>
-            <ApplicationDetail 
-              application={application}
+        <ApplicationDetail 
+          application={application}
+        />
+        
+        <div className="map-section">
+          <h2>Location</h2>
+          <div className="map-container">
+            <MapView 
+              applications={[application]}
+              center={application.location}
+              zoom={15}
             />
-            
-            <div className="map-section">
-              <h2>Location</h2>
-              <div className="map-container">
-                <MapView 
-                  applications={[application]}
-                  center={application.location}
-                  zoom={15}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="not-found">Application not found</div>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
