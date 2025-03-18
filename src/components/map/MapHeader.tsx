@@ -37,6 +37,30 @@ export const MapHeader = ({
   const location = useLocation();
   const isMobile = useIsMobile();
 
+  // Initialize a default statusCounts object
+  const statusCounts = {
+    'Under Review': 0,
+    'Approved': 0,
+    'Declined': 0,
+    'Other': 0
+  };
+
+  // Count applications by status if we have applications
+  if (applications && applications.length > 0) {
+    applications.forEach(app => {
+      const status = app.status?.toLowerCase() || '';
+      if (status.includes('review') || status.includes('pending')) {
+        statusCounts['Under Review']++;
+      } else if (status.includes('approved') || status.includes('granted')) {
+        statusCounts['Approved']++;
+      } else if (status.includes('declined') || status.includes('refused')) {
+        statusCounts['Declined']++;
+      } else {
+        statusCounts['Other']++;
+      }
+    });
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (postcode.trim()) {
@@ -111,6 +135,7 @@ export const MapHeader = ({
                   activeSort={activeSort || 'distance'}
                   isMapView={true}
                   applications={applications}
+                  statusCounts={statusCounts}
                 />
               )}
               
