@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { SearchStateProvider, useSearchState } from './search-views/SearchStateProvider';
 import { LoadingView } from './search-views/LoadingView';
@@ -98,20 +97,25 @@ interface SearchViewProps {
   };
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
+  onSearchStart?: () => void;
+  'aria-busy'?: boolean;
 }
 
 export function SearchView({ 
   initialSearch,
   onError,
-  onSearchComplete
+  onSearchComplete,
+  onSearchStart,
+  'aria-busy': ariaBusy
 }: SearchViewProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" aria-busy={ariaBusy}>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <SearchStateProvider initialSearch={initialSearch}>
           <SearchViewContentWithCallbacks 
             onError={onError} 
-            onSearchComplete={onSearchComplete} 
+            onSearchComplete={onSearchComplete}
+            onSearchStart={onSearchStart}
           />
         </SearchStateProvider>
       </div>
@@ -122,12 +126,14 @@ export function SearchView({
 // This component handles the callbacks
 function SearchViewContentWithCallbacks({ 
   onError, 
-  onSearchComplete 
+  onSearchComplete,
+  onSearchStart
 }: {
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
+  onSearchStart?: () => void;
 }) {
-  const { loadingState, hasSearched } = useSearchState();
+  const { loadingState, hasSearched, isSearchInProgress } = useSearchState();
   
   // Call onError when there's an error
   useEffect(() => {
@@ -142,6 +148,13 @@ function SearchViewContentWithCallbacks({
       onSearchComplete();
     }
   }, [loadingState.stage, hasSearched, onSearchComplete]);
+  
+  // Call onSearchStart when search begins
+  useEffect(() => {
+    if (onSearchStart && isSearchInProgress) {
+      onSearchStart();
+    }
+  }, [isSearchInProgress, onSearchStart]);
   
   return <SearchViewContent />;
 }
