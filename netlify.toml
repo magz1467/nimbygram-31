@@ -1,10 +1,10 @@
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm ci --legacy-peer-deps && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps"
+  NPM_FLAGS = "--legacy-peer-deps --no-optional"
 
 # Handle SPA routing
 [[redirects]]
@@ -27,3 +27,10 @@
 # SSL settings
 [dev]
   https = true
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Force clean cache on each build
+[[plugins]]
+  package = "netlify-plugin-cache-killer"
