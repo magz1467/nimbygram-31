@@ -4,7 +4,7 @@ import { Quote } from "lucide-react";
 export const HeroTestimonial = () => {
   return (
     <div className="relative bg-white/50 rounded-lg p-6 mt-8 md:mt-4">
-      {/* Quote marks in the background */}
+      {/* Large quote mark in the background */}
       <div className="absolute -top-4 md:-top-4 left-4 text-secondary/10">
         <Quote size={60} />
       </div>
