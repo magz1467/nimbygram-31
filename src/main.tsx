@@ -3,14 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 // CSS order is critical - load ours last to ensure it has highest precedence
 import 'leaflet/dist/leaflet.css'; // Third-party CSS first
-import './styles/utils.css';  // Base utilities
-import './styles/lists.css';  // List styling
-import './styles/map.css';    // Map-specific styles
-import './styles/mobile.css'; // Mobile-specific styles
-import './styles/components/logo.css';          // Component styles
-import './styles/components/petition-button.css';
-import './styles/components/loading-overlay.css';
-import './index.css';         // Main CSS last to ensure overrides work
+import './index.css'; // Our main CSS last to ensure overrides work
 import App from './App';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -10,7 +11,7 @@ export default {
     "./index.html",
   ],
   safelist: [
-    // Critical classes that should never be purged
+    // Add critical classes that should never be purged
     'prose',
     'list-disc',
     'font-playfair',
@@ -19,11 +20,6 @@ export default {
     'bg-white/50',
     'bg-background',
     'text-foreground',
-    'hide-scrollbar',
-    'pb-safe',
-    'object-cover',
-    'bullet-point',
-    'emoji-bullet'
   ],
   prefix: "",
   theme: {
