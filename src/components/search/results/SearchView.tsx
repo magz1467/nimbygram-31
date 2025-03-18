@@ -1,67 +1,57 @@
-import React, { useEffect, ReactNode } from 'react';
-import { SearchStateProvider, useSearchState } from '@/hooks/search/useSearchState';
+
+import { useEffect } from 'react';
+import { SearchStateProvider, useSearchState } from './search-views/SearchStateProvider';
 import { LoadingView } from './search-views/LoadingView';
 import { ErrorView } from './search-views/ErrorView';
 import { ResultsView } from './search-views/ResultsView';
 import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
-// Fix #1: Handle missing react-router-dom module
-// Instead of importing directly, check if it's available at runtime
-// const { useNavigate } = require('react-router-dom');
-const useNavigate = () => {
-  return (path: string, options?: any) => {
-    console.warn('Navigation not available, would navigate to:', path, options);
-    window.location.href = path;
-  };
-};
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // This is the inner component that uses the search state context
 function SearchViewContent() {
   const { 
-    searchTerm,
-    displayTerm,
-    applications,
-    filteredApplications,
-    coordinates,
-    isLoading,
-    error,
-    hasSearched,
-    filters,
+    initialSearch, 
+    loadingState, 
+    applications, 
+    filters, 
     setFilters,
     retry,
+    hasSearched,
     hasPartialResults,
     isSearchInProgress,
-    longRunningSearch
+    coordinates
   } = useSearchState();
   
-  // Fix #1: Use our custom navigate function
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Handle navigation to the map view
   const handleToggleMapView = () => {
     // Navigate to the map view with search parameters
     const params = new URLSearchParams();
-    if (searchTerm) {
-      params.set('postcode', searchTerm);
+    if (initialSearch?.searchTerm) {
+      params.set('postcode', initialSearch.searchTerm);
     }
     
     // Store the current search results and coordinates in state
     navigate(`/map?${params.toString()}`, { 
       state: { 
-        applications: filteredApplications,
-        searchTerm,
+        applications,
+        searchTerm: initialSearch?.searchTerm,
         coordinates
       } 
     });
   };
   
-  if (!searchTerm) {
+  if (!initialSearch?.searchTerm) {
     return <NoSearchStateView onPostcodeSelect={() => {}} />;
   }
   
   // Show error view if there's an error and we've already searched
-  if (error && hasSearched) {
-    const errorType = error && 'type' in error ? error.type as ErrorType : detectErrorType(error);
+  if ((loadingState.error || loadingState.stage === 'error') && hasSearched) {
+    const error = loadingState.error || new Error('Unknown search error');
+    const errorType = 'type' in error ? error.type as ErrorType : detectErrorType(error);
     
     return (
       <ErrorView 
@@ -73,14 +63,12 @@ function SearchViewContent() {
   }
   
   // Show loading view if we're loading
-  if (isLoading || isSearchInProgress) {
-    // Fix: Use the exact string literals that match LoadingView's expected values
-    // without trying to type them ourselves
+  if (loadingState.isLoading || loadingState.stage !== 'complete') {
     return (
       <LoadingView 
-        stage={isSearchInProgress ? "searching" : "loading"}
-        isLongRunning={longRunningSearch || false}
-        searchTerm={searchTerm || ''}
+        stage={loadingState.stage}
+        isLongRunning={loadingState.longRunning}
+        searchTerm={initialSearch.searchTerm}
         onRetry={retry}
       />
     );
@@ -89,15 +77,13 @@ function SearchViewContent() {
   // Show results view when we have applications
   return (
     <ResultsView 
-      applications={filteredApplications || []}
-      searchTerm={searchTerm || ''}
-      displayTerm={displayTerm}
-      filters={filters || {}}
+      applications={applications}
+      searchTerm={initialSearch.searchTerm}
+      filters={filters}
       onFilterChange={setFilters}
-      hasPartialResults={hasPartialResults || false}
-      isSearchInProgress={isSearchInProgress || false}
+      hasPartialResults={hasPartialResults}
+      isSearchInProgress={isSearchInProgress}
       onToggleMapView={handleToggleMapView}
-      retry={retry}
     />
   );
 }
@@ -112,113 +98,50 @@ interface SearchViewProps {
   };
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
-  onSearchStart?: () => void;
-  'aria-busy'?: boolean;
-  // Fix #3: Add children prop type
-  children?: ReactNode;
-}
-
-// This component handles the callbacks
-function SearchViewContentWithCallbacks({ 
-  onError, 
-  onSearchComplete,
-  onSearchStart,
-  // Fix #3: Add children prop
-  children
-}: {
-  onError?: (error: Error | null) => void;
-  onSearchComplete?: () => void;
-  onSearchStart?: () => void;
-  children?: ReactNode;
-}) {
-  const { 
-    isLoading, 
-    isSearchInProgress, 
-    hasSearched, 
-    error 
-  } = useSearchState();
-  
-  // Call onError when there's an error
-  useEffect(() => {
-    if (onError) {
-      onError(error);
-    }
-  }, [error, onError]);
-  
-  // Call onSearchComplete when search is complete
-  useEffect(() => {
-    if (onSearchComplete && !isLoading && !isSearchInProgress && hasSearched) {
-      onSearchComplete();
-    }
-  }, [isLoading, isSearchInProgress, hasSearched, onSearchComplete]);
-  
-  // Call onSearchStart when search begins
-  useEffect(() => {
-    if (onSearchStart && isSearchInProgress) {
-      onSearchStart();
-    }
-  }, [isSearchInProgress, onSearchStart]);
-  
-  // Add a cleanup effect to reset error when component unmounts
-  useEffect(() => {
-    return () => {
-      if (onError) {
-        onError(null);
-      }
-    };
-  }, [onError]);
-  
-  // Fix #3: Return children along with SearchViewContent
-  return (
-    <>
-      <SearchViewContent />
-      {children}
-    </>
-  );
 }
 
 export function SearchView({ 
   initialSearch,
   onError,
-  onSearchComplete,
-  onSearchStart,
-  'aria-busy': ariaBusy,
-  children
+  onSearchComplete
 }: SearchViewProps) {
-  // Call onSearchStart immediately if we have an initial search
-  useEffect(() => {
-    if (initialSearch?.searchTerm && onSearchStart) {
-      onSearchStart();
-    }
-  }, [initialSearch, onSearchStart]);
-
-  useEffect(() => {
-    if (initialSearch) {
-      console.log("SearchView received initialSearch:", initialSearch);
-      // Log the actual Supabase query being constructed
-      console.log("Constructing Supabase query with:", {
-        searchTerm: initialSearch.searchTerm,
-        searchType: initialSearch.searchType
-      });
-    }
-  }, [initialSearch]);
-
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy={ariaBusy}>
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <SearchStateProvider 
-          initialSearch={initialSearch}
-          children={
-            <SearchViewContentWithCallbacks 
-              onError={onError} 
-              onSearchComplete={onSearchComplete}
-              onSearchStart={onSearchStart}
-            >
-              {children}
-            </SearchViewContentWithCallbacks>
-          }
-        />
+        <SearchStateProvider initialSearch={initialSearch}>
+          <SearchViewContentWithCallbacks 
+            onError={onError} 
+            onSearchComplete={onSearchComplete} 
+          />
+        </SearchStateProvider>
       </div>
     </div>
   );
+}
+
+// This component handles the callbacks
+function SearchViewContentWithCallbacks({ 
+  onError, 
+  onSearchComplete 
+}: {
+  onError?: (error: Error | null) => void;
+  onSearchComplete?: () => void;
+}) {
+  const { loadingState, hasSearched } = useSearchState();
+  
+  // Call onError when there's an error
+  useEffect(() => {
+    if (onError && loadingState.error) {
+      onError(loadingState.error);
+    }
+  }, [loadingState.error, onError]);
+  
+  // Call onSearchComplete when search is complete
+  useEffect(() => {
+    if (onSearchComplete && loadingState.stage === 'complete' && hasSearched) {
+      onSearchComplete();
+    }
+  }, [loadingState.stage, hasSearched, onSearchComplete]);
+  
+  return <SearchViewContent />;
 }

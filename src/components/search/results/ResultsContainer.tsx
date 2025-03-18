@@ -1,9 +1,8 @@
+
 import { Application } from "@/types/planning";
 import { ResultsListView } from "./ResultsListView";
 import { useState, useEffect } from "react";
 import { MapSplitView } from "./components/MapSplitView";
-import React from 'react';
-import { useSearchState } from "@/hooks/search/useSearchState";
 
 export interface ResultsContainerProps {
   applications: Application[];
@@ -17,7 +16,8 @@ export interface ResultsContainerProps {
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
   handleMarkerClick: (id: number) => void;
-  error?: Error | null;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
 }
 
 export const ResultsContainer = ({
@@ -32,15 +32,11 @@ export const ResultsContainer = ({
   selectedId,
   setSelectedId,
   handleMarkerClick,
-  error
+  hasPartialResults = false,
+  isSearchInProgress = false
 }: ResultsContainerProps) => {
-  // Access global search state
-  const {
-    hasPartialResults,
-    isSearchInProgress,
-    retry,
-    loadMore
-  } = useSearchState();
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   // Modified to display either list view or split view based on showMap
   return showMap && coordinates ? (
@@ -55,27 +51,30 @@ export const ResultsContainer = ({
       isLoading={isLoading}
       hasPartialResults={hasPartialResults}
       isSearchInProgress={isSearchInProgress}
-      onRetry={retry}
+      onRetry={() => console.log("Retry search requested")}
     />
   ) : (
-    <React.Fragment>
-      <ResultsListView
-        applications={displayApplications}
-        isLoading={isLoading}
-        onSeeOnMap={(id) => {
-          setSelectedId(id);
-          setShowMap(true);
-        }}
-        searchTerm={searchTerm}
-        displayTerm={displayTerm}
-        onRetry={retry}
-        selectedId={selectedId}
-        coordinates={coordinates}
-        handleMarkerClick={handleMarkerClick}
-        allApplications={applications}
-        postcode={searchTerm}
-        error={error}
-      />
-    </React.Fragment>
+    <ResultsListView
+      applications={displayApplications}
+      isLoading={isLoading}
+      onSeeOnMap={(id) => {
+        setSelectedId(id);
+        setShowMap(true);
+      }}
+      searchTerm={searchTerm}
+      displayTerm={displayTerm}
+      onRetry={() => console.log("Retry search requested")}
+      selectedId={selectedId}
+      coordinates={coordinates}
+      handleMarkerClick={handleMarkerClick}
+      allApplications={applications}
+      postcode={searchTerm}
+      currentPage={currentPage}
+      totalPages={Math.ceil(displayApplications.length / pageSize)}
+      onPageChange={setCurrentPage}
+      totalCount={displayApplications.length}
+      hasPartialResults={hasPartialResults}
+      isSearchInProgress={isSearchInProgress}
+    />
   );
 };

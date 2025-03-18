@@ -1,29 +1,12 @@
 
-import { FC, useEffect } from "react";
-import { logStorybook } from "@/utils/storybook/logger";
+import { FC } from "react";
 
 interface FallbackContentProps {
   content?: string | null;
   storybook?: string | null;
-  applicationId?: number;
 }
 
-export const FallbackContent: FC<FallbackContentProps> = ({ 
-  content, 
-  storybook, 
-  applicationId 
-}) => {
-  // Log fallback content for debugging
-  useEffect(() => {
-    if (content) {
-      logStorybook.section('fallback-content', content, applicationId);
-    } else if (storybook) {
-      logStorybook.section('fallback-storybook', storybook, applicationId);
-    } else {
-      logStorybook.error('fallback', new Error('No content available for fallback'), null);
-    }
-  }, [content, storybook, applicationId]);
-
+export const FallbackContent: FC<FallbackContentProps> = ({ content, storybook }) => {
   // Process HTML tags in content
   const processHtml = (str: string) => {
     return str
@@ -65,7 +48,7 @@ export const FallbackContent: FC<FallbackContentProps> = ({
             // Check for emoji at the start
             const emojiMatch = bulletText.match(/^([\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}✓])/u);
             
-            formattedHtml += `<li class="pl-0 mb-2 relative text-left">`;
+            formattedHtml += `<li class="pl-0 mb-2 relative">`;
             if (emojiMatch) {
               const emoji = emojiMatch[1];
               const text = bulletText.substring(emojiMatch[0].length).trim();
@@ -83,7 +66,7 @@ export const FallbackContent: FC<FallbackContentProps> = ({
         if (firstBulletStart > 0) {
           const beforeBullets = cleanedText.substring(0, firstBulletStart).trim();
           if (beforeBullets) {
-            formattedHtml = `<p class="mb-4 text-left">${beforeBullets}</p>${formattedHtml}`;
+            formattedHtml = `<p class="mb-4">${beforeBullets}</p>${formattedHtml}`;
           }
         }
         
@@ -94,10 +77,10 @@ export const FallbackContent: FC<FallbackContentProps> = ({
     // Try to detect and format sections
     const sections = cleanedText.split(/\n\n+/);
     if (sections.length > 1) {
-      return sections.map(section => `<p class="mb-4 text-left">${section}</p>`).join('');
+      return sections.map(section => `<p class="mb-4">${section}</p>`).join('');
     }
     
-    return `<p class="text-left">${cleanedText}</p>`;
+    return `<p>${cleanedText}</p>`;
   };
 
   // First try to use formatted content if available
@@ -119,7 +102,7 @@ export const FallbackContent: FC<FallbackContentProps> = ({
     
     return (
       <div className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-gray-900 font-medium mb-2 text-left">Application Details</h3>
+        <h3 className="text-gray-900 font-medium mb-2">Application Details</h3>
         <div 
           className="whitespace-pre-wrap text-gray-700"
           dangerouslySetInnerHTML={{ __html: formattedContent }}

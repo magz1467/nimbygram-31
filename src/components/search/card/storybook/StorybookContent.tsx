@@ -1,4 +1,3 @@
-
 import { FC, useEffect } from "react";
 import { DealSection } from "./DealSection";
 import { DetailsSection } from "./DetailsSection";
@@ -7,24 +6,25 @@ import { WatchOutForSection } from "./WatchOutForSection";
 import { KeyRegulationsSection } from "./KeyRegulationsSection";
 import { FallbackContent } from "./FallbackContent";
 import { FormattedStorybook } from "@/utils/storybook/types";
-import { logStorybook } from "@/utils/storybook/logger";
 
 interface StorybookContentProps {
   formattedStorybook: FormattedStorybook | null;
   rawStorybook: string | null;
-  applicationId?: number;
 }
 
 export const StorybookContent: FC<StorybookContentProps> = ({ 
   formattedStorybook, 
-  rawStorybook,
-  applicationId
+  rawStorybook 
 }) => {
   if (!formattedStorybook && !rawStorybook) return null;
   
   useEffect(() => {
-    logStorybook.output(formattedStorybook, applicationId);
-  }, [formattedStorybook, applicationId]);
+    if (formattedStorybook?.sections?.length) {
+      console.log('info: StorybookContent rendering with sections:', 
+        formattedStorybook.sections.map(s => s.type)
+      );
+    }
+  }, [formattedStorybook]);
   
   // If we have formatted sections, display them
   if (formattedStorybook?.sections?.length) {
@@ -43,40 +43,11 @@ export const StorybookContent: FC<StorybookContentProps> = ({
     
     return (
       <div className="space-y-6">
-        {dealSection && dealSection.content && (
-          <DealSection 
-            content={dealSection.content as string}
-            applicationId={applicationId}
-          />
-        )}
-        
-        {hasDetailsContent && (
-          <DetailsSection 
-            content={detailsSection.content}
-            applicationId={applicationId}
-          />
-        )}
-        
-        {watchOutForSection && watchOutForSection.content && (
-          <WatchOutForSection 
-            content={watchOutForSection.content}
-            applicationId={applicationId}
-          />
-        )}
-        
-        {keyRegulationsSection && keyRegulationsSection.content && (
-          <KeyRegulationsSection 
-            content={keyRegulationsSection.content}
-            applicationId={applicationId}
-          />
-        )}
-        
-        {nimbySection && nimbySection.content && (
-          <NimbySection 
-            content={nimbySection.content}
-            applicationId={applicationId}
-          />
-        )}
+        {dealSection && dealSection.content && <DealSection content={dealSection.content as string} />}
+        {hasDetailsContent && <DetailsSection content={detailsSection.content} />}
+        {watchOutForSection && watchOutForSection.content && <WatchOutForSection content={watchOutForSection.content} />}
+        {keyRegulationsSection && keyRegulationsSection.content && <KeyRegulationsSection content={keyRegulationsSection.content} />}
+        {nimbySection && nimbySection.content && <NimbySection content={nimbySection.content} />}
       </div>
     );
   }
@@ -85,8 +56,7 @@ export const StorybookContent: FC<StorybookContentProps> = ({
   return (
     <FallbackContent 
       content={formattedStorybook?.content} 
-      storybook={rawStorybook}
-      applicationId={applicationId}
+      storybook={rawStorybook} 
     />
   );
 };

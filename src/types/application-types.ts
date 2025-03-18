@@ -1,6 +1,7 @@
+
 import { Application } from "./planning";
 
-export type SortType = 'distance' | 'date' | 'status';
+export type SortType = 'distance' | 'newest' | 'closingSoon' | 'date' | 'impact';
 
 export type FilterType = {
   status?: string;
@@ -8,12 +9,12 @@ export type FilterType = {
   classification?: string;
 };
 
-export interface StatusCounts {
+export type StatusCounts = {
   'Under Review': number;
   'Approved': number;
   'Declined': number;
   'Other': number;
-}
+};
 
 export type MapState = {
   selectedId: number | null;

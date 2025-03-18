@@ -1,23 +1,23 @@
-
 import { MapPin } from "lucide-react";
 import { formatStorybook } from "@/utils/storybook";
-import { logStorybook } from "@/utils/storybook/logger";
-import { useEffect } from "react";
 
 interface CardHeaderProps {
   title: string;
   address: string;
   storybook?: string | null;
-  applicationId?: number;
 }
 
-export const CardHeader = ({ title, address, storybook, applicationId }: CardHeaderProps) => {
-  // Log storybook data for debugging
-  useEffect(() => {
-    logStorybook.input(storybook, applicationId);
-  }, [storybook, applicationId]);
+export const CardHeader = ({ title, address, storybook }: CardHeaderProps) => {
+  // Log incoming storybook data for debugging
+  console.log('CardHeader received storybook:', storybook ? 'yes' : 'no', 
+    storybook ? `length: ${storybook.length}` : '');
   
-  const formattedStorybook = formatStorybook(storybook, applicationId);
+  const formattedStorybook = formatStorybook(storybook);
+
+  // Log the storybook content for debugging
+  console.log('CardHeader storybook formatted result:', 
+    formattedStorybook ? 'success' : 'null', 
+    formattedStorybook?.header ? `header: ${formattedStorybook.header}` : 'no header');
 
   const cleanHeader = (header: string) => {
     let cleanedHeader = header.trim();

@@ -1,10 +1,10 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { initFormatDebugging } from './utils/formatDebugger';
 
 // Debug API key usage
 console.log('=== DEBUG API KEY INFO ===');
@@ -26,11 +26,6 @@ function checkLoadedScripts() {
 // Run script check immediately and after a delay
 checkLoadedScripts();
 setTimeout(checkLoadedScripts, 3000);
-
-// Initialize format debugging in development only
-if (import.meta.env.DEV) {
-  initFormatDebugging();
-}
 
 const queryClient = new QueryClient();
 
