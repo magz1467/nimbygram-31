@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "test": "vite ",
-    "build": "vite build",
+    "build": "npm install --legacy-peer-deps && vite build",
     "build:dev": "vite build --mode development",
+    "build:preview": "vite build --mode preview",
+    "build:production": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -61,7 +63,7 @@
     "mapillary-js": "^4.1.2",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
-    "react-day-picker": "^8.10.1",
+    "react-day-picker": "^8.9.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",
     "react-leaflet": "^4.2.1",
