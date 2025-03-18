@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { SearchView } from "@/components/search/results/SearchView";
@@ -5,6 +6,7 @@ import { SearchErrorView } from "@/components/search/results/SearchErrorView";
 import { NoSearchStateView } from "@/components/search/results/NoSearchStateView";
 import { logRouteChange } from "@/utils/reloadTracker";
 import '../styles/search-results.css'; // Using relative path instead of alias
+import { logStorybook } from "@/utils/storybook/logger";
 
 // Define proper interfaces for type safety
 interface SearchStateType {
@@ -39,6 +41,25 @@ const SearchResultsPage = () => {
     timestamp
   } : (location.state as SearchStateType | null);
 
+  // Log environment info on initial load to help with debugging
+  useEffect(() => {
+    // Log environment information to help debug production vs development differences
+    const isProd = typeof window !== 'undefined' && 
+      window.location.hostname.includes('nimbygram.com');
+    
+    console.log(`🌍 Environment: ${isProd ? 'Production' : 'Development/Preview'}`);
+    console.log(`🔎 Search route loaded with term: ${searchTerm || 'none'}`);
+    
+    // Force a visible log in production for search debugging
+    if (isProd) {
+      logStorybook.critical('Search Results Page Loaded', { 
+        searchTerm, 
+        searchType,
+        hasState: Boolean(location.state)
+      });
+    }
+  }, []);
+  
   // Log route changes
   useEffect(() => {
     if (previousPath.current !== location.pathname) {

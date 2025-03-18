@@ -10,6 +10,7 @@ import { CommentList } from "@/components/comments/CommentList";
 import { format } from "date-fns";
 import { getImageUrl } from "@/utils/imageUtils";
 import { CalendarDays } from "lucide-react";
+import { logStorybook } from '@/utils/storybook/logger';
 
 interface SearchResultCardProps {
   application: Application;
@@ -49,20 +50,10 @@ export const SearchResultCard = ({
 
   // Enhanced logging for storybook data
   useEffect(() => {
-    console.log(`SearchResultCard for application ${application.id}:`, { 
-      hasStorybook: Boolean(application.storybook),
-      storybook: application.storybook ? {
-        type: typeof application.storybook,
-        length: application.storybook.length
-      } : null,
-      description: application.description?.substring(0, 30),
-      title: application.title
-    });
+    // Log storybook content on mount to help debug formatting issues
+    logStorybook.input(application.storybook, application.id);
     
-    if (application.storybook) {
-      console.log('SearchResultCard storybook preview for app', application.id, ':', 
-        application.storybook.substring(0, 100) + '...');
-    } else {
+    if (!application.storybook) {
       console.log('SearchResultCard missing storybook for app', application.id);
     }
   }, [application]);
@@ -82,7 +73,6 @@ export const SearchResultCard = ({
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   const handleSeeOnMap = () => {
-    console.log('📍 See on map clicked for application:', application.id);
     if (application.id && onSeeOnMap) {
       onSeeOnMap(application.id);
     }
@@ -93,7 +83,8 @@ export const SearchResultCard = ({
       <CardHeader 
         title={application.title || ''} 
         address={application.address} 
-        storybook={application.storybook} 
+        storybook={application.storybook}
+        applicationId={application.id}
       />
 
       <CardImage 

@@ -1,3 +1,4 @@
+
 /* Search Results Page Specific Styles */
 
 /* Container for search results */
@@ -48,18 +49,33 @@
   display: list-item;
 }
 
-/* Ensure bullet points display properly */
-.search-results-container li::before {
-  content: "•";
-  display: inline-block;
-  width: 1em;
-  margin-left: -1em;
+/* Enhanced Storybook Styling */
+/* These styles ensure consistent rendering across environments */
+.storybook-content ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
-/* Preserve formatting for emoji bullet points */
-.search-results-container p {
-  margin-bottom: 0.75rem;
+.storybook-content li {
+  display: list-item !important;
+  margin-bottom: 0.5rem !important;
+  text-align: left !important;
+}
+
+/* Ensure emoji bullets display properly */
+.storybook-content li .emoji-bullet {
+  display: inline-block;
+  width: 1.5em;
+  margin-right: 0.5em;
+  text-align: center;
+}
+
+/* Preserve whitespace in paragraphs */
+.storybook-content p {
   white-space: pre-line;
+  margin-bottom: 0.75rem;
+  text-align: left;
 }
 
 /* Ensure proper spacing between bullet points */
