@@ -15,7 +15,9 @@ interface MiniCardProps {
 }
 
 export const MiniCard = ({ application, onClick }: MiniCardProps) => {
-  const formattedStorybook = formatStorybook(application.storybook);
+  // Use storybook or short_story as fallback
+  const contentToUse = application.storybook || application.short_story;
+  const formattedStorybook = contentToUse ? formatStorybook(contentToUse) : null;
   
   // Get the best available image
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);

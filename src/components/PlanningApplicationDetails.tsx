@@ -34,8 +34,16 @@ export const PlanningApplicationDetails = ({
   useEffect(() => {
     console.log('PlanningApplicationDetails - Application Data:', {
       id: application?.id,
-      title: application?.title
+      title: application?.title,
+      hasStorybook: Boolean(application?.storybook),
+      hasShortStory: Boolean(application?.short_story)
     });
+    
+    if (application?.storybook) {
+      console.log('Using storybook content');
+    } else if (application?.short_story) {
+      console.log('Using short_story fallback content');
+    }
     
     setCurrentApplication(application);
     
@@ -109,6 +117,9 @@ export const PlanningApplicationDetails = ({
     });
   };
 
+  // Prepare content - use storybook if available, otherwise use short_story as fallback
+  const storyContent = currentApplication.storybook || currentApplication.short_story;
+
   return (
     <div className="p-6 space-y-4 pb-20">
       <div className="flex justify-between items-start">
@@ -129,7 +140,10 @@ export const PlanningApplicationDetails = ({
       />
 
       <ApplicationContent 
-        application={currentApplication}
+        application={{
+          ...currentApplication,
+          storybook: storyContent // Replace with combined content
+        }}
         feedback={feedback}
         feedbackStats={feedbackStats}
         onFeedback={handleFeedback}

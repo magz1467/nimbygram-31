@@ -10,10 +10,12 @@ export function transformApplicationData(rawData: any): Application {
   
   // Enhanced logging for storybook content
   if (rawData.id) {
-    console.log(`Transform for application ${rawData.id}: has storybook: ${Boolean(rawData.storybook)}`);
+    console.log(`Transform for application ${rawData.id}: has storybook: ${Boolean(rawData.storybook)}, has short_story: ${Boolean(rawData.short_story)}`);
     if (rawData.storybook) {
       console.log(`Raw storybook data type: ${typeof rawData.storybook}`);
       console.log(`Storybook preview for app ${rawData.id}: ${rawData.storybook.substring(0, 100)}...`);
+    } else if (rawData.short_story) {
+      console.log(`Using short_story fallback for app ${rawData.id}: ${rawData.short_story.substring(0, 100)}...`);
     }
   }
   
@@ -54,7 +56,8 @@ export function transformApplicationData(rawData: any): Application {
     postcode: rawData.postcode || null,
     impact_score: rawData.impact_score || null,
     impact_score_details: rawData.impact_score_details || null,
-    storybook: rawData.storybook || null,  // Ensure storybook is included
+    storybook: rawData.storybook || null,
+    short_story: rawData.short_story || null, // Include short_story field
     received_date: rawData.received_date || null
   };
   
@@ -75,10 +78,12 @@ export function transformApplicationsData(rawDataArray: any[]): Application[] {
   
   console.log(`Transforming ${rawDataArray.length} applications`);
   if (rawDataArray.length > 0) {
-    console.log(`First application ID: ${rawDataArray[0]?.id}, has storybook: ${Boolean(rawDataArray[0]?.storybook)}`);
+    console.log(`First application ID: ${rawDataArray[0]?.id}, has storybook: ${Boolean(rawDataArray[0]?.storybook)}, has short_story: ${Boolean(rawDataArray[0]?.short_story)}`);
     if (rawDataArray[0]?.storybook) {
       console.log(`Storybook length: ${rawDataArray[0].storybook.length}`);
       console.log(`First application storybook preview: ${rawDataArray[0].storybook.substring(0, 100)}...`);
+    } else if (rawDataArray[0]?.short_story) {
+      console.log(`Using short_story fallback: ${rawDataArray[0].short_story.substring(0, 100)}...`);
     }
   }
   

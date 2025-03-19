@@ -64,13 +64,18 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Enhanced logging for storybook data
+  // Enhanced logging for content data
   useEffect(() => {
     console.log(`SearchResultCard for application ${application.id}:`, { 
       hasStorybook: Boolean(application.storybook),
+      hasShortStory: Boolean(application.short_story),
       storybook: application.storybook ? {
         type: typeof application.storybook,
         length: application.storybook.length
+      } : null,
+      shortStory: application.short_story ? {
+        type: typeof application.short_story,
+        length: application.short_story.length
       } : null,
       description: application.description?.substring(0, 30),
       title: application.title
@@ -79,8 +84,11 @@ export const SearchResultCard = ({
     if (application.storybook) {
       console.log('SearchResultCard storybook preview for app', application.id, ':', 
         application.storybook.substring(0, 100) + '...');
+    } else if (application.short_story) {
+      console.log('SearchResultCard using short_story fallback for app', application.id, ':', 
+        application.short_story.substring(0, 100) + '...');
     } else {
-      console.log('SearchResultCard missing storybook for app', application.id);
+      console.log('SearchResultCard missing both storybook and short_story for app', application.id);
     }
   }, [application]);
 
@@ -110,7 +118,7 @@ export const SearchResultCard = ({
       <CardHeader 
         title={application.title || ''} 
         address={application.address} 
-        storybook={application.storybook} 
+        storybook={application.storybook || application.short_story} 
       />
 
       <CardImage 
@@ -145,6 +153,7 @@ export const SearchResultCard = ({
         
         <CardContent 
           storybook={application.storybook} 
+          shortStory={application.short_story} // Pass short_story as fallback
           onSeeOnMap={handleSeeOnMap}
           applicationId={application.id}
           applications={applications}

@@ -21,10 +21,10 @@ export const fetchApplicationsInRadius = async (
     const latDiff = radius / kmPerDegree;
     const lngDiff = radius / (kmPerDegree * Math.cos(lat * Math.PI / 180));
     
-    // Query with geographic bounds - explicitly selecting storybook field
+    // Query with geographic bounds - explicitly selecting storybook and short_story fields
     const { data, error } = await supabase
       .from('crystal_roof')
-      .select('*')  // Using * to select all fields including storybook
+      .select('*')  // Using * to select all fields including storybook and short_story
       .gte('latitude', lat - latDiff)
       .lte('latitude', lat + latDiff)
       .gte('longitude', lng - lngDiff)
@@ -38,22 +38,34 @@ export const fetchApplicationsInRadius = async (
       console.log('First application data:', {
         id: data[0].id,
         hasStorybook: Boolean(data[0].storybook),
-        storybookLength: data[0].storybook ? data[0].storybook.length : 0
+        hasShortStory: Boolean(data[0].short_story),
+        storybookLength: data[0].storybook ? data[0].storybook.length : 0,
+        shortStoryLength: data[0].short_story ? data[0].short_story.length : 0
       });
+      
       if (data[0].storybook) {
         console.log(`Storybook preview: ${data[0].storybook.substring(0, 100)}...`);
+      } else if (data[0].short_story) {
+        console.log(`Using short_story: ${data[0].short_story.substring(0, 100)}...`);
       }
     }
 
     // Transform to Application type using our transformer
     const transformedData = data ? data.map(item => transformApplicationData(item)) : [];
     
-    // Verify storybook content was preserved after transformation
-    if (transformedData.length > 0 && data && data[0].storybook) {
+    // Verify storybook and short_story content was preserved after transformation
+    if (transformedData.length > 0 && data) {
       const firstTransformed = transformedData[0];
-      console.log('Verifying storybook content preservation:', {
-        beforeTransform: Boolean(data[0].storybook),
-        afterTransform: Boolean(firstTransformed.storybook)
+      const firstRaw = data[0];
+      console.log('Verifying content preservation:', {
+        beforeTransform: {
+          storybook: Boolean(firstRaw.storybook),
+          shortStory: Boolean(firstRaw.short_story)
+        },
+        afterTransform: {
+          storybook: Boolean(firstTransformed.storybook),
+          shortStory: Boolean(firstTransformed.short_story)
+        }
       });
     }
     

@@ -11,6 +11,7 @@ import { FallbackContent } from "./storybook/FallbackContent";
 
 interface CardContentProps {
   storybook: string | null;
+  shortStory?: string | null; // Add shortStory prop
   onSeeOnMap: () => void;
   applicationId?: number;
   applications?: Application[];
@@ -23,6 +24,7 @@ interface CardContentProps {
 
 export const CardContent = ({ 
   storybook, 
+  shortStory = null, // Default to null
   onSeeOnMap,
   applicationId,
   applications = [],
@@ -39,19 +41,22 @@ export const CardContent = ({
   const application = applications.find(app => app.id === applicationId);
   const applicationCoords = application?.coordinates;
 
-  // Enhanced debugging for storybook data issues
+  // Enhanced debugging for content data issues
   useEffect(() => {
     if (applicationId) {
       console.log(`CardContent for app ${applicationId}:`, {
         hasStorybook: Boolean(storybook),
+        hasShortStory: Boolean(shortStory),
         storybookType: storybook ? typeof storybook : null,
+        shortStoryType: shortStory ? typeof shortStory : null,
         storybookLength: storybook ? storybook.length : 0,
+        shortStoryLength: shortStory ? shortStory.length : 0,
         hasApplicationCoords: Boolean(applicationCoords),
         hasCoordinates: Boolean(coordinates),
         isMobile
       });
     }
-  }, [applicationId, storybook, applicationCoords, coordinates, isMobile]);
+  }, [applicationId, storybook, shortStory, applicationCoords, coordinates, isMobile]);
 
   const handleSeeOnMapClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,8 +91,9 @@ export const CardContent = ({
     setShowMapDialog(false);
   };
 
-  // Process storybook data
-  const formattedStorybook = formatStorybook(storybook);
+  // Process content based on availability (storybook first, then short_story as fallback)
+  const contentToUse = storybook || shortStory;
+  const formattedStorybook = contentToUse ? formatStorybook(contentToUse) : null;
   
   // Render the map button regardless of storybook content
   const mapButton = <MapButton onClick={handleSeeOnMapClick} />;
@@ -97,11 +103,11 @@ export const CardContent = ({
   
   return (
     <div className="space-y-6">
-      {/* Render storybook content if available */}
-      {storybook && formattedStorybook ? (
+      {/* Render content based on availability */}
+      {contentToUse && formattedStorybook ? (
         <StorybookContent 
           formattedStorybook={formattedStorybook} 
-          rawStorybook={storybook} 
+          rawStorybook={contentToUse} 
         />
       ) : (
         <FallbackContent content={null} storybook={null} />

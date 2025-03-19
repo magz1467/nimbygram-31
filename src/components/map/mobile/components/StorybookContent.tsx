@@ -10,10 +10,16 @@ import { FallbackContent } from "./storybook/FallbackContent";
 interface StorybookContentProps {
   formattedStorybook: FormattedStorybook | null;
   storybook: string | null | undefined;
+  shortStory?: string | null | undefined; // Add shortStory prop
   description: string | undefined;
 }
 
-export const StorybookContent = ({ formattedStorybook, storybook, description }: StorybookContentProps) => {
+export const StorybookContent = ({ 
+  formattedStorybook, 
+  storybook, 
+  shortStory,
+  description 
+}: StorybookContentProps) => {
   if (formattedStorybook?.sections) {
     return (
       <div className="text-sm text-gray-600 mb-3">
@@ -59,7 +65,7 @@ export const StorybookContent = ({ formattedStorybook, storybook, description }:
     );
   } else {
     return (
-      <FallbackContent storybook={storybook} description={description} />
+      <FallbackContent storybook={storybook || shortStory} description={description} />
     );
   }
 };

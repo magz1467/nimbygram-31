@@ -49,7 +49,9 @@ export const ApplicationListView = ({
       )}
       <div className="flex-1 overflow-y-auto">
         {applications.map((app) => {
-          const storybook = formatStorybook(app.storybook);
+          // Use storybook or short_story as fallback
+          const contentToUse = app.storybook || app.short_story;
+          const storybook = contentToUse ? formatStorybook(contentToUse) : null;
           
           return (
             <div
