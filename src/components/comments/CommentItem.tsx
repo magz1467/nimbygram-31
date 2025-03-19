@@ -37,6 +37,9 @@ export const CommentItem = ({
     handleReply
   } = useCommentItem(comment, currentUserId);
 
+  // Convert string id to number if needed to fix type error
+  const commentId = typeof comment.id === 'string' ? parseInt(comment.id, 10) : comment.id;
+
   return (
     <div className={`${level > 0 ? 'ml-6' : ''}`}>
       <Card className="p-4">
@@ -44,7 +47,7 @@ export const CommentItem = ({
         <CommentContent comment={comment} />
         <div className="mt-2 flex items-center space-x-4">
           <CommentVoteSection
-            commentId={comment.id}
+            commentId={commentId}
             upvotes={upvotes}
             downvotes={downvotes}
             currentUserId={currentUserId}

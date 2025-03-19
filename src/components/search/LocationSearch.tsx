@@ -36,11 +36,11 @@ export const LocationSearch = ({ onSearch }: LocationSearchProps) => {
                 key={index}
                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                 onClick={() => {
-                  setSearchTerm(suggestion.address);
-                  onSearch(suggestion.address);
+                  setSearchTerm(suggestion.address || suggestion.postcode || '');
+                  onSearch(suggestion.address || suggestion.postcode || '');
                 }}
               >
-                {suggestion.address}
+                {suggestion.address || suggestion.postcode}
               </div>
             ))}
           </div>

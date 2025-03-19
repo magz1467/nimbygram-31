@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { AlertCircle, MinusCircle, ChevronDown } from "lucide-react";
 import { Application } from "@/types/planning";
@@ -18,7 +19,8 @@ export const ExpectedImpactAreas = ({ application, impactedServices }: ExpectedI
   
   if (!application) return null;
 
-  const services = impactedServices || {
+  // Default services if none provided
+  const services = impactedServices || application.impacted_services || {
     "Schools": { impact: "negative" as const, details: "May increase pressure on local schools" },
     "Health": { impact: "negative" as const, details: "May increase pressure on health services" },
     "Roads": { impact: "neutral" as const, details: "No significant impact expected" },
@@ -27,8 +29,9 @@ export const ExpectedImpactAreas = ({ application, impactedServices }: ExpectedI
     "Community Services": { impact: "positive" as const, details: "May support these services" }
   };
 
-  // Count impacts by type
-  const impactCounts = Object.values(services).reduce((acc, { impact }) => {
+  // Count impacts by type with proper type checking
+  const impactCounts = Object.values(services || {}).reduce((acc, service) => {
+    const impact = service?.impact || 'neutral';
     acc[impact] = (acc[impact] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -72,17 +75,17 @@ export const ExpectedImpactAreas = ({ application, impactedServices }: ExpectedI
 
         <CollapsibleContent className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
-            {Object.entries(services).map(([name, { impact, details }]) => (
+            {Object.entries(services || {}).map(([name, serviceInfo]) => (
               <div 
                 key={name} 
-                className={`flex items-start gap-2 group transition-all ${getImpactClass(impact)}`}
-                title={details}
+                className={`flex items-start gap-2 group transition-all ${getImpactClass(serviceInfo?.impact || 'neutral')}`}
+                title={serviceInfo?.details || ''}
               >
-                {getImpactIcon(impact)}
+                {getImpactIcon(serviceInfo?.impact || 'neutral')}
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{name}</span>
                   <span className="text-xs text-gray-500 mt-0.5">
-                    {details}
+                    {serviceInfo?.details || ''}
                   </span>
                 </div>
               </div>

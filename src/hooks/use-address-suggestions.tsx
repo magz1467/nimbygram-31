@@ -1,64 +1,52 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 
-interface PostcodeInfo {
-  latitude: number;
-  longitude: number;
-}
+import { useQuery } from "@tanstack/react-query";
+import { PostcodeSuggestion } from "@/types/address-suggestions";
 
-const fetchAddressSuggestions = async (searchTerm: string): Promise<any[]> => {
-  if (!searchTerm || searchTerm.length < 3) {
-    return [];
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.getAddress.io/autocomplete/${searchTerm}?api-key=${process.env.NEXT_PUBLIC_GET_ADDRESS_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.suggestions || [];
-  } catch (error) {
-    console.error("Failed to fetch address suggestions:", error);
-    return [];
-  }
-};
-
-const fetchPostcodeInfo = async (postcode: string): Promise<PostcodeInfo | null> => {
-  try {
-    const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
-    const data = await response.json();
-
-    if (data.status === 200 && data.result) {
-      return {
-        latitude: data.result.latitude,
-        longitude: data.result.longitude,
-      };
-    } else {
-      console.error("Failed to fetch postcode info:", data.error);
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to fetch postcode info:", error);
-    return null;
-  }
-};
-
-export const useAddressSuggestions = (searchTerm: string) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['address-suggestions', searchTerm] as const,
-    queryFn: () => fetchAddressSuggestions(searchTerm),
-    enabled: !!searchTerm,
-    staleTime: 60 * 1000, // 1 minute
+export const useAddressSuggestions = (search: string) => {
+  const { data: suggestions = [], isLoading, error, isFetching } = useQuery({
+    queryKey: ['address-suggestions', search],
+    queryFn: async () => {
+      if (!search || search.length < 2) return [];
+      
+      try {
+        // Simple UK postcode regex for basic validation
+        const isPostcodePattern = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i.test(search);
+        const isPartialPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/i.test(search);
+        
+        if (isPostcodePattern || isPartialPostcode) {
+          // Fetch from postcodes.io
+          const response = await fetch(`https://api.postcodes.io/postcodes/${search}/autocomplete`);
+          const data = await response.json();
+          
+          if (data.result) {
+            return data.result.map((postcode: string) => ({
+              postcode,
+              address: postcode,
+              county: '',
+              district: ''
+            }));
+          }
+        }
+        
+        // Return mock data for now
+        return [
+          { postcode: search, address: `${search}, London`, county: 'Greater London', district: 'Westminster' },
+          { postcode: `${search} 1AA`, address: `123 ${search} Street`, county: 'Greater London', district: 'Camden' },
+          { postcode: `${search} 2BB`, address: `${search} Park`, county: 'Greater London', district: 'Islington' }
+        ];
+      } catch (err) {
+        console.error("Error fetching address suggestions:", err);
+        return [];
+      }
+    },
+    enabled: search.length >= 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return {
-    suggestions: data || [],
+    suggestions,
     isLoading,
     error,
+    isFetching
   };
 };

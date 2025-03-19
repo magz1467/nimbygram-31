@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Application } from "@/types/planning";
 import { isWithinNextSevenDays } from "@/utils/dateUtils";
@@ -9,6 +10,8 @@ interface ApplicationDetailsProps {
 export const ApplicationDetails = ({ application }: ApplicationDetailsProps) => {
   if (!application) return null;
 
+  // Using nullish coalescing to handle undefined properties
+  const submissionDate = application.submittedDate || application.received_date || application.received || '';
   const isConsultationEndingSoon = isWithinNextSevenDays(application.consultationEnd);
 
   return (
@@ -25,7 +28,7 @@ export const ApplicationDetails = ({ application }: ApplicationDetailsProps) => 
           <dd>{application.applicant}</dd>
           
           <dt className="text-gray-600">Submission Date:</dt>
-          <dd>{application.submissionDate}</dd>
+          <dd>{submissionDate}</dd>
           
           <dt className="text-gray-600">Ward:</dt>
           <dd>{application.ward}</dd>

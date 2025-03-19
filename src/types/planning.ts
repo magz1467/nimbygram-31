@@ -35,6 +35,13 @@ export interface Application {
   centroid?: any;
   received?: string | null;
   decision?: string | null; // Added to fix timeline references
+  // Add any missing fields that are needed
+  impacted_services?: {
+    [key: string]: {
+      impact: 'positive' | 'negative' | 'neutral';
+      details: string;
+    };
+  };
 }
 
 export interface Comment {

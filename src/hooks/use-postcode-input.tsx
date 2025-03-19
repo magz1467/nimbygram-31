@@ -1,33 +1,57 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAddressSuggestions } from "./use-address-suggestions";
 
-export const usePostcodeInput = () => {
-  const [postcode, setPostcode] = useState("");
+interface UsePostcodeInputProps {
+  onSelect: (postcode: string, isLocationName?: boolean) => void;
+  initialValue?: string;
+}
+
+export const usePostcodeInput = ({ onSelect, initialValue = "" }: UsePostcodeInputProps = {}) => {
+  const [search, setSearch] = useState(initialValue);
+  const [open, setOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const commandRef = useRef<HTMLDivElement>(null);
   
   // Use the updated hook with proper parameters
-  const { suggestions, isLoading, error } = useAddressSuggestions(postcode);
+  const { suggestions, isLoading, error, isFetching } = useAddressSuggestions(search);
 
   const handleInputChange = useCallback((value: string) => {
-    setPostcode(value);
+    setSearch(value);
     setSelectedSuggestion(null);
+    setOpen(value.length >= 2);
   }, []);
 
-  const handleSelectSuggestion = useCallback((suggestion: string) => {
-    setPostcode(suggestion);
+  const handleSelect = useCallback((suggestion: string, isLocationName?: boolean) => {
+    setSearch(suggestion);
     setSelectedSuggestion(suggestion);
-  }, []);
+    setOpen(false);
+    onSelect(suggestion, isLocationName);
+  }, [onSelect]);
+
+  const handleSearchClick = useCallback(() => {
+    if (search.length >= 2) {
+      onSelect(search);
+      setOpen(false);
+    }
+  }, [search, onSelect]);
 
   return {
-    postcode,
-    setPostcode: handleInputChange,
+    postcode: search,
+    search,
+    open,
+    inputRef,
+    commandRef,
     suggestions,
     isLoading,
     error: !!error,
-    isFetching: isLoading,
+    isFetching,
     isError: !!error,
     selectedSuggestion,
-    handleSelectSuggestion,
+    handleSelect,
+    handleSearchClick,
+    handleInputChange,
+    setPostcode: handleInputChange
   };
 };
