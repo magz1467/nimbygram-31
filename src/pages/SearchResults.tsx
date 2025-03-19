@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { SearchView } from "@/components/search/results/SearchView";
@@ -21,8 +22,8 @@ const SearchResultsPage = () => {
   console.log(`[SearchResultsPage][${env}] 📋 Search params:`, Object.fromEntries(searchParams.entries()));
   console.log(`[SearchResultsPage][${env}] 📋 Location state:`, location.state);
 
-  // Get search parameters from URL
-  const searchTerm = searchParams.get('search') || location.state?.searchTerm;
+  // Get search parameters from URL (updated to handle both formats)
+  const searchTerm = searchParams.get('search') || searchParams.get('postcode') || location.state?.searchTerm;
   const searchType = (searchParams.get('searchType') || location.state?.searchType || 'location') as 'postcode' | 'location';
   const timestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp')!) : Date.now();
   const isLocationName = searchParams.get('isLocationName') === 'true' || location.state?.isLocationName || false;
@@ -121,7 +122,7 @@ const SearchResultsPage = () => {
     console.log(`[SearchResultsPage][${env}] 📍 Postcode/location selected from NoSearchStateView: ${postcode}, isLocationName=${isLocationName}`);
     
     const newTimestamp = Date.now();
-    // Use URL parameters AND state to ensure the search works
+    // Updated: Use URL parameters AND state to ensure the search works consistently
     navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=${isLocationName ? 'location' : 'postcode'}&isLocationName=${isLocationName}&timestamp=${newTimestamp}`, {
       replace: true,
       state: {

@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { List } from "lucide-react";
-import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterBar } from "../FilterBar";
@@ -29,17 +28,19 @@ export const MapHeader = ({
   applications = []
 }: MapHeaderProps) => {
   const [searchParams] = useSearchParams();
-  const initialPostcode = searchParams.get('postcode') || '';
+  const initialSearch = searchParams.get('search') || searchParams.get('postcode') || '';
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
 
   const handleListViewClick = () => {
-    // Navigate back to search results with the current postcode and state
-    if (initialPostcode) {
-      navigate(`/search-results?postcode=${encodeURIComponent(initialPostcode.trim())}`, {
+    // Navigate back to search results with the current parameters and state
+    if (initialSearch) {
+      // Use the same search parameter format as Header.tsx
+      navigate(`/search-results?search=${encodeURIComponent(initialSearch.trim())}&timestamp=${Date.now()}`, {
         state: {
           ...location.state, // Preserve other state
+          searchTerm: initialSearch.trim(),
           applications: applications, // Pass the current applications
           fromMap: true // Mark as coming from map
         }
