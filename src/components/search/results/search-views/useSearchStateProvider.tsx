@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLoadingState } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
@@ -98,14 +99,18 @@ export function useSearchStateProvider(initialSearch?: {
     } else if (coordsError) {
       console.error('[useSearchStateProvider] Coordinates error:', coordsError);
       performanceTracker.mark('coordinatesError');
-      performanceTracker.addMetadata('coordinatesError', coordsError.message);
+      performanceTracker.addMetadata('coordinatesError', coordsError instanceof Error ? coordsError.message : String(coordsError));
       
       handleError(coordsError, {
         performanceData: performanceTracker.getReport()
       });
       
-      setError(coordsError);
-      loadingState.setError(coordsError);
+      if (coordsError instanceof Error) {
+        setError(coordsError);
+      } else {
+        setError(new Error(String(coordsError)));
+      }
+      loadingState.setError(coordsError instanceof Error ? coordsError : new Error(String(coordsError)));
     }
   }, [coordinates, postcode, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
   
@@ -166,16 +171,20 @@ export function useSearchStateProvider(initialSearch?: {
     if (searchError && !error) {
       console.error('[useSearchStateProvider] Search error:', searchError);
       performanceTracker.mark('searchError');
-      performanceTracker.addMetadata('searchError', searchError.message);
+      performanceTracker.addMetadata('searchError', searchError instanceof Error ? searchError.message : String(searchError));
       
       handleError(searchError, {
         performanceData: performanceTracker.getReport()
       });
       
-      setError(searchError);
-      loadingState.setError(searchError);
+      if (searchError instanceof Error) {
+        setError(searchError);
+      } else {
+        setError(new Error(String(searchError)));
+      }
+      loadingState.setError(searchError instanceof Error ? searchError : new Error(String(searchError)));
     }
-  }, [searchError]);
+  }, [searchError, error]);
   
   useEffect(() => {
     if (applications.length > 0 && !isLoadingResults) {

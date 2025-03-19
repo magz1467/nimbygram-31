@@ -23,7 +23,7 @@ export const useAddressSuggestions = ({ input }: UseAddressSuggestionsProps) => 
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
-  });
+  } as any);
 
   return {
     suggestions,

@@ -9,41 +9,52 @@ interface FeatureItem {
 }
 
 interface PricingTierProps {
-  name: string;
+  title: string;
   price: string;
-  features: FeatureItem[];
-  ctaText?: string;
+  period?: string;
+  description: string;
+  features: string[];
+  buttonText: string;
+  buttonVariant?: "default" | "outline";
+  highlighted?: boolean;
 }
 
 export const PricingTier = ({ 
-  name, 
-  price, 
-  features, 
-  ctaText = "Get Started" 
+  title, 
+  price,
+  period = "",
+  description,
+  features,
+  buttonText,
+  buttonVariant = "default",
+  highlighted = false
 }: PricingTierProps) => {
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={`relative overflow-hidden ${highlighted ? 'border-primary shadow-lg' : ''}`}>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">{name}</CardTitle>
-        <p className="text-3xl font-bold mt-2">{price}</p>
+        <CardTitle className="text-2xl">{title}</CardTitle>
+        <p className="text-3xl font-bold mt-2">
+          {price}
+          <span className="text-sm font-normal text-gray-500">{period}</span>
+        </p>
+        <p className="text-gray-600 mt-2">{description}</p>
       </CardHeader>
       <CardContent>
         <ul className="space-y-4">
           {features.map((feature, index) => (
             <li key={index} className="flex items-center gap-2">
-              {feature.included ? (
-                <Check className="h-5 w-5 text-primary" />
-              ) : (
-                <X className="h-5 w-5 text-gray-300" />
-              )}
-              <span className={feature.included ? "" : "text-gray-500"}>
-                {feature.name}
-              </span>
+              <Check className="h-5 w-5 text-primary" />
+              <span>{feature}</span>
             </li>
           ))}
         </ul>
-        <Button className="w-full mt-6">{ctaText}</Button>
+        <Button 
+          className={`w-full mt-6 ${highlighted ? 'bg-primary hover:bg-primary/90' : ''}`} 
+          variant={buttonVariant}
+        >
+          {buttonText}
+        </Button>
       </CardContent>
     </Card>
   );
-};
+}
