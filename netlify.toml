@@ -1,6 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "mkdir -p src/lib && echo 'import { type ClassValue, clsx } from \"clsx\"; import { twMerge } from \"tailwind-merge\"; export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }' > src/lib/utils.ts && npm cache clean --force && rm -rf node_modules && npm install --legacy-peer-deps --force && npm list class-variance-authority && npm run build || (cat src/components/ui/toast.tsx && exit 1)"
+  command = "mkdir -p src/lib && echo 'import { type ClassValue, clsx } from \"clsx\"; import { twMerge } from \"tailwind-merge\"; export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }' > src/lib/utils.ts && npm install --legacy-peer-deps && npm run build"
   publish = "dist"
   base = "/"
 
