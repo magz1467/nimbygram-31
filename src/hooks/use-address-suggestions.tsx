@@ -18,7 +18,7 @@ export const useAddressSuggestions = ({ input }: UseAddressSuggestionsProps) => 
     isError,
     isSuccess
   } = useQuery({
-    queryKey: ["address-suggestions", debouncedSearch],
+    queryKey: ["address-suggestions", debouncedSearch] as const,
     queryFn: () => fetchAddressSuggestions(debouncedSearch),
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
