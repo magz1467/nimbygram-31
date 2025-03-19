@@ -7,6 +7,7 @@ import DeveloperServices from './pages/DeveloperServices'
 import SearchResultsPage from './pages/SearchResults'
 import MapViewPage from './pages/MapView'
 import ApplicationsDashboardMapPage from './pages/applications/dashboard/map'
+import Auth from './pages/Auth'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/search-results" element={<SearchResultsPage />} />
         <Route path="/map" element={<MapViewPage />} />
         <Route path="/applications/dashboard/map" element={<ApplicationsDashboardMapPage />} />
+        <Route path="/auth" element={<Auth />} />
       </Routes>
     </Router>
   )
