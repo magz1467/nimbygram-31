@@ -5,7 +5,7 @@ import { PostcodeSuggestion } from "@/types/address-suggestions";
 import { useAddressSuggestions } from "@/hooks/use-address-suggestions";
 
 interface UsePostcodeInputProps {
-  onSelect: (value: string) => void;
+  onSelect: (value: string, isLocationName?: boolean) => void;
   initialValue?: string;
 }
 
@@ -52,17 +52,18 @@ export const usePostcodeInput = ({ onSelect, initialValue = "" }: UsePostcodeInp
   };
 
   // Handle selecting a suggestion
-  const handleSelect = (value: string) => {
+  const handleSelect = (value: string, isLocationName = false) => {
     setSearch(value);
     setOpen(false);
-    onSelect(value);
+    onSelect(value, isLocationName);
   };
 
   // Handle clicking the search button
   const handleSearchClick = () => {
     if (search && search.length > 0) {
       setOpen(false);
-      onSelect(search);
+      // For direct searches, we can't determine if it's a location name, so pass false
+      onSelect(search, false);
     }
   };
 

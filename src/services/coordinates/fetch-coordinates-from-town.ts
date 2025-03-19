@@ -14,7 +14,7 @@ interface TownCoordinatesResult {
 export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCoordinatesResult> => {
   console.log(`🔍 Fetching coordinates for town: ${townName}`);
   
-  // Handle major cities directly to match preview behavior
+  // Handle major cities with direct coordinates but DON'T hardcode postcodes
   const lowerTownName = townName.toLowerCase();
   
   // Liverpool special case
@@ -22,7 +22,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     console.log('🔍 Using direct coordinates for Liverpool to match preview');
     return {
       coordinates: [53.4084, -2.9916], // Liverpool city center
-      postcode: "L1" // Central Liverpool outcode
+      postcode: null // Don't force a postcode, use coordinates for search
     };
   }
   
@@ -31,7 +31,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     console.log('🔍 Using direct coordinates for Manchester to match preview');
     return {
       coordinates: [53.4808, -2.2426], // Manchester city center
-      postcode: "M1" // Central Manchester outcode
+      postcode: null // Don't force a postcode, use coordinates for search
     };
   }
   
@@ -40,7 +40,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     console.log('🔍 Using direct coordinates for London to match preview');
     return {
       coordinates: [51.5074, -0.1278], // London city center
-      postcode: "W1" // Central London outcode
+      postcode: null // Don't force a postcode, use coordinates for search
     };
   }
   
@@ -49,7 +49,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     console.log('🔍 Using direct coordinates for Birmingham to match preview');
     return {
       coordinates: [52.4862, -1.8904], // Birmingham city center
-      postcode: "B1" // Central Birmingham outcode
+      postcode: null // Don't force a postcode, use coordinates for search
     };
   }
   
@@ -58,7 +58,7 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     console.log('🔍 Using direct coordinates for Leeds to match preview');
     return {
       coordinates: [53.8008, -1.5491], // Leeds city center
-      postcode: "LS1" // Central Leeds outcode
+      postcode: null // Don't force a postcode, use coordinates for search
     };
   }
   
@@ -78,10 +78,10 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
       
       const result = await fetchCoordinatesByLocationName(townName);
       
-      // Ensure we conform to the TownCoordinatesResult interface
+      // Return coordinates always, postcode only if valid
       return {
         coordinates: result.coordinates,
-        postcode: result.postcode || null // Ensure we always return a string or null
+        postcode: result.postcode
       };
     };
     
@@ -104,31 +104,31 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
       console.log('🔄 Using Liverpool fallback after error');
       return {
         coordinates: [53.4084, -2.9916], // Liverpool city center
-        postcode: "L1" // Central Liverpool outcode
+        postcode: null
       };
     } else if (lowerTownName.includes('manchester')) {
       console.log('🔄 Using Manchester fallback after error');
       return {
         coordinates: [53.4808, -2.2426], // Manchester city center
-        postcode: "M1" // Central Manchester outcode
+        postcode: null
       };
     } else if (lowerTownName.includes('london')) {
       console.log('🔄 Using London fallback after error');
       return {
         coordinates: [51.5074, -0.1278], // London city center
-        postcode: "W1" // Central London outcode
+        postcode: null
       };
     } else if (lowerTownName.includes('birmingham')) {
       console.log('🔄 Using Birmingham fallback after error');
       return {
         coordinates: [52.4862, -1.8904], // Birmingham city center
-        postcode: "B1" // Central Birmingham outcode
+        postcode: null
       };
     } else if (lowerTownName.includes('leeds')) {
       console.log('🔄 Using Leeds fallback after error');
       return {
         coordinates: [53.8008, -1.5491], // Leeds city center
-        postcode: "LS1" // Central Leeds outcode
+        postcode: null
       };
     }
     

@@ -8,7 +8,7 @@ import { SearchButton } from "@/components/search/SearchButton";
 import { getCurrentHostname, getEnvironmentName } from "@/utils/environment";
 
 interface SearchBarProps {
-  onSearch?: (term: string) => void;
+  onSearch?: (term: string, isLocationName?: boolean) => void;
   variant?: "primary" | "compact";
   className?: string;
 }
@@ -17,6 +17,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
   const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [isLocationName, setIsLocationName] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,7 +27,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
   const handleSubmit = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
-    console.log(`[SearchBar][${env}][${hostname}] 🔍 Search submitted: "${searchTerm}"`);
+    console.log(`[SearchBar][${env}][${hostname}] 🔍 Search submitted: "${searchTerm}", isLocationName: ${isLocationName}`);
     
     if (!searchTerm.trim() || isSubmitting) {
       console.log(`[SearchBar][${env}] ⚠️ Invalid search term or already submitting`);
@@ -50,18 +51,18 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       // Call onSearch callback if provided
       if (onSearch) {
         console.log(`[SearchBar][${env}] Calling onSearch callback`);
-        onSearch(searchTerm.trim());
+        onSearch(searchTerm.trim(), isLocationName);
       }
 
-      // Detect if input is likely a UK postcode
+      // Detect if input is likely a UK postcode or if it's explicitly marked as a location
       const isLikelyPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(searchTerm.trim());
-      const searchType = isLikelyPostcode ? 'postcode' : 'location';
+      const searchType = isLikelyPostcode ? 'postcode' : isLocationName ? 'location' : 'location';
       
       console.log(`[SearchBar][${env}] Navigating to search results with: "${searchTerm.trim()}", type: ${searchType}`);
       
       // Create a unique URL that won't cause rerendering issues
       const timestamp = Date.now();
-      const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${timestamp}`;
+      const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${timestamp}&isLocationName=${isLocationName}`;
       console.log(`[SearchBar][${env}] Navigation URL: ${url}`);
       
       // Use replace to avoid history stacking, and pass minimal state
@@ -70,6 +71,7 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
         state: {
           searchTerm: searchTerm.trim(),
           searchType,
+          isLocationName,
           timestamp
         }
       });
@@ -90,12 +92,17 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
     }
   };
 
+  const handlePostcodeSelect = (value: string, locationFlag = false) => {
+    setSearchTerm(value);
+    setIsLocationName(locationFlag);
+  };
+
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <form onSubmit={handleSubmit} className="w-full">
         <div className={variant === "compact" ? "flex items-center gap-2" : "mb-4"}>
           <PostcodeSearch
-            onSelect={(value) => setSearchTerm(value)}
+            onSelect={handlePostcodeSelect}
             placeholder="Search by postcode, street name or area"
             className="flex-1"
             initialValue={searchTerm}

@@ -13,7 +13,11 @@ import {
 } from './coordinates/fetch-strategies';
 import { handleCoordinateError } from './coordinates/error-handler';
 
-export const useCoordinates = (searchTerm: string | undefined) => {
+interface CoordinatesOptions {
+  isLocationName?: boolean;
+}
+
+export const useCoordinates = (searchTerm: string | undefined, options: CoordinatesOptions = {}) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [postcode, setPostcode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,11 +40,12 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       setPostcode(null);
       
       console.log('🔍 useCoordinates: Fetching coordinates for:', searchTerm);
+      console.log('🔍 useCoordinates: Is location name?', options.isLocationName);
       
       try {
-        // Determine what type of location string we have
-        const locationType = detectLocationType(searchTerm);
-        console.log(`🔍 useCoordinates: Detected location type: ${locationType}`);
+        // For explicitly marked location names, prefer direct location name search
+        let locationType = options.isLocationName ? 'LOCATION_NAME' : detectLocationType(searchTerm);
+        console.log(`🔍 useCoordinates: Using location type: ${locationType}`);
         
         // Callbacks object to pass to strategy functions
         const callbacks = {
@@ -107,7 +112,7 @@ export const useCoordinates = (searchTerm: string | undefined) => {
       console.log('🔇 useCoordinates: Cleanup');
       isMounted = false;
     };
-  }, [searchTerm, toast]);
+  }, [searchTerm, options.isLocationName, toast]);
 
   return { coordinates, postcode, isLoading, error };
 };

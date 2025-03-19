@@ -12,7 +12,7 @@ interface SuggestionsListProps {
   isLoading: boolean;
   isFetching: boolean;
   error: boolean | null; // Changed from Error to boolean
-  onSelect: (value: string) => void;
+  onSelect: (value: string, isLocationName?: boolean) => void;
   commandRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -58,7 +58,10 @@ export const SuggestionsList = ({
             <CommandItem
               key={suggestion.postcode + "-" + Math.random().toString(36).substr(2, 9)}
               value={suggestion.address || suggestion.postcode}
-              onSelect={() => onSelect(suggestion.address || suggestion.postcode || '')}
+              onSelect={() => onSelect(
+                suggestion.address || suggestion.postcode || '', 
+                !!suggestion.isLocationName
+              )}
               className="flex cursor-pointer items-center p-2 text-sm hover:bg-gray-100"
             >
               <MapPin className="h-4 w-4 mr-2 text-gray-500" />

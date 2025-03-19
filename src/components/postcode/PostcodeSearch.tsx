@@ -7,7 +7,7 @@ import { usePostcodeInput } from "@/hooks/use-postcode-input";
 import { SuggestionsList } from "./SuggestionsList";
 
 interface PostcodeSearchProps {
-  onSelect: (postcode: string) => void;
+  onSelect: (postcode: string, isLocationName?: boolean) => void;
   placeholder?: string;
   className?: string;
   initialValue?: string;

@@ -23,7 +23,8 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
   
   // When search parameters change, clear flags
   useEffect(() => {
-    console.log('🔍 Search parameters changed:', searchParam);
+    console.log('🔍 Search parameters changed:', 
+      Array.isArray(searchParam) ? `coordinates: [${searchParam[0]}, ${searchParam[1]}]` : searchParam);
     hasShownErrorToast.current = false;
     hasPartialResults.current = false;
     isSearchInProgress.current = false;
@@ -32,6 +33,9 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
     if (Array.isArray(searchParam) && searchParam.length === 2) {
       console.log('🔍 Storing effective coordinates:', searchParam);
       effectiveCoordinatesRef.current = searchParam;
+    } else {
+      // Reset effective coordinates when using a different search parameter
+      effectiveCoordinatesRef.current = null;
     }
   }, [searchParam, searchRadius, JSON.stringify(filters)]);
   
@@ -100,7 +104,9 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
       if (!searchParam) return [];
       
       try {
-        console.log('Searching with param:', searchParam, 'radius:', searchRadius);
+        console.log('Searching with param:', 
+          Array.isArray(searchParam) ? `coordinates: [${searchParam[0]}, ${searchParam[1]}]` : searchParam, 
+          'radius:', searchRadius);
         isSearchInProgress.current = true;
         
         let lat: number;
@@ -137,15 +143,17 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
             throw postcodeError;
           }
         } else {
-          // If searchParam is already coordinates, use it directly - NO VALIDATION that might override
+          // If searchParam is already coordinates, use it directly
           [lat, lng] = searchParam;
           
           // Store these coordinates for reference
           effectiveCoordinatesRef.current = searchParam;
+          
+          console.log('Using direct coordinates for search:', lat, lng);
         }
         
         // First try spatial search (with PostGIS)
-        console.log('Attempting spatial search first...');
+        console.log('Attempting spatial search first with coordinates:', lat, lng);
         const spatialResults = await performSpatialSearch(lat, lng, searchRadius, filters);
         
         // If spatial search returns results or empty array (not null), use those results
@@ -161,7 +169,7 @@ export const usePlanningSearch = (searchParam: [number, number] | string | null)
         }
         
         // If spatial search returns null (indicating failure/unavailability), use fallback
-        console.log('Spatial search unavailable, using fallback search');
+        console.log('Spatial search unavailable, using fallback search with coordinates:', lat, lng);
         const fallbackResults = await performFallbackSearch(lat, lng, searchRadius, filters);
         console.log('Got fallback results:', fallbackResults.length);
         

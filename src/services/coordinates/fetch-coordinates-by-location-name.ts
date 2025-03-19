@@ -38,6 +38,8 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       const fallbackCoords = useFallbackCoordinates(locationName);
       
       if (fallbackCoords) {
+        // Important: Don't hardcode a postcode here, return null instead
+        // This allows the system to use the coordinates directly
         return {
           coordinates: fallbackCoords,
           postcode: null
@@ -45,17 +47,33 @@ export const fetchCoordinatesByLocationName = async (locationName: string): Prom
       }
       
       // If useFallbackCoordinates fails, use the generic fallback
-      return getFallbackForLocation(locationName);
+      const fallbackResult = getFallbackForLocation(locationName);
+      
+      // Don't include a hardcoded postcode in the fallback
+      return {
+        coordinates: fallbackResult.coordinates,
+        postcode: null 
+      };
     }
     
     // Perform the geocoding
-    return await performGeocoding(geocoderInit.geocoder, locationName);
+    const geocodingResult = await performGeocoding(geocoderInit.geocoder, locationName);
+    
+    // Return the coordinates but don't force a postcode if we don't have one
+    return {
+      coordinates: geocodingResult.coordinates,
+      postcode: geocodingResult.postcode
+    };
     
   } catch (error) {
     // Log the error
     logGeocodeError(error);
     
-    // Return fallback coordinates
-    return getFallbackForLocation(locationName);
+    // Return fallback coordinates without forcing a postcode
+    const fallback = getFallbackForLocation(locationName);
+    return {
+      coordinates: fallback.coordinates,
+      postcode: null // Don't force a postcode
+    };
   }
 };

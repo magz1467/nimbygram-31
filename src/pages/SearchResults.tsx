@@ -25,14 +25,16 @@ const SearchResultsPage = () => {
   const searchTerm = searchParams.get('search') || location.state?.searchTerm;
   const searchType = (searchParams.get('searchType') || location.state?.searchType || 'location') as 'postcode' | 'location';
   const timestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp')!) : Date.now();
+  const isLocationName = searchParams.get('isLocationName') === 'true' || location.state?.isLocationName || false;
   
-  console.log(`[SearchResultsPage][${env}] 📋 Extracted search params: term="${searchTerm}", type=${searchType}, timestamp=${timestamp}`);
+  console.log(`[SearchResultsPage][${env}] 📋 Extracted search params: term="${searchTerm}", type=${searchType}, isLocationName=${isLocationName}, timestamp=${timestamp}`);
   
   // Construct a search state object from URL parameters
   const searchState = searchTerm ? {
     searchType,
     searchTerm,
     displayTerm: searchTerm,
+    isLocationName,
     timestamp
   } : location.state;
 
@@ -115,16 +117,17 @@ const SearchResultsPage = () => {
     }
   }, [searchTerm, searchType, timestamp, env]);
 
-  const handlePostcodeSelect = useCallback((postcode: string) => {
-    console.log(`[SearchResultsPage][${env}] 📍 Postcode selected from NoSearchStateView: ${postcode}`);
+  const handlePostcodeSelect = useCallback((postcode: string, isLocationName = false) => {
+    console.log(`[SearchResultsPage][${env}] 📍 Postcode/location selected from NoSearchStateView: ${postcode}, isLocationName=${isLocationName}`);
     
     const newTimestamp = Date.now();
     // Use URL parameters AND state to ensure the search works
-    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=postcode&timestamp=${newTimestamp}`, {
+    navigate(`/search-results?search=${encodeURIComponent(postcode)}&searchType=${isLocationName ? 'location' : 'postcode'}&isLocationName=${isLocationName}&timestamp=${newTimestamp}`, {
       replace: true,
       state: {
         searchTerm: postcode,
-        searchType: 'postcode',
+        searchType: isLocationName ? 'location' : 'postcode',
+        isLocationName,
         timestamp: newTimestamp
       }
     });

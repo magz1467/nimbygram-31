@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLoadingState } from '@/hooks/use-loading-state';
 import { useCoordinates } from '@/hooks/use-coordinates';
@@ -12,6 +11,7 @@ export function useSearchStateProvider(initialSearch?: {
   searchTerm: string;
   displayTerm?: string;
   timestamp?: number;
+  isLocationName?: boolean;
 }) {
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -22,7 +22,12 @@ export function useSearchStateProvider(initialSearch?: {
   
   // Debug info
   console.log('[useSearchStateProvider] Initializing with search:', 
-    initialSearch ? { term: initialSearch.searchTerm, timestamp: initialSearch.timestamp } : 'none');
+    initialSearch ? { 
+      term: initialSearch.searchTerm, 
+      type: initialSearch.searchType,
+      isLocationName: initialSearch.isLocationName,
+      timestamp: initialSearch.timestamp 
+    } : 'none');
   
   const performanceTracker = useMemo(() => 
     getSearchPerformanceTracker(`search-${initialSearch?.timestamp || Date.now()}`),
@@ -59,7 +64,10 @@ export function useSearchStateProvider(initialSearch?: {
     postcode,
     isLoading: isLoadingCoords, 
     error: coordsError 
-  } = useCoordinates(initialSearch?.searchTerm || '');
+  } = useCoordinates(initialSearch?.searchTerm || '', {
+    // Pass the isLocationName flag to useCoordinates
+    isLocationName: initialSearch?.isLocationName
+  });
   
   useEffect(() => {
     // Only start searching if we have a search term and haven't already initiated this search
@@ -101,20 +109,30 @@ export function useSearchStateProvider(initialSearch?: {
     }
   }, [coordinates, postcode, isLoadingCoords, coordsError, initialSearch?.searchTerm]);
   
-  // Use postcode for search if available, otherwise fallback to coordinates
+  // Use coordinates directly for location name searches, and only use postcode for postcode searches
   // Create a properly typed search parameter
   const searchParam = useMemo(() => {
-    // If we have a postcode, use that as a string
-    if (postcode) {
-      return postcode;
-    }
-    // If we have coordinates, use those
-    if (coordinates) {
+    // For location name searches, always prioritize coordinates
+    if (initialSearch?.isLocationName && coordinates) {
+      console.log('[useSearchStateProvider] Using coordinates for location search:', coordinates);
       return coordinates;
     }
+    
+    // For postcode searches, use the postcode if available
+    if (initialSearch?.searchType === 'postcode' && postcode) {
+      console.log('[useSearchStateProvider] Using postcode for search:', postcode);
+      return postcode;
+    }
+    
+    // In any other case, use coordinates if available
+    if (coordinates) {
+      console.log('[useSearchStateProvider] Using coordinates as fallback:', coordinates);
+      return coordinates;
+    }
+    
     // Otherwise return null
     return null;
-  }, [postcode, coordinates]);
+  }, [postcode, coordinates, initialSearch?.searchType, initialSearch?.isLocationName]);
   
   const { 
     applications, 
