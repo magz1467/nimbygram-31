@@ -1,6 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "npm install --legacy-peer-deps --force && npm run build"
+  command = "npm install --legacy-peer-deps --force && npm run build || (cat npm-debug.log && exit 1)"
   publish = "dist"
   base = "/"
 
