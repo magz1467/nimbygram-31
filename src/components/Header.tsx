@@ -22,7 +22,8 @@ export const Header = () => {
   const handlePostcodeSelect = (selected: string, isLocationName = false) => {
     setPostcode(selected);
     if (selected) {
-      navigate(`/search-results?postcode=${encodeURIComponent(selected)}`);
+      // Make sure to include isLocationName as a URL parameter for proper search handling
+      navigate(`/search-results?search=${encodeURIComponent(selected)}&isLocationName=${isLocationName}&timestamp=${Date.now()}`);
     }
   };
 
