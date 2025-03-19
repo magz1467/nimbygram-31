@@ -62,8 +62,17 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
     };
   }
   
+  // Camden Town special case
+  if (lowerTownName.includes('camden')) {
+    console.log('🔍 Using direct coordinates for Camden Town');
+    return {
+      coordinates: [51.5390, -0.1426], // Camden Town center
+      postcode: null // Don't force a postcode, use coordinates for search
+    };
+  }
+  
   // Determine if this is a large city that might need a longer timeout
-  const isLargeCity = /\b(london|manchester|birmingham|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast)\b/i.test(townName);
+  const isLargeCity = /\b(london|manchester|birmingham|leeds|glasgow|edinburgh|newcastle|bristol|cardiff|belfast|camden)\b/i.test(townName);
   
   // Use longer timeout to match preview behavior
   const timeoutMs = isLargeCity ? 60000 : 45000; // 60 seconds for large cities, 45 for others
@@ -128,6 +137,12 @@ export const fetchCoordinatesFromTown = async (townName: string): Promise<TownCo
       console.log('🔄 Using Leeds fallback after error');
       return {
         coordinates: [53.8008, -1.5491], // Leeds city center
+        postcode: null
+      };
+    } else if (lowerTownName.includes('camden')) {
+      console.log('🔄 Using Camden Town fallback after error');
+      return {
+        coordinates: [51.5390, -0.1426], // Camden Town center
         postcode: null
       };
     }
