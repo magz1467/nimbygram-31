@@ -3,11 +3,14 @@ import { useState, useCallback, useRef } from "react";
 import { useAddressSuggestions } from "./use-address-suggestions";
 
 interface UsePostcodeInputProps {
-  onSelect: (postcode: string, isLocationName?: boolean) => void;
+  onSelect?: (postcode: string, isLocationName?: boolean) => void;
   initialValue?: string;
 }
 
-export const usePostcodeInput = ({ onSelect, initialValue = "" }: UsePostcodeInputProps = {}) => {
+export const usePostcodeInput = ({ 
+  onSelect = () => {}, 
+  initialValue = "" 
+}: UsePostcodeInputProps = {}) => {
   const [search, setSearch] = useState(initialValue);
   const [open, setOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
