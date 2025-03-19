@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ContactSection } from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import { Building, ChartBarIncreasing, Megaphone, Newspaper, User } from "lucide-react";
+import { Building, BarChart2, Megaphone, Newspaper, User } from "lucide-react";
 
 const Press = () => {
   useEffect(() => {
@@ -43,7 +43,7 @@ const Press = () => {
           </div>
 
           <div className="p-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <ChartBarIncreasing className="w-10 h-10 text-primary mb-4" />
+            <BarChart2 className="w-10 h-10 text-primary mb-4" />
             <h3 className="text-xl font-semibold mb-3">Measurable Impact</h3>
             <p className="text-gray-600">
               Driving positive change in communities with data-driven insights 

@@ -5,8 +5,8 @@
   base = "/"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NODE_VERSION = "18.17.0"
+  NPM_VERSION = "9.6.7"
   # Ensure we're using npm, not bun
   USE_NPM_INSTALL = "true"
   # Add cache settings for faster builds
