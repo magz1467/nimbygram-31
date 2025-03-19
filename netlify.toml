@@ -1,6 +1,6 @@
 # This file is overriding the UI settings
 [build]
-  command = "mkdir -p src/lib && echo 'import { type ClassValue, clsx } from \"clsx\"; import { twMerge } from \"tailwind-merge\"; export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }' > src/lib/utils.ts && npm install --legacy-peer-deps --force && npm run build || (cat src/components/ui/alert-dialog.tsx && exit 1)"
+  command = "mkdir -p src/lib && echo 'import { type ClassValue, clsx } from \"clsx\"; import { twMerge } from \"tailwind-merge\"; export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }' > src/lib/utils.ts && npm cache clean --force && rm -rf node_modules && npm install --legacy-peer-deps --force && npm list class-variance-authority && npm run build || (cat src/components/ui/toast.tsx && exit 1)"
   publish = "dist"
   base = "/"
 
@@ -15,6 +15,8 @@
   NETLIFY_USE_BUN = "false"
   NPM_FLAGS = "--legacy-peer-deps --no-optional"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
+  # Force resolution of dependencies
+  ROLLUP_USE_NODE_RESOLVE = "true"
 
 # Handle SPA routing
 [[redirects]]

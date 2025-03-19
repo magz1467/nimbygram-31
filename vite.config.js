@@ -15,6 +15,24 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
     }
   },
+  optimizeDeps: {
+    include: [
+      'class-variance-authority',
+      'clsx',
+      'tailwind-merge',
+      'react-hook-form',
+      '@hookform/resolvers/zod',
+      'zod',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-toast',
+      '@supabase/supabase-js',
+      'sonner',
+      'recharts',
+      'embla-carousel-react'
+    ],
+  },
   build: {
     // Force cache invalidation with a timestamp
     rollupOptions: {
@@ -26,6 +44,9 @@ export default defineConfig({
     },
     // Ensure consistent sourcemap generation
     sourcemap: true,
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
   // Add consistent environment variable handling
   define: {
