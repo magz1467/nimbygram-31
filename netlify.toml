@@ -1,7 +1,6 @@
-
 # This file is overriding the UI settings
 [build]
-  command = "node ./build-setup.js && npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   publish = "dist"
   base = "/"
 
@@ -14,10 +13,10 @@
   NETLIFY_USE_YARN = "false"
   NETLIFY_USE_PNPM = "false"
   NETLIFY_USE_BUN = "false"
-  NPM_FLAGS = "--legacy-peer-deps --platform=linux --arch=x64"
+  NPM_FLAGS = "--legacy-peer-deps --no-optional"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
-  # Add esbuild binary path for Netlify
-  ESBUILD_BINARY_PATH = "/opt/build/repo/node_modules/@netlify/esbuild-linux-64/bin/esbuild"
+  # Remove the esbuild binary path - let Netlify handle it
+  # ESBUILD_BINARY_PATH = "/opt/build/repo/node_modules/@netlify/esbuild-linux-64/bin/esbuild"
 
 # Handle SPA routing
 [[redirects]]
@@ -40,3 +39,9 @@
 # SSL settings
 [dev]
   https = true
+
+# Add plugin configuration directly in toml file
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+  [plugins.inputs]
+    includeModules = ["sharp"]
