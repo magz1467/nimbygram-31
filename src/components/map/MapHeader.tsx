@@ -1,12 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Home, List } from "lucide-react";
+import { List } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterBar } from "../FilterBar";
 import { MapListToggle } from "./mobile/MapListToggle";
-import { PostcodeSearch } from "../PostcodeSearch";
+import { PostcodeSearch } from "../postcode/PostcodeSearch";
 
 interface MapHeaderProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -70,38 +70,31 @@ export const MapHeader = ({
   };
 
   return (
-    <header className="border-b bg-white">
-      <div className={`container mx-auto ${isMobile ? 'p-3' : 'px-4 py-3'}`}>
-        {!isMobile && (
-          <div className="flex items-center justify-between mb-3">
-            <Link to="/" className="text-2xl font-bold text-primary flex items-center gap-2">
-              <Home className="h-6 w-6" />
-              PlanningPulse
-            </Link>
-            
-            {/* Add List View button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleListViewClick}
-              className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-            >
-              <List className="h-4 w-4" />
-              List View
-            </Button>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="flex-1">
+    <div className="border-b bg-white">
+      {isMobile && (
+        <form onSubmit={handleSubmit} className="px-4 py-3">
           <PostcodeSearch
             onSelect={setPostcode}
             placeholder="Search new location"
             initialValue={postcode}
           />
         </form>
+      )}
 
-        {isMobile && (
-          <div className="flex items-center justify-between mt-3 border-t pt-2">
+      <div className={`container mx-auto ${isMobile ? 'p-3' : 'px-4 py-3'}`}>
+        <div className="flex items-center justify-between">
+          {/* Add List View button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleListViewClick}
+            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+          >
+            <List className="h-4 w-4" />
+            List View
+          </Button>
+          
+          {isMobile && (
             <div className="flex items-center gap-1">
               {onFilterChange && (
                 <FilterBar
@@ -113,21 +106,10 @@ export const MapHeader = ({
                   applications={applications}
                 />
               )}
-              
-              {/* Add List View button for mobile */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleListViewClick}
-                className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-              >
-                <List className="h-4 w-4" />
-                List
-              </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </header>
+    </div>
   );
 };

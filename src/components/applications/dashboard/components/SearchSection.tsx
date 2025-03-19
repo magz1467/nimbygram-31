@@ -1,6 +1,6 @@
 
 import { FilterBar } from "@/components/FilterBar";
-import { PostcodeSearch } from "@/components/PostcodeSearch";
+import { PostcodeSearch } from "@/components/postcode/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
 
@@ -45,12 +45,14 @@ export const SearchSection = ({
 
   return (
     <div className="bg-white border-b">
-      <div className="container mx-auto px-4 py-3">
-        <PostcodeSearch
-          onSelect={onPostcodeSelect}
-          placeholder="Search new location"
-        />
-      </div>
+      {isMobile && (
+        <div className="container mx-auto px-4 py-3">
+          <PostcodeSearch
+            onSelect={onPostcodeSelect}
+            placeholder="Search new location"
+          />
+        </div>
+      )}
 
       {onFilterChange && (
         <div className="w-full border-t">
