@@ -1,12 +1,11 @@
 
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "./header/Logo";
 import { MobileMenu } from "./header/MobileMenu";
 import { NavigationMenu } from "./header/NavigationMenu";
 import { PostcodeSearch } from "./postcode/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
   const location = useLocation();

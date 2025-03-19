@@ -3,6 +3,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { PostcodeSearch } from "@/components/postcode/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
+import { useLocation } from "react-router-dom";
 
 interface SearchSectionProps {
   searchTerm?: string;
@@ -42,6 +43,16 @@ export const SearchSection = ({
   isLoading
 }: SearchSectionProps) => {
   const isMobile = useIsMobile();
+  const location = useLocation();
+  
+  // Skip rendering the search section on pages that already have a search in the header
+  const shouldSkipSearch = ["/map", "/search-results"].some(path => 
+    location.pathname.includes(path)
+  );
+  
+  if (shouldSkipSearch) {
+    return null;
+  }
 
   return (
     <div className="bg-white border-b">

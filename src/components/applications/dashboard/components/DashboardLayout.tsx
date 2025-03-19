@@ -51,12 +51,7 @@ export const DashboardLayout = ({
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden">
-      <SearchSection 
-        onPostcodeSelect={handlePostcodeSelect}
-        applications={applications}
-        isMapView={isMapView}
-      />
-      
+      {/* Filters and sorting controls - not a header */}
       <DashboardHeader 
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
@@ -101,4 +96,4 @@ export const DashboardLayout = ({
       {children}
     </div>
   );
-};
+}
