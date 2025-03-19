@@ -1,3 +1,4 @@
+
 const Services = () => {
   return (
     <div className="bg-white py-24">
@@ -8,7 +9,7 @@ const Services = () => {
         <div className="grid md:grid-cols-3 gap-8">
           <div className="bg-background rounded-xl shadow-sm overflow-hidden flex flex-col">
             <img
-              src="/lovable-uploads/b35a2c3a-6a17-4cdf-b0ef-27bc28fb93c1.png"
+              src="/lovable-uploads/7f31740f-7092-44c6-be58-887ada6be464.png"
               alt="Local residents monitoring development"
               className="w-full h-48 object-cover"
               loading="lazy"
