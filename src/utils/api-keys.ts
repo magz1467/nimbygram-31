@@ -16,9 +16,9 @@ const CURRENT_GOOGLE_MAPS_API_KEY = 'AIzaSyCuw9EAyPuxA7XssqBSd996Mu8deQmgZYY';
  */
 export const getGoogleMapsApiKey = (): string => {
   // Check for the global override from fixApiKey.js
-  if (typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY) {
-    console.log('🔑 Using globally forced API key ending with:', window.__GOOGLE_MAPS_API_KEY.slice(-6));
-    return window.__GOOGLE_MAPS_API_KEY;
+  if (typeof window !== 'undefined' && (window as any).__GOOGLE_MAPS_API_KEY) {
+    console.log('🔑 Using globally forced API key ending with:', (window as any).__GOOGLE_MAPS_API_KEY.slice(-6));
+    return (window as any).__GOOGLE_MAPS_API_KEY;
   }
   
   // Log to help identify where the key is being retrieved
@@ -27,6 +27,16 @@ export const getGoogleMapsApiKey = (): string => {
   // Get the current hostname
   const hostname = getCurrentHostname();
   console.log('📍 Current hostname:', hostname);
+  
+  // Check if we're in a sandbox environment
+  const isSandbox = hostname === 'server' || 
+                    hostname.includes('localhost') || 
+                    hostname.includes('sandbox') ||
+                    hostname.includes('lovable');
+  
+  if (isSandbox) {
+    console.log('🏝️ Running in sandbox/development environment');
+  }
   
   // IMPORTANT: Always use the CURRENT_GOOGLE_MAPS_API_KEY for all environments
   // This ensures consistency and prevents API key mismatches
@@ -40,7 +50,7 @@ export const getGoogleMapsApiKey = (): string => {
  */
 export const diagnoseApiKey = (): { key: string, hostname: string, source: string } => {
   // Check for the global override
-  const usingGlobalKey = typeof window !== 'undefined' && window.__GOOGLE_MAPS_API_KEY;
+  const usingGlobalKey = typeof window !== 'undefined' && (window as any).__GOOGLE_MAPS_API_KEY;
   
   const key = getGoogleMapsApiKey();
   const hostname = getCurrentHostname();

@@ -28,7 +28,11 @@ export const isProdDomain = (): boolean => {
  */
 export const isDevEnvironment = (): boolean => {
   const hostname = getCurrentHostname();
-  return hostname === 'localhost' || hostname.includes('127.0.0.1');
+  return hostname === 'localhost' || 
+         hostname.includes('127.0.0.1') || 
+         hostname.includes('sandbox') || 
+         hostname.includes('lovable') ||
+         hostname === 'server';
 };
 
 /**
@@ -39,4 +43,15 @@ export const getEnvironmentName = (): string => {
   if (isProdDomain()) return 'production';
   if (isDevEnvironment()) return 'development';
   return 'unknown';
+};
+
+/**
+ * Checks if the current environment is a sandbox or preview environment
+ * @returns Boolean indicating if this is a sandbox environment
+ */
+export const isSandboxEnvironment = (): boolean => {
+  const hostname = getCurrentHostname();
+  return hostname === 'server' || 
+         hostname.includes('sandbox') || 
+         hostname.includes('lovable');
 };

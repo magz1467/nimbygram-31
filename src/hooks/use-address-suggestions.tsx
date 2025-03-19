@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PostcodeSuggestion } from "@/types/address-suggestions";
+import { isSandboxEnvironment } from "@/utils/environment";
 
 export const useAddressSuggestions = (search: string) => {
   const { data: suggestions = [], isLoading, error, isFetching } = useQuery({
@@ -9,6 +10,16 @@ export const useAddressSuggestions = (search: string) => {
       if (!search || search.length < 2) return [];
       
       try {
+        // In sandbox environment, always return mock data
+        if (isSandboxEnvironment()) {
+          console.log('Using mock address data in sandbox environment');
+          return [
+            { postcode: search, address: `${search}, London`, county: 'Greater London', district: 'Westminster' },
+            { postcode: `${search} 1AA`, address: `123 ${search} Street`, county: 'Greater London', district: 'Camden' },
+            { postcode: `${search} 2BB`, address: `${search} Park`, county: 'Greater London', district: 'Islington' }
+          ];
+        }
+        
         // Simple UK postcode regex for basic validation
         const isPostcodePattern = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i.test(search);
         const isPartialPostcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/i.test(search);
@@ -28,7 +39,7 @@ export const useAddressSuggestions = (search: string) => {
           }
         }
         
-        // Return mock data for now
+        // Return mock data as fallback
         return [
           { postcode: search, address: `${search}, London`, county: 'Greater London', district: 'Westminster' },
           { postcode: `${search} 1AA`, address: `123 ${search} Street`, county: 'Greater London', district: 'Camden' },
