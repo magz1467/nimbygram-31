@@ -60,12 +60,12 @@ export const SearchBar = ({ onSearch, variant = "primary", className = "" }: Sea
       
       console.log(`[SearchBar][${env}] Navigating to search results with: "${searchTerm.trim()}", type: ${searchType}`);
       
-      // UPDATED: Ensure consistent URL parameter format with Header.tsx
+      // Create a unique URL that won't cause rerendering issues
       const timestamp = Date.now();
       const url = `/search-results?search=${encodeURIComponent(searchTerm.trim())}&searchType=${searchType}&timestamp=${timestamp}&isLocationName=${isLocationName}`;
       console.log(`[SearchBar][${env}] Navigation URL: ${url}`);
       
-      // Use replace to avoid history stacking, and pass state to ensure consistency
+      // Use replace to avoid history stacking, and pass minimal state
       navigate(url, { 
         replace: true,
         state: {

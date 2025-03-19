@@ -1,9 +1,8 @@
 
 import { FilterBar } from "@/components/FilterBar";
-import { PostcodeSearch } from "@/components/postcode/PostcodeSearch";
+import { PostcodeSearch } from "@/components/PostcodeSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SortType } from "@/types/application-types";
-import { useLocation } from "react-router-dom";
 
 interface SearchSectionProps {
   searchTerm?: string;
@@ -43,27 +42,15 @@ export const SearchSection = ({
   isLoading
 }: SearchSectionProps) => {
   const isMobile = useIsMobile();
-  const location = useLocation();
-  
-  // Skip rendering the search section on pages that already have a search in the header
-  const shouldSkipSearch = ["/map", "/search-results"].some(path => 
-    location.pathname.includes(path)
-  );
-  
-  if (shouldSkipSearch) {
-    return null;
-  }
 
   return (
     <div className="bg-white border-b">
-      {isMobile && (
-        <div className="container mx-auto px-4 py-3">
-          <PostcodeSearch
-            onSelect={onPostcodeSelect}
-            placeholder="Search new location"
-          />
-        </div>
-      )}
+      <div className="container mx-auto px-4 py-3">
+        <PostcodeSearch
+          onSelect={onPostcodeSelect}
+          placeholder="Search new location"
+        />
+      </div>
 
       {onFilterChange && (
         <div className="w-full border-t">

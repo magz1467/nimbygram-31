@@ -19,7 +19,7 @@ interface DashboardLayoutProps {
     type?: string;
   };
   activeSort: SortType;
-  searchTerm: string;
+  searchTerm: string; // Added this property
   isLoading?: boolean;
   filteredApplications: Application[];
   handleMarkerClick: (id: number | null) => void;
@@ -37,7 +37,7 @@ export const DashboardLayout = ({
   coordinates,
   activeFilters,
   activeSort,
-  searchTerm,
+  searchTerm, // Added this parameter
   isLoading = false,
   filteredApplications,
   handleMarkerClick,
@@ -50,8 +50,14 @@ export const DashboardLayout = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden">
-      {/* Filters and sorting controls - not a header */}
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden">
+      {/* Header is removed - we'll use the one from AppLayout */}
+      <SearchSection 
+        onPostcodeSelect={handlePostcodeSelect}
+        applications={applications}
+        isMapView={isMapView}
+      />
+      
       <DashboardHeader 
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
@@ -96,4 +102,4 @@ export const DashboardLayout = ({
       {children}
     </div>
   );
-}
+};

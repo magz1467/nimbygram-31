@@ -6,6 +6,7 @@ import Mission from "@/components/Mission";
 import StayUpToDate from "@/components/StayUpToDate";
 import GetInTouch from "@/components/GetInTouch";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { QuoteSection } from "@/components/QuoteSection";
 import { PageSeparator } from "@/components/ui/page-separator";
 
@@ -13,7 +14,7 @@ const Index = () => {
   return (
     <div className="flex flex-col min-h-screen w-full">
       <PageSeparator />
-      {/* Header removed from here as it's already in AppLayout */}
+      <Header />
       <main className="flex-grow w-full relative z-10">
         <Hero />
         <Features />

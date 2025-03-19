@@ -1,9 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { List } from "lucide-react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { Home, List } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterBar } from "../FilterBar";
+import { MapListToggle } from "./mobile/MapListToggle";
+import { PostcodeSearch } from "../PostcodeSearch";
 
 interface MapHeaderProps {
   onFilterChange?: (filterType: string, value: string) => void;
@@ -28,19 +31,29 @@ export const MapHeader = ({
   applications = []
 }: MapHeaderProps) => {
   const [searchParams] = useSearchParams();
-  const initialSearch = searchParams.get('search') || searchParams.get('postcode') || '';
+  const initialPostcode = searchParams.get('postcode') || '';
+  const [postcode, setPostcode] = useState(initialPostcode);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (postcode.trim()) {
+      if (location.pathname === '/map') {
+        navigate(`/map?postcode=${encodeURIComponent(postcode.trim())}`, { replace: true });
+      } else {
+        navigate(`/map?postcode=${encodeURIComponent(postcode.trim())}`);
+      }
+    }
+  };
+
   const handleListViewClick = () => {
-    // Navigate back to search results with the current parameters and state
-    if (initialSearch) {
-      // Use the same search parameter format as Header.tsx
-      navigate(`/search-results?search=${encodeURIComponent(initialSearch.trim())}&timestamp=${Date.now()}`, {
+    // Navigate back to search results with the current postcode and state
+    if (postcode) {
+      navigate(`/search-results?postcode=${encodeURIComponent(postcode.trim())}`, {
         state: {
           ...location.state, // Preserve other state
-          searchTerm: initialSearch.trim(),
           applications: applications, // Pass the current applications
           fromMap: true // Mark as coming from map
         }
@@ -57,21 +70,38 @@ export const MapHeader = ({
   };
 
   return (
-    <div className="border-b bg-white">
+    <header className="border-b bg-white">
       <div className={`container mx-auto ${isMobile ? 'p-3' : 'px-4 py-3'}`}>
-        <div className="flex items-center justify-between">
-          {/* Add List View button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleListViewClick}
-            className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
-          >
-            <List className="h-4 w-4" />
-            List View
-          </Button>
-          
-          {isMobile && (
+        {!isMobile && (
+          <div className="flex items-center justify-between mb-3">
+            <Link to="/" className="text-2xl font-bold text-primary flex items-center gap-2">
+              <Home className="h-6 w-6" />
+              PlanningPulse
+            </Link>
+            
+            {/* Add List View button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleListViewClick}
+              className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+            >
+              <List className="h-4 w-4" />
+              List View
+            </Button>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="flex-1">
+          <PostcodeSearch
+            onSelect={setPostcode}
+            placeholder="Search new location"
+            initialValue={postcode}
+          />
+        </form>
+
+        {isMobile && (
+          <div className="flex items-center justify-between mt-3 border-t pt-2">
             <div className="flex items-center gap-1">
               {onFilterChange && (
                 <FilterBar
@@ -83,10 +113,21 @@ export const MapHeader = ({
                   applications={applications}
                 />
               )}
+              
+              {/* Add List View button for mobile */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleListViewClick}
+                className="flex items-center gap-1.5 bg-pink-100 hover:bg-pink-200 text-gray-800"
+              >
+                <List className="h-4 w-4" />
+                List
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </header>
   );
 };
