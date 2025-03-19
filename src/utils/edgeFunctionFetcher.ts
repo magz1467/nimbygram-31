@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { createAppError } from "./errors/types";
 import { ErrorType } from "./errors";
@@ -112,3 +111,11 @@ export async function fetchFromEdgeFunction<T = any>(
 ): Promise<T> {
   return invokeFunctionWithTimeout<T>(functionName, payload, options);
 }
+
+/**
+ * Export a singleton instance for easier import
+ */
+export const edgeFunctionFetcher = {
+  invokeFunctionWithTimeout,
+  fetchFromEdgeFunction
+};

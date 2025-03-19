@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { edgeFunctionFetcher } from "@/utils/edgeFunctionFetcher";
 import { useErrorHandler } from "@/hooks/use-error-handler";
 
 export const ContactForm = () => {
@@ -20,25 +20,12 @@ export const ContactForm = () => {
 
     try {
       setIsSubmitting(true);
-
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl('');
-      const baseUrl = publicUrl.split('/images')[0];
       
-      const response = await fetch(`${baseUrl}/functions/v1/send-contact-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          email,
-          message
-        })
+      // Use the send-contact-email edge function
+      await edgeFunctionFetcher.fetchFromEdgeFunction('send-contact-email', {
+        email,
+        message
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
 
       toast({
         title: "Message Sent",
