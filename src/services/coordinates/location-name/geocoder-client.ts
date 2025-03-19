@@ -109,17 +109,17 @@ export const performGeocoding = async (
       reject(new Error('Timeout while searching for location'));
     }, 10000);
     
+    // Create bounds for UK using LatLng objects
+    const ukSW = new google.maps.LatLng(50.0000, -8.6500); // Southwest corner
+    const ukNE = new google.maps.LatLng(58.6350, 1.7800);  // Northeast corner
+    const ukBounds = new google.maps.LatLngBounds(ukSW, ukNE);
+    
     geocoder.geocode({ 
       address: enhancedLocation,
       // Add region biasing to improve UK results
       region: 'uk',
       // Add bounds biasing to UK
-      bounds: {
-        north: 58.6350, // Northern point of UK
-        south: 50.0000, // Southern point of UK
-        east: 1.7800,   // Eastern point of UK
-        west: -8.6500   // Western point of UK
-      }
+      bounds: ukBounds
     }, (results, status) => {
       clearTimeout(timeout);
       
