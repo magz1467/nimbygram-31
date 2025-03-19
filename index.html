@@ -1,78 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/lovable-uploads/428f06f5-d118-4ab4-b899-b3259be9d2e6.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>NimbyGram - Planning Application Portal</title>
-    <meta name="description" content="Track and monitor planning applications in your area" />
-    <meta name="author" content="NimbyGram" />
-    <meta property="og:image" content="/lovable-uploads/428f06f5-d118-4ab4-b899-b3259be9d2e6.png" />
-    <meta property="og:site_name" content="NimbyGram" />
-    <meta property="og:url" content="https://nimbygram.com" />
-    <!-- Load API key fix script before anything else -->
-    <script src="/fixApiKey.js"></script>
-    <!-- Add Playfair Display font -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Add Open Sans font -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Add Caveat font -->
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Ensure styles are loaded before any scripts -->
-    <link rel="stylesheet" href="/src/index.css" type="text/css">
-    <!-- Google Maps API Key Detector Script -->
-    <script>
-      (function() {
-        console.log('=== GOOGLE MAPS API KEY DETECTOR ===');
-        
-        // Watch for script additions to detect when Google Maps is loaded
-        const originalCreateElement = document.createElement;
-        document.createElement = function(tagName) {
-          const element = originalCreateElement.call(document, tagName);
-          
-          if (tagName.toLowerCase() === 'script') {
-            // Watch for src attribute changes
-            const originalSetAttribute = element.setAttribute;
-            element.setAttribute = function(name, value) {
-              if (name === 'src' && value.includes('maps.googleapis.com')) {
-                console.log('DETECTED GOOGLE MAPS SCRIPT:', value);
-                
-                // Extract API key
-                const keyMatch = value.match(/key=([^&]+)/);
-                if (keyMatch && keyMatch[1]) {
-                  console.log('USING API KEY:', keyMatch[1]);
-                  console.log('LAST 6 CHARS:', keyMatch[1].slice(-6));
-                  
-                  // Check if it's the expired key
-                  if (keyMatch[1] === 'AIzaSyC7zDNJTRJgs7g3E_MAAOv72cpZdp1APSA') {
-                    console.error('EXPIRED KEY DETECTED');
-                  }
-                }
-              }
-              return originalSetAttribute.call(this, name, value);
-            };
-          }
-          return element;
-        };
-      })();
-    </script>
-    <!-- Hotjar Tracking Code for nimbygram -->
-    <script>
-        (function(h,o,t,j,a,r){
-            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-            h._hjSettings={hjid:5327735,hjsv:6};
-            a=o.getElementsByTagName('head')[0];
-            r=o.createElement('script');r.async=1;
-            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-            a.appendChild(r);
-        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NIMBYgram</title>
+    <meta name="description" content="NIMBYgram - Housing Development Tracking Platform" />
   </head>
-
   <body>
     <div id="root"></div>
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

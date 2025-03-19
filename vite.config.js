@@ -34,12 +34,16 @@ export default defineConfig({
     ],
   },
   build: {
-    // Force cache invalidation with a timestamp
+    outDir: 'dist',
     rollupOptions: {
-      output: {
-        entryFileNames: `assets/[name].${new Date().getTime()}.js`,
-        chunkFileNames: `assets/[name].${new Date().getTime()}.js`,
-        assetFileNames: `assets/[name].${new Date().getTime()}.[ext]`
+      onwarn(warning, warn) {
+        // Skip certain warnings
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE' || 
+            warning.message.includes('lucide-react')) {
+          return;
+        }
+        // Use default for everything else
+        warn(warning);
       }
     },
     // Ensure consistent sourcemap generation
