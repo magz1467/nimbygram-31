@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useFilterSortState } from "@/hooks/applications/use-filter-sort-state";
@@ -45,7 +44,7 @@ const MapViewPage = () => {
     }
     if (activeFilters.type && 
         !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase()) &&
-        !app.application_type_full?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
+        !app.type?.toLowerCase().includes(activeFilters.type.toLowerCase())) {
       return false;
     }
     return true;

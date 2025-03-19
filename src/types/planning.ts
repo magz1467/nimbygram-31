@@ -34,6 +34,7 @@ export interface Application {
   valid_date?: string | null;
   centroid?: any;
   received?: string | null;
+  decision?: string | null; // Added to fix timeline references
 }
 
 export interface Comment {

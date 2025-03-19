@@ -1,3 +1,4 @@
+
 import { Application } from "@/types/planning";
 import { Card } from "@/components/ui/card";
 import { MapPin, Bookmark, Heart } from "lucide-react";
@@ -25,7 +26,7 @@ export const ApplicationDetails = ({ application, onClose }: ApplicationDetailsP
           )}
           <div className="flex-1 min-w-0">
             <ApplicationTitle 
-              title={application.engaging_title || application.description || ''} 
+              title={application.title || application.description || ''} 
               className="mb-2"
             />
             <div className="flex items-center gap-1 mt-2 text-gray-600">

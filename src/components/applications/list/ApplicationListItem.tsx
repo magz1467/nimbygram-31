@@ -5,7 +5,6 @@ import { useState } from "react";
 import { ApplicationTitle } from "@/components/applications/ApplicationTitle";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
 import { ImageResolver } from "@/components/map/mobile/components/ImageResolver";
-import { FeedbackButtons } from "./FeedbackButtons";
 import { SeeOnMapButton } from "./SeeOnMapButton";
 import { ApplicationMapDialog } from "@/components/map/ApplicationMapDialog";
 
@@ -51,7 +50,7 @@ export const ApplicationListItem = ({
           </div>
           <div className="flex-1 min-w-0">
             <ApplicationTitle 
-              title={application.engaging_title || application.description || ''} 
+              title={application.title || application.description || ''} 
               className="mb-1"
             />
             <div className="flex items-center gap-1 mt-1 text-gray-600">
@@ -66,13 +65,6 @@ export const ApplicationListItem = ({
               />
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-gray-500">{application.distance}</span>
-                {application.feedback_stats && (
-                  <FeedbackButtons
-                    applicationId={application.id}
-                    feedbackStats={application.feedback_stats}
-                    onFeedback={handleFeedback}
-                  />
-                )}
               </div>
             </div>
             

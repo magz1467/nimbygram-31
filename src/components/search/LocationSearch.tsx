@@ -1,82 +1,55 @@
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { useAddressSuggestions } from "@/hooks/use-address-suggestions";
 import { useState } from "react";
+import { useAddressSuggestions } from "@/hooks/use-address-suggestions";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 interface LocationSearchProps {
-  location: string;
-  onLocationChange: (value: string) => void;
-  onLocationSelect: (location: string) => void;
+  onSearch: (location: string) => void;
 }
 
-export const LocationSearch = ({ location, onLocationChange, onLocationSelect }: LocationSearchProps) => {
-  const [open, setOpen] = useState(false);
-  const { suggestions = [], isLoading } = useAddressSuggestions({
-    input: location,
-  });
+export const LocationSearch = ({ onSearch }: LocationSearchProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { suggestions, isLoading } = useAddressSuggestions(searchTerm);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm) {
+      onSearch(searchTerm);
+    }
+  };
 
   return (
-    <div className="relative w-full">
-      <Command className="rounded-lg border shadow-md">
-        <CommandInput
-          placeholder="Enter location (e.g., street, town, or city)"
-          value={location}
-          onValueChange={(value) => {
-            onLocationChange(value);
-            if (value.length >= 2) {
-              setOpen(true);
-            }
-          }}
-          onFocus={() => location.length >= 2 && setOpen(true)}
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <div className="relative flex-1">
+        <Input
+          placeholder="Enter postcode or location"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
         />
-        {open && (
-          <CommandList>
-            {location.length >= 2 ? (
-              <>
-                {isLoading ? (
-                  <CommandEmpty>Loading suggestions...</CommandEmpty>
-                ) : suggestions && suggestions.length === 0 ? (
-                  <CommandEmpty>No results found.</CommandEmpty>
-                ) : (
-                  <CommandGroup heading="Locations">
-                    {(suggestions || []).map((suggestion) => {
-                      if (!suggestion?.address && !suggestion?.postcode) return null;
-                      
-                      const address = suggestion.address || suggestion.postcode;
-                      const key = `${suggestion.postcode}-${suggestion.admin_district}-${Date.now()}`;
-                      
-                      return (
-                        <CommandItem
-                          key={key}
-                          value={address}
-                          onSelect={(value) => {
-                            if (value) {
-                              onLocationSelect(value);
-                              setOpen(false);
-                            }
-                          }}
-                          className="cursor-pointer hover:bg-primary/10"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{address}</span>
-                            {(suggestion.admin_district || suggestion.country) && (
-                              <span className="text-sm text-gray-500">
-                                {[suggestion.admin_district, suggestion.country]
-                                  .filter(Boolean)
-                                  .join(', ')}
-                              </span>
-                            )}
-                          </div>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                )}
-              </>
-            ) : null}
-          </CommandList>
+        {suggestions.length > 0 && (
+          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md overflow-hidden">
+            {suggestions.map((suggestion: any, index: number) => (
+              <div
+                key={index}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  setSearchTerm(suggestion.address);
+                  onSearch(suggestion.address);
+                }}
+              >
+                {suggestion.address}
+              </div>
+            ))}
+          </div>
         )}
-      </Command>
-    </div>
+      </div>
+      <Button type="submit" disabled={isLoading || !searchTerm}>
+        <Search className="h-4 w-4 mr-2" />
+        Search
+      </Button>
+    </form>
   );
 };

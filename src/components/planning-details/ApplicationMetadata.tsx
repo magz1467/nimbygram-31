@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Application } from "@/types/planning";
 import { ApplicationTitle } from "@/components/applications/ApplicationTitle";
@@ -32,7 +33,7 @@ export const ApplicationMetadata = ({
       <div>
         <h2 className="text-3xl font-semibold">
           <ApplicationTitle 
-            title={application.engaging_title || application.title || application.reference} 
+            title={application.title || application.reference} 
             className="!text-2xl"
           />
         </h2>
