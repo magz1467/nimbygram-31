@@ -1,42 +1,52 @@
 
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { useCoordinates } from "@/hooks/use-coordinates";
-import { usePlanningSearch, SearchFilters } from "@/hooks/planning/use-planning-search";
-import { SortType } from "@/types/application-types";
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const useSearchResultsPage = () => {
+  const navigate = useNavigate();
   const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const searchState = location.state;
   
-  const { coordinates, isLoading: isLoadingCoords } = useCoordinates(
-    searchState?.searchTerm || ''
-  );
-
-  const { 
-    applications, 
-    isLoading: isLoadingResults,
-    error: searchError,
-    filters,
-    setFilters
-  } = usePlanningSearch(coordinates);
-
+  // Parse search params from URL
   useEffect(() => {
-    if (searchError) {
-      setError(searchError);
+    const searchParams = new URLSearchParams(location.search);
+    const postcode = searchParams.get('postcode');
+    
+    if (postcode) {
+      setSearchTerm(postcode);
     }
-  }, [searchError]);
-
-  const isLoading = isLoadingCoords || isLoadingResults;
-
+  }, [location.search]);
+  
+  // Handle the search functionality
+  const handleSearch = (term: string) => {
+    if (!term.trim()) return;
+    
+    setIsSearching(true);
+    setError(null);
+    
+    try {
+      // Update URL with search term
+      const params = new URLSearchParams();
+      params.set('postcode', term);
+      navigate(`/search-results?${params.toString()}`);
+    } catch (err) {
+      // Type guard for the error
+      if (err instanceof Error) {
+        setError(err);
+      } else {
+        setError(new Error('An unknown error occurred'));
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
   return {
-    searchState,
-    applications,
-    isLoading,
+    searchTerm,
+    isSearching,
     error,
-    setError,
-    filters,
-    setFilters
+    handleSearch,
   };
 };

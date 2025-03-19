@@ -1,99 +1,135 @@
 
+import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Home, Users, CheckCircle, MessageSquare } from "lucide-react";
+import { Home, Shield, FileText, Bell } from "lucide-react";
 import { PricingTier } from "./PricingTier";
 
 export const HomeownerSection = () => {
-  const homeownerTiers = [
-    {
-      name: "Bronze",
-      price: "£49",
-      features: [
-        { name: "Basic planning guidance", included: true },
-        { name: "Document templates", included: true },
-        { name: "Community feedback", included: false },
-        { name: "Planning officer consultation", included: false },
-        { name: "Priority support", included: false },
-      ],
-    },
-    {
-      name: "Silver",
-      price: "£149",
-      features: [
-        { name: "Basic planning guidance", included: true },
-        { name: "Document templates", included: true },
-        { name: "Community feedback", included: true },
-        { name: "Planning officer consultation", included: false },
-        { name: "Priority support", included: false },
-      ],
-    },
-    {
-      name: "Gold",
-      price: "£299",
-      features: [
-        { name: "Basic planning guidance", included: true },
-        { name: "Document templates", included: true },
-        { name: "Community feedback", included: true },
-        { name: "Planning officer consultation", included: true },
-        { name: "Priority support", included: true },
-      ],
-    },
-  ];
-
   return (
-    <Card className="mb-12">
-      <CardHeader>
-        <div className="flex items-center gap-3 mb-4">
-          <Home className="h-8 w-8 text-primary" />
-          <CardTitle className="text-3xl">For Individual Homeowners</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Get it right the first time</h3>
-            <ul className="space-y-4">
-              {[
-                { icon: Users, text: "Get early feedback from neighbors before submission" },
-                { icon: CheckCircle, text: "Understand local planning policies and requirements" },
-                { icon: MessageSquare, text: "Direct communication with planning officers" }
-              ].map((item, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-primary mt-1" />
-                  <span>{item.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-primary/5 rounded-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Why choose us?</h3>
-            <p className="text-gray-700 mb-6">
-              Our platform helps you navigate the planning process with confidence. 
-              Get early feedback, make necessary adjustments, and increase your chances 
-              of approval - all before official submission.
-            </p>
-            <Button size="lg" className="w-full md:w-auto">
-              Start Your Application
-            </Button>
-          </div>
+    <section className="py-16 bg-white" id="homeowner-services">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Homeowner Services</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Protect your property value and quality of life with our comprehensive
+            homeowner services.
+          </p>
         </div>
 
-        {/* Homeowner Pricing Tiers */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-semibold mb-8 text-center">Choose Your Package</h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            {homeownerTiers.map((tier) => (
-              <PricingTier
-                key={tier.name}
-                name={tier.name}
-                price={tier.price}
-                features={tier.features}
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <Card>
+            <CardHeader>
+              <Home className="h-10 w-10 text-primary mb-2" />
+              <CardTitle>Property Protection</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Be alerted to nearby developments that could impact your property's value
+                or your quality of life.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Shield className="h-10 w-10 text-primary mb-2" />
+              <CardTitle>Planning Defense</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Expert guidance on objecting to problematic developments and navigating
+                the planning process.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <FileText className="h-10 w-10 text-primary mb-2" />
+              <CardTitle>Legal Resources</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Access to templates, guides, and professional advice for addressing
+                planning concerns legally.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Bell className="h-10 w-10 text-primary mb-2" />
+              <CardTitle>Alerts System</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Customizable notifications about new planning applications in your
+                neighborhood and surrounding areas.
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <PricingTier
+            title="Basic"
+            price="Free"
+            period=""
+            description="Essential tools for homeowners"
+            features={[
+              "Basic property alerts",
+              "Access to planning database",
+              "Limited objection templates",
+              "Community forum access"
+            ]}
+            buttonText="Get Started"
+            buttonVariant="outline"
+          />
+
+          <PricingTier
+            title="Premium"
+            price="£9.99"
+            period="/month"
+            description="Advanced protection for your property"
+            features={[
+              "Priority property alerts",
+              "Advanced impact assessment",
+              "Full objection template library",
+              "Expert planning advice",
+              "Legal consultation discount"
+            ]}
+            buttonText="Start Free Trial"
+            buttonVariant="default"
+            highlighted={true}
+          />
+
+          <PricingTier
+            title="Community"
+            price="Custom"
+            period=""
+            description="Organize your neighborhood"
+            features={[
+              "Group coverage for multiple homes",
+              "Coordinated planning responses",
+              "Community campaign tools",
+              "Dedicated planning consultant",
+              "Neighborhood alert system",
+              "Legal strategy sessions"
+            ]}
+            buttonText="Contact Sales"
+            buttonVariant="outline"
+          />
+        </div>
+
+        <div className="text-center mt-12">
+          <Button variant="link" className="text-primary">
+            View full feature comparison →
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 };
+
+export default HomeownerSection;
