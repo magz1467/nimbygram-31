@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, BarChart, Users, MessageSquare } from "lucide-react";
 import { PricingTier } from "./PricingTier";
 
-const DeveloperSection = () => {
+export const DeveloperSection = () => {
   return (
     <section className="py-16 bg-gray-50" id="developer-services">
       <div className="container mx-auto px-4">
