@@ -1,3 +1,4 @@
+
 import Image from "@/components/ui/image";
 
 const Mission = () => {
@@ -12,10 +13,13 @@ const Mission = () => {
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div className="space-y-6 text-foreground font-sans">
                 <p className="text-lg">
-                  The UK planning system has long been burdened by slow processes and limited transparency. With average application decisions taking 8-13 weeks, the need for innovation is clear.
+                  For too long the UK planning system has been dominated by activists and the few who can understand reference information and red tape.
                 </p>
                 <p className="text-lg">
-                  Our platform revolutionizes this outdated system by creating a seamless digital bridge between residents, developers, and local authorities. Through data-driven insights and transparent processes, we're building a future where planning decisions are made faster, smarter, and with genuine community input.
+                  Our mission is to make this information easy to understand and to make it easy to have your say on your local area.
+                </p>
+                <p className="text-lg">
+                  We want decisions made, faster, better and with more community say to support sustainable developments.
                 </p>
               </div>
               <div className="flex items-center justify-center h-full">
