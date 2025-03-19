@@ -1,100 +1,130 @@
-
+import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, ChartBar, Users, MessageSquare } from "lucide-react";
+import { Building2, BarChart, Users, MessageSquare } from "lucide-react";
 import { PricingTier } from "./PricingTier";
 
-export const DeveloperSection = () => {
-  const developerTiers = [
-    {
-      name: "Bronze",
-      price: "£499/month",
-      features: [
-        { name: "Basic planning analytics", included: true },
-        { name: "Community engagement tools", included: true },
-        { name: "Advanced data insights", included: false },
-        { name: "Dedicated account manager", included: false },
-        { name: "API access", included: false },
-      ],
-    },
-    {
-      name: "Silver",
-      price: "£999/month",
-      features: [
-        { name: "Basic planning analytics", included: true },
-        { name: "Community engagement tools", included: true },
-        { name: "Advanced data insights", included: true },
-        { name: "Dedicated account manager", included: false },
-        { name: "API access", included: false },
-      ],
-    },
-    {
-      name: "Gold",
-      price: "£1,999/month",
-      features: [
-        { name: "Basic planning analytics", included: true },
-        { name: "Community engagement tools", included: true },
-        { name: "Advanced data insights", included: true },
-        { name: "Dedicated account manager", included: true },
-        { name: "API access", included: true },
-      ],
-    },
-  ];
-
+const DeveloperSection = () => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3 mb-4">
-          <Building2 className="h-8 w-8 text-primary" />
-          <CardTitle className="text-3xl">For Large Scale Developers</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Data-Driven Decisions</h3>
-            <ul className="space-y-4">
-              {[
-                { icon: ChartBar, text: "Access comprehensive local planning data and trends" },
-                { icon: Users, text: "Understand community sentiment before submission" },
-                { icon: MessageSquare, text: "Engage with stakeholders through our platform" }
-              ].map((item, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-primary mt-1" />
-                  <span>{item.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-primary/5 rounded-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Enterprise Solutions</h3>
-            <p className="text-gray-700 mb-6">
-              Our platform provides valuable insights and streamlines community 
-              engagement. Make informed decisions based on real data and local 
-              sentiment analysis.
-            </p>
-            <Button size="lg" className="w-full md:w-auto">
-              Book a Demo
-            </Button>
-          </div>
+    <section className="py-16 bg-gray-50" id="developer-services">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Developer Services</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Comprehensive tools and data for real estate developers to make informed decisions
+            and streamline project planning.
+          </p>
         </div>
 
-        {/* Developer Pricing Tiers */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-semibold mb-8 text-center">Enterprise Packages</h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            {developerTiers.map((tier) => (
-              <PricingTier
-                key={tier.name}
-                name={tier.name}
-                price={tier.price}
-                features={tier.features}
-                ctaText="Contact Sales"
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <Card>
+            <CardHeader>
+              <Building2 className="h-10 w-10 text-blue-600 mb-2" />
+              <CardTitle>Project Planning</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Access zoning data, development patterns, and historical approval rates to plan your projects effectively.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <BarChart className="h-10 w-10 text-blue-600 mb-2" />
+              <CardTitle>Market Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Comprehensive market data including pricing trends, demand forecasts, and competitive landscape analysis.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Users className="h-10 w-10 text-blue-600 mb-2" />
+              <CardTitle>Community Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Understand community sentiment and anticipate potential opposition to development projects.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <MessageSquare className="h-10 w-10 text-blue-600 mb-2" />
+              <CardTitle>Approval Consulting</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Strategic advice on navigating approval processes and addressing community concerns effectively.
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <PricingTier
+            title="Basic"
+            price="$299"
+            period="/month"
+            description="Essential tools for small developers"
+            features={[
+              "Basic zoning data access",
+              "Limited market reports",
+              "Community sentiment analysis",
+              "Email support"
+            ]}
+            buttonText="Start Free Trial"
+            buttonVariant="outline"
+          />
+
+          <PricingTier
+            title="Professional"
+            price="$799"
+            period="/month"
+            description="Comprehensive tools for growing firms"
+            features={[
+              "Full zoning database access",
+              "Comprehensive market analysis",
+              "Historical approval data",
+              "Community engagement tools",
+              "Priority support"
+            ]}
+            buttonText="Start Free Trial"
+            buttonVariant="default"
+            highlighted={true}
+          />
+
+          <PricingTier
+            title="Enterprise"
+            price="Custom"
+            period=""
+            description="Tailored solutions for large developers"
+            features={[
+              "Custom data integration",
+              "Advanced predictive analytics",
+              "Dedicated consulting services",
+              "API access",
+              "24/7 premium support",
+              "Custom reporting"
+            ]}
+            buttonText="Contact Sales"
+            buttonVariant="outline"
+          />
+        </div>
+
+        <div className="text-center mt-12">
+          <Button variant="link" className="text-blue-600">
+            View full feature comparison →
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 };
+
+export default DeveloperSection;
