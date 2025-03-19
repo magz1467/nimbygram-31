@@ -1,6 +1,6 @@
 
 import { Application } from "@/types/planning";
-import { MapPin, CalendarDays } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useState } from "react";
 import { ApplicationTitle } from "@/components/applications/ApplicationTitle";
 import { ApplicationBadges } from "@/components/applications/ApplicationBadges";
@@ -8,7 +8,6 @@ import { ImageResolver } from "@/components/map/mobile/components/ImageResolver"
 import { FeedbackButtons } from "./FeedbackButtons";
 import { SeeOnMapButton } from "./SeeOnMapButton";
 import { ApplicationMapDialog } from "@/components/map/ApplicationMapDialog";
-import { format } from "date-fns";
 
 interface ApplicationListItemProps {
   application: Application;
@@ -32,13 +31,6 @@ export const ApplicationListItem = ({
       onFeedback(applicationId, type);
     }
   };
-
-  // Format received date
-  const formattedReceivedDate = application.received || application.received_date
-    ? new Date(application.received || application.received_date).toString() !== "Invalid Date"
-      ? format(new Date(application.received || application.received_date), 'dd MMM yyyy')
-      : null
-    : null;
 
   return (
     <>
@@ -66,14 +58,6 @@ export const ApplicationListItem = ({
               <MapPin className="w-3 h-3" />
               <p className="text-sm truncate">{application.address}</p>
             </div>
-            
-            {formattedReceivedDate && (
-              <div className="flex items-center gap-1 mt-1 text-gray-600">
-                <CalendarDays className="w-3 h-3" />
-                <p className="text-xs">Received: {formattedReceivedDate}</p>
-              </div>
-            )}
-            
             <div className="flex flex-col gap-1.5 mt-2">
               <ApplicationBadges
                 status={application.status}

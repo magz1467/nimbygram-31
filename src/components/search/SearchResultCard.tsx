@@ -64,30 +64,38 @@ export const SearchResultCard = ({
     setShowComments(prev => !prev);
   };
 
-  // Debugging to understand what data we have available
+  // Enhanced logging for storybook data
   useEffect(() => {
     console.log(`SearchResultCard for application ${application.id}:`, { 
-      receivedDate: application.received,
-      hasReceivedDate: Boolean(application.received),
-      receivedDateType: application.received ? typeof application.received : 'undefined'
+      hasStorybook: Boolean(application.storybook),
+      storybook: application.storybook ? {
+        type: typeof application.storybook,
+        length: application.storybook.length
+      } : null,
+      description: application.description?.substring(0, 30),
+      title: application.title
     });
+    
+    if (application.storybook) {
+      console.log('SearchResultCard storybook preview for app', application.id, ':', 
+        application.storybook.substring(0, 100) + '...');
+    } else {
+      console.log('SearchResultCard missing storybook for app', application.id);
+    }
   }, [application]);
 
-  // Format received date - trying all possible field names
+  const formattedSubmittedDate = application.submittedDate || application.received_date
+    ? new Date(application.submittedDate || application.received_date).toString() !== "Invalid Date"
+      ? format(new Date(application.submittedDate || application.received_date), 'dd MMM yyyy')
+      : null
+    : null;
+
   const formattedReceivedDate = application.received
     ? new Date(application.received).toString() !== "Invalid Date"
       ? format(new Date(application.received), 'dd MMM yyyy')
       : null
     : null;
 
-  const formattedReceivedDateAlt = application.received_date
-    ? new Date(application.received_date).toString() !== "Invalid Date"
-      ? format(new Date(application.received_date), 'dd MMM yyyy')
-      : null
-    : null;
-
-  const displayDate = formattedReceivedDate || formattedReceivedDateAlt;
-  
   const imageUrl = getImageUrl(application.streetview_url || application.image || application.image_map_url);
 
   const handleSeeOnMap = () => {
@@ -110,12 +118,12 @@ export const SearchResultCard = ({
         title={application.title || ''} 
       />
 
-      {displayDate && (
+      {(formattedReceivedDate || formattedSubmittedDate) && (
         <div className="px-4 py-2 bg-gray-50 border-y border-gray-100">
           <div className="flex items-center gap-1.5 text-sm text-gray-600">
             <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
             <span className="font-medium">Received:</span>
-            <span>{displayDate}</span>
+            <span>{formattedReceivedDate || formattedSubmittedDate || 'Date not available'}</span>
           </div>
         </div>
       )}

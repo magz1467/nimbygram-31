@@ -38,17 +38,6 @@ export const ResultsContainer = ({
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
 
-  // Debug logging to check received date
-  useEffect(() => {
-    if (displayApplications.length > 0) {
-      console.log('ResultsContainer - Sample application:', {
-        id: displayApplications[0].id,
-        received: displayApplications[0].received,
-        received_date: displayApplications[0].received_date
-      });
-    }
-  }, [displayApplications]);
-
   // Modified to display either list view or split view based on showMap
   return showMap && coordinates ? (
     <MapSplitView
