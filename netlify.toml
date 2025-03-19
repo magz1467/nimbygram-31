@@ -15,8 +15,6 @@
   NETLIFY_USE_BUN = "false"
   NPM_FLAGS = "--legacy-peer-deps --no-optional"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "true"
-  # Remove the esbuild binary path - let Netlify handle it
-  # ESBUILD_BINARY_PATH = "/opt/build/repo/node_modules/@netlify/esbuild-linux-64/bin/esbuild"
 
 # Handle SPA routing
 [[redirects]]
@@ -39,9 +37,3 @@
 # SSL settings
 [dev]
   https = true
-
-# Add plugin configuration directly in toml file
-[[plugins]]
-  package = "@netlify/plugin-functions-install-core"
-  [plugins.inputs]
-    includeModules = ["sharp"]
