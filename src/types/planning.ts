@@ -1,3 +1,4 @@
+
 export interface Application {
   id: number;
   reference: string;
@@ -20,7 +21,7 @@ export interface Application {
   impact_score?: number | null;
   impact_score_details?: any;
   storybook?: string | null;
-  short_story?: string | null; // Add the short_story field
+  short_story?: string | null;
   received_date?: string | null;
   applicant?: string;
   consultationEnd?: string;
@@ -33,4 +34,24 @@ export interface Application {
   valid_date?: string | null;
   centroid?: any;
   received?: string | null;
+}
+
+export interface Comment {
+  id: number | string;
+  comment: string;
+  application_id: number | string;
+  user_id?: string;
+  user_email?: string;
+  parent_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  upvotes?: number;
+  downvotes?: number;
+  profiles?: {
+    username?: string;
+  };
+  user?: {
+    username?: string;
+  };
+  replies?: Comment[];
 }

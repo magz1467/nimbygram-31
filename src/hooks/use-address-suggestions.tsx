@@ -1,37 +1,64 @@
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
-import { useQuery } from "@tanstack/react-query";
-import { PostcodeSuggestion } from "@/types/address-suggestions";
-import { fetchAddressSuggestions } from "@/services/address/postcode-autocomplete";
-import { useDebounce } from "./use-debounce";
-
-export interface UseAddressSuggestionsProps {
-  input: string;
+interface PostcodeInfo {
+  latitude: number;
+  longitude: number;
 }
 
-export const useAddressSuggestions = ({ input }: UseAddressSuggestionsProps) => {
-  const debouncedSearch = useDebounce(input, 300);
-  
-  const { 
-    data: suggestions = [] as PostcodeSuggestion[], 
-    isLoading, 
-    isFetching,
-    isError,
-    isSuccess
-  } = useQuery({
-    queryKey: ["address-suggestions", debouncedSearch] as const,
-    queryFn: () => fetchAddressSuggestions(debouncedSearch),
-    enabled: debouncedSearch.length >= 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+const fetchAddressSuggestions = async (searchTerm: string): Promise<any[]> => {
+  if (!searchTerm || searchTerm.length < 3) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.getAddress.io/autocomplete/${searchTerm}?api-key=${process.env.NEXT_PUBLIC_GET_ADDRESS_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.suggestions || [];
+  } catch (error) {
+    console.error("Failed to fetch address suggestions:", error);
+    return [];
+  }
+};
+
+const fetchPostcodeInfo = async (postcode: string): Promise<PostcodeInfo | null> => {
+  try {
+    const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+    const data = await response.json();
+
+    if (data.status === 200 && data.result) {
+      return {
+        latitude: data.result.latitude,
+        longitude: data.result.longitude,
+      };
+    } else {
+      console.error("Failed to fetch postcode info:", data.error);
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch postcode info:", error);
+    return null;
+  }
+};
+
+export const useAddressSuggestions = (searchTerm: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['address-suggestions', searchTerm] as const,
+    queryFn: () => fetchAddressSuggestions(searchTerm),
+    enabled: !!searchTerm,
+    staleTime: 60 * 1000, // 1 minute
   });
 
   return {
-    suggestions,
+    suggestions: data || [],
     isLoading,
-    isFetching,
-    isError,
-    isSuccess,
-    input,
-    setInput: () => {}, // This is a placeholder since we're not using a state setter directly
+    error,
   };
 };
