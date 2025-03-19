@@ -27,24 +27,24 @@ const Features = () => {
             <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <FileText className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">1. Instant petition</h3>
-                <p className="text-foreground">Unleash your inner Nimby by creating a petition against ghastly developments</p>
+                <h3 className="text-lg font-semibold mb-2">1. See your local story</h3>
+                <p className="text-foreground">The most in-depth overview of local projects in your area with an AI powered summary of the key details</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <Map className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">2. Nimby or Yimby</h3>
-                <p className="text-foreground">Upvote or downsvote applications</p>
+                <h3 className="text-lg font-semibold mb-2">2. Easily share, comment and question</h3>
+                <p className="text-foreground">Share interesting applications with neighbours and ask questions of developers</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 p-6 bg-background rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <PenLine className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">3. Easy Share</h3>
-                <p className="text-foreground">Instantly share great or ghastly applications with your network to get more local feedback</p>
+                <h3 className="text-lg font-semibold mb-2">3. Have your say</h3>
+                <p className="text-foreground">Show your support for or petition against new applications to support sustainable development</p>
               </div>
             </div>
           </div>
