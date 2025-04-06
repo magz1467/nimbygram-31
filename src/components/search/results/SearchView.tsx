@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { SearchStateProvider, useSearchState } from './search-views/SearchStateProvider';
 import { LoadingView } from './search-views/LoadingView';
@@ -8,6 +7,8 @@ import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentHostname, getEnvironmentName } from '@/utils/environment';
+import { Application } from '@/types/planning';
+import { Dispatch, SetStateAction } from 'react';
 
 // This is the inner component that uses the search state context
 function SearchViewContent() {
@@ -129,12 +130,36 @@ interface SearchViewProps {
     displayTerm?: string;
     timestamp?: number;
   };
+  applications?: Application[];
+  isLoading?: boolean;
+  searchTerm?: string;
+  displayTerm?: string;
+  coordinates?: [number, number] | null;
+  showMap?: boolean;
+  setShowMap?: Dispatch<SetStateAction<boolean>>;
+  selectedId?: number | null;
+  setSelectedId?: Dispatch<SetStateAction<number | null>>;
+  handleMarkerClick?: (id: number) => void;
+  hasPartialResults?: boolean;
+  isSearchInProgress?: boolean;
   onError?: (error: Error | null) => void;
   onSearchComplete?: () => void;
 }
 
 export function SearchView({ 
   initialSearch,
+  applications,
+  isLoading,
+  searchTerm,
+  displayTerm,
+  coordinates,
+  showMap,
+  setShowMap,
+  selectedId,
+  setSelectedId,
+  handleMarkerClick,
+  hasPartialResults,
+  isSearchInProgress,
   onError,
   onSearchComplete
 }: SearchViewProps) {
@@ -142,19 +167,39 @@ export function SearchView({
   
   console.log(`[SearchView][${env}] Initializing with search params:`, initialSearch);
   
+  // Construct initialSearch from props if not provided directly
+  const effectiveInitialSearch = initialSearch || (searchTerm ? {
+    searchType: 'postcode',
+    searchTerm: searchTerm,
+    displayTerm: displayTerm || searchTerm,
+    timestamp: Date.now()
+  } : undefined);
+  
   // Add debugging for initialSearch props
   useEffect(() => {
     console.log(`[SearchView][${env}] initialSearch CHANGED:`, {
-      searchTerm: initialSearch?.searchTerm,
-      searchType: initialSearch?.searchType,
-      timestamp: initialSearch?.timestamp
+      searchTerm: effectiveInitialSearch?.searchTerm,
+      searchType: effectiveInitialSearch?.searchType,
+      timestamp: effectiveInitialSearch?.timestamp
     });
-  }, [initialSearch, env]);
+  }, [effectiveInitialSearch, env]);
   
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <SearchStateProvider initialSearch={initialSearch}>
+        <SearchStateProvider 
+          initialSearch={effectiveInitialSearch}
+          initialApplications={applications}
+          initialIsLoading={isLoading}
+          coordinates={coordinates}
+          showMap={showMap}
+          setShowMap={setShowMap}
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          handleMarkerClick={handleMarkerClick}
+          hasPartialResults={hasPartialResults}
+          isSearchInProgress={isSearchInProgress}
+        >
           <SearchViewContentWithCallbacks 
             onError={onError} 
             onSearchComplete={onSearchComplete} 

@@ -37,11 +37,20 @@ const SearchResultsPage = () => {
     setSelectedId(id);
   };
 
+  // Create initialSearch object for the SearchView component
+  const initialSearch = searchTerm ? {
+    searchType: 'postcode' as const,
+    searchTerm,
+    displayTerm,
+    timestamp: Date.now()
+  } : undefined;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
         <SearchView
+          initialSearch={initialSearch}
           applications={applications}
           isLoading={isLoading}
           searchTerm={searchTerm}
