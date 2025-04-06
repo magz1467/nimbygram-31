@@ -7,6 +7,7 @@ import Profile from "@/pages/Profile";
 import Help from "@/pages/Help";
 import Feed from "@/pages/Feed";
 import SearchResultsPage from "@/pages/SearchResults";
+import MapViewPage from "@/pages/MapView";
 import { RouteObject } from "react-router-dom";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
@@ -49,6 +50,11 @@ export const mainRoutes: RouteObject[] = [
   {
     path: "/search-results",
     element: <SearchResultsPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/map",
+    element: <MapViewPage />,
     errorElement: <RouteErrorBoundary />,
   },
 ];
