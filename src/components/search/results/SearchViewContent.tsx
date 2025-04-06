@@ -7,6 +7,7 @@ import { ResultsView } from './search-views/ResultsView';
 import { NoSearchStateView } from './NoSearchStateView';
 import { ErrorType, detectErrorType } from '@/utils/errors';
 import { StatusCounts } from '@/types/application-types';
+import { LoadingStage } from '@/hooks/use-loading-state';
 
 export function SearchViewContent() {
   const { 
@@ -89,10 +90,10 @@ export function SearchViewContent() {
   }
   
   // Show loading view if we're loading
-  if (loadingState.isLoading || loadingState.stage !== 'complete') {
+  if (loadingState.isLoading || (loadingState.stage !== 'complete' && loadingState.stage !== 'error')) {
     return (
       <LoadingView 
-        stage={loadingState.stage}
+        stage={loadingState.stage as LoadingStage}
         isLongRunning={loadingState.longRunning}
         searchTerm={initialSearch.searchTerm}
         onRetry={retry}

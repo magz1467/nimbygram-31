@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { SearchStateProvider, useSearchState } from './search-views/SearchStateProvider';
 import { LoadingView } from './search-views/LoadingView';
@@ -9,6 +10,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentHostname, getEnvironmentName } from '@/utils/environment';
 import { Application } from '@/types/planning';
 import { Dispatch, SetStateAction } from 'react';
+import { LoadingStage } from '@/hooks/use-loading-state';
 
 // This is the inner component that uses the search state context
 function SearchViewContent() {
@@ -95,7 +97,7 @@ function SearchViewContent() {
   }
   
   // Show loading view if we're loading
-  if (loadingState.isLoading || loadingState.stage !== 'complete') {
+  if (loadingState.isLoading || (loadingState.stage !== 'complete' && loadingState.stage !== 'error')) {
     console.log(`[SearchViewContent][${env}] Showing loading view. Stage:`, loadingState.stage);
     return (
       <LoadingView 

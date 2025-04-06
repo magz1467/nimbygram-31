@@ -43,6 +43,8 @@ export function LoadingView({ stage, isLongRunning, searchTerm, onRetry }: Loadi
           : `Searching for planning applications${dots}`;
       case 'rendering':
         return `Processing results${dots}`;
+      case 'idle':
+        return `Preparing search${dots}`;
       default:
         return `Loading${dots}`;
     }

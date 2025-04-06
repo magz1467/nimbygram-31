@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Application } from '@/types/planning';
+import { LoadingStage } from '@/hooks/use-loading-state';
 
 interface UsePlanningSearchOptions {
   initialSearch?: {
@@ -12,6 +13,46 @@ interface UsePlanningSearchOptions {
   skipSearch?: boolean;
 }
 
+// Main hook for planning application search
+export function usePlanningSearch(searchParam: string | [number, number] | null) {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [hasPartialResults, setHasPartialResults] = useState(false);
+  const [isSearchInProgress, setIsSearchInProgress] = useState(false);
+
+  // Search effect when searchParam changes
+  useEffect(() => {
+    if (!searchParam) return;
+    
+    setIsLoading(true);
+    setIsSearchInProgress(true);
+    
+    // Simulated search for now - would be replaced with actual API calls
+    setTimeout(() => {
+      // For demo purposes, return empty array
+      setApplications([]);
+      setIsLoading(false);
+      setIsSearchInProgress(false);
+    }, 1500);
+    
+    return () => {
+      // Cleanup if needed
+    };
+  }, [searchParam]);
+
+  return {
+    applications,
+    isLoading,
+    error,
+    filters,
+    setFilters,
+    hasPartialResults,
+    isSearchInProgress
+  };
+}
+
 export function useSearchPages({ initialSearch, skipSearch = false }: UsePlanningSearchOptions = {}) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -21,7 +62,7 @@ export function useSearchPages({ initialSearch, skipSearch = false }: UsePlannin
   
   const [loadingState, setLoadingState] = useState({
     isLoading: false,
-    stage: 'initial' as const,
+    stage: 'idle' as LoadingStage,
     error: null as Error | null,
     longRunning: false
   });
